@@ -887,5 +887,9 @@
   }
 
   global.Game = { boot: boot, state: function () { return S; }, goto: goto };
-  document.addEventListener('DOMContentLoaded', boot);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })(window);
