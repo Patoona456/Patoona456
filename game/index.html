@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AETHERION ONLINE — เอธีเรียนออนไลน์</title>
+<meta name="description" content="เกม Choice-based MMORPG ที่มี AI เล่นเองได้ และวาดภาพฉากใหม่ทุกครั้งที่เรื่องดำเนินไป">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">AETHERION</span>
+    <span class="logo-sub">ONLINE</span>
+  </div>
+  <div class="topbar-mid">
+    <input id="player-name" type="text" maxlength="16" placeholder="ชื่อตัวละคร" autocomplete="off">
+    <select id="persona" title="บุคลิกของ AI ตอนเล่นเอง">
+      <option value="balanced">AI: สมดุล</option>
+      <option value="aggressive">AI: บ้าบิ่น</option>
+      <option value="cautious">AI: รอบคอบ</option>
+      <option value="kind">AI: เมตตา</option>
+    </select>
+  </div>
+  <div class="topbar-actions">
+    <button id="btn-auto" class="btn">○ AUTO-AI: ปิด</button>
+    <button id="btn-repaint" class="btn ghost" title="สุ่มภาพฉากใหม่">◈ ภาพใหม่</button>
+    <button id="btn-save" class="btn ghost">บันทึก</button>
+    <button id="btn-restart" class="btn ghost danger">เริ่มใหม่</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <section class="stage">
+    <div class="scene-wrap">
+      <canvas id="scene"></canvas>
+      <div id="scene-tag" class="scene-tag"></div>
+      <div id="combat" class="combat">
+        <div class="enemy-head">
+          <span id="enemy-name">—</span>
+          <span id="enemy-round" class="round">รอบที่ 1</span>
+        </div>
+        <div id="enemy-hp" class="bar enemy">
+          <div class="bar-fill"></div><span class="bar-text"></span>
+        </div>
+        <div id="combat-log" class="combat-log"></div>
+      </div>
+    </div>
+
+    <h2 id="scene-title" class="scene-title">กำลังเชื่อมต่อ…</h2>
+    <div id="story" class="story"></div>
+    <div id="choices" class="choices"></div>
+  </section>
+
+  <aside class="panel">
+    <div class="card">
+      <div class="who">
+        <div id="hud-name" class="who-name">—</div>
+        <div id="hud-class" class="who-class">—</div>
+      </div>
+
+      <label class="bar-label">HP</label>
+      <div id="hud-hp" class="bar hp"><div class="bar-fill"></div><span class="bar-text"></span></div>
+
+      <label class="bar-label">EP · เสียงสะท้อน</label>
+      <div id="hud-ep" class="bar ep"><div class="bar-fill"></div><span class="bar-text"></span></div>
+
+      <label class="bar-label">EXP</label>
+      <div id="hud-exp" class="bar exp"><div class="bar-fill"></div><span class="bar-text"></span></div>
+
+      <label class="bar-label">ความทรงจำที่เหลือ</label>
+      <div id="hud-mem" class="bar mem"><div class="bar-fill"></div><span class="bar-text"></span></div>
+
+      <div id="hud-stats" class="stats"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">ปาร์ตี้</div>
+      <div id="hud-party" class="party"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">กระเป๋า</div>
+      <div id="hud-items" class="items"></div>
+    </div>
+
+    <div class="card hint-card">
+      <div class="card-title">วิธีเล่น</div>
+      <p>กดเลือกคำตอบ หรือกดปุ่มเลข <b>1–9</b></p>
+      <p>กด <b>Space</b> เพื่อสลับโหมด AUTO-AI ให้ AI เล่นเองทั้งหมด</p>
+      <p>ตายครบ <b>10 ครั้ง</b> ความทรงจำจะหมด และเธอจะกลายเป็นมอนสเตอร์</p>
+      <p>เป้าหมาย: พิชิตชั้นฟ้าทั้ง <b>9 ชั้น</b> แล้วไปถึงแกนกลาง</p>
+    </div>
+  </aside>
+</main>
+
+<div id="toasts" class="toasts"></div>
+
+<script src="js/art.js"></script>
+<script src="js/data.js"></script>
+<script src="js/engine.js"></script>
+</body>
+</html>
