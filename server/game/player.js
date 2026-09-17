@@ -169,19 +169,38 @@ export class Player {
 
   addItem(id, qty = 1, extra = null) {
     const def = ITEMS[id];
-    if (!def) return false;
+    if (!def || qty <= 0) return false;
     if (this.weight() + (def.weight ?? 1) * qty > this.weightCap * 1.5) return false;
-    const stackable = (def.stack ?? 1) > 1 && !extra;
-    if (stackable) {
-      const st = this.inventory.find((s) => s.id === id && !s.refine && !s.equipped);
-      if (st) { st.qty = Math.min(def.stack, st.qty + qty); markDirty(); return true; }
+    const maxStack = def.stack ?? 1;
+
+    if (maxStack > 1) {
+      let left = qty;
+      for (const st of this.inventory) {          // top up existing stacks first
+        if (left <= 0) break;
+        if (st.id !== id || st.refine) continue;
+        const room = maxStack - (st.qty ?? 1);
+        if (room <= 0) continue;
+        const add = Math.min(room, left);
+        st.qty = (st.qty ?? 1) + add;
+        left -= add;
+      }
+      while (left > 0) {
+        if (this.inventory.length >= 100) { markDirty(); return false; }
+        const take = Math.min(maxStack, left);
+        this.inventory.push({ id, qty: take });
+        left -= take;
+      }
+    } else {
+      for (let i = 0; i < qty; i++) {             // equipment: one row each
+        if (this.inventory.length >= 100) { markDirty(); return false; }
+        const row = { id, qty: 1 };
+        if (isEquip(def)) {
+          row.refine = extra?.refine ?? 0;
+          row.dur = extra?.dur ?? def.durability ?? 100;
+        }
+        this.inventory.push(row);
+      }
     }
-    if (this.inventory.length >= 100) return false;
-    const stack = { id, qty: stackable ? qty : 1 };
-    if (isEquip(def)) { stack.refine = extra?.refine ?? 0; stack.dur = extra?.dur ?? def.durability ?? 100; }
-    if (extra?.qty) stack.qty = extra.qty;
-    this.inventory.push(stack);
-    if (!stackable && qty > 1) for (let i = 1; i < qty; i++) this.addItem(id, 1, extra);
     markDirty();
     return true;
   }

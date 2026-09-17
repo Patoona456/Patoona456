@@ -70,8 +70,10 @@ export function applyDamage(zone, attacker, target, amount, opts = {}) {
     src: attacker?.id ?? null, skill: opts.skill ?? null,
   });
 
-  // threat
+  // threat + loot/exp rights
   if (attacker && target.kind === 'monster') {
+    const claimant = attacker.kind === 'player' ? attacker.id : attacker.owner;
+    if (claimant) target.tapped?.add(claimant);
     target.threat ??= new Map();
     target.threat.set(attacker.id, (target.threat.get(attacker.id) ?? 0) + remaining + (opts.aggro ?? 0));
     if (!target.target || (target.threat.get(attacker.id) ?? 0) > (target.threat.get(target.target) ?? 0) * 1.25) {

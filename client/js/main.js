@@ -120,6 +120,7 @@ class Game {
       if (d > 48) { this.predicted.x = m.you.x; this.predicted.y = m.you.y; }
       else { this.predicted.x += dx * 0.25; this.predicted.y += dy * 0.25; }
       this.state.targetId = m.you.target;
+      this.attacking = !!m.you.attacking;   // server may stop us; re-send if still held
       this.ui.updateVitals(this.self, m.you);
       this.ui.updateStatuses(m.you.statuses);
       this.ui.updateCast(m.you.cast);

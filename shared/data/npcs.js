@@ -102,7 +102,7 @@ export const WARP_ROUTES = [
   { to: 'ashfen', at: [8, 32], price: 400, label: 'หนองเถ้า' },
   { to: 'gravebound', at: [30, 6], price: 900, label: 'สุสานกราฟบาวด์' },
   { to: 'orcwatch', at: [8, 8], price: 1800, label: 'สันเขาออร์ควอช' },
-  { to: 'frostvault', at: [10, 10], price: 3200, label: 'ห้องนิรภัยเยือกแข็ง' },
+  { to: 'frostvault', at: [14, 14], price: 3200, label: 'ห้องนิรภัยเยือกแข็ง' },
 ];
 
 export const HEAL_PRICE_PER_LEVEL = 18;

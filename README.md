@@ -18,6 +18,9 @@ git clone --depth 1 https://github.com/makrohn/Universal-LPC-spritesheet.git
 npm run import-lpc -- ./Universal-LPC-spritesheet
 ```
 
+![ต่อสู้ในทุ่งกรีนไมร์](docs/img/combat.png)
+![ร้านค้าในเมือง](docs/img/shop.png)
+
 ## ปรัชญาการออกแบบ
 
 | หัวข้อ | ทางเลือกของเรา |

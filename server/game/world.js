@@ -70,6 +70,7 @@ export class World {
     p.targetId = null;
     p.attacking = false;
     p.cast = null;
+    p.warpSafeUntil = Date.now() + 1200;
     target.addPlayer(p);
     if (target.def.safe) p.record.savePoint = { map: mapId, x: p.x, y: p.y };
     p.conn.send(target.zonePayload());
@@ -130,7 +131,7 @@ export class World {
         snap.you = {
           hp: p.hp, sp: p.sp, maxHp: p.maxHp, maxSp: p.maxSp, x: Math.round(p.x), y: Math.round(p.y),
           exp: p.record.exp, jobExp: p.record.jobExp, level: p.record.level, jobLevel: p.record.jobLevel,
-          aurum: p.record.aurum, alive: p.alive, target: p.targetId,
+          aurum: p.record.aurum, alive: p.alive, target: p.targetId, attacking: p.attacking,
           cast: p.cast ? { skill: p.cast.skillId, until: p.cast.until } : null,
           cooldowns: p.cooldowns, weight: p.weight(), weightCap: p.weightCap,
           statuses: p.statuses.map((s) => ({ type: s.type, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),

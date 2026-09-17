@@ -18,8 +18,9 @@ const M = (o) => ({
 export const MONSTERS = {
   mire_slime: M({
     id: 'mire_slime', name: 'Mire Slime', nameTh: 'สไลม์โคลน', level: 2,
-    hp: 60, atk: 12, def: 2, mdef: 1, hit: 78, flee: 42, exp: 14, jobExp: 8,
+    hp: 60, atk: 8, def: 2, mdef: 1, hit: 78, flee: 42, exp: 14, jobExp: 8,
     element: 'verdant', race: 'plant', size: 'small', speed: 48, respawn: 12,
+    attackDelay: 1.9,
     sprite: { kind: 'blob', color: '#6fae52', scale: 0.8 },
     drops: [
       { id: 'herb_bundle', chance: 0.45, qty: [1, 2] },
@@ -29,9 +30,10 @@ export const MONSTERS = {
   }),
   ember_wisp: M({
     id: 'ember_wisp', name: 'Ember Wisp', nameTh: 'ดวงไฟเร่ร่อน', level: 6,
-    hp: 120, atk: 26, matk: 30, def: 3, mdef: 14, hit: 90, flee: 66, exp: 38, jobExp: 22,
+    hp: 120, atk: 20, matk: 24, def: 3, mdef: 14, hit: 90, flee: 66, exp: 38, jobExp: 22,
     element: 'ember', race: 'spirit', size: 'small', speed: 96, attackRange: 130,
-    attackDelay: 2.0, aggressive: true, aggroRange: 170, respawn: 20,
+    // passive in the starter field: new characters should choose their fights
+    attackDelay: 2.0, aggressive: false, aggroRange: 170, respawn: 20,
     sprite: { kind: 'blob', color: '#ff8a3d', glow: true, scale: 0.7, float: true },
     drops: [
       { id: 'ember_cinder', chance: 0.07 },

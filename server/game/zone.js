@@ -170,7 +170,6 @@ export class Zone {
     }
     if (g.id === '__aurum') {
       p.record.aurum += g.qty;
-      this.world.stats.minted += 0;
       this.ground.splice(idx, 1);
       return { ok: true, aurum: g.qty };
     }
@@ -193,9 +192,8 @@ export class Zone {
 
     if (e.kind === 'monster') {
       e.deadUntil = now() + (e.def.respawn ?? 20) * 1000;
-      if (!e.summon) this.awardKill(e, killer);
-      setTimeout(() => {}, 0);
       if (e.summon) this.entities.delete(e.id);
+      else this.awardKill(e, killer);
     } else if (e.kind === 'player') {
       e.statuses = [];
       e.targetId = null;
@@ -314,10 +312,18 @@ export class Zone {
         p.anim = 'idle';
       }
 
-      // auto attack
+      // auto attack: hold the button and keep swinging, re-acquiring as
+      // targets die so gamepad play never needs a re-press
       if (p.attacking && !p.cast && !sm.stunned) {
-        const target = this.entities.get(p.targetId);
-        if (target?.alive && this.isHostile(p, target)) {
+        let target = this.entities.get(p.targetId);
+        if (!target?.alive || !this.isHostile(p, target)) {
+          target = [...this.entitiesNear(p, 240)]
+            .filter((e) => this.isHostile(p, e))
+            .sort((a, b) => dist(p, a) - dist(p, b))[0] ?? null;
+          p.targetId = target?.id ?? null;
+          if (!target) p.attacking = false;
+        }
+        if (target) {
           const range = p.attackRange + 14;
           if (dist(p, target) <= range && t >= p.nextAttackAt) {
             const delay = Math.max(0.28, p.weaponDelay * p.derived.aspdFactor);
@@ -336,8 +342,6 @@ export class Zone {
               this.pushEvent({ t: 'swing', id: p.id, target: target.id, w: p.weaponClass });
             }
           }
-        } else {
-          p.attacking = false;
         }
       }
 
@@ -358,7 +362,8 @@ export class Zone {
         if (p.sp < p.maxSp) p.sp = Math.min(p.maxSp, p.sp + Math.ceil(spr));
       }
 
-      // warps
+      // warps (with a grace period so arriving on top of a pad never bounces)
+      if (t < (p.warpSafeUntil ?? 0)) continue;
       for (const w of this.def.warps ?? []) {
         const wx = w.x * TILE, wy = w.y * TILE;
         if (p.x >= wx && p.x <= wx + w.w * TILE && p.y >= wy && p.y <= wy + w.h * TILE) {
@@ -377,6 +382,13 @@ export class Zone {
 
       const sm = statusMods(m);
       if (sm.stunned) continue;
+
+      if (m.cast) {
+        if (t < m.cast.until) continue;       // still channelling
+        const payload = m.cast;
+        m.cast = null;
+        Skills.resolve(this, m, payload);
+      }
 
       let target = m.target ? this.entities.get(m.target) : null;
       if (target && (!target.alive || target.zone !== this && target.kind === 'player')) target = null;
@@ -435,7 +447,6 @@ export class Zone {
         } else {
           m.anim = 'idle';
         }
-        if (target.kind === 'player') target.record && m.tapped.add(target.id);
       } else {
         // wander
         if (!m.wanderTo || dist(m, m.wanderTo) < 8 || t > (m.wanderUntil ?? 0)) {

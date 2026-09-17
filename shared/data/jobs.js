@@ -4,7 +4,7 @@
 export const JOBS = {
   novice: {
     id: 'novice', tier: 0, name: 'Novice', nameTh: 'ผู้แรกเริ่ม',
-    desc: 'ยังไม่เลือกทาง สถิติกลางๆ ทุกด้าน', hpMod: 0.8, spMod: 0.8, speedMod: 1,
+    desc: 'ยังไม่เลือกทาง สถิติกลางๆ ทุกด้าน', hpMod: 0.9, spMod: 0.85, speedMod: 1,
     weapons: ['blade', 'rod'], next: ['vanguard', 'wayfarer', 'marksman', 'runecaster', 'warden'],
     jobLevelToAdvance: 10, sprite: { torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_brown' },
     skills: ['first_aid', 'shove'],

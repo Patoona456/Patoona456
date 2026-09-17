@@ -47,8 +47,8 @@ export const MAPS = {
     width: 64, height: 48, seed: 1001, safe: true, theme: 'town',
     spawnPoint: [32, 26],
     warps: [
-      { x: 32, y: 45, w: 4, h: 2, to: 'greenmire', at: [40, 4], label: 'ทุ่งกรีนไมร์' },
-      { x: 2, y: 24, w: 2, h: 4, to: 'ashfen', at: [76, 40], label: 'หนองเถ้า' },
+      { x: 32, y: 45, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 2, y: 24, w: 2, h: 4, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
     ],
     npcs: [
       { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 28, y: 18, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
@@ -69,11 +69,11 @@ export const MAPS = {
     spawnPoint: [40, 6],
     warps: [
       { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [32, 42], label: 'เอมเบอร์โฮลด์' },
-      { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [4, 32], label: 'หนองเถ้า' },
+      { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
     ],
     spawns: [
       { mob: 'mire_slime', count: 26 },
-      { mob: 'ember_wisp', count: 10 },
+      { mob: 'ember_wisp', count: 7 },
     ],
   },
 
@@ -83,7 +83,7 @@ export const MAPS = {
     spawnPoint: [8, 32],
     warps: [
       { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [72, 32], label: 'ทุ่งกรีนไมร์' },
-      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [5, 26], label: 'เอมเบอร์โฮลด์' },
+      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [8, 26], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
     spawns: [
@@ -113,7 +113,7 @@ export const MAPS = {
     spawnPoint: [8, 8],
     warps: [
       { x: 4, y: 4, w: 4, h: 2, to: 'gravebound', at: [60, 60], label: 'สุสานกราฟบาวด์' },
-      { x: 82, y: 60, w: 4, h: 4, to: 'frostvault', at: [10, 10], label: 'ห้องนิรภัยเยือกแข็ง' },
+      { x: 82, y: 60, w: 4, h: 4, to: 'frostvault', at: [14, 14], label: 'ห้องนิรภัยเยือกแข็ง' },
     ],
     spawns: [
       { mob: 'orc_scout', count: 26 },
@@ -125,10 +125,10 @@ export const MAPS = {
   frostvault: {
     id: 'frostvault', name: 'Frostvault Depths', nameTh: 'ห้องนิรภัยเยือกแข็ง', kind: 'cave',
     width: 80, height: 80, seed: 6006, theme: 'ice', levelRange: [40, 60],
-    spawnPoint: [10, 10],
+    spawnPoint: [14, 14],
     warps: [
       { x: 6, y: 6, w: 4, h: 4, to: 'orcwatch', at: [78, 58], label: 'สันเขาออร์ควอช' },
-      { x: 70, y: 70, w: 4, h: 4, to: 'vhaal', at: [24, 44], label: 'ห้องบัลลังก์วาล' },
+      { x: 70, y: 70, w: 4, h: 4, to: 'vhaal', at: [24, 41], label: 'ห้องบัลลังก์วาล' },
     ],
     spawns: [
       { mob: 'frost_husk', count: 30 },
