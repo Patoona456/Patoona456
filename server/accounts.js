@@ -95,7 +95,8 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
       { id: 'worn_boots', qty: 1, refine: 0, dur: 150 },
       { id: 'lesser_salve', qty: 5 },
     ],
-    equipment: {},
+    // starting kit comes pre-equipped so nobody starts the game naked
+    equipment: { weapon: 0, torso: 1, legs: 2, feet: 3 },
     skills: {},
     hotbar: ['first_aid', null, null, null, null, null],
     quests: {},

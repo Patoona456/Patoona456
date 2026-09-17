@@ -272,6 +272,8 @@ export class Conn {
         this.send(Econ.marketList({}));
       });
       case OP.PARTY: return this.partyCmd(m);
+      // the quest log is readable anywhere; only turn-ins need an NPC
+
       case OP.QUEST: return this.questCmd(m);
       case OP.WARP: return this.guardNpc(['warp'], () => {
         const r = Econ.warpService(this.world, p, m.to);
