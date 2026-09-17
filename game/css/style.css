@@ -184,8 +184,27 @@ input:focus, select:focus { border-color: var(--cyan); }
   font-size: 11px; letter-spacing: .22em; color: var(--ink-dim);
   text-transform: uppercase; margin-bottom: 9px;
 }
+.who { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.portrait {
+  width: 56px; height: 56px; flex: none;
+  image-rendering: pixelated;
+  background: radial-gradient(circle at 50% 30%, rgba(126,240,255,.16), transparent 70%);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 4px;
+}
+.who-text { min-width: 0; }
 .who-name { font-size: 17px; font-weight: 700; }
-.who-class { font-size: 12px; color: var(--violet); margin-bottom: 12px; }
+.who-class { font-size: 12px; color: var(--violet); }
+
+.class-portrait {
+  width: 72px; height: 72px; flex: none;
+  image-rendering: pixelated;
+  background: radial-gradient(circle at 50% 30%, rgba(126,240,255,.14), transparent 70%);
+  border: 1px solid var(--line); border-radius: 10px;
+  margin-right: 4px;
+}
+.choice.class-choice { align-items: center; }
+.credit-card p { margin: 0; font-size: 11px; color: var(--ink-dim); line-height: 1.55; }
 
 .bar-label { display: block; font-size: 10.5px; letter-spacing: .16em; color: var(--ink-dim); margin: 9px 0 4px; }
 .bar {

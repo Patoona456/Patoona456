@@ -10,28 +10,28 @@
     bladeweaver: {
       id: 'bladeweaver', name: 'เบลดวีฟเวอร์', tag: 'นักถักใบดาบ',
       desc: 'ดาบที่ถักจากเส้นอีเธอร์ ยิ่งต่อสู้ต่อเนื่องยิ่งคม — ตัวเลือกบุกมักได้ผลดีกว่าปกติ',
-      pose: 'sword', palette: 'blood',
+      pose: 'sword', palette: 'blood', sprite: 'assets/sprites/bladeweaver.png',
       base: { hp: 120, ep: 40, atk: 18, def: 10, spd: 12, luck: 6 },
       skills: ['thread_slash', 'crimson_weave']
     },
     echocaller: {
       id: 'echocaller', name: 'เอคโคคอลเลอร์', tag: 'ผู้เรียกเสียงสะท้อน',
       desc: 'ร่ายเสียงสะท้อนของสิ่งที่ตายไปแล้วกลับมาเป็นอาวุธ — เก่งเวทย์และการอ่านข้อมูลระบบ',
-      pose: 'staff', palette: 'abyss',
+      pose: 'staff', palette: 'abyss', sprite: 'assets/sprites/echocaller.png',
       base: { hp: 92, ep: 90, atk: 12, def: 7, spd: 11, luck: 9 },
       skills: ['echo_lance', 'requiem_field']
     },
     veilstalker: {
       id: 'veilstalker', name: 'เวลสตอล์กเกอร์', tag: 'นักล่าเงาม่าน',
       desc: 'หายไปในรอยต่อของโลก โจมตีจากจุดบอด — ตัวเลือกลอบเร้นและหลบหนีแทบไม่เคยพลาด',
-      pose: 'bow', palette: 'forest',
+      pose: 'bow', palette: 'forest', sprite: 'assets/sprites/veilstalker.png',
       base: { hp: 100, ep: 55, atk: 16, def: 8, spd: 18, luck: 12 },
       skills: ['veil_step', 'thousand_pins']
     },
     anchorwarden: {
       id: 'anchorwarden', name: 'แองเคอร์วอร์เดน', tag: 'ผู้ตรึงสมอ',
       desc: 'ตรึงตัวเองเป็นหมุดของโลก ไม่ให้ใครในปาร์ตี้ถูกลบ — แกร่งที่สุดและปกป้องเพื่อนได้',
-      pose: 'none', palette: 'glacier',
+      pose: 'none', palette: 'glacier', sprite: 'assets/sprites/anchorwarden.png',
       base: { hp: 165, ep: 45, atk: 13, def: 18, spd: 7, luck: 7 },
       skills: ['bulwark_oath', 'gravity_chain']
     }

@@ -96,6 +96,12 @@
     var c = D.CLASSES[S.cls];
     $('#hud-name').textContent = S.name;
     $('#hud-class').textContent = c.name + ' · Lv.' + S.lvl;
+    var portrait = $('#hud-portrait');
+    if (c.sprite) {
+      portrait.src = c.sprite; portrait.alt = c.name; portrait.hidden = false;
+    } else {
+      portrait.hidden = true;
+    }
     bar('#hud-hp', S.hp, S.maxhp);
     bar('#hud-ep', S.ep, S.maxep);
     bar('#hud-exp', S.exp, S.next);
@@ -201,8 +207,13 @@
     box.innerHTML = '';
     choices.forEach(function (ch, idx) {
       if (ch.require && !ch.require()) return;
-      var b = el('button', 'choice');
+      var b = el('button', ch.img ? 'choice class-choice' : 'choice');
       b.appendChild(el('span', 'choice-key', String(idx + 1)));
+      if (ch.img) {
+        var img = el('img', 'class-portrait');
+        img.src = ch.img; img.alt = '';
+        b.appendChild(img);
+      }
       var body = el('div', 'choice-body');
       body.appendChild(el('div', 'choice-text', ch.text));
       if (ch.tag) body.appendChild(el('div', 'choice-tag', '[' + ch.tag + ']'));
@@ -275,6 +286,7 @@
         text: c.name + ' — ' + c.tag,
         tag: 'HP' + c.base.hp + ' ATK' + c.base.atk + ' SPD' + c.base.spd,
         hint: c.desc,
+        img: c.sprite,
         run: function () { chooseClass(k); },
         to: 'trapped'
       };
