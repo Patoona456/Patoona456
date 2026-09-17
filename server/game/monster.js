@@ -1,0 +1,77 @@
+// Monster entity + AI. Simple, readable state machine: idle -> chase -> attack,
+// with leashing back to the spawn anchor and a threat table for parties.
+import { MONSTERS } from '../../shared/data/monsters.js';
+import { TILE } from '../../shared/constants.js';
+
+let seq = 0;
+
+export class Monster {
+  constructor(defId, x, y, anchor, opts = {}) {
+    const def = MONSTERS[defId];
+    this.kind = 'monster';
+    this.id = 'm' + (++seq);
+    this.defId = defId;
+    this.def = def;
+    this.name = def.nameTh ?? def.name;
+    this.level = def.level * (opts.levelPct ? opts.levelPct / 100 : 1) | 0 || def.level;
+    this.boss = !!def.boss;
+    this.summon = !!def.summon || !!opts.summon;
+    this.owner = opts.owner ?? null;
+    this.expiresAt = opts.duration ? Date.now() + opts.duration * 1000 : 0;
+
+    const scale = opts.levelPct ? opts.levelPct / 100 : 1;
+    this.maxHp = Math.floor(def.hp * scale);
+    this.hp = this.maxHp;
+    this.derived = {
+      atk: Math.floor((def.atk ?? 10) * scale), matk: Math.floor((def.matk ?? 0) * scale),
+      def: def.def ?? 0, mdef: def.mdef ?? 0, softDef: Math.floor((def.def ?? 0) / 3),
+      softMdef: Math.floor((def.mdef ?? 0) / 3),
+      hit: def.hit ?? 80, flee: def.flee ?? 50, crit: 1, critRes: 0,
+      maxHp: this.maxHp, level: this.level,
+    };
+    this.element = def.element ?? 'neutral';
+    this.race = def.race ?? 'beast';
+    this.size = def.size ?? 'medium';
+    this.weaponElement = def.element ?? 'neutral';
+
+    this.x = x; this.y = y;
+    this.anchor = anchor ?? { x, y };
+    this.dir = 2; this.anim = 'idle';
+    this.alive = true;
+    this.statuses = [];
+    this.mods = {};
+    this.threat = new Map();
+    this.target = null;
+    this.nextAttackAt = 0;
+    this.nextThinkAt = 0;
+    this.wanderTo = null;
+    this.deadUntil = 0;
+    this.lastCombat = 0;
+    this.tapped = new Set();      // who has hit it (loot / exp rights)
+    this.stolen = false;
+  }
+
+  get aggroRange() { return this.def.aggroRange ?? 150; }
+  get attackRange() { return this.def.attackRange ?? 40; }
+  get speed() { return this.def.speed ?? 70; }
+
+  netState() {
+    return {
+      id: this.id, k: 'm', n: this.name, def: this.defId,
+      x: Math.round(this.x), y: Math.round(this.y), d: this.dir, a: this.anim,
+      hp: this.hp, mhp: this.maxHp, lv: this.level, boss: this.boss ? 1 : 0,
+      sprite: this.def.sprite, sum: this.summon ? 1 : 0,
+      st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
+    };
+  }
+}
+
+/** Distance helpers used by the AI and by skills. */
+export const dist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+export const dist = (a, b) => Math.sqrt(dist2(a, b));
+export const dirTo = (from, to) => {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 3 : 1;
+  return dy > 0 ? 2 : 0;
+};
+export const LEASH = 16 * TILE;

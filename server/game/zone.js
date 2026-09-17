@@ -1,0 +1,545 @@
+// One running instance of a map: terrain, entities, spawns, ground loot.
+import { MAPS, buildGrid, encodeGrid, TILES, BLOCKING, HAZARD, rng } from '../../shared/data/maps.js';
+import { MONSTERS } from '../../shared/data/monsters.js';
+import { ITEMS } from '../../shared/data/items.js';
+import { TILE, AOI_RADIUS } from '../../shared/constants.js';
+import { Monster, dist, dist2, dirTo, LEASH } from './monster.js';
+import { applyDamage, healEntity, basicAttack, statusMods, addStatus } from './combat.js';
+import * as Skills from './skills.js';
+
+const now = () => Date.now();
+const LOOT_LOCK_MS = 25000;     // finder keeps priority this long
+const LOOT_LIFE_MS = 120000;
+
+export class Zone {
+  constructor(id, world) {
+    this.id = id;
+    this.world = world;
+    this.def = MAPS[id];
+    this.width = this.def.width;
+    this.height = this.def.height;
+    this.grid = buildGrid(this.def);
+    this.rle = encodeGrid(this.grid);
+    this.entities = new Map();
+    this.players = new Map();
+    this.ground = [];            // dropped items
+    this.effects = [];           // ground skill effects
+    this.events = [];
+    this.spawnQueue = [];        // { defId, at, anchor }
+    this.rand = rng(this.def.seed ^ 0x1234);
+    this.populate();
+  }
+
+  /* ---------------- terrain ---------------- */
+  tileAt(x, y) {
+    const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+    if (tx < 0 || ty < 0 || tx >= this.width || ty >= this.height) return TILES.WALL;
+    return this.grid[ty * this.width + tx];
+  }
+
+  blocked(x, y) { return BLOCKING.has(this.tileAt(x, y)); }
+
+  walkable(x, y, r = 10) {
+    return !this.blocked(x - r, y - r) && !this.blocked(x + r, y - r)
+      && !this.blocked(x - r, y + r) && !this.blocked(x + r, y + r);
+  }
+
+  randomWalkable(area = null) {
+    for (let i = 0; i < 400; i++) {
+      const tx = area ? area[0] + Math.floor(this.rand() * area[2]) : 1 + Math.floor(this.rand() * (this.width - 2));
+      const ty = area ? area[1] + Math.floor(this.rand() * area[3]) : 1 + Math.floor(this.rand() * (this.height - 2));
+      const x = tx * TILE + TILE / 2, y = ty * TILE + TILE / 2;
+      if (this.walkable(x, y)) return { x, y };
+    }
+    const sp = this.def.spawnPoint ?? [2, 2];
+    return { x: sp[0] * TILE, y: sp[1] * TILE };
+  }
+
+  /** Axis-separated movement so entities slide along walls instead of sticking. */
+  moveTo(e, nx, ny, allowBlocked = false) {
+    const r = 10;
+    if (allowBlocked) {
+      // dashes may cross bodies but never solid terrain: step back until legal
+      const steps = 8;
+      let bx = e.x, by = e.y;
+      for (let i = 1; i <= steps; i++) {
+        const tx = e.x + (nx - e.x) * (i / steps), ty = e.y + (ny - e.y) * (i / steps);
+        if (!this.walkable(tx, ty, r)) break;
+        bx = tx; by = ty;
+      }
+      e.x = bx; e.y = by;
+      return;
+    }
+    if (this.walkable(nx, e.y, r)) e.x = nx;
+    if (this.walkable(e.x, ny, r)) e.y = ny;
+    e.x = Math.max(TILE, Math.min((this.width - 1) * TILE, e.x));
+    e.y = Math.max(TILE, Math.min((this.height - 1) * TILE, e.y));
+  }
+
+  /* ---------------- population ---------------- */
+  populate() {
+    for (const sp of this.def.spawns ?? []) {
+      for (let i = 0; i < sp.count; i++) {
+        const pos = this.randomWalkable(sp.area);
+        this.spawnMonster(sp.mob, pos.x, pos.y, { area: sp.area });
+      }
+    }
+    for (const npc of this.def.npcs ?? []) {
+      const e = {
+        kind: 'npc', id: 'n_' + npc.id, npcId: npc.id, name: npc.name, role: npc.role,
+        x: npc.x * TILE + TILE / 2, y: npc.y * TILE + TILE / 2, dir: 2, anim: 'idle',
+        alive: true, look: npc.look, shop: npc.shop,
+        netState() {
+          return { id: this.id, k: 'n', n: this.name, x: Math.round(this.x), y: Math.round(this.y),
+            d: this.dir, a: 'idle', role: this.role, look: this.look };
+        },
+      };
+      this.entities.set(e.id, e);
+    }
+  }
+
+  spawnMonster(defId, x, y, opts = {}) {
+    const m = new Monster(defId, x, y, { x, y }, opts);
+    m.area = opts.area ?? null;
+    this.entities.set(m.id, m);
+    return m;
+  }
+
+  despawnSummonsOf(ownerId) {
+    for (const e of [...this.entities.values()]) {
+      if (e.kind === 'monster' && e.summon && e.owner === ownerId) this.entities.delete(e.id);
+    }
+  }
+
+  addPlayer(p) {
+    p.zone = this;
+    this.entities.set(p.id, p);
+    this.players.set(p.id, p);
+  }
+
+  removePlayer(p) {
+    this.entities.delete(p.id);
+    this.players.delete(p.id);
+    this.despawnSummonsOf(p.id);
+  }
+
+  /* ---------------- queries ---------------- */
+  *entitiesNear(point, radius) {
+    const r2 = radius * radius;
+    for (const e of this.entities.values()) {
+      if (!e.alive || e.kind === 'npc') continue;
+      if (dist2(point, e) <= r2) yield e;
+    }
+  }
+
+  isHostile(a, b) {
+    if (!a || !b || a === b || !b.alive || b.kind === 'npc') return false;
+    const aSide = a.kind === 'player' || (a.kind === 'monster' && a.summon) ? 'good' : 'bad';
+    const bSide = b.kind === 'player' || (b.kind === 'monster' && b.summon) ? 'good' : 'bad';
+    return aSide !== bSide;
+  }
+
+  partyMembersNear(p, radius) {
+    const out = [p];
+    if (p.kind !== 'player' || !p.party) return out;
+    for (const other of this.players.values()) {
+      if (other !== p && other.party === p.party && dist(p, other) <= radius && other.alive) out.push(other);
+    }
+    return out;
+  }
+
+  pushEvent(ev) { this.events.push(ev); }
+
+  /* ---------------- loot ---------------- */
+  dropItem(x, y, id, qty, ownerIds = [], extra = null) {
+    const pos = this.walkable(x, y) ? { x, y } : this.randomWalkable();
+    this.ground.push({
+      uid: 'g' + Math.random().toString(36).slice(2, 9),
+      id, qty, x: pos.x + (Math.random() - 0.5) * 24, y: pos.y + (Math.random() - 0.5) * 24,
+      owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS, extra,
+    });
+  }
+
+  pickup(p, uid) {
+    const idx = this.ground.findIndex((g) => g.uid === uid);
+    if (idx < 0) return { error: 'ไอเทมหายไปแล้ว' };
+    const g = this.ground[idx];
+    if (dist(p, g) > 48) return { error: 'อยู่ไกลเกินไป' };
+    if (g.lockUntil > now() && g.owners.length && !g.owners.includes(p.id)) {
+      return { error: 'ยังเป็นสิทธิ์ของผู้เล่นอื่น' };
+    }
+    if (g.id === '__aurum') {
+      p.record.aurum += g.qty;
+      this.world.stats.minted += 0;
+      this.ground.splice(idx, 1);
+      return { ok: true, aurum: g.qty };
+    }
+    if (p.overweight()) return { error: 'น้ำหนักเกิน เก็บของไม่ได้' };
+    if (!p.addItem(g.id, g.qty, g.extra)) return { error: 'กระเป๋าเต็ม' };
+    this.ground.splice(idx, 1);
+    return { ok: true, item: g.id, qty: g.qty };
+  }
+
+  addGroundEffect(fx) { this.effects.push(fx); }
+
+  /* ---------------- death ---------------- */
+  onDeath(e, killer) {
+    if (!e.alive) return;
+    e.alive = false;
+    e.hp = 0;
+    e.anim = 'hurt';
+    e.cast = null;
+    this.pushEvent({ t: 'death', id: e.id, by: killer?.id ?? null });
+
+    if (e.kind === 'monster') {
+      e.deadUntil = now() + (e.def.respawn ?? 20) * 1000;
+      if (!e.summon) this.awardKill(e, killer);
+      setTimeout(() => {}, 0);
+      if (e.summon) this.entities.delete(e.id);
+    } else if (e.kind === 'player') {
+      e.statuses = [];
+      e.targetId = null;
+      // Death costs: 5% of current base EXP, and gear wear. No item loss -
+      // losing gear on death would gut the player economy we are protecting.
+      const lost = Math.floor(e.record.exp * 0.05);
+      e.record.exp = Math.max(0, e.record.exp - lost);
+      e.conn?.send({ t: 'died', expLost: lost });
+    }
+  }
+
+  awardKill(m, killer) {
+    const contributors = [...m.tapped].map((id) => this.players.get(id)).filter((p) => p?.alive !== undefined);
+    const main = killer?.kind === 'player' ? killer : (killer?.owner ? this.players.get(killer.owner) : null);
+    const party = main?.party;
+    let share = contributors.length ? contributors : (main ? [main] : []);
+    if (party) {
+      const inParty = [...this.players.values()].filter((p) => p.party === party && dist(p, m) < AOI_RADIUS);
+      if (inParty.length) share = inParty;
+    }
+    if (!share.length) return;
+
+    // Party EXP: +10% per extra member, then split. Grouping is worth it,
+    // leeching is not (everyone must be in range).
+    const mult = 1 + 0.1 * (share.length - 1);
+    const exp = (m.def.exp ?? 0) * mult / share.length;
+    const jobExp = (m.def.jobExp ?? 0) * mult / share.length;
+    for (const p of share) {
+      const gap = Math.abs(p.record.level - m.level);
+      const penalty = gap > 20 ? 0.25 : gap > 12 ? 0.6 : 1;   // no power-levelling
+      p.gainExp(exp * penalty, jobExp * penalty, this);
+      this.world.onKill(p, m);
+    }
+
+    const ownerIds = share.map((p) => p.id);
+    // drops
+    for (const d of m.def.drops ?? []) {
+      if (Math.random() > d.chance) continue;
+      const qty = Array.isArray(d.qty) ? d.qty[0] + Math.floor(Math.random() * (d.qty[1] - d.qty[0] + 1)) : (d.qty ?? 1);
+      this.dropItem(m.x, m.y, d.id, qty, ownerIds);
+    }
+    // aurum
+    const au = m.def.aurum;
+    if (au && Math.random() < au.chance) {
+      const amount = au.min + Math.floor(Math.random() * (au.max - au.min + 1));
+      this.ground.push({
+        uid: 'g' + Math.random().toString(36).slice(2, 9), id: '__aurum', qty: amount,
+        x: m.x, y: m.y, owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS,
+      });
+      this.world.stats.minted += amount;
+    }
+  }
+
+  revivePlayer(p, hpPct = 0.2) {
+    p.alive = true;
+    p.hp = Math.max(1, Math.floor(p.maxHp * hpPct));
+    p.sp = Math.max(1, Math.floor(p.maxSp * hpPct));
+    p.anim = 'idle';
+    this.pushEvent({ t: 'revive', id: p.id });
+  }
+
+  /* ---------------- simulation ---------------- */
+  update(dt) {
+    const t = now();
+    this.updateStatuses(t);
+    this.updatePlayers(dt, t);
+    this.updateMonsters(dt, t);
+    this.updateEffects(t);
+    this.updateGround(t);
+    this.updateRespawns(t);
+  }
+
+  updateStatuses(t) {
+    for (const e of this.entities.values()) {
+      if (!e.statuses?.length) continue;
+      let changed = false;
+      for (const s of e.statuses) {
+        if (s.tick && t >= (s.nextTick ?? 0)) {
+          s.nextTick = t + 1000;
+          if (e.alive) applyDamage(this, null, e, s.tick, { element: s.element ?? 'neutral', skill: s.type });
+        }
+        if (s.until && t > s.until) { s.expired = true; changed = true; }
+      }
+      if (changed) {
+        e.statuses = e.statuses.filter((s) => !s.expired);
+        e.recompute?.();
+      }
+    }
+  }
+
+  updatePlayers(dt, t) {
+    for (const p of this.players.values()) {
+      if (!p.alive) continue;
+      const sm = statusMods(p);
+
+      // finish casts
+      if (p.cast && t >= p.cast.until) {
+        const payload = p.cast;
+        p.cast = null;
+        const r = Skills.resolve(this, p, payload);
+        if (r?.error) p.conn?.send({ t: 'error', text: r.error });
+      }
+
+      // movement
+      const moving = (p.input.mx || p.input.my) && !sm.rooted && !sm.stunned && !p.cast;
+      if (moving) {
+        let speed = p.derived.moveSpeed * (1 + sm.slowPct / 100);
+        if (p.overweight()) speed *= 0.5;
+        const len = Math.hypot(p.input.mx, p.input.my) || 1;
+        const vx = p.input.mx / len, vy = p.input.my / len;
+        this.moveTo(p, p.x + vx * speed * dt, p.y + vy * speed * dt);
+        p.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 3 : 1) : (vy > 0 ? 2 : 0);
+        p.anim = 'walk';
+        // moving cancels stealth-breaking? no - but it does cancel casts above
+      } else if (p.anim === 'walk') {
+        p.anim = 'idle';
+      }
+
+      // auto attack
+      if (p.attacking && !p.cast && !sm.stunned) {
+        const target = this.entities.get(p.targetId);
+        if (target?.alive && this.isHostile(p, target)) {
+          const range = p.attackRange + 14;
+          if (dist(p, target) <= range && t >= p.nextAttackAt) {
+            const delay = Math.max(0.28, p.weaponDelay * p.derived.aspdFactor);
+            p.nextAttackAt = t + delay * 1000;
+            p.dir = dirTo(p, target);
+            p.anim = p.weaponClass === 'bow' ? 'shoot' : p.weaponClass === 'spear' ? 'thrust' : 'slash';
+            p.animStart = t;
+            if (p.weaponClass === 'bow' && !p.consumeAmmo(1)) {
+              p.conn?.send({ t: 'error', text: 'ลูกธนูหมด' });
+              p.attacking = false;
+            } else {
+              const cloak = p.statuses.find((s) => s.breakOnAttack);
+              if (cloak) { p.statuses.splice(p.statuses.indexOf(cloak), 1); p.recompute(); }
+              basicAttack(this, p, target);
+              p.wearGear('attack');
+              this.pushEvent({ t: 'swing', id: p.id, target: target.id, w: p.weaponClass });
+            }
+          }
+        } else {
+          p.attacking = false;
+        }
+      }
+
+      // hazards
+      const haz = HAZARD[this.tileAt(p.x, p.y)];
+      if (haz && t - (p.lastHazard ?? 0) > 1000) {
+        p.lastHazard = t;
+        applyDamage(this, null, p, haz.dps, { element: haz.element, skill: 'hazard' });
+      }
+
+      // regen every 4s, doubled out of combat
+      if (t >= p.regenAt) {
+        p.regenAt = t + 4000;
+        const ooc = t - p.lastCombat > 8000 ? 2 : 1;
+        const hpr = p.derived.hpRegen * ooc * (1 + (p.mods.hpRegenPct ?? 0) / 100);
+        const spr = p.derived.spRegen * ooc * (1 + (p.mods.spRegenPct ?? 0) / 100);
+        if (p.hp < p.maxHp) p.hp = Math.min(p.maxHp, p.hp + Math.ceil(hpr));
+        if (p.sp < p.maxSp) p.sp = Math.min(p.maxSp, p.sp + Math.ceil(spr));
+      }
+
+      // warps
+      for (const w of this.def.warps ?? []) {
+        const wx = w.x * TILE, wy = w.y * TILE;
+        if (p.x >= wx && p.x <= wx + w.w * TILE && p.y >= wy && p.y <= wy + w.h * TILE) {
+          this.world.warpPlayer(p, w.to, w.at[0] * TILE, w.at[1] * TILE);
+          break;
+        }
+      }
+    }
+  }
+
+  updateMonsters(dt, t) {
+    for (const m of this.entities.values()) {
+      if (m.kind !== 'monster') continue;
+      if (m.summon && m.expiresAt && t > m.expiresAt) { this.entities.delete(m.id); continue; }
+      if (!m.alive) continue;
+
+      const sm = statusMods(m);
+      if (sm.stunned) continue;
+
+      let target = m.target ? this.entities.get(m.target) : null;
+      if (target && (!target.alive || target.zone !== this && target.kind === 'player')) target = null;
+      if (target && statusMods(target).invisible) target = null;
+
+      // acquire
+      if (!target && t >= m.nextThinkAt) {
+        m.nextThinkAt = t + 400;
+        if (m.summon) {
+          const owner = this.players.get(m.owner);
+          const near = owner ? [...this.entitiesNear(owner, 220)].find((e) => this.isHostile(m, e)) : null;
+          if (near) { m.target = near.id; target = near; }
+        } else if (m.def.aggressive) {
+          let best = null, bestD = m.aggroRange;
+          for (const p of this.players.values()) {
+            if (!p.alive || statusMods(p).invisible) continue;
+            const d = dist(m, p);
+            if (d < bestD) { best = p; bestD = d; }
+          }
+          if (best) { m.target = best.id; target = best; m.threat.set(best.id, 1); }
+        }
+      }
+
+      // leash
+      if (target && dist(m, m.anchor) > LEASH * (m.boss ? 2 : 1)) {
+        m.target = null; m.threat.clear(); target = null;
+        m.hp = m.maxHp;   // full reset, classic leash behaviour
+        m.tapped.clear();
+      }
+
+      const speed = m.speed * (1 + sm.slowPct / 100);
+      if (target) {
+        const d = dist(m, target);
+        if (d > m.attackRange) {
+          if (!sm.rooted) {
+            const ux = (target.x - m.x) / (d || 1), uy = (target.y - m.y) / (d || 1);
+            this.moveTo(m, m.x + ux * speed * dt, m.y + uy * speed * dt);
+            m.anim = 'walk';
+          }
+          m.dir = dirTo(m, target);
+        } else if (t >= m.nextAttackAt) {
+          m.nextAttackAt = t + (m.def.attackDelay ?? 1.6) * 1000;
+          m.dir = dirTo(m, target);
+          m.anim = m.def.attackRange > 60 ? 'shoot' : 'slash';
+          m.animStart = t;
+          // boss skills
+          const skills = m.def.skills ?? [];
+          if (skills.length && Math.random() < 0.3) {
+            const sid = skills[Math.floor(Math.random() * skills.length)];
+            Skills.begin(this, m, sid, { targetId: target.id, point: { x: target.x, y: target.y } });
+          } else {
+            basicAttack(this, m, target);
+            if (target.kind === 'player') target.wearGear('defend');
+          }
+          this.pushEvent({ t: 'swing', id: m.id, target: target.id });
+        } else {
+          m.anim = 'idle';
+        }
+        if (target.kind === 'player') target.record && m.tapped.add(target.id);
+      } else {
+        // wander
+        if (!m.wanderTo || dist(m, m.wanderTo) < 8 || t > (m.wanderUntil ?? 0)) {
+          if (Math.random() < 0.02 || !m.wanderTo) {
+            const a = Math.random() * Math.PI * 2, r = 32 + Math.random() * 96;
+            m.wanderTo = { x: m.anchor.x + Math.cos(a) * r, y: m.anchor.y + Math.sin(a) * r };
+            m.wanderUntil = t + 4000;
+          } else { m.anim = 'idle'; m.wanderTo = null; }
+        }
+        if (m.wanderTo) {
+          const d = dist(m, m.wanderTo) || 1;
+          this.moveTo(m, m.x + (m.wanderTo.x - m.x) / d * speed * 0.5 * dt, m.y + (m.wanderTo.y - m.y) / d * speed * 0.5 * dt);
+          m.dir = dirTo(m, m.wanderTo);
+          m.anim = 'walk';
+        }
+        // out-of-combat regen
+        if (m.hp < m.maxHp && t - m.lastCombat > 6000) {
+          m.hp = Math.min(m.maxHp, m.hp + Math.ceil(m.maxHp * 0.03));
+        }
+      }
+    }
+  }
+
+  updateEffects(t) {
+    for (let i = this.effects.length - 1; i >= 0; i--) {
+      const fx = this.effects[i];
+      if (t > fx.until) { this.effects.splice(i, 1); continue; }
+      if (t < fx.nextTick) continue;
+      fx.nextTick = t + fx.tickRate;
+      const owner = this.entities.get(fx.ownerId);
+      for (const e of this.entitiesNear(fx, fx.radius)) {
+        const hostile = owner ? this.isHostile(owner, e) : e.kind === 'monster';
+        if (fx.healTick && !hostile) { healEntity(this, e, fx.healTick); continue; }
+        if (!fx.ratio || !hostile) continue;
+        const power = fx.magic ? (owner?.derived.matk ?? 20) : (owner?.derived.atk ?? 20);
+        applyDamage(this, owner, e, Math.max(1, Math.floor(power * fx.ratio)), {
+          element: fx.element ?? 'neutral', skill: fx.skill, magic: fx.magic,
+        });
+        if (fx.trap) {
+          addStatus(e, { key: fx.trap.type, type: fx.trap.type, icon: '⛓', until: t + fx.trap.duration * 1000 });
+          this.effects.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+
+  updateGround(t) {
+    for (let i = this.ground.length - 1; i >= 0; i--) {
+      if (t > this.ground[i].until) this.ground.splice(i, 1);
+    }
+  }
+
+  updateRespawns(t) {
+    for (const m of this.entities.values()) {
+      if (m.kind !== 'monster' || m.alive) continue;
+      if (m.summon) { this.entities.delete(m.id); continue; }
+      if (t < m.deadUntil) continue;
+      const pos = this.randomWalkable(m.area);
+      m.x = pos.x; m.y = pos.y;
+      m.anchor = { x: pos.x, y: pos.y };
+      m.hp = m.maxHp;
+      m.alive = true;
+      m.anim = 'idle';
+      m.target = null;
+      m.threat.clear();
+      m.tapped.clear();
+      m.stolen = false;
+      m.statuses = [];
+    }
+  }
+
+  /* ---------------- snapshots ---------------- */
+  snapshotFor(p) {
+    const ents = [];
+    for (const e of this.entities.values()) {
+      if (!e.alive && e.kind !== 'player') continue;
+      if (e.kind === 'monster' && e.hp <= 0) continue;
+      if (dist2(p, e) > AOI_RADIUS * AOI_RADIUS) continue;
+      ents.push(e.netState());
+    }
+    const ground = this.ground
+      .filter((g) => dist2(p, g) < AOI_RADIUS * AOI_RADIUS)
+      .map((g) => ({ uid: g.uid, id: g.id, qty: g.qty, x: Math.round(g.x), y: Math.round(g.y),
+        mine: !g.owners.length || g.owners.includes(p.id) || g.lockUntil < now() ? 1 : 0 }));
+    const fx = this.effects
+      .filter((f) => dist2(p, f) < AOI_RADIUS * AOI_RADIUS)
+      .map((f) => ({ skill: f.skill, x: Math.round(f.x), y: Math.round(f.y), r: Math.round(f.radius), until: f.until }));
+    return { t: 'snapshot', map: this.id, ts: now(), ents, ground, fx };
+  }
+
+  zonePayload() {
+    return {
+      t: 'zone', id: this.id, name: this.def.name, nameTh: this.def.nameTh,
+      width: this.width, height: this.height, theme: this.def.theme, kind: this.def.kind,
+      safe: !!this.def.safe, rle: this.rle,
+      warps: (this.def.warps ?? []).map((w) => ({ x: w.x, y: w.y, w: w.w, h: w.h, label: w.label, to: w.to })),
+      levelRange: this.def.levelRange ?? null,
+    };
+  }
+
+  drainEvents() {
+    const ev = this.events;
+    this.events = [];
+    return ev;
+  }
+}

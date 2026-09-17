@@ -1,0 +1,18 @@
+{
+  "name": "emberfall-online",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Emberfall Online - 2D MMORPG (browser + mobile, gamepad-first) built on Universal LPC spritesheets",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "import-lpc": "node tools/import-lpc.js"
+  },
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": { "node": ">=20" }
+}
