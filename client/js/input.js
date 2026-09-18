@@ -35,6 +35,8 @@ export class Input {
     this.released = new Set();
     this.padIndex = null;
     this.rotated = false;         // true while the page is force-rotated
+    this.manualAt = -1e9;         // last time a human pushed the stick
+    this.padMoving = false;
     this.lastSource = 'keyboard';
     this.keys = new Set();
     this.touch = { move: { x: 0, y: 0 }, buttons: new Set() };
@@ -50,6 +52,8 @@ export class Input {
     addEventListener('gamepaddisconnected', () => {
       this.padIndex = null;
     this.rotated = false;         // true while the page is force-rotated
+    this.manualAt = -1e9;         // last time a human pushed the stick
+    this.padMoving = false;
       this.onPadChange?.(false);
     });
     addEventListener('blur', () => { this.keys.clear(); this.held.clear(); });
@@ -77,8 +81,21 @@ export class Input {
     }
   }
 
-  /** Called by the touch UI. */
-  touchStick(x, y) { this.touch.move.x = x; this.touch.move.y = y; if (x || y) this.lastSource = 'touch'; }
+  /** Called by the touch UI: a real thumb, which outranks any automation. */
+  touchStick(x, y) {
+    this.touch.move.x = x; this.touch.move.y = y;
+    if (x || y) { this.lastSource = 'touch'; this.manualAt = performance.now(); }
+  }
+
+  /** Called by auto-battle and auto-travel. Never counts as manual input. */
+  autoStick(x, y) { this.touch.move.x = x; this.touch.move.y = y; }
+
+  /** True while the player is driving: the automations stand down. */
+  manualRecently(ms = 1200) {
+    if (this.keys.size) return true;
+    if (this.padMoving) return true;
+    return performance.now() - (this.manualAt ?? -1e9) < ms;
+  }
   touchButton(action, down) { this.lastSource = 'touch'; this.setAction(action, down); }
 
   poll() {
@@ -98,6 +115,7 @@ export class Input {
       if (this.padIndex == null) this.padIndex = pad.index;
       const dz = (v) => (Math.abs(v) < 0.22 ? 0 : (Math.abs(v) - 0.22) / 0.78 * Math.sign(v));
       const px = dz(pad.axes[0] ?? 0), py = dz(pad.axes[1] ?? 0);
+      this.padMoving = !!(px || py);
       if (px || py) { mx = px; my = py; this.lastSource = 'gamepad'; }
       ax = dz(pad.axes[2] ?? 0); ay = dz(pad.axes[3] ?? 0);
 

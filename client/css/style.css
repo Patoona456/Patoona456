@@ -262,6 +262,7 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 .qtag.sub { background: #2c4a6b; color: #cfe4ff; }
 .qtag.event { background: #5a2b5e; color: #f0cdf5; }
 .qrow .qprog { font-size: 11px; color: var(--muted); }
+.qrow .qgo { padding: 2px 8px; font-size: 11px; margin-top: 4px; }
 .qrow .qprog b { color: var(--text); }
 
 /* --- menu rail --- */

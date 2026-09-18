@@ -4,6 +4,7 @@ import { Input, bindTouchControls } from './input.js';
 import { Renderer, ZOOM_STEPS } from './renderer.js';
 import { UI, loadTheme } from './ui.js';
 import { Audio } from './audio.js';
+import { findPath, zoneRoute, warpTo, sourceOf, huntingGround, homeOf } from './autowalk.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
 import { TILE } from '../../shared/constants.js';
 import { BLOCKING, decodeGrid } from '../../shared/data/maps.js';
@@ -41,6 +42,7 @@ class Game {
 
     this.auto = false;
     this.autoAt = 0;
+    this.nav = null;          // the quest we are walking to, see startQuestNav
 
     this.wireNet();
     this.net.connect();
@@ -171,6 +173,7 @@ class Game {
       $('#zone-range').textContent = m.levelRange ? `Lv.${m.levelRange[0]}-${m.levelRange[1]}` : (m.safe ? 'ปลอดภัย' : '');
       this.entities.clear();
       if (this.inWorld) this.ui.zoneBanner(m);
+      if (this.nav) setTimeout(() => this.planNav(), 400);
     });
     n.on('self', (m) => {
       this.self = m.self;
@@ -352,6 +355,7 @@ class Game {
 
     this.input.poll();
     this.handleActions();
+    this.updateNav(t);
     this.updateAuto(t);
     this.predictMovement(dt);
     this.interpolate(t);
@@ -379,8 +383,153 @@ class Game {
     document.getElementById('btn-auto')?.classList.toggle('on', this.auto);
     this.ui.toast(this.auto ? 'สู้อัตโนมัติ: เปิด' : 'สู้อัตโนมัติ: ปิด', this.auto ? 'good' : 'info');
     if (!this.auto) {
-      this.input.touchStick(0, 0);
+      this.input.autoStick(0, 0);
       if (this.attacking) { this.attacking = false; this.net.send({ t: 'attack', on: false }); }
+    }
+  }
+
+  /* ---------------- auto-travel ---------------- */
+
+  /**
+   * Walk to what a quest is asking for. Kill and collect objectives head for
+   * the ground the monster lives on - crossing zones through the warps when
+   * it is somewhere else - and switch auto-battle on when they arrive.
+   * Anything finished heads back to whoever handed it out.
+   */
+  startQuestNav(quest) {
+    if (this.nav?.questId === quest.id) return this.stopNav('ยกเลิกเดินอัตโนมัติ');
+    this.nav = { questId: quest.id, quest, phase: 'travel', path: null, at: 0, said: false };
+    this.ui.toast(`เดินอัตโนมัติ: ${quest.name}`, 'good');
+    this.ui.renderQuestTrack(this.ui.trackedQuests);
+    this.planNav();
+  }
+
+  stopNav(reason) {
+    if (!this.nav) return;
+    this.nav = null;
+    this.input.autoStick(0, 0);
+    if (reason) this.ui.toast(reason, 'info');
+    this.ui.renderQuestTrack(this.ui.trackedQuests);
+  }
+
+  /** Where does this quest want us right now? */
+  navTarget() {
+    const nav = this.nav;
+    if (!nav) return null;
+    const q = nav.quest;
+    const tracked = (this.ui.trackedQuests ?? []).find((x) => x.id === q.id);
+    const done = tracked ? tracked.done : false;
+
+    // finished: go and hand it in
+    if (done || nav.phase === 'return') {
+      const giverRole = { board: 'quests', trainer: 'trainer', smith: 'smith', healer: 'healer',
+        vendor: 'shop', banker: 'storage', broker: 'market' }[q.giver] ?? 'quests';
+      return { map: q.giverMap ?? 'emberhold', role: giverRole, kind: 'turnin' };
+    }
+
+    // a kill or collect objective: go where that monster lives
+    for (const o of q.objectives ?? []) {
+      const mob = o.type === 'kill' ? o.mob : o.type === 'collect' ? sourceOf(o.item, this.zone?.id) : null;
+      if (!mob) continue;
+      const map = homeOf(mob) ?? q.zone ?? this.zone?.id;
+      return { map, mob, kind: 'hunt' };
+    }
+    return { map: q.zone ?? 'emberhold', kind: 'travel' };
+  }
+
+  /** Lay out the next leg: a path in this zone, or the warp that leaves it. */
+  planNav() {
+    const nav = this.nav;
+    if (!nav || !this.zone || !this.grid) return;
+    const target = this.navTarget();
+    if (!target) return this.stopNav(null);
+    nav.target = target;
+
+    let goal = null;
+    if (target.map !== this.zone.id) {
+      const route = zoneRoute(this.zone.id, target.map);
+      if (!route) return this.stopNav('ไปโซนนั้นด้วยการเดินไม่ได้');
+      goal = warpTo(this.zone, route[1]);
+      nav.leg = 'warp';
+    } else if (target.kind === 'turnin') {
+      const npc = [...this.entities.values()].find((e) => e.k === 'n' && e.role === target.role);
+      goal = npc ? { x: npc.x, y: npc.y } : null;
+      nav.npcId = npc?.id ?? null;
+      nav.leg = 'npc';
+    } else if (target.mob) {
+      const live = [...this.entities.values()]
+        .filter((e) => e.k === 'm' && e.hp > 0 && e.def === target.mob)
+        .sort((a, b) => Math.hypot(a.x - this.predicted.x, a.y - this.predicted.y)
+          - Math.hypot(b.x - this.predicted.x, b.y - this.predicted.y))[0];
+      goal = live ? { x: live.x, y: live.y } : huntingGround(this.zone.id, target.mob);
+      nav.leg = 'hunt';
+    } else {
+      goal = { x: (this.zone.width / 2) * TILE, y: (this.zone.height / 2) * TILE };
+      nav.leg = 'travel';
+    }
+    if (!goal) return this.stopNav('หาจุดหมายไม่เจอ');
+
+    nav.goal = goal;
+    nav.path = findPath(this.grid, this.zone.width, this.zone.height, this.predicted, goal) ?? [];
+    nav.index = 0;
+  }
+
+  /** Steer along the planned path, one waypoint at a time. */
+  updateNav(now) {
+    const nav = this.nav;
+    if (!nav || !this.inWorld) return;
+    if (this.input.manualRecently() || this.ui.openPanels.size > 1) return;   // the player is driving
+    if (!this.state.you?.alive) return this.stopNav('ตายระหว่างทาง — หยุดเดินอัตโนมัติ');
+
+    // once the fighting starts, auto-battle does the steering until the
+    // objective ticks over - two systems pushing the stick is one too many
+    if (nav.phase === 'fight') {
+      const tracked = (this.ui.trackedQuests ?? []).find((x) => x.id === nav.questId);
+      if (tracked?.done) {
+        nav.phase = 'return';
+        if (this.auto) this.toggleAuto();
+        this.planNav();
+      } else if (!this.auto) {
+        this.toggleAuto();
+      }
+      return;
+    }
+
+    // re-plan a few times a second: monsters move, and zones change under us
+    if (now - nav.at > 900) {
+      nav.at = now;
+      this.planNav();
+    }
+    if (!nav.path) return;
+
+    const me = this.predicted;
+    const wp = nav.path[nav.index];
+    if (!wp) return this.arriveNav();
+    const dx = wp.x - me.x, dy = wp.y - me.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 20) { nav.index++; return; }
+    this.input.autoStick(dx / d, dy / d);
+  }
+
+  /** The path ran out: fight, talk, or wait for the warp to take us. */
+  arriveNav() {
+    const nav = this.nav;
+    if (!nav) return;
+    this.input.autoStick(0, 0);
+    if (nav.leg === 'warp') return;              // standing on the pad; the server warps us
+
+    if (nav.leg === 'npc') {
+      const tracked = (this.ui.trackedQuests ?? []).find((x) => x.id === nav.questId);
+      if (nav.npcId) this.net.send({ t: 'npcInteract', id: nav.npcId });
+      if (tracked?.done) this.net.send({ t: 'quest', cmd: 'complete', id: nav.questId });
+      this.ui.close('dialog');
+      this.stopNav('ส่งภารกิจแล้ว');
+      return;
+    }
+    if (nav.leg === 'hunt') {
+      nav.phase = 'fight';
+      if (!this.auto) this.toggleAuto();           // arrived at the hunting ground
+      if (!nav.said) { nav.said = true; this.ui.toast('ถึงจุดล่าแล้ว — เปิดสู้อัตโนมัติให้', 'good'); }
     }
   }
 
@@ -396,7 +545,7 @@ class Game {
     if (!you?.alive) { this.net.send({ t: 'respawn' }); return; }
 
     const me = this.predicted;
-    const manual = this.input.keys.size > 0;
+    const manual = this.input.manualRecently();
 
     for (const g of this.state.ground ?? []) {
       if (g.mine && Math.hypot(g.x - me.x, g.y - me.y) < 44) this.net.send({ t: 'pickup', uid: g.uid });
@@ -409,7 +558,7 @@ class Game {
       if (d < bestD) { best = e; bestD = d; }
     }
     if (!best) {
-      if (!manual) this.input.touchStick(0, 0);
+      if (!manual) this.input.autoStick(0, 0);
       if (this.attacking) { this.attacking = false; this.net.send({ t: 'attack', on: false }); }
       return;
     }
@@ -420,8 +569,8 @@ class Game {
     }
     const reach = (this.self?.derived?.attackRange ?? 40) + 20;
     if (!manual) {
-      if (bestD > reach) this.input.touchStick((best.x - me.x) / bestD, (best.y - me.y) / bestD);
-      else this.input.touchStick(0, 0);
+      if (bestD > reach) this.input.autoStick((best.x - me.x) / bestD, (best.y - me.y) / bestD);
+      else this.input.autoStick(0, 0);
     }
     if (!this.attacking) { this.attacking = true; this.net.send({ t: 'attack', on: true, id: best.id }); }
 

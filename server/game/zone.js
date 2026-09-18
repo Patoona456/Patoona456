@@ -137,7 +137,7 @@ export class Zone {
         alive: true, look: npc.look, shop: npc.shop,
         netState() {
           return { id: this.id, k: 'n', n: this.name, x: Math.round(this.x), y: Math.round(this.y),
-            d: this.dir, a: 'idle', role: this.role, look: this.look };
+            d: this.dir, a: 'idle', role: this.role, npcId: this.npcId, look: this.look };
         },
       };
       this.entities.set(e.id, e);

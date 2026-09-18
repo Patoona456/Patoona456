@@ -13,6 +13,10 @@ import { SLOTS } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
 import { gameClock, skyAt } from '../../shared/daycycle.js';
 import { glowTier, glowCss } from '../../shared/refineglow.js';
+import { MAPS } from '../../shared/data/maps.js';
+
+/** Zone ids to the names players see, for quest rows. */
+const ZONE_NAMES = Object.fromEntries(Object.entries(MAPS).map(([id, m]) => [id, m.nameTh ?? m.name]));
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -206,6 +210,12 @@ export class UI {
       row.append(name);
       row.append(el('div', 'qprog', q.progress
         .map((pr) => `<b>${pr.have}</b>/${pr.need}`).join(' · ') + (q.done ? ' — พร้อมส่ง' : '')));
+
+      // one tap to walk there: the tracker is where people actually look
+      const navving = this.game.nav?.questId === q.id;
+      const go = el('button', 'btn qgo' + (navving ? ' primary' : ''), navving ? '■ หยุด' : '🧭 ไปเลย');
+      go.addEventListener('click', (e) => { e.stopPropagation(); this.game.startQuestNav(q); });
+      row.append(go);
       row.addEventListener('click', () => this.toggle('quests'));
       out.append(row);
     }
@@ -698,8 +708,10 @@ export class UI {
       const info = el('div');
       info.innerHTML = `<b>${esc(q.name)}</b> <span class="muted">Lv.${q.minLevel ?? 1}+</span>
         <div class="muted">${esc(q.desc)}</div>
-        <div class="muted">${q.progress.map((p, i) => `${p.have}/${p.need}`).join(' · ')}
-        · รางวัล: ${fmt(q.rewards.aurum ?? 0)} AU, EXP ${fmt(q.rewards.exp)}</div>`;
+        <div class="muted">${q.progress.map((p) => `${p.have}/${p.need}`).join(' · ')}
+        · รางวัล: ${fmt(q.rewards.aurum ?? 0)} AU, EXP ${fmt(q.rewards.exp)}
+        ${q.repeatable ? `· <b>${q.repeatable === 'daily' ? 'ทำได้ทุกวัน' : 'ทุกสัปดาห์'}</b>` : ''}
+        ${q.zone ? `· ${esc(ZONE_NAMES[q.zone] ?? q.zone)}` : ''}</div>`;
       const btns = el('div', 'opts');
       if (!q.state || q.state.done) {
         const b = el('button', 'btn primary', 'รับภารกิจ');
@@ -710,6 +722,14 @@ export class UI {
         b.disabled = !done;
         b.addEventListener('click', () => this.game.net.send({ t: 'quest', cmd: 'complete', id: q.id }));
         btns.append(b);
+        // walk me there (or to the giver, once it is finished)
+        const navving = this.game.nav?.questId === q.id;
+        const go = el('button', 'btn' + (navving ? ' primary' : ''), navving ? '■ หยุดเดิน' : '🧭 ไปเลย');
+        go.addEventListener('click', () => {
+          this.game.startQuestNav({ ...q, done });
+          this.close('quests');
+        });
+        btns.append(go);
       }
       row.append(info, btns);
       wrap.append(row);
