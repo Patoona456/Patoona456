@@ -188,10 +188,17 @@ class Game {
         r.floater(String(ev.v), at.x, at.y, onMe ? '#ff9a9a' : ev.crit ? '#ffd166' : mine ? '#ffffff' : '#ffb3b3', ev.crit ? 15 : 12);
         if (onMe) r.shake = Math.min(6, ev.v / 30);
         this.audio.play(onMe ? 'hurt' : ev.crit ? 'crit' : 'hit', at, { gain: mine || onMe ? 1 : 0.55 });
+        r.spark(ent.x, ent.y - 16, ev.crit
+          ? { color: '255,214,120', n: 12, power: 1.5 }
+          : onMe ? { color: '255,140,140', n: 5 } : { color: '255,228,190', n: 6 });
         break;
       }
       case 'heal':
-        if (at) { r.floater('+' + ev.v, at.x, at.y, '#7dffb0'); this.audio.play('heal', at); }
+        if (at) {
+          r.floater('+' + ev.v, at.x, at.y, '#7dffb0');
+          r.spark(ent.x, ent.y - 18, { color: '140,255,180', n: 6, power: 0.7 });
+          this.audio.play('heal', at);
+        }
         break;
       case 'miss':
         if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 11); this.audio.play('miss', at); }
@@ -209,6 +216,7 @@ class Game {
         this.audio.play(FX_SOUND[ev.fx] ?? 'cast', { x: ev.x, y: ev.y });
         break;
       case 'death':
+        if (ent) r.poof(ent.x, ent.y - 12, ev.id === this.state.myId ? '200,120,120' : '150,140,160');
         if (ev.id === this.state.myId) { this.audio.play('death'); this.showDeath(); }
         else this.audio.play('die', at);
         break;

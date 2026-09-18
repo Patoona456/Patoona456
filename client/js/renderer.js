@@ -5,6 +5,8 @@ import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, playerLayers, monsterLayers, npcLayers } from './sprites.js';
+import { Particles } from './particles.js';
+import { skyAt } from '../../shared/daycycle.js';
 
 // Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
 export const ZOOM_STEPS = [
@@ -24,6 +26,12 @@ function savedZoomStep() {
   return 1;
 }
 
+// How far each soft prop leans, as a horizontal skew.
+const SWAY = {
+  grass: 0.10, flowers: 0.08, reeds: 0.09, mushroom: 0.04,
+  bush: 0.035, tree: 0.022, deadtree: 0.018, banner: 0.05,
+};
+
 const rand = (seed) => {
   let a = seed >>> 0;
   return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -41,6 +49,8 @@ export class Renderer {
     this.grid = null;
     this.floaters = [];
     this.fx = [];
+    this.particles = new Particles();
+    this.steps = new Map();          // entity id -> when its next dust puff is due
     this.shake = 0;
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -81,6 +91,8 @@ export class Renderer {
 
   setZone(zonePayload) {
     this.zone = zonePayload;
+    this.particles.setTheme(zonePayload.theme);
+    this.steps.clear();
     this.grid = decodeGrid(zonePayload.rle, zonePayload.width * zonePayload.height);
 
     const painted = buildTerrain(zonePayload, this.grid);
@@ -160,9 +172,13 @@ export class Renderer {
     this.drawGroundItems(ctx, state, now);
     this.drawEntities(ctx, state, now, visibleProps);
     this.drawFx(ctx, now);
+    this.particles.update(now, view);
+    this.particles.draw(ctx, now);
     this.drawAmbience(ctx, view, visibleProps, state, now);
+    this.particles.drawGlow(ctx);
     ctx.restore();
 
+    this.drawVignette(ctx);
     this.drawFloaters(ctx, s);
   }
 
@@ -289,6 +305,14 @@ export class Renderer {
     const w = img.width * (p.w ? 1 : p.scale), h = img.height * (p.w ? 1 : p.scale);
     ctx.save();
     if (p.flip) { ctx.translate(p.x, 0); ctx.scale(-1, 1); ctx.translate(-p.x, 0); }
+    // soft growth leans in the wind, pivoting on its base
+    const sway = SWAY[p.kind];
+    if (sway) {
+      const a = Math.sin(now / 900 + p.x * 0.05 + p.y * 0.03) * sway;
+      ctx.translate(p.x, p.y + 6);
+      ctx.transform(1, 0, a, 1, 0, 0);
+      ctx.translate(-p.x, -(p.y + 6));
+    }
     ctx.drawImage(img, Math.round(p.x - w / 2), Math.round(p.y - h + 6), w, h);
     ctx.restore();
   }
@@ -303,12 +327,23 @@ export class Renderer {
       const elapsed = now - (e._animStart ?? now);
       const hurt = e._hurtUntil && e._hurtUntil > now ? (e._hurtUntil - now) / 200 : 0;
 
-      // shadow
+      // shadow: sized with the sprite, softened at the rim
+      const sc = e.sprite?.scale ?? 1;
+      const rx = (e.k === 'n' ? 9 : 10) * sc;
       ctx.save();
-      ctx.globalAlpha = 0.28;
-      ctx.fillStyle = '#000';
-      ctx.beginPath(); ctx.ellipse(e.x, e.y + 2, 10, 4, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = e.inv ? 0.10 : 0.30;
+      const sg = ctx.createRadialGradient(e.x, e.y + 2, 0, e.x, e.y + 2, rx);
+      sg.addColorStop(0, '#000');
+      sg.addColorStop(0.65, 'rgba(0,0,0,0.75)');
+      sg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sg;
+      ctx.save();
+      ctx.translate(e.x, e.y + 2); ctx.scale(1, 0.4); ctx.translate(-e.x, -(e.y + 2));
+      ctx.beginPath(); ctx.arc(e.x, e.y + 2, rx, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
+      ctx.restore();
+
+      if (anim === 'walk') this.footstep(e, now);
 
       if (e.k === 'm' && e.sprite?.kind === 'blob') {
         drawBlob(ctx, e.sprite, { x: e.x, y: e.y, t: now + (e.id.charCodeAt(1) * 97), hurt });
@@ -330,6 +365,33 @@ export class Renderer {
       this.drawNameplate(ctx, e, state, now);
     }
   }
+
+  /** One puff every couple of strides, per entity. */
+  footstep(e, now) {
+    const due = this.steps.get(e.id) ?? 0;
+    if (now < due) return;
+    this.steps.set(e.id, now + 260 + Math.random() * 120);
+    if (due) this.particles.step(e.x, e.y + 1);
+  }
+
+  /** A soft frame so the eye settles in the middle of the screen. */
+  drawVignette(ctx) {
+    const w = this.canvas.width, h = this.canvas.height;
+    if (!this._vig || this._vig.w !== w || this._vig.h !== h) {
+      const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.38, w / 2, h / 2, Math.max(w, h) * 0.72);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.34)');
+      this._vig = { w, h, g };
+    }
+    ctx.save();
+    ctx.fillStyle = this._vig.g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  /** Hit sparks, called from the game when damage lands. */
+  spark(x, y, opts) { this.particles.spark(x, y, opts); }
+  poof(x, y, color) { this.particles.poof(x, y, color); }
 
   drawNameplate(ctx, e, state, now) {
     const isMe = e.id === state.myId;
@@ -419,6 +481,9 @@ export class Renderer {
   /** Per-theme colour grade, vignette, and additive lights from props/portals. */
   drawAmbience(ctx, view, props, state, now) {
     const theme = this.zone.theme ?? 'grass';
+    const w = view.x1 - view.x0, h = view.y1 - view.y0;
+
+    // the zone's own colour, always on
     const tint = {
       crypt: 'rgba(12,10,26,0.52)', ice: 'rgba(90,150,200,0.20)', marsh: 'rgba(48,66,44,0.22)',
       rock: 'rgba(80,60,40,0.12)', grass: 'rgba(30,50,70,0.06)', town: 'rgba(255,205,140,0.05)',
@@ -426,19 +491,41 @@ export class Renderer {
     if (tint) {
       ctx.save();
       ctx.fillStyle = tint;
-      ctx.fillRect(view.x0, view.y0, view.x1 - view.x0, view.y1 - view.y0);
+      ctx.fillRect(view.x0, view.y0, w, h);
       ctx.restore();
     }
 
+    // time of day on top of it, skipped underground where there is no sky
+    const sky = skyAt(Date.now());
+    const underground = theme === 'crypt';
+    if (!underground && sky.alpha > 0.005) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = `rgba(${sky.rgb.join(',')},${sky.alpha})`;
+      ctx.fillRect(view.x0, view.y0, w, h);
+      ctx.restore();
+      if (sky.phase > 0.24 && sky.phase < 0.36) {        // dawn wash
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = `rgba(255,170,90,${0.05 * (1 - sky.lamp)})`;
+        ctx.fillRect(view.x0, view.y0, w, h);
+        ctx.restore();
+      }
+    }
+
+    // lamps matter more after dark; underground they are always lit
+    const lampNeed = underground ? 1 : Math.max(0.18, sky.lamp);
     const lights = [];
-    for (const p of props) if (GLOWING.has(p.kind)) lights.push({ x: p.x, y: p.y - 22 * p.scale, r: 90, c: '255,190,120' });
-    for (const w of this.zone.warps ?? []) {
-      lights.push({ x: (w.x + w.w / 2) * TILE, y: (w.y + w.h / 2) * TILE, r: 120, c: '150,215,255' });
+    for (const p of props) {
+      if (GLOWING.has(p.kind)) lights.push({ x: p.x, y: p.y - 22 * p.scale, r: 90 + 40 * lampNeed, c: '255,190,120', i: 0.34 * (0.45 + lampNeed) });
     }
-    if (theme === 'crypt' || theme === 'ice') {
-      const me = state.me;
-      if (me) lights.push({ x: me.x, y: me.y - 16, r: 150, c: '255,225,180' });
+    for (const w2 of this.zone.warps ?? []) {
+      lights.push({ x: (w2.x + w2.w / 2) * TILE, y: (w2.y + w2.h / 2) * TILE, r: 120, c: '150,215,255', i: 0.34 });
     }
+    const me = state.me;
+    // a lantern of your own, once it is dark enough to need one
+    const carry = underground || theme === 'ice' ? 1 : lampNeed;
+    if (me && carry > 0.3) lights.push({ x: me.x, y: me.y - 16, r: 120 + 50 * carry, c: '255,225,180', i: 0.30 * carry });
     if (!lights.length) return;
 
     ctx.save();
@@ -447,7 +534,7 @@ export class Renderer {
       if (l.x < view.x0 - l.r || l.x > view.x1 + l.r || l.y < view.y0 - l.r || l.y > view.y1 + l.r) continue;
       const flicker = 0.82 + Math.sin(now / 130 + l.x) * 0.1;
       const g = ctx.createRadialGradient(l.x, l.y, 2, l.x, l.y, l.r);
-      g.addColorStop(0, `rgba(${l.c},${0.34 * flicker})`);
+      g.addColorStop(0, `rgba(${l.c},${(l.i ?? 0.34) * flicker})`);
       g.addColorStop(1, `rgba(${l.c},0)`);
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2); ctx.fill();

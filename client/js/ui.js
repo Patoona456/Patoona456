@@ -11,6 +11,7 @@ import { itemIcon, skillIcon, icon } from './icons.js';
 import { playerLayers, drawCharacter, loadedRatio } from './sprites.js';
 import { SLOTS } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
+import { gameClock, skyAt } from '../../shared/daycycle.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -170,8 +171,21 @@ export class UI {
     const shards = (this.game.inventory?.items ?? []).find((x) => x.id === 'shard_dawn');
     $('#shards').textContent = fmt(shards?.qty ?? 0);
 
+    this.updateClock();
+
     const over = (you?.weight ?? 0) > (you?.weightCap ?? 1);
     $('#netinfo').innerHTML = `${this.game.net.ping}ms · <span style="color:${over ? 'var(--bad)' : 'inherit'}">${fmt(you?.weight ?? 0)}/${fmt(you?.weightCap ?? 0)}</span>`;
+  }
+
+  /** In-world time: one full day every 24 real minutes, shared by everyone. */
+  updateClock() {
+    const node = $('#clock');
+    if (!node) return;
+    const sky = skyAt();
+    const p = sky.phase;
+    const icon = p < 0.24 ? '🌙' : p < 0.30 ? '🌅' : p < 0.70 ? '🌤' : p < 0.80 ? '🌇' : '🌙';
+    node.textContent = `${icon} ${gameClock().text}`;
+    node.title = sky.night ? 'กลางคืน — คบไฟและโคมสว่างขึ้น' : 'กลางวัน';
   }
 
   /** The quest tracker pinned to the left edge. */
