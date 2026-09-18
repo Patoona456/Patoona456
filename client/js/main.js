@@ -106,6 +106,9 @@ class Game {
     const why = $('#rotate .why');
     const manual = $('#btn-force-landscape');
     const portrait = () => innerHeight > innerWidth;
+    // the upright layout is a real layout now, so the gate is only ever shown
+    // once per session, and never again after it is waved away
+    try { dismissed = localStorage.getItem('emberfall-upright') === '1'; } catch { /* no storage */ }
     const update = () => {
       const show = portrait() && !dismissed && !this.forcedLandscape;
       gate.classList.toggle('hidden', !show);
@@ -147,7 +150,12 @@ class Game {
       update();
       this.ui.toast('หมุนภาพเป็นแนวนอนแล้ว — ถือเครื่องตะแคงได้เลย', 'good');
     });
-    $('#btn-stay-portrait')?.addEventListener('click', () => { dismissed = true; update(); });
+    $('#btn-stay-portrait')?.addEventListener('click', () => {
+      dismissed = true;
+      try { localStorage.setItem('emberfall-upright', '1'); } catch { /* no storage */ }
+      this.ui.toast('เล่นแนวตั้งได้เลย — เปลี่ยนเป็นแนวนอนได้ทีหลังในหน้าตั้งค่า', 'info');
+      update();
+    });
 
     addEventListener('resize', update);
     addEventListener('orientationchange', () => setTimeout(update, 120));
@@ -199,6 +207,11 @@ class Game {
     n.on('chatMsg', (m) => this.ui.chat(m));
     n.on('npcDialog', (m) => this.ui.open('dialog', m));
     n.on('shop', (m) => this.ui.openShop(m));
+    n.on('gachaResult', (m) => this.ui.showGachaResult(m));
+    n.on('boxOpened', (m) => {
+      this.audio.play(m.rarity === 'common' ? 'loot' : 'levelup');
+      this.ui.renderInventory();
+    });
     n.on('storage', (m) => this.ui.open('storage', m));
     n.on('market', (m) => this.ui.open('market', m));
     n.on('partyState', (m) => {

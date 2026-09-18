@@ -15,9 +15,14 @@ export function shopPayload(shopId) {
   if (!shop) return null;
   return {
     t: 'shop', id: shop.id, name: shop.name, services: shop.services ?? [],
+    currency: shop.currency ?? null,
     stock: shop.stock.map((s) => {
       const it = ITEMS[s.id];
-      return { id: s.id, price: it.value, stock: s.stock ?? 99, name: it.nameTh ?? it.name, type: it.type };
+      return {
+        id: s.id,
+        price: shop.currency ? (s.price ?? 1) : it.value,
+        stock: s.stock ?? 99, name: it.nameTh ?? it.name, type: it.type,
+      };
     }),
   };
 }
@@ -28,9 +33,21 @@ export function buy(world, p, shopId, itemId, qty) {
   if (!line) return { error: 'ร้านนี้ไม่มีของชิ้นนี้' };
   qty = Math.max(1, Math.min(999, Math.floor(qty) || 1));
   const def = ITEMS[itemId];
+  if (p.weight() + (def.weight ?? 1) * qty > p.weightCap) return { error: 'น้ำหนักเกิน' };
+
+  // some counters trade in a material rather than coin
+  if (shop.currency) {
+    const price = (line.price ?? 1) * qty;
+    const cur = ITEMS[shop.currency];
+    if (p.countItem(shop.currency) < price) return { error: `ต้องใช้${cur?.nameTh ?? shop.currency} ${price} ชิ้น` };
+    if (!p.addItem(itemId, qty)) return { error: 'กระเป๋าเต็ม' };
+    p.removeItemById(shop.currency, price);
+    markDirty();
+    return { ok: true, spent: price, currency: shop.currency };
+  }
+
   const total = def.value * qty;
   if (p.record.aurum < total) return { error: 'ออรัมไม่พอ' };
-  if (p.weight() + (def.weight ?? 1) * qty > p.weightCap) return { error: 'น้ำหนักเกิน' };
   if (!p.addItem(itemId, qty)) return { error: 'กระเป๋าเต็ม' };
   p.record.aurum -= total;
   burn(world, total);
@@ -60,6 +77,99 @@ export function sell(world, p, index, qty) {
   world.stats.minted += gained;
   markDirty();
   return { ok: true, gained, dampened: soldToday > 5 };
+}
+
+/* ---------------- boxes & the gacha shrine ---------------- */
+
+/** Roll one entry out of a weighted table. */
+function rollTable(table) {
+  const total = table.reduce((a, o) => a + o.weight, 0);
+  let pick = Math.random() * total;
+  for (const o of table) {
+    if (pick < o.weight) return o;
+    pick -= o.weight;
+  }
+  return table[table.length - 1];
+}
+
+const qtyOf = (q) => (Array.isArray(q) ? q[0] + Math.floor(Math.random() * (q[1] - q[0] + 1)) : (q ?? 1));
+
+/** Open a box item in the player's bag. */
+export function openBox(p, index) {
+  const st = p.inventory[index];
+  if (!st) return { error: 'ไม่พบไอเทม' };
+  const def = ITEMS[st.id];
+  if (!def?.box) return { error: 'ไอเทมนี้เปิดไม่ได้' };
+  if (p.inventory.length >= 99) return { error: 'กระเป๋าเต็มเกินไป เปิดไม่ได้' };
+
+  const roll = rollTable(def.opens);
+  const qty = qtyOf(roll.qty);
+  p.removeItemAt(index, 1);
+  p.addItem(roll.id, qty);
+  markDirty();
+  return { ok: true, box: st.id, got: { id: roll.id, qty }, rarity: ITEMS[roll.id]?.rarity ?? 'common' };
+}
+
+/**
+ * The Dawn Shrine: pay shards, draw from the pool.
+ *
+ * Nothing here can be bought with real money, and nothing in the pool is
+ * stronger than what a boss drops - it is a *sink* for the rarest currency
+ * in the game, not a second progression track. Pity is hard: every tenth
+ * draw is a guaranteed rare-or-better, and the counter is on the record so
+ * it survives logging out.
+ */
+export const GACHA = {
+  cost: 2,                       // shard_dawn per draw
+  pity: 10,                      // draws until a guaranteed rare+
+  pool: [
+    { id: 'runed_whetstone', qty: [1, 3], weight: 26, tier: 'common' },
+    { id: 'greater_salve', qty: [5, 10], weight: 16, tier: 'common' },
+    { id: 'mana_draught', qty: [5, 10], weight: 12, tier: 'common' },
+    { id: 'blessing_oil', qty: [1, 2], weight: 14, tier: 'common' },
+    { id: 'mystery_scroll', qty: [2, 4], weight: 10, tier: 'common' },
+    { id: 'boss_casket', qty: 1, weight: 6, tier: 'rare' },
+    { id: 'wings_feather', qty: 1, weight: 5, tier: 'rare' },
+    { id: 'wings_raven', qty: 1, weight: 5, tier: 'rare' },
+    { id: 'wings_bat', qty: 1, weight: 3, tier: 'rare' },
+    { id: 'wings_frost', qty: 1, weight: 2, tier: 'rare' },
+    { id: 'wings_ember', qty: 1, weight: 0.8, tier: 'legendary' },
+    { id: 'wings_dawn', qty: 1, weight: 0.2, tier: 'legendary' },
+  ],
+};
+
+export function gachaDraw(world, p, times = 1) {
+  const n = Math.max(1, Math.min(10, times | 0));
+  const cost = GACHA.cost * n;
+  if (p.countItem('shard_dawn') < cost) return { error: `ต้องใช้เศษรุ่งอรุณ ${cost} ชิ้น` };
+  if (p.inventory.length + n >= 100) return { error: 'กระเป๋าเต็ม' };
+  p.removeItemById('shard_dawn', cost);
+
+  const r = p.record;
+  r.gachaPity = r.gachaPity ?? 0;
+  const results = [];
+  for (let i = 0; i < n; i++) {
+    r.gachaPity++;
+    const guaranteed = r.gachaPity >= GACHA.pity;
+    const table = guaranteed ? GACHA.pool.filter((o) => o.tier !== 'common') : GACHA.pool;
+    const roll = rollTable(table);
+    if (roll.tier !== 'common') r.gachaPity = 0;
+    const qty = qtyOf(roll.qty);
+    p.addItem(roll.id, qty);
+    results.push({ id: roll.id, qty, tier: roll.tier, guaranteed });
+  }
+  markDirty();
+  return { ok: true, results, spent: cost, pity: GACHA.pity - r.gachaPity };
+}
+
+/** The shard counter, shown next to the shrine. */
+export function shardShop(p) {
+  return {
+    cost: GACHA.cost,
+    have: p.countItem('shard_dawn'),
+    pity: GACHA.pity - (p.record.gachaPity ?? 0),
+    pool: GACHA.pool.map((o) => ({ id: o.id, qty: o.qty, tier: o.tier, chance: o.weight })),
+  };
 }
 
 /* ---------------- refine ---------------- */

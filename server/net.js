@@ -221,10 +221,11 @@ export class Conn {
       }
       case OP.NPC_INTERACT: return this.npcInteract(m);
       case OP.NPC_ACTION: return this.npcAction(m);
-      case OP.SHOP_BUY: return this.guardNpc(['shop', 'smith'], () => {
+      case OP.SHOP_BUY: return this.guardNpc(['shop', 'smith', 'gacha'], () => {
         const r = Econ.buy(this.world, p, m.shop, m.id, m.qty);
         if (r.error) return this.error(r.error);
-        this.notice(`ซื้อสำเร็จ -${r.spent} ออรัม`);
+        const unit = r.currency ? (ITEMS[r.currency]?.nameTh ?? r.currency) : 'ออรัม';
+        this.notice(`ซื้อสำเร็จ -${r.spent} ${unit}`);
         this.sendInventory();
       });
       case OP.SHOP_SELL: return this.guardNpc(['shop', 'smith'], () => {
@@ -299,7 +300,7 @@ export class Conn {
           'emberheart_amulet', 'band_of_vigor', 'greater_salve'];
         for (const id of kit) {
           if ((ITEMS[id]?.level ?? 1) > r.level) continue;      // only what this level may wear
-          p.addItem(id, id === 'greater_salve' ? 50 : 1);
+          p.addItem(id, id === 'greater_salve' ? 50 : id === 'shard_dawn' ? 60 : 1);
         }
         for (const [i, st] of p.inventory.entries()) {
           const def = ITEMS[st.id];
@@ -356,6 +357,14 @@ export class Conn {
     if (!st) return this.error('ไม่พบไอเทม');
     const def = ITEMS[st.id];
     if (!def) return this.error('ไอเทมไม่ถูกต้อง');
+    if (def.box) {
+      const r = Econ.openBox(p, idx);
+      if (r.error) return this.error(r.error);
+      const got = ITEMS[r.got.id];
+      this.notice(`เปิด${def.nameTh} ได้ ${got?.nameTh ?? r.got.id} x${r.got.qty}`, r.rarity === 'common' ? 'info' : 'good');
+      this.send({ t: 'boxOpened', box: def.id, got: r.got, rarity: r.rarity });
+      return this.sendInventory();
+    }
     if (def.type !== 'consumable') return this.error('ใช้ไอเทมนี้ไม่ได้');
     if ((def.level ?? 1) > p.record.level) return this.error(`ต้องเลเวล ${def.level}`);
     const cdKey = 'item:' + st.id;
@@ -450,6 +459,18 @@ export class Conn {
         return this.notice('ล้างสถานะผิดปกติแล้ว', 'good');
       }
       case 'warpMenu': return this.send({ t: OP.SHOP, mode: 'warp', routes: WARP_ROUTES, name: npc.name });
+      case 'gacha': return this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
+      case 'gachaDraw': return this.guardNpc(['gacha'], () => {
+        const r = Econ.gachaDraw(this.world, p, m.times | 0 || 1);
+        if (r.error) return this.error(r.error);
+        const best = r.results.find((x) => x.tier === 'legendary') ?? r.results.find((x) => x.tier === 'rare');
+        this.notice(best
+          ? `ศาลตอบรับ! ได้ ${ITEMS[best.id]?.nameTh ?? best.id}`
+          : `เสี่ยงทาย ${r.results.length} ครั้ง — ยังไม่ได้ของหายาก`, best ? 'good' : 'info');
+        this.send({ t: 'gachaResult', results: r.results, pity: r.pity });
+        this.sendInventory();
+        this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
+      });
       case 'jobChange': {
         const r = p.changeJob(m.job);
         if (r.error) return this.error(r.error);

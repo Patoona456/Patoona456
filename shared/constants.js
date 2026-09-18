@@ -38,7 +38,7 @@ export const ANIM = {
 };
 
 /** Equipment slots ------------------------------------------------------- */
-export const SLOTS = ['weapon', 'offhand', 'head', 'torso', 'hands', 'legs', 'feet', 'belt', 'accessory'];
+export const SLOTS = ['weapon', 'offhand', 'head', 'torso', 'hands', 'legs', 'feet', 'belt', 'accessory', 'wings'];
 
 /** Elements (rock-paper-scissors style, our own table) -------------------- */
 export const ELEMENTS = ['neutral', 'ember', 'frost', 'storm', 'verdant', 'shade', 'radiant'];

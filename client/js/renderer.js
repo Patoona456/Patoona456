@@ -6,6 +6,7 @@ import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, drawRefineGlow, playerLayers, monsterLayers, npcLayers } from './sprites.js';
 import { glowTier } from '../../shared/refineglow.js';
+import { drawWings } from './wings.js';
 import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
 
@@ -372,6 +373,14 @@ export class Renderer {
           : monsterLayers(e.sprite);
         if (layers) {
           const scale = e.sprite?.scale ?? 1;
+          // wings sit behind the body, and beat faster while you run
+          const wing = ITEMS[e.eq?.wings]?.wing;
+          if (wing) {
+            drawWings(ctx, wing.style, {
+              x: e.x, y: e.y, dir: e.d ?? 2, t: now + (e.id.charCodeAt(1) ?? 0) * 37,
+              scale: scale * (wing.scale ?? 1), moving: anim === 'walk',
+            });
+          }
           drawCharacter(ctx, layers, {
             x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed,
             scale,

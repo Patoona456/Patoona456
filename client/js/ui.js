@@ -9,6 +9,7 @@ import { TILE } from '../../shared/constants.js';
 import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js';
 import { itemIcon, skillIcon, icon } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
+import { drawWings } from './wings.js';
 import { SLOTS } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
 import { gameClock, skyAt } from '../../shared/daycycle.js';
@@ -437,7 +438,7 @@ export class UI {
 
     const LABELS = {
       head: 'ศีรษะ', torso: 'ลำตัว', hands: 'มือ', legs: 'ขา', feet: 'เท้า',
-      weapon: 'อาวุธ', offhand: 'มือรอง', belt: 'เข็มขัด', accessory: 'เครื่องประดับ',
+      weapon: 'อาวุธ', offhand: 'มือรอง', belt: 'เข็มขัด', accessory: 'เครื่องประดับ', wings: 'ปีก',
     };
     const slotNode = (slot) => {
       const it = worn[slot];
@@ -455,6 +456,7 @@ export class UI {
     for (const slot of ['head', 'torso', 'hands', 'belt']) left.append(slotNode(slot));
     for (const slot of ['weapon', 'offhand', 'legs', 'feet']) right.append(slotNode(slot));
     mid.append(slotNode('accessory'));
+    mid.append(slotNode('wings'));
     gear.append(left, mid, right);
 
     const ctx = preview.getContext('2d');
@@ -473,6 +475,8 @@ export class UI {
       ctx.save();
       ctx.scale(1.55, 1.55);
       const pose = { x: 31, y: 70, anim: 'idle', dir: 2, elapsed: 0 };
+      const wing = worn.wings && ITEMS[worn.wings.id]?.wing;
+      if (wing) drawWings(ctx, wing.style, { x: 31, y: 70, dir: 2, t, scale: wing.scale ?? 1 });
       drawCharacter(ctx, layers, pose);
       if (tier) {
         // the same aura the world shows, so the doll matches the field
@@ -1007,6 +1011,7 @@ export class UI {
     if (d.mode === 'craft') return this.openCraft();
     if (d.mode === 'warp') return this.openWarp(d);
     if (d.mode === 'sell') return this.openSell();
+    if (d.mode === 'gacha') return this.openGacha(d);
     this.lastShop = d;
 
     const wrap = el('div', 'grid');
@@ -1035,8 +1040,9 @@ export class UI {
             t: 'shopBuy', shop: d.id, id: entry.id, qty: Number(qty.value) || 1,
           }));
           actions.append(qty, buy);
+          const unit = d.currency ? (ITEMS[d.currency]?.nameTh ?? d.currency) : 'AU';
           return this.detailCard(entry.item, [
-            ['ราคา', fmt(entry.price) + ' AU'],
+            ['ราคา', `${fmt(entry.price)} ${unit}`],
             ['คงเหลือ', fmt(entry.stock)],
             ...(entry.item.atk ? [['ATK', entry.item.atk]] : []),
             ...(entry.item.def ? [['DEF', entry.item.def]] : []),
@@ -1353,6 +1359,70 @@ export class UI {
     return box;
   }
 
+  /**
+   * The Dawn Shrine. Shows the whole pool with real odds and how many draws
+   * are left before the guaranteed one - a gacha that hides its numbers is
+   * a gacha that is hiding something.
+   */
+  openGacha(d) {
+    const wrap = el('div', 'grid');
+    const shard = ITEMS.shard_dawn?.nameTh ?? 'เศษรุ่งอรุณ';
+    const head = el('div', 'row');
+    head.innerHTML = `<span>มี<b class="num"> ${fmt(d.have)}</b> ${esc(shard)}</span>
+      <span class="muted">ครั้งละ ${d.cost} ชิ้น · การันตีของหายากในอีก <b>${d.pity}</b> ครั้ง</span>`;
+    wrap.append(head);
+
+    const roll = el('div', 'opts');
+    for (const [times, label] of [[1, 'เสี่ยง 1 ครั้ง'], [10, 'เสี่ยง 10 ครั้ง']]) {
+      const b = el('button', 'btn' + (times === 10 ? ' primary' : ''), `${label} (${d.cost * times})`);
+      b.disabled = d.have < d.cost * times;
+      b.addEventListener('click', () => this.game.net.send({ t: 'npcAction', action: 'gachaDraw', times }));
+      roll.append(b);
+    }
+    wrap.append(roll);
+    wrap.append(el('div', 'muted', 'ไม่มีอะไรในศาลที่ซื้อด้วยเงินจริงได้ และของทุกชิ้นหาได้จากบอสหรือร้านแลกเหมือนกัน — ศาลคือทางลัดที่ต้องเสี่ยง ไม่ใช่ทางเดียว'));
+
+    const total = d.pool.reduce((a, o) => a + o.chance, 0);
+    const list = el('div', 'grid');
+    list.append(el('h3', '', 'โอกาสออกของแต่ละชิ้น'));
+    for (const o of [...d.pool].sort((a, b) => a.chance - b.chance)) {
+      const it = ITEMS[o.id] ?? { id: o.id, nameTh: o.id };
+      const row = el('div', 'listing');
+      const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
+      ico.append(itemIcon(o.id, { size: 28 }));
+      const qty = Array.isArray(o.qty) ? `x${o.qty[0]}-${o.qty[1]}` : o.qty > 1 ? `x${o.qty}` : '';
+      row.append(ico,
+        el('div', '', `<b class="rarity-${it.rarity ?? 'common'}">${esc(it.nameTh ?? it.name)}</b> ${qty}
+          <div class="muted">${o.tier === 'legendary' ? 'ระดับตำนาน' : o.tier === 'rare' ? 'ของหายาก (นับในการันตี)' : 'ของทั่วไป'}</div>`),
+        el('span', 'num', ((o.chance / total) * 100).toFixed(1) + '%'));
+      list.append(row);
+    }
+    wrap.append(list);
+    return this.panel('gacha', 'ศาลรุ่งอรุณ', wrap);
+  }
+
+  /** The draw animation: one card per pull, rare ones announced. */
+  showGachaResult(m) {
+    const wrap = el('div', 'grid');
+    const grid = el('div', 'slot-grid');
+    for (const r of m.results) {
+      const it = ITEMS[r.id] ?? { id: r.id, nameTh: r.id };
+      const node = el('div', 'slot rarity-' + (it.rarity ?? 'common') + (r.tier !== 'common' ? ' sel' : ''));
+      node.append(itemIcon(r.id, { size: 32 }));
+      if (r.qty > 1) node.append(el('span', 'qty num', String(r.qty)));
+      node.title = `${it.nameTh ?? it.name}${r.guaranteed ? ' (การันตี)' : ''}`;
+      grid.append(node);
+    }
+    wrap.append(grid);
+    const best = m.results.find((r) => r.tier === 'legendary') ?? m.results.find((r) => r.tier === 'rare');
+    wrap.append(el('div', best ? '' : 'muted', best
+      ? `✦ ได้ ${esc(ITEMS[best.id]?.nameTh ?? best.id)}!`
+      : 'รอบนี้ยังไม่มีของหายาก'));
+    wrap.append(el('div', 'muted', `การันตีของหายากในอีก ${m.pity} ครั้ง`));
+    this.game.audio?.play(best ? 'levelup' : 'ui');
+    return this.panel('gachaResult', 'ผลการเสี่ยงทาย', wrap);
+  }
+
   /* ---------------- player trading ---------------- */
 
   /** Server pushed a new trade state: open, refresh or close the window. */
@@ -1554,6 +1624,22 @@ export class UI {
     wrap.append(cam, el('hr'));
 
     wrap.append(this.audioSettings(), el('hr'));
+
+    // screen orientation lives here now, so nothing has to block the game
+    const screenBox = el('div');
+    screenBox.innerHTML = '<h3 style="margin:0 0 6px">การวางจอ</h3>';
+    const screenRow = el('div', 'opts');
+    const forced = !!this.game.forcedLandscape;
+    const upright = el('button', 'btn' + (forced ? '' : ' primary'), 'ตามการหมุนเครื่อง');
+    upright.title = 'เล่นได้ทั้งแนวตั้งและแนวนอน เกมจัดหน้าจอให้เอง';
+    upright.addEventListener('click', () => { this.game.setForcedLandscape(false); this.open('settings'); });
+    const land = el('button', 'btn' + (forced ? ' primary' : ''), 'บังคับแนวนอน');
+    land.title = 'หมุนภาพทั้งหน้า 90° สำหรับเครื่องที่ล็อกการหมุนไว้';
+    land.addEventListener('click', () => { this.game.setForcedLandscape(true); this.open('settings'); });
+    screenRow.append(upright, land);
+    screenBox.append(screenRow);
+    screenBox.append(el('div', 'muted', 'เล่นแนวตั้งได้เต็มรูปแบบ ปุ่มทุกปุ่มมีที่ของตัวเอง — เลือกแนวนอนเมื่ออยากเห็นสนามกว้างขึ้น'));
+    wrap.append(screenBox, el('hr'));
 
     const help = el('div');
     help.innerHTML = `

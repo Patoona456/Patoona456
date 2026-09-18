@@ -12,6 +12,100 @@ const C = (o) => ({ type: 'consumable', stack: 99, weight: 4, ...o });
 const M = (o) => ({ type: 'material', stack: 999, weight: 2, ...o });
 
 export const ITEMS = {
+  /* ================= BOXES & SCROLLS =================
+     A box is opened, not consumed for stats: `opens` is a weighted table,
+     rolled on the server. Scrolls drop from ordinary monsters and pay in
+     materials; boss caskets are where wings actually come from. */
+
+  mystery_scroll: C({
+    id: 'mystery_scroll', name: 'Mystery Scroll', nameTh: 'ม้วนปริศนา', level: 1,
+    weight: 1, value: 900, rarity: 'uncommon', stack: 99, cooldown: 0, box: true,
+    desc: 'ม้วนกระดาษผนึกไว้ ไม่มีใครรู้ว่าข้างในเป็นอะไรจนกว่าจะแกะ',
+    opens: [
+      { id: 'lesser_salve', qty: [3, 6], weight: 22 },
+      { id: 'herb_bundle', qty: [5, 12], weight: 18 },
+      { id: 'iron_ore', qty: [2, 6], weight: 16 },
+      { id: 'greater_salve', qty: [2, 4], weight: 12 },
+      { id: 'mana_draught', qty: [2, 4], weight: 10 },
+      { id: 'steel_ingot', qty: [1, 2], weight: 8 },
+      { id: 'runed_whetstone', qty: 1, weight: 7 },
+      { id: 'blessing_oil', qty: 1, weight: 4 },
+      { id: 'shard_dawn', qty: 1, weight: 3 },
+    ],
+  }),
+  boss_casket: C({
+    id: 'boss_casket', name: "Warlord's Casket", nameTh: 'หีบของจอมทัพ', level: 1,
+    weight: 3, value: 24000, rarity: 'epic', stack: 99, cooldown: 0, box: true,
+    desc: 'หีบที่บอสหวงไว้ — ข้างในมีตั้งแต่ของดีไปจนถึงปีก',
+    opens: [
+      { id: 'runed_whetstone', qty: [2, 4], weight: 24 },
+      { id: 'blessing_oil', qty: [1, 2], weight: 20 },
+      { id: 'shard_dawn', qty: [2, 5], weight: 18 },
+      { id: 'steel_ingot', qty: [4, 8], weight: 14 },
+      { id: 'emberheart_amulet', qty: 1, weight: 8 },
+      { id: 'wings_feather', qty: 1, weight: 6 },
+      { id: 'wings_raven', qty: 1, weight: 6 },
+      { id: 'wings_bat', qty: 1, weight: 3 },
+      { id: 'wings_frost', qty: 1, weight: 1 },
+    ],
+  }),
+  dawn_casket: C({
+    id: 'dawn_casket', name: 'Dawn Casket', nameTh: 'หีบรุ่งอรุณ', level: 1,
+    weight: 3, value: 90000, rarity: 'legendary', stack: 99, cooldown: 0, box: true,
+    desc: 'หีบที่เปิดได้ด้วยแสงแรกของวัน — ของข้างในไม่มีของธรรมดาเลย',
+    opens: [
+      { id: 'shard_dawn', qty: [5, 10], weight: 26 },
+      { id: 'blessing_oil', qty: [2, 4], weight: 20 },
+      { id: 'runed_whetstone', qty: [4, 8], weight: 18 },
+      { id: 'wings_frost', qty: 1, weight: 12 },
+      { id: 'wings_bat', qty: 1, weight: 10 },
+      { id: 'wings_ember', qty: 1, weight: 8 },
+      { id: 'wings_dawn', qty: 1, weight: 3 },
+      { id: 'ashguard_plate', qty: 1, weight: 3 },
+    ],
+  }),
+
+  /* ================= WINGS =================
+     Cosmetic first, useful second: small stats, no refining, and the only
+     way to get them is the gacha, a boss box or a scroll. They are what the
+     shard economy exists to chase. `wing` names the style wings.js draws. */
+  wings_feather: A({
+    id: 'wings_feather', name: 'Seraph Wings', nameTh: 'ปีกนางฟ้า', slot: 'wings', level: 20,
+    weight: 6, value: 60000, rarity: 'rare', refinable: false, durability: undefined,
+    wing: { style: 'feather', scale: 1 }, stats: { agi: 2 }, speed: 3,
+    desc: 'ขนนกสีนวล เบาจนแทบไม่รู้สึกว่ามีอะไรอยู่บนหลัง',
+  }),
+  wings_raven: A({
+    id: 'wings_raven', name: 'Raven Wings', nameTh: 'ปีกอีกา', slot: 'wings', level: 20,
+    weight: 6, value: 60000, rarity: 'rare', refinable: false, durability: undefined,
+    wing: { style: 'raven', scale: 1 }, stats: { agi: 2, luk: 1 }, flee: 8,
+    desc: 'ดำสนิทจนกลืนไปกับกลางคืน',
+  }),
+  wings_bat: A({
+    id: 'wings_bat', name: 'Duskfang Wings', nameTh: 'ปีกค้างคาวสนธยา', slot: 'wings', level: 30,
+    weight: 7, value: 120000, rarity: 'epic', refinable: false, durability: undefined,
+    wing: { style: 'bat', scale: 1.05 }, stats: { str: 2, agi: 2 }, crit: 2,
+    desc: 'หนังปีกบางเฉียบ ได้ยินเสียงลมทุกครั้งที่ขยับ',
+  }),
+  wings_frost: A({
+    id: 'wings_frost', name: 'Rimeglass Wings', nameTh: 'ปีกแก้วน้ำแข็ง', slot: 'wings', level: 40,
+    weight: 8, value: 220000, rarity: 'epic', refinable: false, durability: undefined,
+    wing: { style: 'frost', scale: 1.05 }, stats: { int: 3, vit: 2 }, sp: 60, mdef: 4,
+    desc: 'ผลึกที่ไม่ละลาย แม้จะอยู่ในมือของคนเป็น',
+  }),
+  wings_ember: A({
+    id: 'wings_ember', name: 'Emberfall Wings', nameTh: 'ปีกเปลวอังคาร', slot: 'wings', level: 50,
+    weight: 8, value: 380000, rarity: 'legendary', refinable: false, durability: undefined,
+    wing: { style: 'ember', scale: 1.1 }, stats: { str: 3, agi: 3 }, atk: 12, speed: 4,
+    desc: 'ไฟที่ไม่ไหม้เจ้าของ — แต่ไหม้ทุกอย่างที่เข้ามาใกล้',
+  }),
+  wings_dawn: A({
+    id: 'wings_dawn', name: 'Dawnbringer Wings', nameTh: 'ปีกผู้นำรุ่งอรุณ', slot: 'wings', level: 60,
+    weight: 8, value: 700000, rarity: 'legendary', refinable: false, durability: undefined,
+    wing: { style: 'dawn', scale: 1.15 }, stats: { str: 2, agi: 2, int: 2, vit: 2 }, hp: 200, sp: 80, speed: 5,
+    desc: 'แสงแรกของวัน ที่มีคนเพียงไม่กี่คนในเซิร์ฟเวอร์เคยได้ถือ',
+  }),
+
   /* ================= WEAPONS ================= */
   training_blade: W({
     id: 'training_blade', name: 'Training Blade', nameTh: 'มีดฝึกหัด', wclass: 'blade',

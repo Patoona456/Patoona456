@@ -61,6 +61,7 @@ export const MAPS = {
       { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 32, y: 30, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
       { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 36, y: 24, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
       { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 28, y: 24, look: null },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 27, y: 21, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
     ],
     spawns: [],
     // hand-placed town: footprints become walls, the client draws the buildings.

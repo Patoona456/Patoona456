@@ -46,6 +46,25 @@ export const SHOPS = {
       { id: 'iron_ore', stock: 200, restock: 600 },
     ],
   },
+  // Paid for in Dawn Shards, not coin: the sure-thing counterpart to the
+  // shrine's gamble. Anything the gacha can roll can also simply be bought
+  // here, for more shards than the average draw costs - so nobody is ever
+  // forced to gamble for a wing they want.
+  dawn: {
+    id: 'dawn', name: 'ร้านแลกเศษรุ่งอรุณ', currency: 'shard_dawn',
+    stock: [
+      { id: 'runed_whetstone', stock: 999, price: 1 },
+      { id: 'blessing_oil', stock: 999, price: 2 },
+      { id: 'mystery_scroll', stock: 999, price: 1 },
+      { id: 'boss_casket', stock: 999, price: 8 },
+      { id: 'wings_feather', stock: 99, price: 30 },
+      { id: 'wings_raven', stock: 99, price: 30 },
+      { id: 'wings_bat', stock: 99, price: 55 },
+      { id: 'wings_frost', stock: 99, price: 80 },
+      { id: 'wings_ember', stock: 99, price: 140 },
+      { id: 'wings_dawn', stock: 99, price: 260 },
+    ],
+  },
 };
 
 export const NPC_DIALOG = {
@@ -93,6 +112,13 @@ export const NPC_DIALOG = {
   board: {
     greet: 'กระดานภารกิจของเมือง',
     options: [{ label: 'ดูภารกิจ', action: 'quests' }],
+  },
+  oracle: {
+    greet: 'เศษรุ่งอรุณในมือเจ้า… อยากรู้ไหมว่ามันจะกลายเป็นอะไร?',
+    options: [
+      { label: 'เสี่ยงทายที่ศาล', action: 'gacha' },
+      { label: 'ร้านแลกเศษรุ่งอรุณ', action: 'shop', shop: 'dawn' },
+    ],
   },
 };
 
