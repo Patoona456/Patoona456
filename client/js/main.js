@@ -59,6 +59,8 @@ class Game {
       bindTouchControls(this.input, $('#touch'));
       this.watchOrientation();
     }
+    this.syncLayout();
+    addEventListener('resize', () => this.syncLayout());
     this.input.onPadChange = (connected, id) => {
       this.ui.toast(connected ? `เชื่อมต่อจอยแล้ว: ${id?.slice(0, 28) ?? ''}` : 'ถอดจอยออกแล้ว', connected ? 'good' : 'warn');
     };
@@ -68,34 +70,80 @@ class Game {
   }
 
   /**
+   * `landscape-ui` drives the compact, wide layout. A media query cannot
+   * see a page we rotated ourselves, so the class is set here instead.
+   */
+  syncLayout() {
+    // the compact layout is for phones on their side and for genuinely short
+    // windows - a desktop browser is wide, but it is not short
+    const touch = document.body.classList.contains('touch');
+    const phoneOnItsSide = touch && innerWidth > innerHeight;
+    document.body.classList.toggle('landscape-ui',
+      this.forcedLandscape || phoneOnItsSide || innerHeight <= 520);
+  }
+
+  /** Turn the whole page a quarter turn, for browsers that will not. */
+  setForcedLandscape(on) {
+    this.forcedLandscape = on;
+    document.body.classList.toggle('forced-landscape', on);
+    this.input.rotated = on;
+    this.syncLayout();
+    this.renderer.resize();
+  }
+
+  /**
    * The game wants a wide screen: on a phone held upright there is no room
-   * for both the world and the controls. Ask for a rotate, offer to do it
-   * for them where the browser allows it, and let them refuse.
+   * for both the world and the controls. Ask for a rotate, try to do it for
+   * them, and if the browser refuses - an iframe, or iOS, which has no lock
+   * API - turn the page ourselves.
    */
   watchOrientation() {
     const gate = $('#rotate');
     if (!gate) return;
     let dismissed = false;
-    const portrait = () => (screen.orientation?.type ?? '').startsWith('portrait')
-      || (!screen.orientation && innerHeight > innerWidth)
-      || innerHeight > innerWidth;
+    const why = $('#rotate .why');
+    const manual = $('#btn-force-landscape');
+    const portrait = () => innerHeight > innerWidth;
     const update = () => {
-      const show = portrait() && !dismissed;
+      const show = portrait() && !dismissed && !this.forcedLandscape;
       gate.classList.toggle('hidden', !show);
       document.body.classList.toggle('portrait-gate', show);
+      // a real rotate beats our fake one, so drop it as soon as one happens
+      if (this.forcedLandscape && !portrait()) this.setForcedLandscape(false);
+      this.syncLayout();
+    };
+
+    const fullscreenThenLock = async () => {
+      try {
+        if (!document.fullscreenElement) {
+          const done = new Promise((res) => addEventListener('fullscreenchange', res, { once: true }));
+          await document.documentElement.requestFullscreen?.();
+          await Promise.race([done, new Promise((r) => setTimeout(r, 600))]);
+        }
+      } catch { /* fullscreen refused; the lock below may still work */ }
+      try {
+        await screen.orientation?.lock?.('landscape');
+        return true;
+      } catch { return false; }
     };
 
     $('#btn-landscape')?.addEventListener('click', async () => {
-      try {
-        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
-      } catch { /* refused: the lock below may still work */ }
-      try {
-        await screen.orientation?.lock?.('landscape');
-      } catch {
-        // iOS has no orientation lock - the player turns the phone themselves
-        this.ui.toast('เบราว์เซอร์นี้ล็อกแนวนอนไม่ได้ หมุนเครื่องเองได้เลย', 'warn');
+      const locked = await fullscreenThenLock();
+      // give the browser a moment to actually turn the screen
+      await new Promise((r) => setTimeout(r, 350));
+      if (locked && !portrait()) { update(); return; }
+      if (why) {
+        why.textContent = 'เบราว์เซอร์นี้หมุนจอให้ไม่ได้ (มักเกิดกับ iOS หรือหน้าที่ฝังในเว็บอื่น) — กดปุ่มด้านล่างให้เกมหมุนภาพเอง';
+        why.classList.remove('hidden');
       }
+      manual?.classList.remove('hidden');
       update();
+    });
+    manual?.addEventListener('click', () => {
+      this.setForcedLandscape(true);
+      dismissed = true;
+      update();
+      this.ui.toast('หมุนภาพเป็นแนวนอนแล้ว — ถือเครื่องตะแคงได้เลย', 'good');
     });
     $('#btn-stay-portrait')?.addEventListener('click', () => { dismissed = true; update(); });
 

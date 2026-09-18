@@ -60,10 +60,14 @@ export class Renderer {
 
   resize() {
     const dpr = Math.min(2, devicePixelRatio || 1);
-    this.canvas.width = Math.floor(innerWidth * dpr);
-    this.canvas.height = Math.floor(innerHeight * dpr);
-    this.canvas.style.width = innerWidth + 'px';
-    this.canvas.style.height = innerHeight + 'px';
+    // when the page itself is turned a quarter, width and height swap
+    const rotated = document.body.classList.contains('forced-landscape');
+    const w = rotated ? innerHeight : innerWidth;
+    const h = rotated ? innerWidth : innerHeight;
+    this.canvas.width = Math.floor(w * dpr);
+    this.canvas.height = Math.floor(h * dpr);
+    this.canvas.style.width = w + 'px';
+    this.canvas.style.height = h + 'px';
     this.dpr = dpr;
     this.applyZoom();
     this.ctx.imageSmoothingEnabled = false;
@@ -71,7 +75,8 @@ export class Renderer {
 
   /** Base zoom follows the window; the player's step scales it. */
   applyZoom() {
-    const base = innerWidth < 720 ? 2 : innerWidth < 1400 ? 2.25 : 2.6;
+    const wide = document.body.classList.contains('forced-landscape') ? innerHeight : innerWidth;
+    const base = wide < 720 ? 2 : wide < 1400 ? 2.25 : 2.6;
     const step = ZOOM_STEPS[this.zoomStep] ?? ZOOM_STEPS[1];
     this.zoom = Math.round(base * step.mul * 100) / 100;
   }

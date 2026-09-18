@@ -34,6 +34,7 @@ export class Input {
     this.pressed = new Set();     // edge, cleared by consume()
     this.released = new Set();
     this.padIndex = null;
+    this.rotated = false;         // true while the page is force-rotated
     this.lastSource = 'keyboard';
     this.keys = new Set();
     this.touch = { move: { x: 0, y: 0 }, buttons: new Set() };
@@ -48,6 +49,7 @@ export class Input {
     });
     addEventListener('gamepaddisconnected', () => {
       this.padIndex = null;
+    this.rotated = false;         // true while the page is force-rotated
       this.onPadChange?.(false);
     });
     addEventListener('blur', () => { this.keys.clear(); this.held.clear(); });
@@ -142,6 +144,8 @@ export function bindTouchControls(input, root) {
     const t = [...(e.changedTouches ?? [e])].find((x) => (x.identifier ?? 'mouse') === sid);
     if (!t) return;
     let dx = t.clientX - cx, dy = t.clientY - cy;
+    // the page is turned a quarter clockwise, so undo that on the thumb vector
+    if (input.rotated) { const sx = dx; dx = dy; dy = -sx; }
     const len = Math.hypot(dx, dy) || 1;
     const clamped = Math.min(len, R);
     dx = dx / len * clamped; dy = dy / len * clamped;

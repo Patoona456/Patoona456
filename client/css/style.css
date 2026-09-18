@@ -513,107 +513,123 @@ body.touch #btn-target { display: none; }   /* the action row already cycles tar
   100% { transform: rotate(0deg); }
 }
 #rotate h2 { margin: 0; font-family: var(--font-display); font-size: 20px; }
+#rotate .why { color: var(--warn); font-size: 12px; line-height: 1.6; margin: 0; }
+#rotate .why.hidden { display: none !important; }
 #rotate p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
 #rotate .btn { width: 100%; padding: 11px; }
 
-/* landscape phones and small tablets: the layout the game is designed for */
-@media (pointer: coarse) and (orientation: landscape), (max-height: 520px) {
-  #hud { font-size: 11px; }
-  #vitals { width: 210px; padding: 6px; gap: 6px; }
-  .portrait { width: 40px; height: 40px; }
-  #vitals .name b { font-size: 12px; }
-  #vitals .bar { height: 10px; }
-  #me-stats { display: none; }
-  #currencies { top: 6px; left: 224px; gap: 4px; }
-  .pill { padding: 3px 8px 3px 4px; font-size: 11px; }
-  #topright { top: 6px; right: 6px; }
-  .map-card { padding: 4px; gap: 3px; }
-  #minimap { width: 84px; height: 84px; }
-  .map-time { font-size: 10px; }
-  .map-foot { font-size: 9px; }
-  #quest-track { display: none; }
-  /* the rail hangs under the map card instead of fighting it for the corner */
-  #menu-buttons {
-    top: 108px; bottom: auto; transform: none; right: 6px; gap: 4px;
-    grid-template-columns: repeat(2, auto);   /* two short columns, clear of the thumbs */
-  }
-  #menu-buttons .btn { padding: 6px; min-width: 0; grid-template-columns: 20px; }
-  #menu-buttons .btn span { display: none; }   /* icons only: the labels do not fit */
-  #menu-buttons svg { width: 17px; height: 17px; }
-  #target-frame { width: 190px; top: 6px; }
-  #statuses { top: 62px; left: 224px; font-size: 14px; }
-  #toasts { top: 74px; }
-  /* experience moves up under the vitals card: the bottom belongs to thumbs */
-  #expstrip {
-    top: 92px; bottom: auto; left: 8px; right: auto; width: 210px;
-    display: grid; grid-template-columns: auto 1fr; align-items: center;
-    gap: 3px 6px; padding: 0; background: none;
-  }
-  #expstrip .bar { height: 7px; flex: none; }
-  #expstrip .bar span { line-height: 7px; font-size: 7px; }
-  .lvtag { font-size: 9px; }
-  /* the chat tabs scroll sideways instead of wrapping into two rows */
-  #chat-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  #chat-tabs::-webkit-scrollbar { display: none; }
-  #chat-tabs .tab { flex: none; white-space: nowrap; }
-  .toast { font-size: 11px; padding: 5px 12px; max-width: 76vw; }
-
-  /* controls hug the two bottom corners, clear of each other */
-  #stick { left: 10px; bottom: calc(10px + var(--safe-b)); width: 108px; height: 108px; }
-  #stick-knob { width: 46px; height: 46px; }
-  #buttons {
-    right: 10px; bottom: calc(10px + var(--safe-b));
-    grid-template-columns: repeat(3, 46px); gap: 6px;
-  }
-  .tbtn { width: 46px; height: 46px; font-size: 17px; }
-  .tbtn.big { width: 60px; height: 60px; font-size: 22px; }
-  .tbtn.small { width: 38px; height: 38px; font-size: 12px; }
-
-  body.touch #actionbar { right: 86px; bottom: calc(126px + var(--safe-b)); gap: 4px; }
-  body.touch .round { width: 38px; height: 38px; font-size: 10px; }
-  body.touch #quick-items .slot { width: 36px; height: 36px; }
-
-  /* chat sits above the stick, never under the thumb */
-  body.touch #chat, #chat {
-    left: 8px; bottom: calc(124px + var(--safe-b));
-    width: min(200px, 26vw);
-  }
-  #chat-log { max-height: 44px; font-size: 11px; padding: 4px 6px; }
-  #chat-tabs .tab { font-size: 10px; padding: 1px 6px; }
-  #chat-form select, #chat-form input { padding: 4px 6px; font-size: 11px; }
-
-  .win.window { max-height: 92vh; }
-  .win.window > header { padding: 7px 10px; }
-  .win.window > header h2 { font-size: 13px; }
-  .win.window .body { padding: 10px; gap: 8px; }
+/* When the browser will not turn the screen for us - an iframe, or iOS,
+   which has no lock API at all - we turn the page ourselves: the whole
+   document is rotated a quarter turn inside the upright viewport. */
+body.forced-landscape {
+  position: fixed; top: 0; left: 0;
+  width: 100vh; height: 100vw;
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+  overflow: hidden;
 }
 
+/* The layout the game is designed for: landscape phones, short windows, and
+   any page we turned ourselves. JS keeps `landscape-ui` in sync, because a
+   media query cannot see a page we rotated with a transform. */
+body.landscape-ui #hud { font-size: 11px; }
+body.landscape-ui #vitals { top: 8px; left: 8px; width: 210px; padding: 6px; gap: 6px; }
+body.landscape-ui .portrait { width: 40px; height: 40px; }
+body.landscape-ui #vitals .name b { font-size: 12px; }
+body.landscape-ui #vitals .bar { height: 10px; }
+body.landscape-ui #me-stats { display: none; }
+body.landscape-ui #currencies { top: 6px; left: 224px; gap: 4px; }
+body.landscape-ui .pill { padding: 3px 8px 3px 4px; font-size: 11px; }
+body.landscape-ui #topright { top: 6px; right: 6px; }
+body.landscape-ui .map-card { padding: 4px; gap: 3px; }
+body.landscape-ui #minimap { width: 84px; height: 84px; }
+body.landscape-ui .map-time { font-size: 10px; }
+body.landscape-ui .map-foot { font-size: 9px; }
+body.landscape-ui #quest-track { display: none; }
+/* the rail hangs under the map card instead of fighting it for the corner */
+body.landscape-ui #menu-buttons {
+  top: 160px; bottom: auto; left: auto; transform: none; right: 6px; gap: 4px;
+  grid-template-columns: repeat(3, auto);   /* two short rows, under the map, clear of the thumbs */
+}
+body.landscape-ui #menu-buttons .btn { padding: 6px; min-width: 0; grid-template-columns: 20px; }
+body.landscape-ui #menu-buttons .btn span { display: none; }   /* icons only: the labels do not fit */
+body.landscape-ui #menu-buttons svg { width: 17px; height: 17px; }
+body.landscape-ui #target-frame { width: 190px; top: 6px; left: 50%; transform: translateX(-50%); }
+body.landscape-ui #statuses { top: 62px; left: 224px; font-size: 14px; }
+body.landscape-ui #btn-target { display: none; }
+body.landscape-ui #toasts { top: 74px; }
+/* experience moves up under the vitals card: the bottom belongs to thumbs */
+body.landscape-ui #expstrip {
+  top: 92px; bottom: auto; left: 8px; right: auto; width: 210px;
+  display: grid; grid-template-columns: auto 1fr; align-items: center;
+  gap: 3px 6px; padding: 0; background: none;
+}
+body.landscape-ui #expstrip .bar { height: 7px; flex: none; }
+body.landscape-ui #expstrip .bar span { line-height: 7px; font-size: 7px; }
+body.landscape-ui .lvtag { font-size: 9px; }
+/* the chat tabs scroll sideways instead of wrapping into two rows */
+body.landscape-ui #chat-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+body.landscape-ui #chat-tabs::-webkit-scrollbar { display: none; }
+body.landscape-ui #chat-tabs .tab { flex: none; white-space: nowrap; }
+body.landscape-ui .toast { font-size: 11px; padding: 5px 12px; max-width: 76vw; }
+
+/* controls hug the two bottom corners, clear of each other */
+body.landscape-ui #stick { left: 10px; right: auto; top: auto; bottom: calc(10px + var(--safe-b)); width: 108px; height: 108px; }
+body.landscape-ui #stick-knob { width: 46px; height: 46px; }
+body.landscape-ui #buttons {
+  right: 10px; left: auto; top: auto; bottom: calc(10px + var(--safe-b));
+  grid-template-columns: repeat(3, 46px); gap: 6px;
+}
+body.landscape-ui .tbtn { width: 46px; height: 46px; font-size: 17px; }
+body.landscape-ui .tbtn.big { width: 60px; height: 60px; font-size: 22px; }
+body.landscape-ui .tbtn.small { width: 38px; height: 38px; font-size: 12px; }
+
+body.landscape-ui #actionbar {
+  left: auto; right: 86px; bottom: calc(126px + var(--safe-b)); top: auto;
+  flex-direction: row; align-items: center; gap: 4px;
+}
+body.landscape-ui .round { width: 38px; height: 38px; font-size: 10px; }
+body.landscape-ui #quick-items .slot { width: 36px; height: 36px; }
+
+/* chat sits above the stick, never under the thumb */
+body.landscape-ui #chat {
+  left: 8px; right: auto; top: auto; bottom: calc(124px + var(--safe-b));
+  width: min(200px, 26%);
+}
+body.landscape-ui #chat-log { max-height: 44px; font-size: 11px; padding: 4px 6px; }
+body.landscape-ui #chat-tabs .tab { font-size: 10px; padding: 1px 6px; }
+body.landscape-ui #chat-form select, body.landscape-ui #chat-form input { padding: 4px 6px; font-size: 11px; }
+
+body.landscape-ui .win.window { max-height: 92%; width: min(720px, 94%); }
+body.landscape-ui .win.window > header { padding: 7px 10px; }
+body.landscape-ui .win.window > header h2 { font-size: 13px; }
+body.landscape-ui .win.window .body { padding: 10px; gap: 8px; }
 /* upright phones: keep it playable, but every row gets its own band */
 @media (pointer: coarse) and (orientation: portrait) {
-  #vitals { width: min(210px, 54vw); }
-  #currencies { top: 100px; left: 8px; }
-  #topright { top: 8px; right: 8px; }
-  #minimap { width: 76px; height: 76px; }
-  #expstrip {
+  body:not(.landscape-ui) #vitals { width: min(210px, 54vw); }
+  body:not(.landscape-ui) #currencies { top: 100px; left: 8px; }
+  body:not(.landscape-ui) #topright { top: 8px; right: 8px; }
+  body:not(.landscape-ui) #minimap { width: 76px; height: 76px; }
+  body:not(.landscape-ui) #expstrip {
     top: 132px; bottom: auto; left: 8px; right: auto; width: min(210px, 54vw);
     display: grid; grid-template-columns: auto 1fr; align-items: center;
     gap: 3px 6px; padding: 0; background: none;
   }
-  #expstrip .bar { height: 7px; flex: none; }
-  #expstrip .bar span { line-height: 7px; font-size: 7px; }
-  #chat-tabs { flex-wrap: nowrap; overflow-x: auto; }
-  #chat-tabs .tab { flex: none; white-space: nowrap; }
-  #target-frame { top: 190px; left: 8px; transform: none; width: min(220px, 58vw); }
-  #toasts { top: 250px; }
-  #statuses { top: 228px; left: 8px; }
-  body.touch #actionbar {
+  body:not(.landscape-ui) #expstrip .bar { height: 7px; flex: none; }
+  body:not(.landscape-ui) #expstrip .bar span { line-height: 7px; font-size: 7px; }
+  body:not(.landscape-ui) #chat-tabs { flex-wrap: nowrap; overflow-x: auto; }
+  body:not(.landscape-ui) #chat-tabs .tab { flex: none; white-space: nowrap; }
+  body:not(.landscape-ui) #target-frame { top: 190px; left: 8px; transform: none; width: min(220px, 58vw); }
+  body:not(.landscape-ui) #toasts { top: 250px; }
+  body:not(.landscape-ui) #statuses { top: 228px; left: 8px; }
+  body:not(.landscape-ui).touch #actionbar {
     right: 8px; bottom: calc(300px + var(--safe-b));
     flex-direction: column; align-items: flex-end;
   }
-  body.touch #chat { left: 8px; right: auto; width: min(196px, 48vw); bottom: calc(236px + var(--safe-b)); }
-  #chat-log { max-height: 56px; }
-  #stick { left: 12px; bottom: calc(16px + var(--safe-b)); }
-  #buttons { right: 12px; bottom: calc(96px + var(--safe-b)); }
+  body:not(.landscape-ui).touch #chat { left: 8px; right: auto; width: min(196px, 48vw); bottom: calc(236px + var(--safe-b)); }
+  body:not(.landscape-ui) #chat-log { max-height: 56px; }
+  body:not(.landscape-ui) #stick { left: 12px; bottom: calc(16px + var(--safe-b)); }
+  body:not(.landscape-ui) #buttons { right: 12px; bottom: calc(96px + var(--safe-b)); }
 }
 
 /* ============================ toasts, flash, banner ============================ */
