@@ -1,7 +1,7 @@
 // Bootstrap: screens -> world loop. Owns client state and talks to server.
 import { Net } from './net.js';
 import { Input, bindTouchControls } from './input.js';
-import { Renderer } from './renderer.js';
+import { Renderer, ZOOM_STEPS } from './renderer.js';
 import { UI, loadTheme } from './ui.js';
 import { Audio } from './audio.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
@@ -501,7 +501,7 @@ class Game {
     }
     if (inp.consume('zoomOut')) this.setZoom(this.renderer.zoomStep - 1);
     if (inp.consume('zoomIn')) this.setZoom(this.renderer.zoomStep + 1);
-    if (inp.consume('zoomCycle')) this.setZoom((this.renderer.zoomStep + 1) % 3);
+    if (inp.consume('zoomCycle')) this.setZoom((this.renderer.zoomStep + 1) % ZOOM_STEPS.length);
     if (inp.consume('menu')) this.ui.toggle('inventory');
     if (inp.consume('map')) this.ui.toggle('quests');
     for (let i = 1; i <= 6; i++) if (inp.consume('skill' + i)) this.useHotbar(i - 1);

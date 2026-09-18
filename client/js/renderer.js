@@ -11,20 +11,30 @@ import { skyAt } from '../../shared/daycycle.js';
 
 // Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
 export const ZOOM_STEPS = [
-  { key: 'far', label: 'ไกล', note: 'เห็นสนามรบกว้างที่สุด', mul: 0.62 },
+  { key: 'xfar', label: 'ไกลมาก', note: 'เห็นทั้งย่าน เหมาะกับจอมือถือแนวนอน', mul: 0.46 },
+  { key: 'far', label: 'ไกล', note: 'เห็นสนามรบกว้าง', mul: 0.62 },
   { key: 'mid', label: 'กลาง', note: 'ระยะมาตรฐาน', mul: 0.80 },
   { key: 'near', label: 'ใกล้', note: 'เห็นตัวละครชัดที่สุด', mul: 1.00 },
 ];
 const ZOOM_KEY = 'emberfall-zoom';
+const DEFAULT_ZOOM = ZOOM_STEPS.findIndex((z) => z.key === 'mid');
 
+/**
+ * Remembered by key, not by index: adding a step at the front must not
+ * silently move everyone's camera. Older builds stored the index, so those
+ * three values are translated once.
+ */
 function savedZoomStep() {
   try {
     const raw = localStorage.getItem(ZOOM_KEY);
-    if (raw === null) return 1;
-    const n = Number(raw);
-    if (Number.isInteger(n) && n >= 0 && n < ZOOM_STEPS.length) return n;
+    if (raw === null) return DEFAULT_ZOOM;
+    const byKey = ZOOM_STEPS.findIndex((z) => z.key === raw);
+    if (byKey >= 0) return byKey;
+    const legacy = ['far', 'mid', 'near'][Number(raw)];
+    const migrated = ZOOM_STEPS.findIndex((z) => z.key === legacy);
+    if (migrated >= 0) return migrated;
   } catch { /* no storage */ }
-  return 1;
+  return DEFAULT_ZOOM;
 }
 
 // How far each soft prop leans, as a horizontal skew.
@@ -85,7 +95,7 @@ export class Renderer {
   setZoomStep(n) {
     this.zoomStep = Math.max(0, Math.min(ZOOM_STEPS.length - 1, n | 0));
     this.applyZoom();
-    try { localStorage.setItem(ZOOM_KEY, String(this.zoomStep)); } catch { /* no storage */ }
+    try { localStorage.setItem(ZOOM_KEY, ZOOM_STEPS[this.zoomStep].key); } catch { /* no storage */ }
     return ZOOM_STEPS[this.zoomStep];
   }
 
