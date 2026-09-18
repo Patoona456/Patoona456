@@ -84,11 +84,13 @@ export const MAPS = {
       { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [32, 42], label: 'เอมเบอร์โฮลด์' },
       { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
     ],
+    // the north strip by the town gate stays gentle; anything that bites
+    // lives further out, so a brand new character has somewhere to start
     spawns: [
       { mob: 'mire_slime', count: 24 },
-      { mob: 'ember_wisp', count: 7 },
-      { mob: 'dusk_bat', count: 10 },
-      { mob: 'thistle_sprite', count: 8 },
+      { mob: 'ember_wisp', count: 7, area: [4, 26, 72, 34] },
+      { mob: 'dusk_bat', count: 10, area: [4, 30, 72, 30] },
+      { mob: 'thistle_sprite', count: 8, area: [4, 34, 72, 26] },
     ],
   },
 
@@ -325,7 +327,7 @@ export function generateProps(map, grid) {
   }));
   const set = PROP_SETS[map.theme] ?? PROP_SETS.grass;
   const total = set.reduce((n, [, w]) => n + w, 0);
-  const density = map.kind === 'town' ? 0.06 : 0.13;
+  const density = map.kind === 'town' ? 0.07 : 0.17;
   const props = [];
   for (let y = 1; y < map.height - 1; y++) {
     for (let x = 1; x < map.width - 1; x++) {

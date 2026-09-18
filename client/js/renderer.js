@@ -2,6 +2,7 @@
 import { TILE, SPRITE } from '../../shared/constants.js';
 import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
 import { propSprite, GLOWING } from './props.js';
+import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, playerLayers, monsterLayers, npcLayers } from './sprites.js';
 
@@ -10,88 +11,6 @@ const rand = (seed) => {
   return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
 };
 
-/** Tile art is generated once into 32x32 canvases - no tileset asset needed. */
-function makeTile(kind, theme, variant = 0) {
-  const c = document.createElement('canvas');
-  c.width = c.height = TILE;
-  const g = c.getContext('2d');
-  const r = rand(kind * 7919 + theme.length * 13 + variant * 104729);
-  const palettes = {
-    [TILES.GRASS]: ['#3f6b3a', '#47773f', '#355c31'],
-    [TILES.PATH]: ['#7a6a4e', '#857459', '#6d5e45'],
-    [TILES.WATER]: ['#274b6d', '#2d5880', '#1f3d59'],
-    [TILES.TREE]: ['#244224', '#1c351d', '#2e5230'],
-    [TILES.ROCK]: ['#5a5a63', '#4a4a52', '#6a6a74'],
-    [TILES.SAND]: ['#a8996c', '#b5a678', '#9a8b60'],
-    [TILES.FLOOR]: ['#4a4650', '#524d59', '#413d47'],
-    [TILES.WALL]: ['#2a2830', '#232129', '#332f3a'],
-    [TILES.BRIDGE]: ['#6b4f34', '#77593c', '#5d442c'],
-    [TILES.SNOW]: ['#cdd8e4', '#dae3ee', '#bfcbd9'],
-    [TILES.LAVA]: ['#8c2f10', '#b84a16', '#6d2209'],
-    [TILES.FLOWER]: ['#3f6b3a', '#47773f', '#c26a8c'],
-    [TILES.ASH]: ['#4a4440', '#565049', '#3e3936'],
-    [TILES.MOSS]: ['#3d5a3c', '#456348', '#334c33'],
-  };
-  if (theme === 'town') {
-    palettes[TILES.FLOOR] = ['#9a8f7c', '#a89d88', '#8b806e'];   // warm cobble, not dungeon stone
-    palettes[TILES.WALL] = ['#6d6355', '#5b5246', '#7d7365'];
-  }
-  const pal = palettes[kind] ?? palettes[TILES.GRASS];
-  g.fillStyle = pal[0];
-  g.fillRect(0, 0, TILE, TILE);
-  for (let i = 0; i < 46; i++) {
-    g.fillStyle = pal[1 + (r() < 0.5 ? 0 : 1)];
-    g.globalAlpha = 0.25 + r() * 0.4;
-    const s = 1 + Math.floor(r() * 3);
-    g.fillRect(Math.floor(r() * TILE), Math.floor(r() * TILE), s, s);
-  }
-  g.globalAlpha = 1;
-
-  if (kind === TILES.TREE) {
-    // offset and resize per variant so a forest never looks like a grid
-    const ox = [0, -4, 5][variant % 3], oy = [0, 3, -2][variant % 3];
-    const rr = [12, 10, 13][variant % 3];
-    g.fillStyle = '#2b1d12';
-    g.fillRect(14 + ox, 18 + oy, 4, 12);
-    g.fillStyle = '#254a25';
-    g.beginPath(); g.arc(16 + ox, 16 + oy, rr, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#2f5a2e';
-    g.beginPath(); g.arc(14 + ox, 14 + oy, rr * 0.78, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#3d7038';
-    g.beginPath(); g.arc(12 + ox, 12 + oy, rr * 0.5, 0, Math.PI * 2); g.fill();
-  } else if (kind === TILES.WALL) {
-    g.strokeStyle = 'rgba(0,0,0,0.35)';
-    g.strokeRect(0.5, 0.5, TILE - 1, TILE - 1);
-    g.fillStyle = 'rgba(255,255,255,0.06)';
-    g.fillRect(2, 2, TILE - 4, 3);
-  } else if (kind === TILES.ROCK) {
-    // an outcrop, not a tile: irregular per variant so ridges read as terrain
-    const ground = { ice: '#cdd8e4', rock: '#a8996c', marsh: '#3d5a3c', crypt: '#4a4650' }[theme] ?? '#3f6b3a';
-    g.fillStyle = ground;
-    g.fillRect(0, 0, TILE, TILE);
-    const o = [[0, 0], [-3, 2], [3, -2]][variant % 3];
-    g.fillStyle = pal[1];
-    g.beginPath();
-    g.moveTo(1 + o[0], 24 + o[1]); g.lineTo(6 + o[0], 8 + o[1]); g.lineTo(18 + o[0], 3 + o[1]);
-    g.lineTo(29 + o[0], 11 + o[1]); g.lineTo(31 + o[0], 27 + o[1]); g.lineTo(16 + o[0], 32 + o[1]);
-    g.closePath(); g.fill();
-    g.fillStyle = pal[2];
-    g.beginPath();
-    g.moveTo(6 + o[0], 12 + o[1]); g.lineTo(17 + o[0], 6 + o[1]); g.lineTo(24 + o[0], 13 + o[1]);
-    g.lineTo(13 + o[0], 18 + o[1]);
-    g.closePath(); g.fill();
-    g.globalAlpha = 0.3; g.fillStyle = '#000';
-    g.fillRect(2 + o[0], 26 + o[1], 26, 5);
-    g.globalAlpha = 1;
-  } else if (kind === TILES.FLOWER) {
-    for (let i = 0; i < 4; i++) {
-      g.fillStyle = ['#e0d060', '#d86e9a', '#cfd7ea'][Math.floor(r() * 3)];
-      g.fillRect(4 + Math.floor(r() * 24), 4 + Math.floor(r() * 24), 2, 2);
-    }
-  }
-  return c;
-}
-
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -99,7 +18,6 @@ export class Renderer {
     this.ctx.imageSmoothingEnabled = false;
     this.zoom = 2;
     this.camera = { x: 0, y: 0 };
-    this.tiles = new Map();
     this.zone = null;
     this.grid = null;
     this.floaters = [];
@@ -123,17 +41,18 @@ export class Renderer {
   setZone(zonePayload) {
     this.zone = zonePayload;
     this.grid = decodeGrid(zonePayload.rle, zonePayload.width * zonePayload.height);
-    this.tiles.clear();
-    // three variants per tile kind kills the obvious repeating grid
-    for (const kind of Object.values(TILES)) {
-      this.tiles.set(kind, [0, 1, 2].map((v) => makeTile(kind, zonePayload.theme ?? 'grass', v)));
-    }
-    this.props = generateProps(
+
+    const painted = buildTerrain(zonePayload, this.grid);
+    this.terrain = painted.canvas;
+    this.water = painted.water;
+
+    const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
         theme: zonePayload.theme ?? 'grass', kind: zonePayload.kind,
         structures: zonePayload.structures ?? [] },
       this.grid
-    ).sort((a, b) => a.y - b.y);
+    );
+    this.props = scenery.concat(painted.overlays).sort((a, b) => a.y - b.y);
     this._miniCache = null;
   }
 
@@ -193,7 +112,7 @@ export class Renderer {
       ? this.props.filter((p) => p.x > view.x0 && p.x < view.x1 && p.y > view.y0 && p.y < view.y1)
       : [];
 
-    this.drawTerrain(ctx, halfW, halfH);
+    this.drawTerrain(ctx, halfW, halfH, now);
     this.drawWarps(ctx, now);
     this.drawGroundFx(ctx, state, now);
     this.drawProps(ctx, visibleProps, false, now);
@@ -206,19 +125,35 @@ export class Renderer {
     this.drawFloaters(ctx, s);
   }
 
-  drawTerrain(ctx, halfW, halfH) {
-    const x0 = Math.max(0, Math.floor((this.camera.x - halfW) / TILE) - 1);
-    const y0 = Math.max(0, Math.floor((this.camera.y - halfH) / TILE) - 1);
-    const x1 = Math.min(this.zone.width - 1, Math.ceil((this.camera.x + halfW) / TILE) + 1);
-    const y1 = Math.min(this.zone.height - 1, Math.ceil((this.camera.y + halfH) / TILE) + 1);
-    for (let y = y0; y <= y1; y++) {
-      for (let x = x0; x <= x1; x++) {
-        const t = this.grid[y * this.zone.width + x];
-        const set = this.tiles.get(t) ?? this.tiles.get(TILES.GRASS);
-        const v = (hash2(x, y, this.zone.seed ?? 1) * 3) | 0;
-        ctx.drawImage(set[v] ?? set[0], x * TILE, y * TILE);
-      }
+  drawTerrain(ctx, halfW, halfH, now) {
+    if (!this.terrain) return;
+    const x0 = Math.max(0, Math.floor(this.camera.x - halfW) - TILE);
+    const y0 = Math.max(0, Math.floor(this.camera.y - halfH) - TILE);
+    const x1 = Math.min(this.terrain.width, Math.ceil(this.camera.x + halfW) + TILE);
+    const y1 = Math.min(this.terrain.height, Math.ceil(this.camera.y + halfH) + TILE);
+    if (x1 <= x0 || y1 <= y0) return;
+    ctx.drawImage(this.terrain, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+    this.drawWaterShimmer(ctx, x0, y0, x1, y1, now);
+  }
+
+  /** Water is painted flat; the movement is added live so it never looks dead. */
+  drawWaterShimmer(ctx, x0, y0, x1, y1, now) {
+    if (!this.water?.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const [tx, ty] of this.water) {
+      const px = tx * TILE, py = ty * TILE;
+      if (px + TILE < x0 || px > x1 || py + TILE < y0 || py > y1) continue;
+      const t = now / 900 + tx * 0.7 + ty * 0.4;
+      const a = 0.05 + Math.sin(t) * 0.035;
+      if (a <= 0) continue;
+      ctx.fillStyle = `rgba(190,225,255,${a})`;
+      ctx.beginPath();
+      ctx.ellipse(px + TILE / 2 + Math.sin(t * 1.3) * 5, py + TILE / 2 + Math.cos(t) * 3,
+        TILE * 0.42, TILE * 0.16, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
+    ctx.restore();
   }
 
   drawWarps(ctx, now) {
