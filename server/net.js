@@ -9,6 +9,7 @@ import * as Party from './game/party.js';
 import * as Quests from './game/quests.js';
 import { ITEMS, RECIPES } from '../shared/data/items.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
+import { MAPS } from '../shared/data/maps.js';
 import { dist } from './game/monster.js';
 
 const RATE_WINDOW = 1000;
@@ -271,6 +272,15 @@ export class Conn {
         this.sendInventory();
         this.send(Econ.marketList({}));
       });
+      // dev-only teleport, for screenshots and QA. Off unless EMBERFALL_DEV=1.
+      case 'devWarp': {
+        if (process.env.EMBERFALL_DEV !== '1') return this.error('ปิดใช้งานอยู่');
+        const map = MAPS[m.map];
+        if (!map) return this.error('ไม่พบแผนที่');
+        const [tx, ty] = m.at ?? map.spawnPoint;
+        this.world.warpPlayer(p, m.map, tx * TILE, ty * TILE);
+        return;
+      }
       case OP.PARTY: return this.partyCmd(m);
       // the quest log is readable anywhere; only turn-ins need an NPC
 

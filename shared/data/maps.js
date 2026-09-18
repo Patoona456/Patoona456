@@ -51,16 +51,29 @@ export const MAPS = {
       { x: 2, y: 24, w: 2, h: 4, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
     ],
     npcs: [
-      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 28, y: 18, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 35, y: 18, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
-      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 28, y: 30, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 35, y: 30, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
-      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 32, y: 16, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 32, y: 31, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
-      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 35, y: 24, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 29, y: 24, look: null },
+      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 21, y: 20, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 42, y: 20, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
+      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 21, y: 28, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 42, y: 28, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
+      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 32, y: 15, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 32, y: 30, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 36, y: 24, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 28, y: 24, look: null },
     ],
     spawns: [],
+    // hand-placed town: footprints become walls, the client draws the buildings
+    structures: [
+      { kind: 'house', x: 29, y: 10, w: 6, h: 4, roof: '#b0b4c0', sign: 'วิหาร' },
+      { kind: 'house', x: 19, y: 15, w: 5, h: 4, roof: '#8c4a3a', sign: 'ร้านค้า' },
+      { kind: 'house', x: 40, y: 15, w: 5, h: 4, roof: '#6a5a8c', sign: 'โรงตีเหล็ก' },
+      { kind: 'house', x: 19, y: 30, w: 5, h: 4, roof: '#4a7a6a', sign: 'คลัง' },
+      { kind: 'house', x: 40, y: 30, w: 5, h: 4, roof: '#8c7a3a', sign: 'ตลาด' },
+      { kind: 'stall', x: 26, y: 20, w: 3, h: 2 },
+      { kind: 'stall', x: 36, y: 20, w: 3, h: 2 },
+      { kind: 'stall', x: 26, y: 28, w: 3, h: 2 },
+      { kind: 'stall', x: 36, y: 28, w: 3, h: 2 },
+      { kind: 'fountain', x: 31, y: 23, w: 3, h: 3 },
+    ],
   },
 
   greenmire: {
@@ -196,30 +209,34 @@ export function buildGrid(map) {
     }
   };
   const path = theme === 'crypt' || theme === 'ice' ? T.FLOOR : T.PATH;
+  const roadWidth = map.kind === 'town' ? 2 : 0;   // fields get a thin trail, not a highway
   let cx = 2, cy = Math.floor(h / 2);
   const steps = w + h;
   for (let s = 0; s < steps; s++) {
-    carve(cx, cy, 2, path);
+    carve(cx, cy, roadWidth, path);
     if (r() < 0.62 && cx < w - 3) cx++;
     else cy += r() < 0.5 ? 1 : -1;
     cy = Math.max(3, Math.min(h - 4, cy));
   }
   // vertical spine
   cx = Math.floor(w / 2);
-  for (let y2 = 2; y2 < h - 2; y2++) carve(cx, y2, 2, path);
+  for (let y2 = 2; y2 < h - 2; y2++) carve(cx, y2, map.kind === 'town' ? 2 : 1, path);
 
   if (map.kind === 'town') {
-    // plaza + building blocks, all walkable except the walls
-    carve(Math.floor(w / 2), Math.floor(h / 2), 10, T.FLOOR);
-    for (const [bx, by, bw, bh] of [[20, 18, 8, 6], [36, 18, 8, 6], [20, 28, 8, 6], [36, 28, 8, 6]]) {
-      for (let y2 = by; y2 < by + bh; y2++) {
-        for (let x2 = bx; x2 < bx + bw; x2++) {
-          const onEdge = y2 === by || y2 === by + bh - 1 || x2 === bx || x2 === bx + bw - 1;
-          g[y2 * w + x2] = onEdge ? T.WALL : T.FLOOR;
+    carve(Math.floor(w / 2), Math.floor(h / 2), 11, T.FLOOR);
+    for (const st of map.structures ?? []) {
+      for (let y2 = st.y; y2 < st.y + st.h; y2++) {
+        for (let x2 = st.x; x2 < st.x + st.w; x2++) {
+          if (x2 < 1 || y2 < 1 || x2 >= w - 1 || y2 >= h - 1) continue;
+          g[y2 * w + x2] = st.kind === 'fountain' ? T.WATER : T.WALL;
         }
       }
-      // doorway
-      g[(by + bh - 1) * w + (bx + Math.floor(bw / 2))] = T.FLOOR;
+      if (st.kind === 'house') {
+        // doorway on the plaza-facing side
+        const doorX = st.x + Math.floor(st.w / 2);
+        const doorY = st.y < h / 2 ? st.y + st.h - 1 : st.y;
+        g[doorY * w + doorX] = T.FLOOR;
+      }
     }
   }
 
@@ -258,4 +275,67 @@ export function decodeGrid(rle, size) {
     i += n;
   }
   return g;
+}
+
+/** stable per-tile hash, so decoration is identical on every client */
+export function hash2(x, y, seed) {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 2654435761);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/**
+ * Cosmetic scenery. Generated from the map seed on both sides, so it costs
+ * nothing on the wire and never affects collision.
+ * `tall` props are sorted with the entities so characters walk behind them.
+ */
+export const PROP_SETS = {
+  town:  [['barrel', 1], ['crate', 1], ['lamp', 1.2], ['bench', 0.8], ['flowerpot', 1], ['sign', 0.6], ['cart', 0.5], ['banner', 0.8]],
+  grass: [['tree', 3], ['bush', 2.5], ['flowers', 2], ['stump', 0.8], ['rock', 1.2], ['mushroom', 0.8], ['grass', 3]],
+  marsh: [['deadtree', 2.4], ['reeds', 3], ['ashpile', 1.6], ['bones', 1], ['mushroom', 1.4], ['rock', 1], ['grass', 1.6]],
+  crypt: [['pillar', 1.4], ['grave', 1.6], ['skull', 1.4], ['rubble', 2], ['torch', 1.2], ['banner', 0.7]],
+  rock:  [['boulder', 2], ['spike', 1.6], ['bones', 1.2], ['totem', 0.7], ['campfire', 0.5], ['rubble', 1.6]],
+  ice:   [['iceshard', 2.4], ['crystal', 1.4], ['snowpile', 2], ['icicle', 1.6], ['bones', 0.6]],
+};
+export const TALL_PROPS = new Set(['tree', 'deadtree', 'pillar', 'lamp', 'totem', 'crystal', 'sign', 'banner', 'icicle', 'spike']);
+
+export function generateProps(map, grid) {
+  const structures = (map.structures ?? []).map((st) => ({
+    x: (st.x + st.w / 2) * 32,
+    y: (st.y + st.h) * 32,
+    kind: st.kind,
+    w: st.w * 32,
+    h: st.h * 32,
+    roof: st.roof,
+    sign: st.sign,
+    scale: 1,
+    flip: 0,
+    tall: st.kind !== 'fountain',
+  }));
+  const set = PROP_SETS[map.theme] ?? PROP_SETS.grass;
+  const total = set.reduce((n, [, w]) => n + w, 0);
+  const density = map.kind === 'town' ? 0.06 : 0.13;
+  const props = [];
+  for (let y = 1; y < map.height - 1; y++) {
+    for (let x = 1; x < map.width - 1; x++) {
+      const t = grid[y * map.width + x];
+      if (BLOCKING.has(t) || t === TILES.PATH || t === TILES.BRIDGE) continue;
+      const h = hash2(x, y, map.seed);
+      if (h > density) continue;
+      // second hash picks the kind, third jitters position and size
+      let pick = hash2(x, y, map.seed ^ 0x51ed) * total;
+      let kind = set[0][0];
+      for (const [k, w] of set) { if (pick < w) { kind = k; break; } pick -= w; }
+      const j = hash2(x, y, map.seed ^ 0x2f1b);
+      props.push({
+        x: x * 32 + 8 + j * 16,
+        y: y * 32 + 12 + hash2(x, y, map.seed ^ 0x77ab) * 16,
+        kind,
+        scale: 0.82 + j * 0.42,
+        flip: hash2(x, y, map.seed ^ 0x1234) > 0.5 ? 1 : 0,
+        tall: TALL_PROPS.has(kind),
+      });
+    }
+  }
+  return structures.concat(props);
 }

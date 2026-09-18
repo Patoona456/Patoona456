@@ -1,6 +1,7 @@
 // Canvas renderer: procedural terrain tiles + LPC paper-doll entities.
 import { TILE, SPRITE } from '../../shared/constants.js';
-import { TILES, decodeGrid } from '../../shared/data/maps.js';
+import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
+import { propSprite, GLOWING } from './props.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, playerLayers, monsterLayers, npcLayers } from './sprites.js';
 
@@ -10,11 +11,11 @@ const rand = (seed) => {
 };
 
 /** Tile art is generated once into 32x32 canvases - no tileset asset needed. */
-function makeTile(kind, theme) {
+function makeTile(kind, theme, variant = 0) {
   const c = document.createElement('canvas');
   c.width = c.height = TILE;
   const g = c.getContext('2d');
-  const r = rand(kind * 7919 + theme.length * 13);
+  const r = rand(kind * 7919 + theme.length * 13 + variant * 104729);
   const palettes = {
     [TILES.GRASS]: ['#3f6b3a', '#47773f', '#355c31'],
     [TILES.PATH]: ['#7a6a4e', '#857459', '#6d5e45'],
@@ -31,6 +32,10 @@ function makeTile(kind, theme) {
     [TILES.ASH]: ['#4a4440', '#565049', '#3e3936'],
     [TILES.MOSS]: ['#3d5a3c', '#456348', '#334c33'],
   };
+  if (theme === 'town') {
+    palettes[TILES.FLOOR] = ['#9a8f7c', '#a89d88', '#8b806e'];   // warm cobble, not dungeon stone
+    palettes[TILES.WALL] = ['#6d6355', '#5b5246', '#7d7365'];
+  }
   const pal = palettes[kind] ?? palettes[TILES.GRASS];
   g.fillStyle = pal[0];
   g.fillRect(0, 0, TILE, TILE);
@@ -43,12 +48,17 @@ function makeTile(kind, theme) {
   g.globalAlpha = 1;
 
   if (kind === TILES.TREE) {
+    // offset and resize per variant so a forest never looks like a grid
+    const ox = [0, -4, 5][variant % 3], oy = [0, 3, -2][variant % 3];
+    const rr = [12, 10, 13][variant % 3];
     g.fillStyle = '#2b1d12';
-    g.fillRect(14, 20, 4, 10);
+    g.fillRect(14 + ox, 18 + oy, 4, 12);
+    g.fillStyle = '#254a25';
+    g.beginPath(); g.arc(16 + ox, 16 + oy, rr, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#2f5a2e';
-    g.beginPath(); g.arc(16, 16, 12, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(14 + ox, 14 + oy, rr * 0.78, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#3d7038';
-    g.beginPath(); g.arc(13, 13, 7, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(12 + ox, 12 + oy, rr * 0.5, 0, Math.PI * 2); g.fill();
   } else if (kind === TILES.ROCK || kind === TILES.WALL) {
     g.strokeStyle = 'rgba(0,0,0,0.35)';
     g.strokeRect(0.5, 0.5, TILE - 1, TILE - 1);
@@ -95,7 +105,17 @@ export class Renderer {
     this.zone = zonePayload;
     this.grid = decodeGrid(zonePayload.rle, zonePayload.width * zonePayload.height);
     this.tiles.clear();
-    for (const kind of Object.values(TILES)) this.tiles.set(kind, makeTile(kind, zonePayload.theme ?? 'grass'));
+    // three variants per tile kind kills the obvious repeating grid
+    for (const kind of Object.values(TILES)) {
+      this.tiles.set(kind, [0, 1, 2].map((v) => makeTile(kind, zonePayload.theme ?? 'grass', v)));
+    }
+    this.props = generateProps(
+      { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
+        theme: zonePayload.theme ?? 'grass', kind: zonePayload.kind,
+        structures: zonePayload.structures ?? [] },
+      this.grid
+    ).sort((a, b) => a.y - b.y);
+    this._miniCache = null;
   }
 
   floater(text, x, y, color = '#fff', size = 12) {
@@ -146,12 +166,22 @@ export class Renderer {
     ctx.scale(s, s);
     ctx.translate(-this.camera.x, -this.camera.y);
 
+    const view = {
+      x0: this.camera.x - halfW - 48, x1: this.camera.x + halfW + 48,
+      y0: this.camera.y - halfH - 64, y1: this.camera.y + halfH + 64,
+    };
+    const visibleProps = this.props
+      ? this.props.filter((p) => p.x > view.x0 && p.x < view.x1 && p.y > view.y0 && p.y < view.y1)
+      : [];
+
     this.drawTerrain(ctx, halfW, halfH);
     this.drawWarps(ctx, now);
     this.drawGroundFx(ctx, state, now);
+    this.drawProps(ctx, visibleProps, false, now);
     this.drawGroundItems(ctx, state, now);
-    this.drawEntities(ctx, state, now);
+    this.drawEntities(ctx, state, now, visibleProps);
     this.drawFx(ctx, now);
+    this.drawAmbience(ctx, view, visibleProps, state, now);
     ctx.restore();
 
     this.drawFloaters(ctx, s);
@@ -165,24 +195,59 @@ export class Renderer {
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const t = this.grid[y * this.zone.width + x];
-        const img = this.tiles.get(t) ?? this.tiles.get(TILES.GRASS);
-        ctx.drawImage(img, x * TILE, y * TILE);
+        const set = this.tiles.get(t) ?? this.tiles.get(TILES.GRASS);
+        const v = (hash2(x, y, this.zone.seed ?? 1) * 3) | 0;
+        ctx.drawImage(set[v] ?? set[0], x * TILE, y * TILE);
       }
     }
   }
 
   drawWarps(ctx, now) {
     for (const w of this.zone.warps ?? []) {
-      const pulse = 0.35 + Math.sin(now / 400) * 0.15;
-      ctx.fillStyle = `rgba(120,200,255,${pulse})`;
-      ctx.fillRect(w.x * TILE, w.y * TILE, w.w * TILE, w.h * TILE);
-      ctx.strokeStyle = 'rgba(180,230,255,0.8)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(w.x * TILE, w.y * TILE, w.w * TILE, w.h * TILE);
-      ctx.fillStyle = '#cfeaff';
-      ctx.font = '8px system-ui, sans-serif';
+      const cx = (w.x + w.w / 2) * TILE, cy = (w.y + w.h / 2) * TILE;
+      const rx = (w.w * TILE) / 2, ry = (w.h * TILE) / 2;
+      const pulse = 0.5 + Math.sin(now / 420) * 0.18;
+
+      ctx.save();
+      // pad
+      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, Math.max(rx, ry));
+      grad.addColorStop(0, `rgba(180,235,255,${0.55 * pulse + 0.2})`);
+      grad.addColorStop(1, 'rgba(70,150,220,0.05)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `rgba(200,240,255,${pulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.lineDashOffset = -now / 90;
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // rising motes
+      ctx.fillStyle = 'rgba(210,245,255,0.85)';
+      for (let i = 0; i < 6; i++) {
+        const t = ((now / 1400) + i / 6) % 1;
+        const a = i * 1.7 + now / 900;
+        ctx.globalAlpha = (1 - t) * 0.9;
+        ctx.fillRect(cx + Math.cos(a) * rx * 0.7, cy + ry * 0.5 - t * (ry * 2 + 20), 2, 3);
+      }
+      ctx.globalAlpha = 1;
+
+      // arch
+      ctx.strokeStyle = 'rgba(150,215,255,0.75)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy + ry * 0.4, rx * 0.95, Math.PI * 1.08, Math.PI * 1.92);
+      ctx.stroke();
+
+      ctx.font = 'bold 9px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(w.label ?? w.to, (w.x + w.w / 2) * TILE, w.y * TILE - 3);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+      const label = `\u27A4 ${w.label ?? w.to}`;
+      ctx.strokeText(label, cx, cy - ry - 8);
+      ctx.fillStyle = '#d8f2ff';
+      ctx.fillText(label, cx, cy - ry - 8);
+      ctx.restore();
     }
   }
 
@@ -217,9 +282,28 @@ export class Renderer {
     }
   }
 
-  drawEntities(ctx, state, now) {
-    const ents = [...(state.ents ?? [])].sort((a, b) => a.y - b.y);
+  drawProps(ctx, props, tall, now) {
+    for (const p of props) {
+      if (!!p.tall !== tall) continue;
+      this.drawProp(ctx, p, now);
+    }
+  }
+
+  drawProp(ctx, p, now) {
+    const img = propSprite(p.w ? p : p.kind);
+    const w = img.width * (p.w ? 1 : p.scale), h = img.height * (p.w ? 1 : p.scale);
+    ctx.save();
+    if (p.flip) { ctx.translate(p.x, 0); ctx.scale(-1, 1); ctx.translate(-p.x, 0); }
+    ctx.drawImage(img, Math.round(p.x - w / 2), Math.round(p.y - h + 6), w, h);
+    ctx.restore();
+  }
+
+  drawEntities(ctx, state, now, props = []) {
+    // tall scenery shares the painter's-order list so characters walk behind it
+    const ents = [...(state.ents ?? []), ...props.filter((p) => p.tall).map((p) => ({ _prop: p, y: p.y }))]
+      .sort((a, b) => a.y - b.y);
     for (const e of ents) {
+      if (e._prop) { this.drawProp(ctx, e._prop, now); continue; }
       const anim = e.a ?? 'idle';
       const elapsed = now - (e._animStart ?? now);
       const hurt = e._hurtUntil && e._hurtUntil > now ? (e._hurtUntil - now) / 200 : 0;
@@ -335,6 +419,45 @@ export class Renderer {
       }
       ctx.restore();
     }
+  }
+
+  /** Per-theme colour grade, vignette, and additive lights from props/portals. */
+  drawAmbience(ctx, view, props, state, now) {
+    const theme = this.zone.theme ?? 'grass';
+    const tint = {
+      crypt: 'rgba(12,10,26,0.52)', ice: 'rgba(90,150,200,0.20)', marsh: 'rgba(48,66,44,0.22)',
+      rock: 'rgba(80,60,40,0.12)', grass: 'rgba(30,50,70,0.06)', town: 'rgba(255,205,140,0.05)',
+    }[theme];
+    if (tint) {
+      ctx.save();
+      ctx.fillStyle = tint;
+      ctx.fillRect(view.x0, view.y0, view.x1 - view.x0, view.y1 - view.y0);
+      ctx.restore();
+    }
+
+    const lights = [];
+    for (const p of props) if (GLOWING.has(p.kind)) lights.push({ x: p.x, y: p.y - 22 * p.scale, r: 90, c: '255,190,120' });
+    for (const w of this.zone.warps ?? []) {
+      lights.push({ x: (w.x + w.w / 2) * TILE, y: (w.y + w.h / 2) * TILE, r: 120, c: '150,215,255' });
+    }
+    if (theme === 'crypt' || theme === 'ice') {
+      const me = state.me;
+      if (me) lights.push({ x: me.x, y: me.y - 16, r: 150, c: '255,225,180' });
+    }
+    if (!lights.length) return;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const l of lights) {
+      if (l.x < view.x0 - l.r || l.x > view.x1 + l.r || l.y < view.y0 - l.r || l.y > view.y1 + l.r) continue;
+      const flicker = 0.82 + Math.sin(now / 130 + l.x) * 0.1;
+      const g = ctx.createRadialGradient(l.x, l.y, 2, l.x, l.y, l.r);
+      g.addColorStop(0, `rgba(${l.c},${0.34 * flicker})`);
+      g.addColorStop(1, `rgba(${l.c},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
   }
 
   drawFloaters(ctx, s) {
