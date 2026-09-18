@@ -341,7 +341,9 @@ export class Renderer {
     for (const e of ents) {
       if (e._prop) { this.drawProp(ctx, e._prop, now); continue; }
       const anim = e.a ?? 'idle';
-      const elapsed = now - (e._animStart ?? now);
+      // a weapon faster than its animation plays the swing quicker, rather
+      // than looping half of it
+      const elapsed = (now - (e._animStart ?? now)) * (e.as ?? 1);
       const hurt = e._hurtUntil && e._hurtUntil > now ? (e._hurtUntil - now) / 200 : 0;
 
       // shadow: sized with the sprite, softened at the rim

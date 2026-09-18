@@ -234,7 +234,8 @@ class Game {
         prev.px = prev.x; prev.py = prev.y;
         prev.tx = e.x; prev.ty = e.y;
         prev.lerpAt = now;
-        if (prev.a !== e.a) prev._animStart = now;
+        // a new swing restarts the animation even when its name is unchanged
+        if (prev.a !== e.a || (e.ast !== undefined && e.ast !== prev.ast)) prev._animStart = now;
         Object.assign(prev, e, { x: prev.x, y: prev.y, px: prev.px, py: prev.py, tx: e.x, ty: e.y, _animStart: prev._animStart });
         if (e.hp < prev._lastHp) prev._hurtUntil = now + 200;
         prev._lastHp = e.hp;

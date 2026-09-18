@@ -18,6 +18,7 @@ export class Player {
     this.look = record.look;
     this.x = record.x; this.y = record.y;
     this.dir = 2; this.anim = 'idle'; this.animStart = 0;
+    this.animUntil = 0; this.animSpeed = 1;   // one-shot swing bookkeeping
     this.alive = true;
     this.statuses = [];
     this.cooldowns = {};          // skillId -> timestamp ms
@@ -408,6 +409,7 @@ export class Player {
     return {
       id: this.id, k: 'p', n: this.name, x: Math.round(this.x), y: Math.round(this.y),
       d: this.dir, a: this.anim, hp: this.hp, mhp: this.maxHp, lv: this.record.level,
+      ast: this.animStart, as: this.animSpeed !== 1 ? +this.animSpeed.toFixed(2) : undefined,
       job: this.record.job, look: this.look,
       eq: Object.fromEntries(Object.entries(this.record.equipment)
         .map(([slot, idx]) => [slot, this.inventory[idx]?.id])

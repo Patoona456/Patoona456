@@ -2,7 +2,7 @@
 import { MAPS, buildGrid, encodeGrid, TILES, BLOCKING, HAZARD, rng } from '../../shared/data/maps.js';
 import { MONSTERS } from '../../shared/data/monsters.js';
 import { ITEMS } from '../../shared/data/items.js';
-import { TILE, AOI_RADIUS } from '../../shared/constants.js';
+import { TILE, AOI_RADIUS, ANIM } from '../../shared/constants.js';
 import { Monster, dist, dist2, dirTo, LEASH } from './monster.js';
 import { applyDamage, healEntity, basicAttack, statusMods, addStatus } from './combat.js';
 import * as Skills from './skills.js';
@@ -10,6 +10,32 @@ import * as Skills from './skills.js';
 const now = () => Date.now();
 const LOOT_LOCK_MS = 25000;     // finder keeps priority this long
 const LOOT_LIFE_MS = 120000;
+
+/** Animations that play once and then hand back to idle. */
+const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt']);
+
+/**
+ * Start a swing that lasts exactly one attack.
+ *
+ * The animation used to be set and left running, so a character holding
+ * attack swung continuously while damage landed on the weapon's own timer -
+ * three swings at air for every hit. Now the swing is bounded by the attack
+ * interval: it plays once per hit, sped up if the weapon is faster than the
+ * animation, and the entity drops back to idle in between.
+ */
+function startSwing(e, anim, t, intervalMs) {
+  const a = ANIM[anim] ?? ANIM.slash;
+  const durMs = (a.frames / a.fps) * 1000;
+  e.anim = anim;
+  e.animStart = t;
+  e.animSpeed = intervalMs > 0 && intervalMs < durMs ? durMs / intervalMs : 1;
+  e.animUntil = t + Math.min(durMs, intervalMs || durMs);
+}
+
+/** True while a one-shot animation is still playing. */
+function inOneShot(e, t) {
+  return ONE_SHOT.has(e.anim) && e.animUntil > t;
+}
 
 export class Zone {
   constructor(id, world) {
@@ -207,6 +233,7 @@ export class Zone {
     e.alive = false;
     e.hp = 0;
     e.anim = 'hurt';
+    e.animUntil = now() + 400;
     e.cast = null;
     this.pushEvent({ t: 'death', id: e.id, by: killer?.id ?? null });
 
@@ -318,6 +345,7 @@ export class Zone {
       }
 
       // movement
+      const swinging = inOneShot(p, t);
       const moving = (p.input.mx || p.input.my) && !sm.rooted && !sm.stunned && !p.cast;
       if (moving) {
         let speed = p.derived.moveSpeed * (1 + sm.slowPct / 100);
@@ -326,9 +354,9 @@ export class Zone {
         const vx = p.input.mx / len, vy = p.input.my / len;
         this.moveTo(p, p.x + vx * speed * dt, p.y + vy * speed * dt);
         p.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 3 : 1) : (vy > 0 ? 2 : 0);
-        p.anim = 'walk';
+        if (!swinging) p.anim = 'walk';
         // moving cancels stealth-breaking? no - but it does cancel casts above
-      } else if (p.anim === 'walk') {
+      } else if (!swinging && (p.anim === 'walk' || ONE_SHOT.has(p.anim))) {
         p.anim = 'idle';
       }
 
@@ -349,8 +377,8 @@ export class Zone {
             const delay = Math.max(0.28, p.weaponDelay * p.derived.aspdFactor);
             p.nextAttackAt = t + delay * 1000;
             p.dir = dirTo(p, target);
-            p.anim = p.weaponClass === 'bow' ? 'shoot' : p.weaponClass === 'spear' ? 'thrust' : 'slash';
-            p.animStart = t;
+            startSwing(p, p.weaponClass === 'bow' ? 'shoot' : p.weaponClass === 'spear' ? 'thrust' : 'slash',
+              t, delay * 1000);
             if (p.weaponClass === 'bow' && !p.consumeAmmo(1)) {
               p.conn?.send({ t: 'error', text: 'ลูกธนูหมด' });
               p.attacking = false;
@@ -446,14 +474,14 @@ export class Zone {
           if (!sm.rooted) {
             const ux = (target.x - m.x) / (d || 1), uy = (target.y - m.y) / (d || 1);
             this.moveTo(m, m.x + ux * speed * dt, m.y + uy * speed * dt);
-            m.anim = 'walk';
+            if (!inOneShot(m, t)) m.anim = 'walk';
           }
           m.dir = dirTo(m, target);
         } else if (t >= m.nextAttackAt) {
-          m.nextAttackAt = t + (m.def.attackDelay ?? 1.6) * 1000;
+          const mDelay = (m.def.attackDelay ?? 1.6) * 1000;
+          m.nextAttackAt = t + mDelay;
           m.dir = dirTo(m, target);
-          m.anim = m.def.attackRange > 60 ? 'shoot' : 'slash';
-          m.animStart = t;
+          startSwing(m, m.def.attackRange > 60 ? 'shoot' : 'slash', t, mDelay);
           // boss skills
           const skills = m.def.skills ?? [];
           if (skills.length && Math.random() < 0.3) {
@@ -464,7 +492,7 @@ export class Zone {
             if (target.kind === 'player') target.wearGear('defend');
           }
           this.pushEvent({ t: 'swing', id: m.id, target: target.id });
-        } else {
+        } else if (!inOneShot(m, t)) {
           m.anim = 'idle';
         }
       } else {

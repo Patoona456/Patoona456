@@ -106,6 +106,9 @@ export function rowOf(animName, dir) {
   return a.single ? a.row : a.row + (dir & 3);
 }
 
+/** These play once and hold their last frame; the server hands back to idle. */
+const ONE_SHOT = new Set(['hurt', 'slash', 'thrust', 'shoot']);
+
 // A 64x64 scratch buffer for tinting a single layer (see drawRefineGlow).
 let scratch = null;
 function scratchCtx() {
@@ -128,7 +131,7 @@ export function drawRefineGlow(ctx, layers, { x, y, anim = 'idle', dir = 2, elap
   const s = sheet(url);
   if (!s.ready) return false;
 
-  const col = frameOf(anim, elapsed, anim !== 'hurt');
+  const col = frameOf(anim, elapsed, !ONE_SHOT.has(anim));
   const row = rowOf(anim, dir);
   const g = scratchCtx();
   g.clearRect(0, 0, SPRITE, SPRITE);
@@ -155,7 +158,7 @@ export function drawRefineGlow(ctx, layers, { x, y, anim = 'idle', dir = 2, elap
  * @param layers map of layer -> url (from playerLayers/monsterLayers)
  */
 export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elapsed = 0, scale = 1, alpha = 1, tint = null, flash = 0 }) {
-  const col = frameOf(anim, elapsed, anim !== 'hurt');
+  const col = frameOf(anim, elapsed, !ONE_SHOT.has(anim));
   const row = rowOf(anim, dir);
   const sx = col * SPRITE, sy = row * SPRITE;
   const size = SPRITE * scale;

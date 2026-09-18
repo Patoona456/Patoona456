@@ -36,7 +36,8 @@ export class Monster {
 
     this.x = x; this.y = y;
     this.anchor = anchor ?? { x, y };
-    this.dir = 2; this.anim = 'idle';
+    this.dir = 2; this.anim = 'idle'; this.animStart = 0;
+    this.animUntil = 0; this.animSpeed = 1;
     this.alive = true;
     this.statuses = [];
     this.mods = {};
@@ -59,6 +60,7 @@ export class Monster {
     return {
       id: this.id, k: 'm', n: this.name, def: this.defId,
       x: Math.round(this.x), y: Math.round(this.y), d: this.dir, a: this.anim,
+      ast: this.animStart, as: this.animSpeed !== 1 ? +this.animSpeed.toFixed(2) : undefined,
       hp: this.hp, mhp: this.maxHp, lv: this.level, boss: this.boss ? 1 : 0,
       sprite: this.def.sprite, sum: this.summon ? 1 : 0,
       st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
