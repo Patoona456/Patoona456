@@ -6,6 +6,24 @@ import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, playerLayers, monsterLayers, npcLayers } from './sprites.js';
 
+// Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
+export const ZOOM_STEPS = [
+  { key: 'far', label: 'ไกล', note: 'เห็นสนามรบกว้างที่สุด', mul: 0.62 },
+  { key: 'mid', label: 'กลาง', note: 'ระยะมาตรฐาน', mul: 0.80 },
+  { key: 'near', label: 'ใกล้', note: 'เห็นตัวละครชัดที่สุด', mul: 1.00 },
+];
+const ZOOM_KEY = 'emberfall-zoom';
+
+function savedZoomStep() {
+  try {
+    const raw = localStorage.getItem(ZOOM_KEY);
+    if (raw === null) return 1;
+    const n = Number(raw);
+    if (Number.isInteger(n) && n >= 0 && n < ZOOM_STEPS.length) return n;
+  } catch { /* no storage */ }
+  return 1;
+}
+
 const rand = (seed) => {
   let a = seed >>> 0;
   return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -16,6 +34,7 @@ export class Renderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d', { alpha: false });
     this.ctx.imageSmoothingEnabled = false;
+    this.zoomStep = savedZoomStep();
     this.zoom = 2;
     this.camera = { x: 0, y: 0 };
     this.zone = null;
@@ -34,8 +53,30 @@ export class Renderer {
     this.canvas.style.width = innerWidth + 'px';
     this.canvas.style.height = innerHeight + 'px';
     this.dpr = dpr;
-    this.zoom = innerWidth < 720 ? 2 : innerWidth < 1400 ? 2.25 : 2.6;
+    this.applyZoom();
     this.ctx.imageSmoothingEnabled = false;
+  }
+
+  /** Base zoom follows the window; the player's step scales it. */
+  applyZoom() {
+    const base = innerWidth < 720 ? 2 : innerWidth < 1400 ? 2.25 : 2.6;
+    const step = ZOOM_STEPS[this.zoomStep] ?? ZOOM_STEPS[1];
+    this.zoom = Math.round(base * step.mul * 100) / 100;
+  }
+
+  /** Pick a camera distance (0 = ไกล, 1 = กลาง, 2 = ใกล้). Returns the step. */
+  setZoomStep(n) {
+    this.zoomStep = Math.max(0, Math.min(ZOOM_STEPS.length - 1, n | 0));
+    this.applyZoom();
+    try { localStorage.setItem(ZOOM_KEY, String(this.zoomStep)); } catch { /* no storage */ }
+    return ZOOM_STEPS[this.zoomStep];
+  }
+
+  /** Step in or out by one; wraps at the ends so one button can cycle. */
+  nudgeZoom(dir, wrap = false) {
+    const n = this.zoomStep + dir;
+    if (wrap) return this.setZoomStep((n + ZOOM_STEPS.length) % ZOOM_STEPS.length);
+    return this.setZoomStep(n);
   }
 
   setZone(zonePayload) {

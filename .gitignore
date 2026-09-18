@@ -3,3 +3,5 @@ data/*.json
 *.log
 .DS_Store
 .env
+dist/
+shot-*.png

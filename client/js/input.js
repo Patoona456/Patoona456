@@ -5,19 +5,22 @@ export const ACTIONS = [
   'attack', 'interact', 'cancel', 'targetNext', 'targetPrev',
   'skill1', 'skill2', 'skill3', 'skill4', 'skill5', 'skill6',
   'menu', 'map', 'chat', 'sit', 'pickup',
+  'zoomIn', 'zoomOut', 'zoomCycle',
 ];
 
 const KEYMAP = {
   Space: 'attack', KeyE: 'interact', Escape: 'cancel', Tab: 'targetNext', KeyQ: 'targetPrev',
   Digit1: 'skill1', Digit2: 'skill2', Digit3: 'skill3', Digit4: 'skill4', Digit5: 'skill5', Digit6: 'skill6',
   KeyZ: 'pickup', KeyX: 'sit',
+  Minus: 'zoomOut', NumpadSubtract: 'zoomOut',
+  Equal: 'zoomIn', NumpadAdd: 'zoomIn',
 };
 
 // Standard gamepad layout.
 const PAD_BUTTONS = {
   0: 'interact', 1: 'cancel', 2: 'attack', 3: 'pickup',
   4: 'targetPrev', 5: 'targetNext',
-  8: 'map', 9: 'menu',
+  8: 'map', 9: 'menu', 11: 'zoomCycle',
   12: 'skill1', 13: 'skill2', 14: 'skill3', 15: 'skill4',
 };
 const MOD_BUTTON = 6;       // LT: shifts the d-pad to skills 5/6

@@ -362,9 +362,21 @@ class Game {
       else if (this.ui.openPanels.size) this.ui.closeTop();
       else { this.state.targetId = null; this.net.send({ t: 'target', id: null }); }
     }
+    if (inp.consume('zoomOut')) this.setZoom(this.renderer.zoomStep - 1);
+    if (inp.consume('zoomIn')) this.setZoom(this.renderer.zoomStep + 1);
+    if (inp.consume('zoomCycle')) this.setZoom((this.renderer.zoomStep + 1) % 3);
     if (inp.consume('menu')) this.ui.toggle('inventory');
     if (inp.consume('map')) this.ui.toggle('quests');
     for (let i = 1; i <= 6; i++) if (inp.consume('skill' + i)) this.useHotbar(i - 1);
+  }
+
+  /** Camera distance, shared by the hotkeys, the pad and the settings panel. */
+  setZoom(n) {
+    const before = this.renderer.zoomStep;
+    const step = this.renderer.setZoomStep(n);
+    if (this.renderer.zoomStep !== before) this.ui.flash('มุมกล้อง: ' + step.label);
+    if (this.ui.openPanels.has('settings')) this.ui.open('settings');
+    return step;
   }
 
   cycleTarget(dir) {

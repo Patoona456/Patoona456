@@ -10,6 +10,7 @@ import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js
 import { itemIcon, skillIcon, icon } from './icons.js';
 import { playerLayers, drawCharacter, loadedRatio } from './sprites.js';
 import { SLOTS } from '../../shared/constants.js';
+import { ZOOM_STEPS } from './renderer.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -1142,6 +1143,20 @@ export class UI {
     themes.append(el('div', 'muted', 'เปลี่ยนได้ตลอดเวลา ระบบจำค่าไว้ในเบราว์เซอร์นี้'));
     wrap.append(themes, el('hr'));
 
+    const cam = el('div');
+    cam.innerHTML = '<h3 style="margin:0 0 6px">ระยะกล้อง</h3>';
+    const camRow = el('div', 'opts');
+    const curStep = this.game.renderer?.zoomStep ?? 1;
+    ZOOM_STEPS.forEach((z, i) => {
+      const b = el('button', 'btn' + (curStep === i ? ' primary' : ''), z.label);
+      b.title = z.note;
+      b.addEventListener('click', () => this.game.setZoom(i));
+      camRow.append(b);
+    });
+    cam.append(camRow);
+    cam.append(el('div', 'muted', 'ปุ่มลัด: − / +  ·  จอยเกม: กดแกนอนาล็อกขวา'));
+    wrap.append(cam, el('hr'));
+
     const help = el('div');
     help.innerHTML = `
       <h3>ปุ่มควบคุม</h3>
@@ -1153,6 +1168,7 @@ export class UI {
         <tr><td>สลับเป้าหมาย</td><td>LB / RB</td><td>Tab / Q</td><td>ปุ่ม 🎯</td></tr>
         <tr><td>สกิล 1-4</td><td>ปุ่มทิศ (D-pad)</td><td>1-4</td><td>ปุ่ม 1-4</td></tr>
         <tr><td>สกิล 5-6</td><td>LT + ทิศบน/ล่าง</td><td>5-6</td><td>—</td></tr>
+        <tr><td>ระยะกล้อง ไกล/กลาง/ใกล้</td><td>กดอนาล็อกขวา</td><td>− / +</td><td>ตั้งค่า</td></tr>
         <tr><td>เมนู / ปิดหน้าต่าง</td><td>Start / B</td><td>I K C J P / Esc</td><td>ปุ่มมุมขวาล่าง</td></tr>
       </table>
       <h3>สิ่งที่ควรรู้</h3>
