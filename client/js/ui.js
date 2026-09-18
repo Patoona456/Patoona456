@@ -39,6 +39,17 @@ export class UI {
     $('#chat-input').addEventListener('focus', () => { game.input.textMode = true; });
     $('#chat-input').addEventListener('blur', () => { game.input.textMode = false; });
 
+    for (const tab of document.querySelectorAll('#chat-tabs .tab')) {
+      tab.addEventListener('click', () => {
+        this.chatFilter = tab.dataset.ch;
+        for (const t of document.querySelectorAll('#chat-tabs .tab')) t.classList.toggle('on', t === tab);
+        for (const line of document.querySelectorAll('#chat-log div')) {
+          line.hidden = this.chatFilter !== 'all' && line.dataset.ch !== this.chatFilter;
+        }
+      });
+    }
+    $('#quest-toggle')?.addEventListener('click', () => $('#quest-track').classList.toggle('collapsed'));
+
     for (const b of document.querySelectorAll('#menu-buttons button')) {
       b.addEventListener('click', () => this.toggle(b.dataset.panel));
     }
@@ -96,6 +107,8 @@ export class UI {
     const log = $('#chat-log');
     const prefix = { say: '', party: '[ปาร์ตี้] ', trade: '[ซื้อขาย] ', world: '[โลก] ', system: '' }[m.ch] ?? '';
     const line = el('div', m.ch, `${prefix}${m.from ? `<b>${esc(m.from)}</b>: ` : ''}${esc(m.text)}`);
+    line.dataset.ch = m.ch;
+    if (this.chatFilter && this.chatFilter !== 'all' && this.chatFilter !== m.ch) line.hidden = true;
     log.append(line);
     while (log.childElementCount > 120) log.firstChild.remove();
     log.scrollTop = log.scrollHeight;
@@ -123,18 +136,71 @@ export class UI {
   updateVitals(self, you) {
     const hp = you?.hp ?? self.hp, sp = you?.sp ?? self.sp;
     const maxHp = you?.maxHp ?? self.maxHp, maxSp = you?.maxSp ?? self.maxSp;
+    const level = you?.level ?? self.level, jobLevel = you?.jobLevel ?? self.jobLevel;
+    const d = self.derived ?? {};
+
     $('#me-name').textContent = self.name;
-    $('#me-job').textContent = `${JOBS[self.job]?.nameTh ?? self.job} Lv.${you?.level ?? self.level}/J${you?.jobLevel ?? self.jobLevel}`;
+    $('#me-job').textContent = JOBS[self.job]?.nameTh ?? self.job;
+    $('#me-level').textContent = level;
     setBar('#bar-hp', '#txt-hp', hp, maxHp);
     setBar('#bar-sp', '#txt-sp', sp, maxSp);
-    setBar('#bar-exp', null, you?.exp ?? self.exp, self.expNext);
-    setBar('#bar-jexp', null, you?.jobExp ?? self.jobExp, self.jobExpNext);
-    const pct = (a, b) => (b > 0 ? ((a / b) * 100).toFixed(1) : '0.0');
-    $('#xp-line').innerHTML = `EXP <b class="num">${pct(you?.exp ?? self.exp, self.expNext)}%</b>`
-      + ` · อาชีพ <b class="num">${pct(you?.jobExp ?? self.jobExp, self.jobExpNext)}%</b>`;
+
+    // one number for "how strong am I", the way mobile MMOs summarise a build
+    const cp = Math.round((d.atk ?? 0) + (d.matk ?? 0) * 0.8 + (d.def ?? 0) * 2.2
+      + (d.mdef ?? 0) * 1.6 + (d.maxHp ?? 0) / 12 + (d.hit ?? 0) * 0.4 + (d.flee ?? 0) * 0.4);
+    $('#me-cp').textContent = fmt(cp);
+    $('#me-stats').textContent = `ATK ${fmt(d.atk ?? 0)} · DEF ${fmt(d.def ?? 0)}`;
+
+    setBar('#bar-exp', '#txt-exp', you?.exp ?? self.exp, self.expNext, 'pct');
+    setBar('#bar-jexp', '#txt-jexp', you?.jobExp ?? self.jobExp, self.jobExpNext, 'pct');
+    $('#base-lv').textContent = `Base Lv.${level}`;
+    $('#job-lv').textContent = `Job Lv.${jobLevel}`;
+
     $('#aurum').textContent = fmt(you?.aurum ?? self.aurum);
+    const shards = (this.game.inventory?.items ?? []).find((x) => x.id === 'shard_dawn');
+    $('#shards').textContent = fmt(shards?.qty ?? 0);
+
     const over = (you?.weight ?? 0) > (you?.weightCap ?? 1);
-    $('#netinfo').innerHTML = `ping ${this.game.net.ping}ms · น้ำหนัก <span style="color:${over ? 'var(--bad)' : 'inherit'}">${fmt(you?.weight ?? 0)}/${fmt(you?.weightCap ?? 0)}</span>`;
+    $('#netinfo').innerHTML = `${this.game.net.ping}ms · <span style="color:${over ? 'var(--bad)' : 'inherit'}">${fmt(you?.weight ?? 0)}/${fmt(you?.weightCap ?? 0)}</span>`;
+  }
+
+  /** The quest tracker pinned to the left edge. */
+  renderQuestTrack(list) {
+    this.trackedQuests = list ?? [];
+    const box = $('#quest-track');
+    const out = $('#quest-list');
+    if (!box || !out) return;
+    if (!this.trackedQuests.length) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    out.innerHTML = '';
+    for (const q of this.trackedQuests) {
+      const row = el('div', 'qrow' + (q.done ? ' done' : ''));
+      const name = el('div', 'qname');
+      name.append(el('span', 'qtag ' + q.kind, { main: 'หลัก', sub: 'ย่อย', event: 'พิเศษ' }[q.kind] ?? 'ย่อย'));
+      name.append(el('span', '', esc(q.name)));
+      row.append(name);
+      row.append(el('div', 'qprog', q.progress
+        .map((pr) => `<b>${pr.have}</b>/${pr.need}`).join(' · ') + (q.done ? ' — พร้อมส่ง' : '')));
+      row.addEventListener('click', () => this.toggle('quests'));
+      out.append(row);
+    }
+  }
+
+  /** Consumables parked next to the action bar. */
+  renderQuickItems() {
+    const box = $('#quick-items');
+    if (!box) return;
+    const items = (this.game.inventory?.items ?? []).filter((it) => it.type === 'consumable').slice(0, 4);
+    box.innerHTML = '';
+    for (const it of items) {
+      const slot = el('div', 'slot');
+      slot.append(itemIcon(it.id, { size: 28 }));
+      slot.append(el('span', 'qty num', String(it.qty)));
+      slot.title = it.name;
+      slot.addEventListener('click', () => this.game.net.send({ t: 'useItem', index: it.i }));
+      box.append(slot);
+    }
+    for (let i = items.length; i < 2; i++) box.append(el('div', 'slot empty'));
   }
 
   updateTarget(ent) {
@@ -284,6 +350,7 @@ export class UI {
       case 'inventory': return this.openInventory();
       case 'skills': return this.openSkills(self);
       case 'quests':
+        this.wantQuests = true;
         this.game.net.send({ t: 'quest', cmd: 'list' });
         return this.openQuests(this.lastQuests ?? []);
       case 'party':
@@ -347,6 +414,7 @@ export class UI {
   }
 
   renderInventory() {
+    this.renderQuickItems();
     const wrap = $('#inv-body');
     if (!wrap) return;
     const inv = this.game.inventory ?? { items: [] };
@@ -904,11 +972,11 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
-function setBar(barSel, txtSel, cur, max) {
+function setBar(barSel, txtSel, cur, max, mode) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
   $(barSel).style.width = pct + '%';
   const t = txtSel && $(txtSel);
-  if (t) t.textContent = `${fmt(Math.floor(cur))} / ${fmt(max)}`;
+  if (t) t.textContent = mode === 'pct' ? `${pct.toFixed(2)}%` : `${fmt(Math.floor(cur))} / ${fmt(max)}`;
 }
 const statRow = (k, v) => `<div class="row"><span class="muted">${k}</span><b>${v}</b></div>`;
 function esc(s) {

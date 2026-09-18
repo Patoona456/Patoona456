@@ -203,48 +203,113 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 .chip b { color: var(--accent); }
 
 /* ============================ HUD ============================ */
+/* Layout follows a mobile MMO: identity top-left, wallet top-centre, map
+   top-right, quest tracker left, menu rail right, action bar and an EXP
+   strip along the bottom. */
 #hud { position: fixed; inset: 0; pointer-events: none; font-size: 12px; }
-#hud > * { pointer-events: auto; }
-#vitals, #target-frame, #topright, #cast-bar, #statuses, #hotbar, #menu-buttons { position: absolute; }
+#hud > * { pointer-events: auto; position: absolute; }
 
-#vitals { top: 10px; left: 10px; display: flex; gap: 9px; width: 264px; }
+/* --- identity --- */
+#vitals { top: 8px; left: 8px; display: flex; gap: 9px; width: 286px; }
 .portrait {
-  position: relative; width: 46px; height: 46px; flex: none; overflow: hidden;
+  position: relative; width: 52px; height: 52px; flex: none; overflow: hidden;
   border: 1px solid var(--edge-soft); border-radius: calc(var(--radius) * .6);
   background: linear-gradient(180deg, #2b3242, #171b25);
 }
 .portrait canvas { position: absolute; inset: 0; }
-#vitals .stack { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.portrait .lv {
+  position: absolute; left: 0; bottom: 0; right: 0; text-align: center;
+  background: rgba(0, 0, 0, .68); color: var(--accent); font-size: 10px; font-weight: 700;
+}
+#vitals .stack { display: grid; gap: 3px; flex: 1; min-width: 0; }
 #vitals .name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 #vitals .name b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-#xp-line { font-size: 10px; letter-spacing: .02em; }
-#xp-line b { color: var(--text); font-weight: 600; }
+.cp-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 10px; }
+.cp { color: var(--accent); font-weight: 700; letter-spacing: .04em; }
+.cp b { color: var(--text); }
 
-#target-frame { top: 10px; left: 50%; transform: translateX(-50%); width: 224px; display: grid; gap: 5px; text-align: center; }
+/* --- wallet --- */
+#currencies { top: 8px; left: 302px; display: flex; gap: 6px; }
+.pill {
+  display: flex; align-items: center; gap: 6px; padding: 4px 11px 4px 5px;
+  background: var(--panel); border: 1px solid var(--edge-soft);
+  border-radius: 999px; font-weight: 700; font-size: 12px;
+}
+.pill i { width: 15px; height: 15px; border-radius: 50%; flex: none; }
+.pill i.coin { background: radial-gradient(circle at 35% 30%, #ffe9a0, #d9a441 70%, #9a6f1e); }
+.pill i.shard { background: radial-gradient(circle at 35% 30%, #fff3cf, #ffb03a 70%, #b06a12); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); border-radius: 0; }
+
+/* --- map --- */
+#topright { top: 8px; right: 8px; }
+.map-card { display: grid; gap: 5px; padding: 6px; }
+.map-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.map-head b { font-family: var(--font-display); letter-spacing: var(--display-spacing); font-size: 12px; }
+#minimap { display: block; border-radius: calc(var(--radius) * .5); image-rendering: pixelated; }
+.map-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; }
+
+/* --- quest tracker --- */
+#quest-track { top: 92px; left: 8px; width: 250px; display: grid; gap: 6px; }
+#quest-track header { display: flex; align-items: center; justify-content: space-between; }
+#quest-track .btn { padding: 0 6px; font-size: 12px; line-height: 1.2; }
+#quest-track.collapsed #quest-list { display: none; }
+#quest-list { display: grid; gap: 6px; max-height: 32vh; overflow: auto; }
+.qrow { display: grid; gap: 2px; padding: 5px 6px; border-left: 2px solid var(--edge); background: rgba(0, 0, 0, .25); }
+.qrow.done { border-left-color: var(--good); }
+.qrow .qname { font-size: 12px; display: flex; gap: 6px; align-items: baseline; }
+.qtag { font-size: 9px; padding: 0 5px; border-radius: 3px; font-weight: 700; flex: none; }
+.qtag.main { background: #7c4a1e; color: #ffd9a8; }
+.qtag.sub { background: #2c4a6b; color: #cfe4ff; }
+.qtag.event { background: #5a2b5e; color: #f0cdf5; }
+.qrow .qprog { font-size: 11px; color: var(--muted); }
+.qrow .qprog b { color: var(--text); }
+
+/* --- menu rail --- */
+#menu-buttons { top: 50%; right: 8px; transform: translateY(-50%); display: grid; gap: 5px; }
+#menu-buttons .btn {
+  display: grid; grid-template-columns: 20px auto; align-items: center; gap: 8px;
+  padding: 6px 12px 6px 9px; font-size: 12px; text-align: left; min-width: 112px;
+}
+#menu-buttons svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* --- target --- */
+#target-frame { top: 8px; left: 50%; transform: translateX(-50%); width: 228px; display: grid; gap: 5px; text-align: center; }
 #target-frame .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 #target-frame .row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-#topright { top: 10px; right: 10px; display: grid; gap: 6px; justify-items: end; }
-#zone-name { font-family: var(--font-display); font-weight: 700; text-shadow: 0 2px 6px #000; }
-#purse { display: flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 700; padding: 5px 11px; }
-#netinfo { text-shadow: 0 1px 3px #000; }
-#minimap { display: block; border-radius: calc(var(--radius) * .5); image-rendering: pixelated; }
-.mini-wrap { padding: 5px; line-height: 0; }
-
-#cast-bar { left: 50%; bottom: 84px; transform: translateX(-50%); width: 210px; padding: 0; border: none; box-shadow: none; background: none; }
+#cast-bar { left: 50%; bottom: 112px; transform: translateX(-50%); width: 210px; }
 #cast-bar .bar { height: 14px; }
 #cast-bar .bar span { line-height: 14px; font-size: 10px; }
-
-#statuses { top: 66px; left: 12px; display: flex; gap: 4px; font-size: 16px; }
+#statuses { top: 74px; left: 300px; display: flex; gap: 4px; font-size: 16px; }
 #statuses div { background: var(--panel); border: 1px solid var(--edge-soft); border-radius: 6px; padding: 0 4px; }
 #statuses div.bad { border-color: #7c3040; }
 
-#hotbar { bottom: calc(10px + var(--safe-b)); left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
-#hotbar .slot { width: 52px; height: 52px; }
+/* --- action bar --- */
+#actionbar {
+  left: 50%; bottom: calc(24px + var(--safe-b)); transform: translateX(-50%);
+  display: flex; align-items: flex-end; gap: 12px;
+}
+#hotbar { display: flex; gap: 6px; }
+#hotbar .slot { width: 54px; height: 54px; }
+#action-right { display: flex; align-items: flex-end; gap: 6px; }
+.round {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--slot); border: 1px solid var(--edge); color: var(--text);
+  font-size: 12px; font-weight: 700; letter-spacing: .04em;
+}
+.round svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.round.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+#quick-items { display: flex; gap: 5px; }
+#quick-items .slot { width: 44px; height: 44px; }
 
-#menu-buttons { bottom: calc(10px + var(--safe-b)); right: 10px; display: flex; gap: 6px; }
-#menu-buttons .btn { width: 42px; height: 42px; display: grid; place-items: center; padding: 0; }
-#menu-buttons svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+/* --- experience strip --- */
+#expstrip {
+  left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 8px;
+  padding: 3px 10px calc(3px + var(--safe-b));
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .55) 40%);
+}
+#expstrip .bar { flex: 1; height: 9px; }
+#expstrip .bar span { line-height: 9px; font-size: 8px; }
+.lvtag { font-size: 10px; font-weight: 700; color: var(--accent); white-space: nowrap; letter-spacing: .03em; }
 
 /* ============================ touch ============================ */
 #touch { position: fixed; inset: 0; pointer-events: none; }
@@ -273,7 +338,14 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 #btn-target { position: absolute; right: 16px; bottom: calc(250px + var(--safe-b)); }
 
 /* ============================ chat ============================ */
-#chat { position: fixed; left: 10px; bottom: calc(10px + var(--safe-b)); width: min(330px, 40vw); display: grid; gap: 5px; }
+#chat { position: fixed; left: 8px; bottom: calc(84px + var(--safe-b)); width: min(320px, 38vw); display: grid; gap: 4px; }
+#chat-tabs { display: flex; gap: 3px; }
+#chat-tabs .tab {
+  font-size: 11px; padding: 2px 9px; border: 1px solid var(--edge-soft); border-bottom: none;
+  border-radius: calc(var(--radius) * .6) calc(var(--radius) * .6) 0 0;
+  background: var(--panel); color: var(--muted);
+}
+#chat-tabs .tab.on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 #chat-log {
   max-height: 136px; overflow-y: auto; font-size: 12px; line-height: 1.5;
   background: var(--panel); border: 1px solid var(--edge-soft); border-radius: calc(var(--radius) * .8);
@@ -337,19 +409,57 @@ input[type=number], input[type=text], input[type=password], select {
 }
 
 /* mobile: windows become bottom sheets */
-@media (max-width: 720px) {
+@media (max-width: 860px) {
   .win.window {
     top: auto; bottom: 0; left: 0; transform: none;
     width: 100%; max-height: 76vh; border-radius: 16px 16px 0 0; clip-path: none;
     padding-bottom: var(--safe-b);
   }
-  #chat { width: min(240px, 52vw); }
-  #chat-log { max-height: 84px; }
+  #vitals { width: 232px; }
+  #currencies { left: 248px; }
+  #quest-track { width: 200px; top: 84px; }
+  #menu-buttons .btn { min-width: 0; grid-template-columns: 20px; padding: 8px; }
+  #menu-buttons .btn span { display: none; }
+  #chat { width: min(220px, 46vw); bottom: calc(150px + var(--safe-b)); }
+  #chat-log { max-height: 76px; }
   #hotbar .slot { width: 46px; height: 46px; }
+  #quick-items .slot { width: 40px; height: 40px; }
+  #actionbar { bottom: calc(86px + var(--safe-b)); gap: 8px; }
+  #statuses { left: 8px; top: 68px; }
+}
+@media (max-width: 620px) {
+  /* portrait phones: stack the top row instead of fighting over the centre */
+  #vitals { width: 200px; }
+  #me-stats { display: none; }
+  #currencies { top: 66px; left: 8px; }
+  #target-frame { top: 108px; left: 8px; transform: none; width: min(240px, 62vw); }
+  #toasts { top: 176px; }
+  #statuses { top: 158px; left: 8px; }
+  .map-card { padding: 4px; }
+  #minimap { width: 96px; height: 96px; }
+  #actionbar { flex-direction: column; align-items: flex-end; gap: 6px; left: auto; right: 8px; transform: none; }
+  #hotbar { flex-wrap: wrap; justify-content: flex-end; max-width: 168px; }
+  #chat { width: min(230px, 56vw); bottom: calc(196px + var(--safe-b)); }
+  #quest-track { display: none; }
 }
 
+/* with the on-screen pad, the pad *is* the hotbar - keep only auto, target
+   and the quick items, and lift the chat clear of the thumb zone */
+body.touch #hotbar { display: none; }
+body.touch #actionbar {
+  left: auto; right: 8px; bottom: calc(272px + var(--safe-b)); transform: none;
+  flex-direction: row; align-items: center; gap: 6px;
+}
+body.touch .round { width: 42px; height: 42px; font-size: 11px; }
+body.touch #quick-items .slot { width: 40px; height: 40px; }
+body.touch #chat { bottom: calc(160px + var(--safe-b)); width: min(220px, 50vw); }
+body.touch #chat-log { max-height: 64px; }
+body.touch #expstrip { padding-bottom: calc(3px + var(--safe-b)); }
+body.touch #menu-buttons { top: 42%; }
+body.touch #btn-target { display: none; }   /* the action row already cycles targets */
+
 /* ============================ toasts, flash, banner ============================ */
-#toasts { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 40; display: grid; gap: 6px; justify-items: center; pointer-events: none; }
+#toasts { position: fixed; top: 132px; left: 50%; transform: translateX(-50%); z-index: 40; display: grid; gap: 6px; justify-items: center; pointer-events: none; }
 .toast {
   background: var(--panel); border: 1px solid var(--edge); border-radius: 999px;
   padding: 6px 16px; font-size: 13px; animation: pop .25s ease; box-shadow: var(--shadow);

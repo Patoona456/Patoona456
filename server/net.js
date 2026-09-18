@@ -122,6 +122,7 @@ export class Conn {
     this.world.addPlayer(this.player);
     this.sendInventory();
     this.send(Party.state(this.world, this.player));
+    this.send({ t: 'questTrack', quests: Quests.tracked(this.player) });
   }
 
   /* ---------------- in world ---------------- */
@@ -481,6 +482,7 @@ export class Conn {
       this.send({ t: OP.SELF, self: p.selfState() });
     }
     this.send({ t: OP.QUEST_STATE, quests: Quests.available(p) });
+    this.send({ t: 'questTrack', quests: Quests.tracked(p) });
   }
 
   sendInventory() {

@@ -44,11 +44,28 @@ export function onKill(p, mobId) {
     if (!q) continue;
     q.objectives.forEach((o, i) => {
       if (o.type === 'kill' && o.mob === mobId) {
-        st.counts[i] = Math.min(o.count, (st.counts[i] ?? 0) + 1);
+        const before = st.counts[i] ?? 0;
+        st.counts[i] = Math.min(o.count, before + 1);
+        if (st.counts[i] !== before) p.questsDirty = true;   // the tracker refreshes
       }
     });
   }
   markDirty();
+}
+
+/** Only the quests the player has taken and not finished, for the HUD tracker. */
+export function tracked(p) {
+  return Object.entries(p.record.quests)
+    .filter(([id, st]) => !st.done && QUESTS[id])
+    .map(([id]) => {
+      const q = QUESTS[id];
+      return {
+        id, name: q.name, kind: q.repeatable ? 'event' : (q.giver === 'trainer' ? 'main' : 'sub'),
+        progress: progressOf(p, q),
+        objectives: q.objectives.map((o) => o.type),
+        done: progressOf(p, q).every((x) => x.have >= x.need),
+      };
+    });
 }
 
 export function complete(world, p, id) {

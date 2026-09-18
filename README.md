@@ -18,7 +18,7 @@ git clone --depth 1 https://github.com/makrohn/Universal-LPC-spritesheet.git
 npm run import-lpc -- ./Universal-LPC-spritesheet
 ```
 
-![UI ธีมพิกเซล](docs/img/ui-pixel.png)
+![HUD แบบ MMO มือถือ](docs/img/hud-desktop.png)
 ![กระเป๋าแบบตารางไอคอน](docs/img/ui-inventory.png)
 ![เมืองเอมเบอร์โฮลด์](docs/img/town.png)
 ![สันเขาออร์ควอช](docs/img/ridge.png)

@@ -16,19 +16,68 @@
 
 <!-- ======================= HUD ======================= -->
 <div id="hud" class="hidden">
+
+  <!-- top left: who you are -->
   <div class="panel" id="vitals">
     <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-    <div class="portrait" id="portrait"></div>
+    <div class="portrait" id="portrait"><span class="lv num" id="me-level">1</span></div>
     <div class="stack">
       <div class="name"><b id="me-name">-</b><span id="me-job" class="muted label"></span></div>
-      <div class="bar hp"><i id="bar-hp"></i><span id="txt-hp"></span></div>
-      <div class="bar sp"><i id="bar-sp"></i><span id="txt-sp"></span></div>
-      <div class="bar exp"><i id="bar-exp"></i></div>
-      <div class="bar jexp"><i id="bar-jexp"></i></div>
-      <div id="xp-line" class="muted"></div>
+      <div class="bar hp"><i id="bar-hp"></i><span id="txt-hp" class="num"></span></div>
+      <div class="bar sp"><i id="bar-sp"></i><span id="txt-sp" class="num"></span></div>
+      <div class="cp-row">
+        <span class="cp" title="พลังรวม">CP <b id="me-cp" class="num">0</b></span>
+        <span id="me-stats" class="muted num"></span>
+      </div>
     </div>
   </div>
 
+  <!-- top centre: what you can spend -->
+  <div id="currencies">
+    <div class="pill" title="ออรัม"><i class="coin"></i><span id="aurum" class="num">0</span></div>
+    <div class="pill" title="เศษรุ่งอรุณ"><i class="shard"></i><span id="shards" class="num">0</span></div>
+  </div>
+
+  <!-- top right: where you are -->
+  <div id="topright">
+    <div class="panel map-card">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <div class="map-head"><b id="zone-name">-</b><span id="zone-range" class="muted"></span></div>
+      <canvas id="minimap" width="140" height="140"></canvas>
+      <div class="map-foot"><span id="coords" class="muted num"></span><span id="netinfo" class="muted"></span></div>
+    </div>
+  </div>
+
+  <!-- left: what you are doing -->
+  <div class="panel hidden" id="quest-track">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <header><b class="label">ภารกิจ</b><button class="btn ghost" id="quest-toggle" aria-label="ย่อ/ขยาย">▾</button></header>
+    <div id="quest-list"></div>
+  </div>
+
+  <!-- middle right: everything else -->
+  <div id="menu-buttons">
+    <button class="btn" data-panel="character" title="ตัวละคร (C)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>ตัวละคร</span>
+    </button>
+    <button class="btn" data-panel="inventory" title="กระเป๋า (I)">
+      <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.2 12H5.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>กระเป๋า</span>
+    </button>
+    <button class="btn" data-panel="skills" title="สกิล (K)">
+      <svg viewBox="0 0 24 24"><path d="M12 3l2.1 5.4L20 10l-4.6 3.3L16.8 19 12 15.9 7.2 19l1.4-5.7L4 10l5.9-1.6z"/></svg><span>สกิล</span>
+    </button>
+    <button class="btn" data-panel="quests" title="ภารกิจ (J)">
+      <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg><span>ภารกิจ</span>
+    </button>
+    <button class="btn" data-panel="party" title="ปาร์ตี้ (P)">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-3.4 3.4-5 6-5s5 1.6 6 5"/><path d="M15.5 20c.6-2.2 2-3.4 3.6-3.4 1.2 0 2.3.6 2.9 1.8"/></svg><span>ปาร์ตี้</span>
+    </button>
+    <button class="btn" data-panel="settings" title="ตั้งค่า (F1)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.3M17.6 15.2l2.2 1.3M19.8 7.5l-2.2 1.3M6.4 15.2l-2.2 1.3"/></svg><span>ตั้งค่า</span>
+    </button>
+  </div>
+
+  <!-- top centre: who you are hitting -->
   <div class="panel hidden" id="target-frame">
     <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
     <div class="row"><b id="tg-name"></b><span id="tg-lv" class="muted"></span></div>
@@ -36,41 +85,29 @@
     <div id="tg-el" class="muted num"></div>
   </div>
 
-  <div id="topright">
-    <div id="zone-name"></div>
-    <div class="panel" id="purse"><span id="aurum" class="num">0</span><span class="label" style="font-size:10px">AU</span></div>
-    <div id="netinfo" class="muted"></div>
-    <div class="panel mini-wrap">
-      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-      <canvas id="minimap" width="132" height="132"></canvas>
-    </div>
-  </div>
-
   <div id="cast-bar" class="hidden">
     <div class="bar cast"><i></i><span></span></div>
   </div>
   <div id="statuses"></div>
-  <div id="hotbar"></div>
 
-  <div id="menu-buttons">
-    <button class="btn" data-panel="character" title="ตัวละคร (C)" aria-label="ตัวละคร">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
-    </button>
-    <button class="btn" data-panel="inventory" title="กระเป๋า (I)" aria-label="กระเป๋า">
-      <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.2 12H5.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
-    </button>
-    <button class="btn" data-panel="skills" title="สกิล (K)" aria-label="สกิล">
-      <svg viewBox="0 0 24 24"><path d="M12 3l2.1 5.4L20 10l-4.6 3.3L16.8 19 12 15.9 7.2 19l1.4-5.7L4 10l5.9-1.6z"/></svg>
-    </button>
-    <button class="btn" data-panel="quests" title="ภารกิจ (J)" aria-label="ภารกิจ">
-      <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
-    </button>
-    <button class="btn" data-panel="party" title="ปาร์ตี้ (P)" aria-label="ปาร์ตี้">
-      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-3.4 3.4-5 6-5s5 1.6 6 5"/><path d="M15.5 20c.6-2.2 2-3.4 3.6-3.4 1.2 0 2.3.6 2.9 1.8"/></svg>
-    </button>
-    <button class="btn" data-panel="settings" title="ตั้งค่า / วิธีเล่น (F1)" aria-label="ตั้งค่า">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.3M17.6 15.2l2.2 1.3M19.8 7.5l-2.2 1.3M6.4 15.2l-2.2 1.3"/></svg>
-    </button>
+  <!-- bottom bar: skills, automation, quick items -->
+  <div id="actionbar">
+    <div id="hotbar"></div>
+    <div id="action-right">
+      <button class="round" id="btn-auto" title="สู้อัตโนมัติ">AUTO</button>
+      <button class="round" id="btn-cycle" title="สลับเป้าหมาย (Tab)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+      </button>
+      <div id="quick-items"></div>
+    </div>
+  </div>
+
+  <!-- the strip along the very bottom -->
+  <div id="expstrip">
+    <span class="lvtag" id="base-lv">Base Lv.1</span>
+    <div class="bar exp"><i id="bar-exp"></i><span id="txt-exp" class="num"></span></div>
+    <span class="lvtag" id="job-lv">Job Lv.1</span>
+    <div class="bar jexp"><i id="bar-jexp"></i><span id="txt-jexp" class="num"></span></div>
   </div>
 </div>
 
@@ -90,6 +127,13 @@
 
 <!-- ======================= chat ======================= -->
 <div id="chat" class="hidden">
+  <div id="chat-tabs">
+    <button class="tab on" data-ch="all">ทั้งหมด</button>
+    <button class="tab" data-ch="world">โลก</button>
+    <button class="tab" data-ch="party">ปาร์ตี้</button>
+    <button class="tab" data-ch="trade">ซื้อขาย</button>
+    <button class="tab" data-ch="system">ระบบ</button>
+  </div>
   <div id="chat-log"></div>
   <form id="chat-form">
     <select id="chat-ch" aria-label="ช่องแชท">

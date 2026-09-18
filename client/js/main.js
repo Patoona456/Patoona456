@@ -30,10 +30,18 @@ class Game {
     this.chars = [];
     this.inWorld = false;
 
+    this.auto = false;
+    this.autoAt = 0;
+
     this.wireNet();
     this.net.connect();
 
-    if (matchMedia('(pointer: coarse)').matches) {
+    document.getElementById('btn-auto')?.addEventListener('click', () => this.toggleAuto());
+    document.getElementById('btn-cycle')?.addEventListener('click', () => this.cycleTarget(1));
+
+    // ?touch=1 forces the mobile control scheme on a desktop, for testing
+    if (matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('touch')) {
+      document.body.classList.add('touch');
       $('#touch').classList.remove('hidden');
       bindTouchControls(this.input, $('#touch'));
     }
@@ -58,6 +66,7 @@ class Game {
       this.zone = m;
       this.grid = decodeGrid(m.rle, m.width * m.height);
       $('#zone-name').textContent = m.nameTh ?? m.name;
+      $('#zone-range').textContent = m.levelRange ? `Lv.${m.levelRange[0]}-${m.levelRange[1]}` : (m.safe ? 'ปลอดภัย' : '');
       this.entities.clear();
       if (this.inWorld) this.ui.zoneBanner(m);
     });
@@ -86,7 +95,15 @@ class Game {
       if (this.ui.openPanels.has('party')) this.ui.open('party', m);
       if (m.invite) this.ui.toast(`${m.invite.from} ชวนเข้าปาร์ตี้ — เปิดเมนูปาร์ตี้เพื่อตอบรับ`, 'warn');
     });
-    n.on('questState', (m) => this.ui.openQuests(m.quests));
+    n.on('questState', (m) => {
+      // only take over the screen when the player actually asked for the log
+      this.ui.lastQuests = m.quests;
+      if (this.ui.openPanels.has('quests') || this.ui.wantQuests) {
+        this.ui.wantQuests = false;
+        this.ui.openQuests(m.quests);
+      }
+    });
+    n.on('questTrack', (m) => this.ui.renderQuestTrack(m.quests));
     n.on('died', (m) => this.onDied(m));
   }
 
@@ -197,6 +214,7 @@ class Game {
 
     this.input.poll();
     this.handleActions();
+    this.updateAuto(t);
     this.predictMovement(dt);
     this.interpolate(t);
 
@@ -207,9 +225,75 @@ class Game {
 
     this.renderer.render(this.state, t);
     this.ui.updateTarget(this.entities.get(this.state.targetId));
-    if (t - (this._miniAt ?? 0) > 200) { this._miniAt = t; this.ui.minimap(this.state, this.renderer); }
+    if (t - (this._miniAt ?? 0) > 200) {
+      this._miniAt = t;
+      this.ui.minimap(this.state, this.renderer);
+      const coords = document.getElementById('coords');
+      if (coords) coords.textContent = `(${Math.floor(this.predicted.x / TILE)}, ${Math.floor(this.predicted.y / TILE)})`;
+    }
     if (this.state.you) this.ui.tickHotbar(this.state.you.cooldowns);
     this.input.endFrame();
+  }
+
+  toggleAuto() {
+    this.auto = !this.auto;
+    document.getElementById('btn-auto')?.classList.toggle('on', this.auto);
+    this.ui.toast(this.auto ? 'สู้อัตโนมัติ: เปิด' : 'สู้อัตโนมัติ: ปิด', this.auto ? 'good' : 'info');
+    if (!this.auto) {
+      this.input.touchStick(0, 0);
+      if (this.attacking) { this.attacking = false; this.net.send({ t: 'attack', on: false }); }
+    }
+  }
+
+  /**
+   * Hands-off grinding, entirely client side: pick the nearest hostile, close
+   * the gap, swing, spend whatever skills are off cooldown, hoover up loot.
+   * Manual input always wins - the moment you touch the keys, auto lets go.
+   */
+  updateAuto(now) {
+    if (!this.auto || now - this.autoAt < 260) return;
+    this.autoAt = now;
+    const you = this.state.you;
+    if (!you?.alive) { this.net.send({ t: 'respawn' }); return; }
+
+    const me = this.predicted;
+    const manual = this.input.keys.size > 0;
+
+    for (const g of this.state.ground ?? []) {
+      if (g.mine && Math.hypot(g.x - me.x, g.y - me.y) < 44) this.net.send({ t: 'pickup', uid: g.uid });
+    }
+
+    let best = null, bestD = 420;
+    for (const e of this.entities.values()) {
+      if (e.k !== 'm' || e.hp <= 0 || e.sum) continue;
+      const d = Math.hypot(e.x - me.x, e.y - me.y);
+      if (d < bestD) { best = e; bestD = d; }
+    }
+    if (!best) {
+      if (!manual) this.input.touchStick(0, 0);
+      if (this.attacking) { this.attacking = false; this.net.send({ t: 'attack', on: false }); }
+      return;
+    }
+
+    if (this.state.targetId !== best.id) {
+      this.state.targetId = best.id;
+      this.net.send({ t: 'target', id: best.id });
+    }
+    const reach = (this.self?.derived?.attackRange ?? 40) + 20;
+    if (!manual) {
+      if (bestD > reach) this.input.touchStick((best.x - me.x) / bestD, (best.y - me.y) / bestD);
+      else this.input.touchStick(0, 0);
+    }
+    if (!this.attacking) { this.attacking = true; this.net.send({ t: 'attack', on: true, id: best.id }); }
+
+    // spend a ready skill, cheapest first so SP lasts
+    const cds = you.cooldowns ?? {};
+    const ready = (this.self?.hotbar ?? [])
+      .map((id, i) => ({ id, i }))
+      .filter((x) => x.id && (cds[x.id] ?? 0) < Date.now() && SKILLS[x.id]?.kind !== 'passive');
+    if (ready.length && bestD <= (SKILLS[ready[0].id]?.range ?? 60) + 40) {
+      this.useHotbar(ready[Math.floor(Math.random() * ready.length)].i);
+    }
   }
 
   predictMovement(dt) {
@@ -353,22 +437,25 @@ class Game {
 
   renderPortrait() {
     const box = $('#portrait');
-    box.innerHTML = '';
-    const c = document.createElement('canvas');
-    c.width = c.height = 46;
-    c.style.imageRendering = 'pixelated';
-    box.append(c);
+    // keep the level badge that lives in this box - only the canvas is ours
+    let c = box.querySelector('canvas');
+    if (!c) {
+      c = document.createElement('canvas');
+      c.width = c.height = 52;
+      c.style.imageRendering = 'pixelated';
+      box.prepend(c);
+    }
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     const layers = playerLayers(this.self.look, Object.fromEntries(
       Object.entries(this.self.equipment ?? {}).map(([slot, idx]) => [slot, this.inventory.items?.[idx]?.id]).filter(([, v]) => v)
     ));
     const draw = () => {
-      ctx.clearRect(0, 0, 46, 46);
+      ctx.clearRect(0, 0, 52, 52);
       ctx.save();
-      ctx.translate(0, 6);
-      ctx.scale(1.4, 1.4);
-      drawCharacter(ctx, layers, { x: 16, y: 34, anim: 'idle', dir: 2, elapsed: 0 });
+      ctx.translate(0, 8);
+      ctx.scale(1.55, 1.55);
+      drawCharacter(ctx, layers, { x: 17, y: 32, anim: 'idle', dir: 2, elapsed: 0 });
       ctx.restore();
       if (loadedRatio() < 1) setTimeout(draw, 250);
     };

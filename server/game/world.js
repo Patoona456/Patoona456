@@ -137,6 +137,11 @@ export class World {
           statuses: p.statuses.map((s) => ({ type: s.type, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),
         };
         p.conn.send(snap);
+        if (p.questsDirty && Date.now() - (p.questsSentAt ?? 0) > 1000) {
+          p.questsDirty = false;
+          p.questsSentAt = Date.now();
+          p.conn.send({ t: 'questTrack', quests: Quests.tracked(p) });
+        }
       }
     }
   }
