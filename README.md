@@ -24,6 +24,16 @@ npm run import-lpc -- ./Universal-LPC-spritesheet
 ![สันเขาออร์ควอช](docs/img/ridge.png)
 ![ร้านค้าในเมือง](docs/img/shop.png)
 
+## เอาขึ้นเซิร์ฟเวอร์จริง
+
+```
+docker compose up -d --build     # เปิด http://localhost:8080
+```
+
+process เดียวจบ: เสิร์ฟไฟล์ไคลเอนต์และรับ WebSocket บนพอร์ตเดียวกัน ไม่มีขั้นตอน
+build ข้อมูลโลกอยู่ใน SQLite ไฟล์เดียวที่ `/data` (ผูก volume ไว้แล้ว)
+รายละเอียด reverse proxy, HTTPS, systemd, สำรองข้อมูล ดู `docs/DEPLOY.md`
+
 ## เดโมเล่นในเบราว์เซอร์ (ไม่ต้องมีเซิร์ฟเวอร์)
 
 ```
@@ -51,6 +61,7 @@ npx serve dist/demo             # หรือ static server ตัวไหน�
 | หน้าตา | ไม่ลอก Ragnarok — ชื่อ อาชีพ มอนสเตอร์ แผนที่ ทั้งหมดเป็นของเราเอง |
 | เศรษฐกิจ | **เงินหายากโดยตั้งใจ** ของถึงมีค่า (ดู `docs/ECONOMY.md`) |
 | การบังคับ | ออกแบบจากจอยก่อน แล้วแมปลงทัช/คีย์บอร์ด (ดู `docs/CONTROLS.md`) |
+| การติดตั้ง | คอนเทนเนอร์เดียว ไม่มี build step, dependency ตัวเดียวคือ `ws` (ดู `docs/DEPLOY.md`) |
 | เซิร์ฟเวอร์ | authoritative ทั้งหมด ไคลเอนต์ทำแค่ทำนายการเดินของตัวเอง |
 
 ## โครงสร้าง
@@ -64,7 +75,8 @@ server/
   index.js       static server + websocket
   net.js         โปรโตคอลต่อหนึ่งการเชื่อมต่อ
   accounts.js    สมัคร/ล็อกอิน/สร้างตัวละคร (scrypt)
-  persistence.js เก็บสถานะลง JSON แบบ atomic
+  persistence.js เก็บสถานะลง SQLite (หรือ JSON) สลับได้ด้วย EMBERFALL_STORE
+  store-sqlite.js แบ็กเอนด์ SQLite ที่ใช้ node:sqlite ในตัว Node
   game/          world, zone, player, monster, combat, skills, economy, party, quests
 client/
   index.html     โครง HUD ทั้งหมด
@@ -80,7 +92,7 @@ docs/            เอกสารออกแบบเกม เศรษฐ�
 
 เล่นได้จริงตั้งแต่ต้นจนจบลูป: สมัคร → สร้างตัวละคร → เดิน → ตี → เก็บของ →
 เลเวลอัพ → แบ่งแต้ม → เรียนสกิล → เปลี่ยนอาชีพ → ซื้อขาย/ตีบวก/ฝากของ →
-ลงตลาดผู้เล่น → ตั้งปาร์ตี้ → ทำเควสต์ → ล่าบอส
+ลงตลาดผู้เล่น → เทรดตัวต่อตัว → ตั้งปาร์ตี้ → ทำเควสต์ → ล่าบอส
 
 สำหรับทดสอบเนื้อหาเลเวลสูง เปิดโหมดพัฒนา:
 

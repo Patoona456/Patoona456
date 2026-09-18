@@ -1,10 +1,21 @@
-// Dead simple durable store: one JSON file, atomic writes, debounced saves.
-// Swap this module for a real database later - nothing else knows the shape.
+// Durable store for the whole world.
+//
+// The rest of the server only ever touches the in-memory `db` object and
+// calls markDirty(); this module decides where that lands. Two backends:
+//
+//   sqlite (default) - node:sqlite, one row per account/character/listing,
+//                      written in a transaction, only what changed
+//   json             - one file, atomic rename, whole world each save
+//
+// Pick with EMBERFALL_STORE=sqlite|json. A world.json left over from the
+// JSON backend is imported once, so upgrading does not lose anyone.
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 const DIR = process.env.EMBERFALL_DATA ?? path.resolve('data');
 const FILE = path.join(DIR, 'world.json');
+const WANT = (process.env.EMBERFALL_STORE ?? 'sqlite').toLowerCase();
 
 const empty = () => ({
   version: 1,
@@ -19,9 +30,38 @@ const empty = () => ({
 export const db = empty();
 let dirty = false;
 let saving = false;
+let store = null;        // sqlite handle, or null when running on JSON
 
 export async function load() {
   await mkdir(DIR, { recursive: true });
+  Object.assign(db, empty());
+
+  if (WANT === 'sqlite') {
+    try {
+      const { openStore } = await import('./store-sqlite.js');
+      store = openStore(DIR);
+      const fresh = store.isEmpty();
+      if (fresh && existsSync(FILE)) {
+        // one-time migration from the old single-file world
+        try {
+          Object.assign(db, empty(), JSON.parse(await readFile(FILE, 'utf8')));
+          store.write(db);
+          console.log(`[db] migrated ${Object.keys(db.characters).length} characters from world.json into sqlite`);
+        } catch (e) {
+          console.warn('[db] migration failed, starting fresh:', e.message);
+          Object.assign(db, empty());
+        }
+      } else {
+        store.read(db);
+      }
+      console.log(`[db] sqlite ${store.file}: ${Object.keys(db.accounts).length} accounts, ${Object.keys(db.characters).length} characters`);
+      return;
+    } catch (e) {
+      console.warn('[db] sqlite unavailable, falling back to json:', e.message);
+      store = null;
+    }
+  }
+
   try {
     const raw = JSON.parse(await readFile(FILE, 'utf8'));
     Object.assign(db, empty(), raw);
@@ -39,9 +79,12 @@ export async function save(force = false) {
   if (saving || (!dirty && !force)) return;
   saving = true; dirty = false;
   try {
-    const tmp = FILE + '.tmp';
-    await writeFile(tmp, JSON.stringify(db));
-    await rename(tmp, FILE);
+    if (store) store.write(db);
+    else {
+      const tmp = FILE + '.tmp';
+      await writeFile(tmp, JSON.stringify(db));
+      await rename(tmp, FILE);
+    }
   } catch (e) {
     console.error('[db] save failed:', e.message);
     dirty = true;
@@ -54,4 +97,10 @@ export function startAutosave(intervalMs = 15000) {
   const t = setInterval(() => { save(); }, intervalMs);
   t.unref?.();
   return t;
+}
+
+/** Called on shutdown, after the last save. */
+export function closeStore() {
+  store?.close();
+  store = null;
 }

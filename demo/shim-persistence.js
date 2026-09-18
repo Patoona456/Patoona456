@@ -38,3 +38,6 @@ export function wipe() {
   Object.assign(db, empty());
   try { localStorage.removeItem(KEY); } catch { /* ignore */ }
 }
+
+/** The real store closes a SQLite handle here; the browser has nothing to close. */
+export function closeStore() {}

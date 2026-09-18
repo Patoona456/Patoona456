@@ -1,0 +1,10 @@
+node_modules
+dist
+data
+demo-data
+.git
+.github
+*.log
+*.png
+!assets/**/*.png
+tools/lpc-src

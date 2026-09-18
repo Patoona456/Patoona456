@@ -2,7 +2,7 @@
 import { Zone } from './zone.js';
 import { MAPS } from '../../shared/data/maps.js';
 import { TICK_MS, SNAPSHOT_HZ, TILE } from '../../shared/constants.js';
-import { db, markDirty, save } from '../persistence.js';
+import { db, markDirty, save, closeStore } from '../persistence.js';
 import { sweepMarket } from './economy.js';
 import * as Quests from './quests.js';
 import * as Party from './party.js';
@@ -156,5 +156,6 @@ export class World {
     for (const p of this.players.values()) p.persist();
     this.stop();
     await save(true);
+    closeStore();
   }
 }

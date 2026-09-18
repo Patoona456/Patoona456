@@ -1,0 +1,17 @@
+# Bring the whole game up with: docker compose up -d
+services:
+  emberfall:
+    build: .
+    image: emberfall-online
+    restart: unless-stopped
+    ports:
+      - "${EMBERFALL_PORT:-8080}:8080"
+    volumes:
+      - emberfall-data:/data      # accounts, characters, market - keep this
+    environment:
+      EMBERFALL_STORE: sqlite
+      # set to 1 only while testing: it enables the dev warp/boost commands
+      EMBERFALL_DEV: "0"
+
+volumes:
+  emberfall-data:
