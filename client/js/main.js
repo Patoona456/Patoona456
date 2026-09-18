@@ -57,6 +57,7 @@ class Game {
       document.body.classList.add('touch');
       $('#touch').classList.remove('hidden');
       bindTouchControls(this.input, $('#touch'));
+      this.watchOrientation();
     }
     this.input.onPadChange = (connected, id) => {
       this.ui.toast(connected ? `เชื่อมต่อจอยแล้ว: ${id?.slice(0, 28) ?? ''}` : 'ถอดจอยออกแล้ว', connected ? 'good' : 'warn');
@@ -64,6 +65,44 @@ class Game {
 
     requestAnimationFrame((t) => this.loop(t));
     this.showLogin();
+  }
+
+  /**
+   * The game wants a wide screen: on a phone held upright there is no room
+   * for both the world and the controls. Ask for a rotate, offer to do it
+   * for them where the browser allows it, and let them refuse.
+   */
+  watchOrientation() {
+    const gate = $('#rotate');
+    if (!gate) return;
+    let dismissed = false;
+    const portrait = () => (screen.orientation?.type ?? '').startsWith('portrait')
+      || (!screen.orientation && innerHeight > innerWidth)
+      || innerHeight > innerWidth;
+    const update = () => {
+      const show = portrait() && !dismissed;
+      gate.classList.toggle('hidden', !show);
+      document.body.classList.toggle('portrait-gate', show);
+    };
+
+    $('#btn-landscape')?.addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+      } catch { /* refused: the lock below may still work */ }
+      try {
+        await screen.orientation?.lock?.('landscape');
+      } catch {
+        // iOS has no orientation lock - the player turns the phone themselves
+        this.ui.toast('เบราว์เซอร์นี้ล็อกแนวนอนไม่ได้ หมุนเครื่องเองได้เลย', 'warn');
+      }
+      update();
+    });
+    $('#btn-stay-portrait')?.addEventListener('click', () => { dismissed = true; update(); });
+
+    addEventListener('resize', update);
+    addEventListener('orientationchange', () => setTimeout(update, 120));
+    screen.orientation?.addEventListener?.('change', update);
+    update();
   }
 
   /* ---------------- networking ---------------- */
