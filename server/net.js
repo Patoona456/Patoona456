@@ -6,6 +6,7 @@ import { Player } from './game/player.js';
 import * as Skills from './game/skills.js';
 import * as Econ from './game/economy.js';
 import * as Party from './game/party.js';
+import * as Trade from './game/trade.js';
 import * as Quests from './game/quests.js';
 import { ITEMS, RECIPES } from '../shared/data/items.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
@@ -313,6 +314,7 @@ export class Conn {
         return this.notice('dev: boosted', 'good');
       }
       case OP.PARTY: return this.partyCmd(m);
+      case OP.TRADE: return this.tradeCmd(m);
       // the quest log is readable anywhere; only turn-ins need an NPC
 
       case OP.QUEST: return this.questCmd(m);
@@ -468,6 +470,40 @@ export class Conn {
     }
   }
 
+  /** Player-to-player trading. Every command answers with the whole window. */
+  tradeCmd(m) {
+    const p = this.player;
+    const w = this.world;
+    let r;
+    switch (m.cmd) {
+      case 'invite': r = Trade.invite(w, p, String(m.name ?? '')); break;
+      case 'accept': r = Trade.accept(w, p, m.fromId); break;
+      case 'decline': r = Trade.decline(p); break;
+      case 'cancel': r = Trade.cancel(w, p); break;
+      case 'offer': r = Trade.offer(p, m.index | 0, m.qty | 0 || 1); break;
+      case 'unoffer': r = Trade.unoffer(p, m.slot | 0); break;
+      case 'aurum': r = Trade.setAurum(p, m.amount); break;
+      case 'lock': r = Trade.lock(p, m.on !== false); break;
+      case 'confirm': r = Trade.confirm(w, p); break;
+      case 'state': r = { ok: true }; break;
+      default: return this.error('คำสั่งเทรดไม่ถูกต้อง');
+    }
+    if (r.error) {
+      this.error(r.error);
+      if (!r.session) return;
+    }
+    if (r.done) {
+      for (const side of [r.session.a, r.session.b]) {
+        side.p.conn?.send({ t: 'tradeState', trade: null, invite: null });
+        side.p.conn?.send({ t: 'notice', kind: 'good', text: 'เทรดสำเร็จ' });
+        side.p.conn?.sendInventory();
+      }
+      return;
+    }
+    if (r.session) return Trade.push(r.session);
+    this.send(Trade.state(p));
+  }
+
   questCmd(m) {
     const p = this.player;
     if (m.cmd === 'accept') {
@@ -511,6 +547,7 @@ export class Conn {
     if (!this.alive) return;
     this.alive = false;
     if (this.player) {
+      Trade.cancel(this.world, this.player, 'อีกฝ่ายออกจากเกม');
       this.world.broadcastChat({ ch: 'system', text: `${this.player.name} ออกจากโลก` });
       this.world.removePlayer(this.player);
       this.player = null;

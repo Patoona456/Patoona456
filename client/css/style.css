@@ -402,6 +402,10 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 .doll-slot { width: 46px; height: 46px; }
 .doll-label { font-size: 9px; color: var(--muted); text-align: center; line-height: 1.1; padding: 2px; }
 
+.trade-side { align-content: start; }
+.trade-side .slot-grid { grid-template-columns: repeat(4, 48px); justify-content: start; }
+.trade-side .row { padding-top: 0; }
+
 .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; }
 .craft-row {
   display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;

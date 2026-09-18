@@ -29,6 +29,8 @@ export class Player {
     this.lastCombat = 0;
     this.regenAt = 0;
     this.party = null;
+    this.trade = null;           // trade session id, see game/trade.js
+    this.tradeInvite = null;
     this.mods = {};
     this.cards = { size: {}, race: {} };
     this.element = 'neutral';

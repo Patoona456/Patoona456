@@ -58,7 +58,7 @@ export class UI {
     }
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
-      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', F1: 'settings' };
+      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', F1: 'settings', KeyT: 'trade' };
       if (map[e.code]) { e.preventDefault(); this.toggle(map[e.code]); }
       if (e.code === 'Enter') { e.preventDefault(); $('#chat-input').focus(); }
       if (e.code === 'KeyM') {
@@ -215,6 +215,8 @@ export class UI {
 
   updateTarget(ent) {
     const f = $('#target-frame');
+    const tradeBtn = $('#tg-trade');
+    if (tradeBtn) tradeBtn.classList.toggle('hidden', ent?.k !== 'p');
     if (!ent) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
     $('#tg-name').textContent = ent.n;
@@ -372,6 +374,8 @@ export class UI {
         this.game.net.send({ t: 'party', cmd: 'state' });
         return this.openParty(this.lastParty);
       case 'settings': return this.openSettings();
+      case 'trade': return this.lastTrade ? this.openTrade(data ?? this.lastTrade) : this.openTradePicker();
+      case 'tradePicker': return this.openTradePicker();
       case 'shop': return this.openShop(data);
       case 'market': return this.openMarket(data);
       case 'storage': return this.openStorage(data);
@@ -715,6 +719,10 @@ export class UI {
     });
     form.append(input, b);
     wrap.append(form);
+
+    const trade = el('button', 'btn', 'เทรดกับผู้เล่นใกล้ๆ');
+    trade.addEventListener('click', () => this.openTradePicker());
+    wrap.append(trade);
     return this.panel('party', 'ปาร์ตี้', wrap);
   }
 
@@ -1162,6 +1170,172 @@ export class UI {
       box.append(row);
     }
     box.append(el('div', 'muted', 'เสียงทั้งหมดสังเคราะห์สดในเบราว์เซอร์ ไม่มีไฟล์เสียงให้โหลด'));
+    return box;
+  }
+
+  /* ---------------- player trading ---------------- */
+
+  /** Server pushed a new trade state: open, refresh or close the window. */
+  tradeState(m) {
+    this.lastTrade = m.trade;
+    this.tradeInvite = m.invite;
+    if (m.trade) return this.openTrade(m.trade);
+    this.close('trade');
+    if (m.invite) this.openTradeInvite(m.invite);
+    else this.close('tradeInvite');
+  }
+
+  openTradeInvite(inv) {
+    const wrap = el('div');
+    wrap.append(el('div', '', `<b>${esc(inv.from)}</b> ขอเทรดกับคุณ`));
+    wrap.append(el('div', 'muted', 'ตรวจของทั้งสองฝั่งให้ดีก่อนกดล็อกและยืนยัน'));
+    const row = el('div', 'row');
+    const yes = el('button', 'btn primary', 'ยอมรับ');
+    yes.addEventListener('click', () => {
+      this.game.net.send({ t: 'trade', cmd: 'accept', fromId: inv.fromId });
+      this.close('tradeInvite');
+    });
+    const no = el('button', 'btn', 'ปฏิเสธ');
+    no.addEventListener('click', () => {
+      this.game.net.send({ t: 'trade', cmd: 'decline' });
+      this.close('tradeInvite');
+    });
+    row.append(yes, no);
+    wrap.append(row);
+    return this.panel('tradeInvite', 'คำขอเทรด', wrap);
+  }
+
+  /** Nearby players you can ask to trade - trading is face to face. */
+  openTradePicker() {
+    const me = this.game.predicted ?? { x: 0, y: 0 };
+    const near = [...this.game.entities.values()]
+      .filter((e) => e.k === 'p' && e.id !== this.game.state.myId)
+      .map((e) => ({ e, d: Math.hypot(e.x - me.x, e.y - me.y) }))
+      .filter((r) => r.d <= 160)
+      .sort((a, b) => a.d - b.d);
+    const wrap = el('div');
+    wrap.append(el('div', 'muted', 'เทรดได้เฉพาะผู้เล่นที่ยืนใกล้กัน (ไม่เกิน 5 ช่อง) ถ้าเดินห่างออกไป การเทรดจะถูกยกเลิก'));
+    if (!near.length) wrap.append(el('div', 'muted', 'ไม่มีผู้เล่นคนอื่นอยู่ใกล้ๆ'));
+    for (const { e, d } of near) {
+      const row = el('div', 'row');
+      row.append(el('span', '', `${esc(e.n)} ${e.lv ? `<span class="muted">Lv.${e.lv}</span>` : ''}`));
+      const b = el('button', 'btn primary', 'ขอเทรด');
+      b.title = `ห่าง ${Math.round(d)} พิกเซล`;
+      b.addEventListener('click', () => this.game.net.send({ t: 'trade', cmd: 'invite', name: e.n }));
+      row.append(b);
+      wrap.append(row);
+    }
+    const form = el('div', 'row');
+    const input = el('input');
+    input.type = 'text';
+    input.placeholder = 'หรือพิมพ์ชื่อผู้เล่น';
+    input.addEventListener('focus', () => { this.game.input.textMode = true; });
+    input.addEventListener('blur', () => { this.game.input.textMode = false; });
+    const go = el('button', 'btn', 'ขอเทรด');
+    go.addEventListener('click', () => {
+      if (input.value.trim()) this.game.net.send({ t: 'trade', cmd: 'invite', name: input.value.trim() });
+      input.value = '';
+    });
+    form.append(input, go);
+    wrap.append(form);
+    return this.panel('tradePicker', 'ขอเทรด', wrap);
+  }
+
+  /** The window itself: my offer on the left, theirs on the right. */
+  openTrade(tr) {
+    const send = (msg) => this.game.net.send({ t: 'trade', ...msg });
+    const wrap = el('div', 'grid');
+    const cols = el('div', 'grid cols-2');
+    cols.append(this.tradeSide(tr.me, true), this.tradeSide(tr.them, false));
+    wrap.append(cols);
+
+    if (!tr.me.locked) {
+      const add = el('div', 'grid');
+      add.append(el('h3', '', 'ใส่ของจากกระเป๋า'));
+      const offered = new Map();
+      for (const it of tr.me.items) offered.set(it.index, (offered.get(it.index) ?? 0) + it.qty);
+      const items = (this.game.inventory?.items ?? [])
+        .filter((it) => !it.equipped && (it.qty ?? 1) > (offered.get(it.i) ?? 0))
+        .map((it) => ({ id: 'inv' + it.i, item: { ...(ITEMS[it.id] ?? {}), id: it.id }, qty: it.qty, refine: it.refine, inv: it }));
+      add.append(this.itemPicker({
+        key: 'trade',
+        items,
+        empty: 'ไม่มีของที่เทรดได้ (ถอดอุปกรณ์ที่ใส่อยู่ออกก่อน)',
+        onSelect: (entry) => {
+          const left = (entry.qty ?? 1) - (offered.get(entry.inv.i) ?? 0);
+          const qty = el('input');
+          qty.type = 'number'; qty.min = 1; qty.max = String(left); qty.value = '1';
+          qty.style.width = '80px';
+          return this.detailCard(entry.item, [
+            ['มีอยู่', fmt(entry.qty ?? 1)],
+            ['ใส่ได้อีก', fmt(left)],
+            ...(entry.refine ? [['ตีบวก', '+' + entry.refine]] : []),
+          ], [['ใส่ลงกองเทรด', () => send({ cmd: 'offer', index: entry.inv.i, qty: Number(qty.value) || 1 }), 'btn primary']], qty);
+        },
+      }));
+      wrap.append(add);
+    }
+
+    // aurum: typed in, cleared whenever either side changes anything
+    const money = el('div', 'row');
+    money.append(el('span', '', 'ออรัมที่จะให้'));
+    const au = el('input');
+    au.type = 'number'; au.min = '0'; au.value = String(tr.me.aurum);
+    au.style.width = '140px';
+    au.disabled = tr.me.locked;
+    au.addEventListener('focus', () => { this.game.input.textMode = true; });
+    au.addEventListener('blur', () => { this.game.input.textMode = false; });
+    const set = el('button', 'btn', 'ตั้งค่า');
+    set.disabled = tr.me.locked;
+    set.addEventListener('click', () => send({ cmd: 'aurum', amount: Number(au.value) || 0 }));
+    money.append(au, set);
+    wrap.append(money);
+
+    const bothLocked = tr.me.locked && tr.them.locked;
+    const status = el('div', 'muted', bothLocked
+      ? (tr.me.confirmed ? 'รออีกฝ่ายกดยืนยัน…' : 'ตรวจของให้ครบแล้วกดยืนยันเพื่อปิดการเทรด')
+      : 'แก้กองของเมื่อไหร่ ล็อกของทั้งสองฝ่ายจะถูกปลดทันที');
+    wrap.append(status);
+
+    const actions = el('div', 'opts');
+    const lock = el('button', 'btn' + (tr.me.locked ? '' : ' primary'), tr.me.locked ? 'ปลดล็อก' : 'ล็อกกองของ');
+    lock.addEventListener('click', () => send({ cmd: 'lock', on: !tr.me.locked }));
+    const ok = el('button', 'btn primary', 'ยืนยันเทรด');
+    ok.disabled = !bothLocked || tr.me.confirmed;
+    ok.addEventListener('click', () => send({ cmd: 'confirm' }));
+    const no = el('button', 'btn danger', 'ยกเลิก');
+    no.addEventListener('click', () => send({ cmd: 'cancel' }));
+    actions.append(lock, ok, no);
+    wrap.append(actions);
+
+    return this.panel('trade', `เทรดกับ ${tr.them.name}`, wrap);
+  }
+
+  tradeSide(side, mine) {
+    const box = el('div', 'grid trade-side');
+    const head = el('div', 'row');
+    head.append(el('b', '', mine ? 'ของคุณ' : esc(side.name)));
+    head.append(el('span', side.locked ? '' : 'muted',
+      side.confirmed ? '✔ ยืนยันแล้ว' : side.locked ? '🔒 ล็อกแล้ว' : 'กำลังเลือก…'));
+    box.append(head);
+    const grid = el('div', 'slot-grid');
+    for (const it of side.items) {
+      const def = ITEMS[it.id] ?? {};
+      const node = el('div', 'slot rarity-' + (def.rarity ?? 'common'));
+      node.append(itemIcon(it.id, { size: 32 }));
+      if (it.qty > 1) node.append(el('span', 'qty num', String(it.qty)));
+      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      node.title = def.nameTh ?? it.id;
+      if (mine && !side.locked) {
+        node.style.cursor = 'pointer';
+        node.addEventListener('click', () => this.game.net.send({ t: 'trade', cmd: 'unoffer', slot: it.slot }));
+      }
+      grid.append(node);
+    }
+    for (let i = side.items.length; i < 8; i++) grid.append(el('div', 'slot empty'));
+    box.append(grid);
+    box.append(el('div', side.aurum ? '' : 'muted', `ออรัม: <b class="num">${fmt(side.aurum)}</b>`));
+    if (mine && side.items.length) box.append(el('div', 'muted', 'คลิกที่ของเพื่อเอาออก'));
     return box;
   }
 

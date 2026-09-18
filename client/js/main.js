@@ -46,6 +46,10 @@ class Game {
 
     document.getElementById('btn-auto')?.addEventListener('click', () => this.toggleAuto());
     document.getElementById('btn-cycle')?.addEventListener('click', () => this.cycleTarget(1));
+    document.getElementById('tg-trade')?.addEventListener('click', () => {
+      const t = this.entities.get(this.state.targetId);
+      if (t?.k === 'p') this.net.send({ t: 'trade', cmd: 'invite', name: t.n });
+    });
 
     // ?touch=1 forces the mobile control scheme on a desktop, for testing
     if (matchMedia('(pointer: coarse)').matches || new URLSearchParams(location.search).has('touch')) {
@@ -118,6 +122,10 @@ class Game {
         this.ui.wantQuests = false;
         this.ui.openQuests(m.quests);
       }
+    });
+    n.on('tradeState', (m) => {
+      if (m.invite) this.audio.play('warn');
+      this.ui.tradeState(m);
     });
     n.on('questTrack', (m) => this.ui.renderQuestTrack(m.quests));
     n.on('died', (m) => this.onDied(m));

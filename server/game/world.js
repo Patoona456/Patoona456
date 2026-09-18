@@ -6,6 +6,7 @@ import { db, markDirty, save } from '../persistence.js';
 import { sweepMarket } from './economy.js';
 import * as Quests from './quests.js';
 import * as Party from './party.js';
+import * as Trade from './trade.js';
 
 export class World {
   constructor() {
@@ -22,12 +23,16 @@ export class World {
   start() {
     this.tickHandle = setInterval(() => this.tick(), TICK_MS);
     this.sweeper = setInterval(() => sweepMarket(), 60000);
+    // a trade dies when either side walks off, dies or disconnects
+    this.tradeSweeper = setInterval(() => Trade.sweep(this), 500);
+    this.tradeSweeper.unref?.();
     this.sweeper.unref?.();
   }
 
   stop() {
     clearInterval(this.tickHandle);
     clearInterval(this.sweeper);
+    clearInterval(this.tradeSweeper);
   }
 
   zone(id) { return this.zones.get(id); }
@@ -50,6 +55,7 @@ export class World {
 
   removePlayer(p) {
     p.persist();
+    Trade.cancel(this, p, 'อีกฝ่ายออกจากเกม');
     Party.leave(this, p);
     p.zone?.removePlayer(p);
     this.players.delete(p.id);
