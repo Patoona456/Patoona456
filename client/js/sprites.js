@@ -106,6 +106,49 @@ export function rowOf(animName, dir) {
   return a.single ? a.row : a.row + (dir & 3);
 }
 
+// A 64x64 scratch buffer for tinting a single layer (see drawRefineGlow).
+let scratch = null;
+function scratchCtx() {
+  if (!scratch) {
+    scratch = document.createElement('canvas');
+    scratch.width = SPRITE; scratch.height = SPRITE;
+  }
+  return scratch.getContext('2d');
+}
+
+/**
+ * Light coming off a refined weapon: the weapon layer, tinted and drawn
+ * again additively - so the glow follows the swing frame by frame instead
+ * of floating next to the character.
+ */
+export function drawRefineGlow(ctx, layers, { x, y, anim = 'idle', dir = 2, elapsed = 0,
+  scale = 1, color = '#ffffff', alpha = 0.5, blur = 0 } = {}) {
+  const url = layers?.weapon;
+  if (!url) return false;
+  const s = sheet(url);
+  if (!s.ready) return false;
+
+  const col = frameOf(anim, elapsed, anim !== 'hurt');
+  const row = rowOf(anim, dir);
+  const g = scratchCtx();
+  g.clearRect(0, 0, SPRITE, SPRITE);
+  g.drawImage(s.img, col * SPRITE, row * SPRITE, SPRITE, SPRITE, 0, 0, SPRITE, SPRITE);
+  g.globalCompositeOperation = 'source-atop';
+  g.fillStyle = color;
+  g.fillRect(0, 0, SPRITE, SPRITE);
+  g.globalCompositeOperation = 'source-over';
+
+  const size = SPRITE * scale;
+  const dx = Math.round(x - size / 2), dy = Math.round(y - size + size * 0.18);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = alpha;
+  if (blur) ctx.filter = `blur(${blur}px)`;
+  ctx.drawImage(scratch, dx, dy, size, size);
+  ctx.restore();
+  return true;
+}
+
 /**
  * Draw one composed character.
  * @param ctx canvas 2d context

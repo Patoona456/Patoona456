@@ -4,7 +4,8 @@ import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
-import { drawCharacter, drawBlob, playerLayers, monsterLayers, npcLayers } from './sprites.js';
+import { drawCharacter, drawBlob, drawRefineGlow, playerLayers, monsterLayers, npcLayers } from './sprites.js';
+import { glowTier } from '../../shared/refineglow.js';
 import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
 
@@ -51,6 +52,7 @@ export class Renderer {
     this.fx = [];
     this.particles = new Particles();
     this.steps = new Map();          // entity id -> when its next dust puff is due
+    this.sparkAt = new Map();        // entity id -> when its weapon next throws a spark
     this.shake = 0;
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -102,7 +104,7 @@ export class Renderer {
     const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
         theme: zonePayload.theme ?? 'grass', kind: zonePayload.kind,
-        structures: zonePayload.structures ?? [] },
+        structures: zonePayload.structures ?? [], decor: zonePayload.decor ?? [] },
       this.grid
     );
     this.props = scenery.concat(painted.overlays).sort((a, b) => a.y - b.y);
@@ -352,17 +354,75 @@ export class Renderer {
           : e.k === 'n' ? npcLayers(e.look)
           : monsterLayers(e.sprite);
         if (layers) {
+          const scale = e.sprite?.scale ?? 1;
           drawCharacter(ctx, layers, {
             x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed,
-            scale: e.sprite?.scale ?? 1,
+            scale,
             alpha: e.inv ? 0.35 : 1,
             tint: e.sprite?.tint ?? null,
             flash: hurt,
           });
+          if (e.k === 'p' && e.wr) this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
         }
       }
 
       this.drawNameplate(ctx, e, state, now);
+    }
+  }
+
+  /**
+   * Refined weapons burn: a blurred bloom pass, a crisp one on top, and
+   * sparks that come off the blade at the levels people actually chase.
+   */
+  drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now) {
+    const tier = glowTier(e.wr);
+    if (!tier || e.inv) return;
+    const colour = `rgb(${tier.color.join(',')})`;
+    // breathing, plus a kick while swinging
+    const swinging = anim === 'slash' || anim === 'thrust' || anim === 'shoot';
+    const pulse = 0.72 + 0.28 * Math.sin(now / (520 / tier.pulse) + e.x * 0.05);
+    const power = tier.aura * pulse * (swinging ? 1.45 : 1);
+
+    const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed, scale, color: colour };
+    // wide bloom, tight bloom, then the blade itself lit up
+    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.75, blur: 7 + tier.aura * 7 });
+    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.70, blur: 2.5 });
+    drawRefineGlow(ctx, layers, { ...opts, alpha: Math.min(0.95, power * 0.9), blur: 0 });
+
+    // light cast on the ground around the wielder, at the higher tiers
+    if (tier.light) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const r = tier.light * (0.85 + pulse * 0.25);
+      const g = ctx.createRadialGradient(e.x, e.y - 6, 1, e.x, e.y - 6, r);
+      g.addColorStop(0, `rgba(${tier.color.join(',')},${0.26 * power})`);
+      g.addColorStop(0.45, `rgba(${tier.color.join(',')},${0.10 * power})`);
+      g.addColorStop(1, `rgba(${tier.color.join(',')},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(e.x, e.y - 6, r, 0, Math.PI * 2); ctx.fill();
+      // a ring of light on the floor, so the tier reads even in daylight
+      ctx.globalAlpha = 0.5 * power;
+      ctx.strokeStyle = `rgba(${tier.color.join(',')},0.55)`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(e.x, e.y + 2, 14 + tier.trail * 8, (14 + tier.trail * 8) * 0.4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // embers drifting off the blade
+    if (tier.sparks) {
+      const due = this.sparkAt.get(e.id) ?? 0;
+      const gap = (swinging ? 110 : 420) / tier.sparks;
+      if (now >= due) {
+        this.sparkAt.set(e.id, now + gap * (0.6 + Math.random() * 0.8));
+        const side = [[0, -1], [-1, 0], [0, 1], [1, 0]][e.d ?? 2];
+        this.particles.spark(
+          e.x + side[0] * 12 + (Math.random() - 0.5) * 10,
+          e.y - 26 + side[1] * 6 + (Math.random() - 0.5) * 10,
+          { color: tier.color.join(','), n: swinging ? 3 : 1, power: 0.5 + tier.trail },
+        );
+      }
     }
   }
 

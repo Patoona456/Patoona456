@@ -313,6 +313,16 @@ export class Conn {
         this.sendInventory();
         return this.notice('dev: boosted', 'good');
       }
+      // dev-only: set the equipped weapon's refine, to look at the auras
+      case 'devRefine': {
+        if (process.env.EMBERFALL_DEV !== '1') return this.error('ปิดใช้งานอยู่');
+        const eq = p.equippedItem('weapon');
+        if (!eq) return this.error('ไม่ได้ถืออาวุธ');
+        eq.stack.refine = Math.max(0, Math.min(15, m.level | 0));
+        p.recompute();
+        this.sendInventory();
+        return this.send({ t: OP.SELF, self: p.selfState() });
+      }
       case OP.PARTY: return this.partyCmd(m);
       case OP.TRADE: return this.tradeCmd(m);
       // the quest log is readable anywhere; only turn-ins need an NPC

@@ -412,6 +412,8 @@ export class Player {
       eq: Object.fromEntries(Object.entries(this.record.equipment)
         .map(([slot, idx]) => [slot, this.inventory[idx]?.id])
         .filter(([, id]) => id)),
+      // refine level of the weapon, so everyone can see what you carry
+      wr: this.equippedItem('weapon')?.stack.refine ?? 0,
       st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
       party: this.party ?? null,
       inv: this.mods.invisible ? 1 : 0,

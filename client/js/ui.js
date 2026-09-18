@@ -8,10 +8,11 @@ import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
 import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js';
 import { itemIcon, skillIcon, icon } from './icons.js';
-import { playerLayers, drawCharacter, loadedRatio } from './sprites.js';
+import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
 import { SLOTS } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
 import { gameClock, skyAt } from '../../shared/daycycle.js';
+import { glowTier, glowCss } from '../../shared/refineglow.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -433,7 +434,7 @@ export class UI {
       node.title = it ? `${it.name}${it.refine ? ` +${it.refine}` : ''} — คลิกเพื่อถอด` : LABELS[slot];
       if (it) {
         node.append(itemIcon(it.id, { size: 30 }));
-        if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+        if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
         node.addEventListener('click', () => this.game.net.send({ t: 'unequip', slot }));
       } else {
         node.append(el('span', 'doll-label', LABELS[slot]));
@@ -453,14 +454,26 @@ export class UI {
     // the canvas is not in the document yet when this runs, so keep painting
     // until the sheets are decoded rather than bailing on the first frame
     let tries = 0;
-    const paint = () => {
-      if (tries++ > 40) return;
+    const wr = worn.weapon?.refine ?? 0;
+    const tier = glowTier(wr);
+    const paint = (t = 0) => {
+      if (tries++ > 40 && !tier) return;
       ctx.clearRect(0, 0, 96, 116);
       ctx.save();
       ctx.scale(1.55, 1.55);
-      drawCharacter(ctx, layers, { x: 31, y: 70, anim: 'idle', dir: 2, elapsed: 0 });
+      const pose = { x: 31, y: 70, anim: 'idle', dir: 2, elapsed: 0 };
+      drawCharacter(ctx, layers, pose);
+      if (tier) {
+        // the same aura the world shows, so the doll matches the field
+        const pulse = 0.72 + 0.28 * Math.sin(t / (520 / tier.pulse));
+        const colour = `rgb(${tier.color.join(',')})`;
+        drawRefineGlow(ctx, layers, { ...pose, color: colour, alpha: tier.aura * pulse * 0.55, blur: 4 });
+        drawRefineGlow(ctx, layers, { ...pose, color: colour, alpha: tier.aura * pulse * 0.5 });
+      }
       ctx.restore();
-      if (loadedRatio() < 1 || tries < 3) setTimeout(paint, 200);
+      if (!document.body.contains(preview)) return;
+      if (tier) requestAnimationFrame(paint);
+      else if (loadedRatio() < 1 || tries < 3) setTimeout(paint, 200);
     };
     paint();
 
@@ -543,7 +556,7 @@ export class UI {
         + (this.selectedInv === it.i ? ' sel' : '') + (broken ? ' broken' : ''));
       node.append(itemIcon(it.id, { size: 34 }));
       if (it.qty > 1) node.append(el('span', 'qty num', String(it.qty)));
-      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
       if (it.equipped) node.append(el('span', 'worn'));
       node.title = it.name;
       node.addEventListener('click', () => { this.selectedInv = it.i; this.renderInventory(); });
@@ -570,8 +583,16 @@ export class UI {
     head.style.borderTop = 'none';
     const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
     ico.append(itemIcon(it.id, { size: 34 }));
+    if (it.refine) markRefine(ico, it.refine);
     const meta = el('div');
     meta.append(title);
+    const auraTier = glowTier(it.refine ?? 0);
+    if (auraTier) {
+      const line = el('div', '', `✦ ออร่า${auraTier.name}`);
+      line.style.color = glowCss(it.refine, 1);
+      line.style.fontSize = '12px';
+      meta.append(line);
+    }
     meta.append(el('div', 'muted', [
       { weapon: 'อาวุธ', armor: 'เกราะ', consumable: 'ของใช้', material: 'วัตถุดิบ', ammo: 'กระสุน' }[it.type] ?? '',
       it.wclass, it.level ? `ต้องเลเวล ${it.level}` : '',
@@ -781,6 +802,10 @@ export class UI {
 
   /** Small reusable picker: a grid of item slots plus a detail pane. */
   itemPicker({ items, onSelect, key = 'picker', empty = 'ไม่มีไอเทม' }) {
+    // so a detail card can name the aura without every caller remembering to
+    for (const e of items) {
+      if (e.refine && e.item && e.item.refine === undefined) e.item = { ...e.item, refine: e.refine };
+    }
     const box = el('div', 'grid');
     const grid = el('div', 'slot-grid');
     const detail = el('div');
@@ -791,7 +816,7 @@ export class UI {
         + (this.pick?.[key] === entry.id ? ' sel' : ''));
       node.append(itemIcon(it.id, { size: 32 }));
       if (entry.qty > 1) node.append(el('span', 'qty num', String(entry.qty)));
-      if (entry.refine) node.append(el('span', 'plus', '+' + entry.refine));
+      if (entry.refine) { node.append(el('span', 'plus', '+' + entry.refine)); markRefine(node, entry.refine); }
       node.title = it.nameTh ?? it.name;
       node.addEventListener('click', () => {
         this.pick ??= {};
@@ -823,6 +848,13 @@ export class UI {
     const meta = el('div');
     meta.append(el('div', 'tname rarity-' + (it.rarity ?? 'common'), esc(it.nameTh ?? it.name)));
     if (it.desc) meta.append(el('div', 'muted', esc(it.desc)));
+    const tier = glowTier(it.refine ?? 0);
+    if (tier) {
+      const line = el('div', '', `✦ ออร่า${tier.name} (+${it.refine})`);
+      line.style.color = glowCss(it.refine, 1);
+      line.style.fontSize = '12px';
+      meta.append(line);
+    }
     head.append(ico, meta);
     card.append(head);
     for (const [k, v] of rows) {
@@ -1052,7 +1084,7 @@ export class UI {
       const node = el('div', `slot rarity-${it.rarity ?? 'common'}`);
       node.append(itemIcon(it.id, { size: 30 }));
       if (it.qty > 1) node.append(el('span', 'qty num', String(it.qty)));
-      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
       node.title = `${it.name} — คลิกเพื่อฝาก`;
       node.addEventListener('click', () => this.game.net.send({ t: 'storageMove', dir: 'in', index: it.i, qty: it.qty }));
       mineGrid.append(node);
@@ -1067,7 +1099,7 @@ export class UI {
       const node = el('div', `slot rarity-${def.rarity ?? 'common'}`);
       node.append(itemIcon(it.id, { size: 30 }));
       if ((it.qty ?? 1) > 1) node.append(el('span', 'qty num', String(it.qty)));
-      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
       node.title = `${def.nameTh ?? it.id} — คลิกเพื่อถอน`;
       node.addEventListener('click', () => this.game.net.send({ t: 'storageMove', dir: 'out', index: i, qty: it.qty ?? 1 }));
       storeGrid.append(node);
@@ -1099,7 +1131,7 @@ export class UI {
         const ico = el('div', `slot rarity-${l.rarity ?? 'common'}`);
         ico.append(itemIcon(l.id, { size: 30 }));
         if (l.qty > 1) ico.append(el('span', 'qty num', String(l.qty)));
-        if (l.refine) ico.append(el('span', 'plus', '+' + l.refine));
+        if (l.refine) { ico.append(el('span', 'plus', '+' + l.refine)); markRefine(ico, l.refine); }
         const mid = el('div');
         mid.innerHTML = `<b class="rarity-${l.rarity ?? 'common'}">${esc(l.name)}${l.refine ? ` +${l.refine}` : ''}</b> <span class="muted">x${l.qty}</span>
           <div class="muted num">ชิ้นละ ${fmt(l.unit)} · อ้างอิง ${fmt(l.ref)} · ผู้ขาย ${esc(l.seller)}</div>`;
@@ -1338,7 +1370,7 @@ export class UI {
       const node = el('div', 'slot rarity-' + (def.rarity ?? 'common'));
       node.append(itemIcon(it.id, { size: 32 }));
       if (it.qty > 1) node.append(el('span', 'qty num', String(it.qty)));
-      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
       node.title = def.nameTh ?? it.id;
       if (mine && !side.locked) {
         node.style.cursor = 'pointer';
@@ -1431,6 +1463,18 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** A refined item wears its aura in the bag too, in the same colour it glows. */
+function markRefine(node, refine) {
+  const tier = glowTier(refine);
+  if (!tier) return;
+  node.classList.add('refined');
+  node.style.borderColor = glowCss(refine, 0.85);
+  node.style.boxShadow = `inset 0 0 10px ${glowCss(refine, 0.35)}, 0 0 8px ${glowCss(refine, 0.30)}`;
+  const plus = node.querySelector('.plus');
+  if (plus) plus.style.color = glowCss(refine, 1);
+  node.title = `${node.title ?? ''} · ${tier.name} (+${refine})`.trim();
+}
+
 function setBar(barSel, txtSel, cur, max, mode) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
   $(barSel).style.width = pct + '%';

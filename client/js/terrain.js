@@ -43,8 +43,64 @@ function canvas(w, h) {
   return c;
 }
 
+/**
+ * The town square is laid, not grown: real cobbles with mortar between them,
+ * worn smooth in places. Anything else gets the organic mottle below.
+ */
+function cobbleTexture() {
+  const c = canvas(96, 96);
+  const g = c.getContext('2d');
+  let seed = 20240917;
+  const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+
+  g.fillStyle = '#6f6350';                       // warm mortar underneath
+  g.fillRect(0, 0, 96, 96);
+
+  const stone = (x, y, rx, ry, rot, tone) => {
+    const grad = g.createRadialGradient(x - rx * 0.3, y - ry * 0.4, 0.5, x, y, rx * 1.15);
+    grad.addColorStop(0, tone[0]);
+    grad.addColorStop(1, tone[1]);
+    g.fillStyle = grad;
+    g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(60,54,44,0.35)';
+    g.lineWidth = 0.8;
+    g.stroke();
+  };
+
+  const TONES = [
+    ['#c8bb9c', '#a2937a'], ['#bcae8f', '#97896f'], ['#d1c4a4', '#ab9d81'],
+    ['#b3a68c', '#8e816a'], ['#d8cbab', '#b2a58a'],
+  ];
+  // brick-ish rows, jittered so no two stones line up perfectly
+  const rows = 10, cols = 9;
+  for (let ry = 0; ry < rows; ry++) {
+    for (let cx2 = 0; cx2 < cols; cx2++) {
+      const offset = ry % 2 ? (96 / cols) / 2 : 0;
+      const x = cx2 * (96 / cols) + offset + (rnd() - 0.5) * 3;
+      const y = ry * (96 / rows) + (rnd() - 0.5) * 3;
+      const rx = 5.2 + rnd() * 1.3, r2 = 3.7 + rnd() * 1.0;
+      const tone = TONES[Math.floor(rnd() * TONES.length)];
+      const rot = (rnd() - 0.5) * 0.5;
+      stone(x, y, rx, r2, rot, tone);
+      for (const [ox, oy] of [[-96, 0], [96, 0], [0, -96], [0, 96]]) {
+        if (x + ox > -12 && x + ox < 108 && y + oy > -12 && y + oy < 108) stone(x + ox, y + oy, rx, r2, rot, tone);
+      }
+    }
+  }
+  // damp patches and a little grit in the joints
+  for (let i = 0; i < 14; i++) {
+    g.globalAlpha = 0.05 + rnd() * 0.06;
+    g.fillStyle = i % 2 ? '#3d4a52' : '#e8dcc0';
+    const x = rnd() * 96, y = rnd() * 96, r = 6 + rnd() * 14;
+    g.beginPath(); g.ellipse(x, y, r, r * 0.7, rnd() * 3, 0, Math.PI * 2); g.fill();
+  }
+  g.globalAlpha = 1;
+  return c;
+}
+
 /** One 96x96 sheet holding three organic variants of a material, used as a pattern. */
 function materialTexture(kind, theme) {
+  if (theme === 'town' && kind === T.FLOOR) return cobbleTexture();
   const pal = (theme === 'town' && TOWN_OVERRIDE[kind]) || PALETTES[kind] || PALETTES[T.GRASS];
   const c = canvas(96, 96);
   const g = c.getContext('2d');
@@ -365,6 +421,77 @@ export function buildTerrain(zone, grid) {
   // --- close-up detail: blades, pebbles, cracks, sparkle -------------------
   drawDecals(ctx, cells, at, theme, zone.seed ?? 1);
 
+  // A fountain's water is part of its sprite, so the basin's square of water
+  // tiles must not show through around it: pave them back over.
+  if (theme === 'town') {
+    for (const st of zone.structures ?? []) {
+      if (st.kind !== 'fountain') continue;
+      ctx.save();
+      ctx.fillStyle = tex(T.FLOOR);
+      // one tile of margin, to bury the shoreline halo the water pass left
+      ctx.fillRect((st.x - 1) * TILE, (st.y - 1) * TILE, (st.w + 2) * TILE, (st.h + 2) * TILE);
+      ctx.restore();
+    }
+  }
+
+  // --- the town square: wear, damp and a ring of paving round the middle ---
+  if (theme === 'town' && cells.has(T.FLOOR)) {
+    const e = cells.get(T.FLOOR);
+    const box = boxOf(e, 1);
+    const cx = ((e.x0 + e.x1) / 2 + 0.5) * TILE, cy = ((e.y0 + e.y1) / 2 + 0.5) * TILE;
+    const clipToSquare = (g) => {
+      g.globalCompositeOperation = 'destination-in';
+      g.beginPath();
+      pathAll(g, T.FLOOR, 12);
+      g.fill();
+      g.globalCompositeOperation = 'source-over';
+    };
+
+    // sun-bleached patches and damp ones, so the repeating cobble breaks up
+    for (const [tone, alpha, count, seedOff] of [
+      ['rgba(255,244,214,1)', 0.20, 16, 0x1a],
+      ['rgba(52,60,70,1)', 0.14, 12, 0x2b],
+    ]) {
+      stamp(box, 26, (g) => {
+        g.beginPath();
+        for (let i = 0; i < count; i++) {
+          const h = hash2(i * 5 + 1, i * 11 + 2, (zone.seed ?? 1) ^ seedOff);
+          const h2 = hash2(i * 7 + 3, i * 3 + 5, (zone.seed ?? 1) ^ (seedOff + 1));
+          const x = (e.x0 + h * (e.x1 - e.x0)) * TILE, y = (e.y0 + h2 * (e.y1 - e.y0)) * TILE;
+          g.moveTo(x, y);
+          g.ellipse(x, y, 40 + h * 90, 30 + h2 * 70, h * 3, 0, Math.PI * 2);
+        }
+        g.fill();
+        clipToSquare(g);
+      }, tone, 'overlay', alpha);
+    }
+
+    // paving laid in rings around the fountain, the way a real square is set
+    stamp(box, 1.5, (g) => {
+      g.strokeStyle = '#fff';
+      for (let r = 44; r < 330; r += 46) {
+        g.lineWidth = r % 92 === 44 ? 3 : 2;
+        g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.stroke();
+      }
+      clipToSquare(g);
+    }, 'rgba(70,62,50,1)', 'source-over', 0.22);
+
+    // and the paths people actually walk: faint radial wear
+    stamp(box, 8, (g) => {
+      g.strokeStyle = '#fff';
+      g.lineWidth = 26;
+      g.lineCap = 'round';
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + 0.3;
+        g.beginPath();
+        g.moveTo(cx + Math.cos(a) * 60, cy + Math.sin(a) * 60);
+        g.lineTo(cx + Math.cos(a) * 330, cy + Math.sin(a) * 330);
+        g.stroke();
+      }
+      clipToSquare(g);
+    }, 'rgba(255,238,200,1)', 'overlay', 0.12);
+  }
+
   // --- slow, large colour variation so nothing reads as flat ---------------
   stamp([0, 0, out.width, out.height], 42, (g) => {
     g.beginPath();
@@ -399,9 +526,18 @@ export function buildTerrain(zone, grid) {
     }
   }
 
+  // the animated shimmer skips fountain basins - their sprite owns that water
+  const inFountain = (x, y) => (zone.structures ?? []).some((st) => st.kind === 'fountain'
+    && x >= st.x && x < st.x + st.w && y >= st.y && y < st.y + st.h);
   const water = [];
   const wc = cells.get(T.WATER);
-  if (wc) for (let i = 0; i < wc.list.length; i += 2) water.push([wc.list[i], wc.list[i + 1]]);
+  if (wc) {
+    for (let i = 0; i < wc.list.length; i += 2) {
+      const x = wc.list[i], y = wc.list[i + 1];
+      if (theme === 'town' && inFountain(x, y)) continue;
+      water.push([x, y]);
+    }
+  }
 
   console.debug(`[terrain] ${zone.id} painted in ${Math.round(performance.now() - t0)}ms`);
   return { canvas: out, water, overlays };

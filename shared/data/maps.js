@@ -45,7 +45,9 @@ export const MAPS = {
   emberhold: {
     id: 'emberhold', name: 'Emberhold', nameTh: 'เอมเบอร์โฮลด์', kind: 'town',
     width: 64, height: 48, seed: 1001, safe: true, theme: 'town',
-    spawnPoint: [32, 26],
+    // south of the fountain: a spawn that touches the basin corner wedges
+    // the player's collision box against it
+    spawnPoint: [32, 28],
     warps: [
       { x: 32, y: 45, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
       { x: 2, y: 24, w: 2, h: 4, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
@@ -61,18 +63,45 @@ export const MAPS = {
       { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 28, y: 24, look: null },
     ],
     spawns: [],
-    // hand-placed town: footprints become walls, the client draws the buildings
+    // hand-placed town: footprints become walls, the client draws the buildings.
+    // Deliberately off-grid - a town that mirrors perfectly reads as a template.
     structures: [
-      { kind: 'house', x: 29, y: 10, w: 6, h: 4, roof: '#b0b4c0', sign: 'วิหาร' },
-      { kind: 'house', x: 19, y: 15, w: 5, h: 4, roof: '#8c4a3a', sign: 'ร้านค้า' },
-      { kind: 'house', x: 40, y: 15, w: 5, h: 4, roof: '#6a5a8c', sign: 'โรงตีเหล็ก' },
-      { kind: 'house', x: 19, y: 30, w: 5, h: 4, roof: '#4a7a6a', sign: 'คลัง' },
-      { kind: 'house', x: 40, y: 30, w: 5, h: 4, roof: '#8c7a3a', sign: 'ตลาด' },
-      { kind: 'stall', x: 26, y: 20, w: 3, h: 2 },
-      { kind: 'stall', x: 36, y: 20, w: 3, h: 2 },
-      { kind: 'stall', x: 26, y: 28, w: 3, h: 2 },
-      { kind: 'stall', x: 36, y: 28, w: 3, h: 2 },
-      { kind: 'fountain', x: 31, y: 23, w: 3, h: 3 },
+      { kind: 'house', x: 27, y: 8, w: 8, h: 5, roof: '#b0b4c0', sign: 'วิหารรุ่งอรุณ' },
+      { kind: 'house', x: 16, y: 14, w: 6, h: 4, roof: '#8c4a3a', sign: 'ร้านค้า' },
+      { kind: 'house', x: 39, y: 13, w: 6, h: 5, roof: '#6a5a8c', sign: 'โรงตีเหล็ก' },
+      { kind: 'house', x: 17, y: 29, w: 5, h: 4, roof: '#4a7a6a', sign: 'คลังสมบัติ' },
+      { kind: 'house', x: 38, y: 29, w: 7, h: 4, roof: '#8c7a3a', sign: 'ตลาดกลาง' },
+      { kind: 'house', x: 46, y: 21, w: 5, h: 4, roof: '#7a5a4a', sign: 'โรงเตี๊ยม' },
+      { kind: 'house', x: 11, y: 21, w: 5, h: 4, roof: '#5a6a8c', sign: 'หอยาม' },
+      { kind: 'house', x: 24, y: 36, w: 6, h: 4, roof: '#6d4a3a' },
+      { kind: 'house', x: 35, y: 37, w: 5, h: 3, roof: '#4a6a5a' },
+      // market row: uneven spacing, four different awnings
+      { kind: 'stall', x: 25, y: 18, w: 3, h: 2, variant: 0 },
+      { kind: 'stall', x: 35, y: 17, w: 3, h: 2, variant: 1 },
+      { kind: 'stall', x: 24, y: 27, w: 3, h: 2, variant: 2 },
+      { kind: 'stall', x: 25, y: 31, w: 4, h: 2, variant: 3 },
+      { kind: 'stall', x: 26, y: 33, w: 3, h: 2, variant: 1 },
+      { kind: 'fountain', x: 30, y: 22, w: 4, h: 4 },
+    ],
+    // props that do not block anything: lamps, benches, crates, greenery
+    decor: [
+      // lantern ring around the plaza
+      ['lamp', 27, 20], ['lamp', 37, 20], ['lamp', 27, 28], ['lamp', 37, 28],
+      ['lamp', 32, 17], ['lamp', 32, 31], ['lamp', 22, 24], ['lamp', 42, 24],
+      // somewhere to sit, and something green to look at
+      ['bench', 29, 20], ['bench', 36, 21], ['bench', 28, 29], ['bench', 34, 31],
+      ['planter', 30, 17], ['planter', 34, 18], ['planter', 29, 31], ['planter', 35, 29],
+      ['tree', 21, 12], ['tree', 45, 16], ['tree', 14, 33], ['tree', 47, 34], ['tree', 20, 40],
+      ['bush', 23, 13], ['bush', 44, 18], ['bush', 16, 35],
+      // working clutter around the shops
+      ['well', 25, 24], ['cart', 42, 27], ['awning', 44, 20],
+      ['barrel', 23, 18], ['barrel', 22, 19], ['crate', 38, 16], ['sack', 39, 17],
+      ['crate', 19, 27], ['sack', 20, 28], ['barrel', 41, 32], ['crate', 42, 32],
+      ['sack', 27, 34], ['barrel', 31, 35], ['crate', 26, 20], ['sack', 37, 29],
+      // banners and signposts at the ways in and out
+      ['banner', 30, 13], ['banner', 34, 13], ['sign', 32, 36], ['sign', 6, 24],
+      ['banner', 22, 30], ['banner', 43, 21],
+      ['flowerpot', 28, 12], ['flowerpot', 36, 12], ['flowerpot', 46, 25], ['flowerpot', 12, 25],
     ],
   },
 
@@ -237,6 +266,38 @@ export function buildGrid(map) {
 
   if (map.kind === 'town') {
     carve(Math.floor(w / 2), Math.floor(h / 2), 11, T.FLOOR);
+    // the roads keep their dirt outside the square, but the square is all stone
+    const px = Math.floor(w / 2), py = Math.floor(h / 2);
+    for (let y2 = py - 13; y2 <= py + 13; y2++) {
+      for (let x2 = px - 13; x2 <= px + 13; x2++) {
+        if (x2 < 1 || y2 < 1 || x2 >= w - 1 || y2 >= h - 1) continue;
+        const d = (x2 - px) ** 2 + (y2 - py) ** 2;
+        if (d <= 13 * 13 && g[y2 * w + x2] === T.PATH) g[y2 * w + x2] = T.FLOOR;
+      }
+    }
+  }
+
+  // clear warp pads and the spawn point
+  // Only open what is actually blocked: stamping a dirt pad over ground that
+  // already works punched holes in the town square.
+  const openTile = map.kind === 'town' ? T.FLOOR : path;
+  const clear = (x, y, ww = 2, hh = 2) => {
+    for (let y2 = y - 1; y2 < y + hh + 1; y2++) {
+      for (let x2 = x - 1; x2 < x + ww + 1; x2++) {
+        if (x2 <= 0 || y2 <= 0 || x2 >= w - 1 || y2 >= h - 1) continue;
+        const i = y2 * w + x2;
+        if (!BLOCKING.has(g[i])) continue;
+        g[i] = openTile;
+      }
+    }
+  };
+  for (const wp of map.warps ?? []) clear(wp.x, wp.y, wp.w, wp.h);
+  if (map.spawnPoint) clear(map.spawnPoint[0] - 2, map.spawnPoint[1] - 2, 5, 5);
+  for (const npc of map.npcs ?? []) clear(npc.x - 1, npc.y - 1, 3, 3);
+  for (const sp of map.spawns ?? []) if (sp.area) clear(sp.area[0], sp.area[1], sp.area[2], sp.area[3]);
+
+  // buildings last: a doorway or an NPC pad must never eat a wall
+  if (map.kind === 'town') {
     for (const st of map.structures ?? []) {
       for (let y2 = st.y; y2 < st.y + st.h; y2++) {
         for (let x2 = st.x; x2 < st.x + st.w; x2++) {
@@ -252,17 +313,6 @@ export function buildGrid(map) {
       }
     }
   }
-
-  // clear warp pads and the spawn point
-  const clear = (x, y, ww = 2, hh = 2) => {
-    for (let y2 = y - 1; y2 < y + hh + 1; y2++)
-      for (let x2 = x - 1; x2 < x + ww + 1; x2++)
-        if (x2 > 0 && y2 > 0 && x2 < w - 1 && y2 < h - 1) g[y2 * w + x2] = path;
-  };
-  for (const wp of map.warps ?? []) clear(wp.x, wp.y, wp.w, wp.h);
-  if (map.spawnPoint) clear(map.spawnPoint[0] - 2, map.spawnPoint[1] - 2, 5, 5);
-  for (const npc of map.npcs ?? []) clear(npc.x - 1, npc.y - 1, 3, 3);
-  for (const sp of map.spawns ?? []) if (sp.area) clear(sp.area[0], sp.area[1], sp.area[2], sp.area[3]);
 
   return g;
 }
@@ -310,7 +360,7 @@ export const PROP_SETS = {
   rock:  [['boulder', 2], ['spike', 1.6], ['bones', 1.2], ['totem', 0.7], ['campfire', 0.5], ['rubble', 1.6]],
   ice:   [['iceshard', 2.4], ['crystal', 1.4], ['snowpile', 2], ['icicle', 1.6], ['bones', 0.6]],
 };
-export const TALL_PROPS = new Set(['tree', 'deadtree', 'pillar', 'lamp', 'totem', 'crystal', 'sign', 'banner', 'icicle', 'spike']);
+export const TALL_PROPS = new Set(['tree', 'deadtree', 'pillar', 'lamp', 'totem', 'crystal', 'sign', 'banner', 'icicle', 'spike', 'well', 'awning']);
 
 export function generateProps(map, grid) {
   const structures = (map.structures ?? []).map((st) => ({
@@ -321,10 +371,19 @@ export function generateProps(map, grid) {
     h: st.h * 32,
     roof: st.roof,
     sign: st.sign,
+    variant: st.variant ?? 0,
     scale: 1,
     flip: 0,
     tall: st.kind !== 'fountain',
   }));
+  // hand-placed decor: exact tiles, no blocking, drawn like any other prop
+  const decor = (map.decor ?? []).map(([kind, dx, dy, scale = 1, flip = 0]) => ({
+    x: (dx + 0.5) * 32,
+    y: (dy + 1) * 32,
+    kind, scale, flip,
+    tall: TALL_PROPS.has(kind),
+  }));
+
   const set = PROP_SETS[map.theme] ?? PROP_SETS.grass;
   const total = set.reduce((n, [, w]) => n + w, 0);
   const density = map.kind === 'town' ? 0.07 : 0.17;
@@ -350,5 +409,5 @@ export function generateProps(map, grid) {
       });
     }
   }
-  return structures.concat(props);
+  return structures.concat(decor, props);
 }
