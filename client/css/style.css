@@ -390,7 +390,33 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 @media (max-width: 680px) { .cols-2 { grid-template-columns: 1fr; } }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 
+.doll { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; justify-content: center; }
+.doll-col { display: grid; gap: 6px; }
+.doll-mid { display: grid; gap: 6px; justify-items: center; }
+.doll-view {
+  width: 96px; height: 116px; image-rendering: pixelated;
+  background: radial-gradient(60% 55% at 50% 60%, rgba(255, 176, 58, .10), transparent 70%);
+}
+.doll-cp { font-size: 13px; }
+.doll-cp b { color: var(--accent); }
+.doll-slot { width: 46px; height: 46px; }
+.doll-label { font-size: 9px; color: var(--muted); text-align: center; line-height: 1.1; padding: 2px; }
+
 .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; }
+.craft-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+  padding: 8px; border: 1px solid var(--edge-soft); border-radius: calc(var(--radius) * .7);
+}
+.craft-mats { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0; }
+.craft-mat { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.craft-mat canvas { image-rendering: pixelated; }
+.craft-mat.short { color: var(--bad); }
+
+.listing {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+  padding: 7px 0; border-bottom: 1px solid var(--edge-soft);
+}
+
 .tip { display: grid; gap: 5px; font-size: 12px; }
 .tip .tname { font-weight: 700; font-size: 13px; }
 .tip .stat { display: flex; justify-content: space-between; gap: 12px; }

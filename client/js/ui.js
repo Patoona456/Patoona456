@@ -8,6 +8,8 @@ import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
 import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js';
 import { itemIcon, skillIcon, icon } from './icons.js';
+import { playerLayers, drawCharacter, loadedRatio } from './sprites.js';
+import { SLOTS } from '../../shared/constants.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -369,21 +371,84 @@ export class UI {
   openCharacter(self) {
     const wrap = el('div');
     const d = self.derived;
+
+    /* --- equipment doll: the character between two columns of slots --- */
+    const gear = el('div', 'doll');
+    const left = el('div', 'doll-col');
+    const right = el('div', 'doll-col');
+    const mid = el('div', 'doll-mid');
+
+    const preview = document.createElement('canvas');
+    preview.width = 96; preview.height = 116;
+    preview.className = 'doll-view';
+    mid.append(preview);
+    const cp = el('div', 'doll-cp');
+    cp.innerHTML = `<span class="label">CP</span> <b class="num">${fmt(Math.round(
+      (d.atk ?? 0) + (d.matk ?? 0) * 0.8 + (d.def ?? 0) * 2.2 + (d.mdef ?? 0) * 1.6
+      + (d.maxHp ?? 0) / 12 + (d.hit ?? 0) * 0.4 + (d.flee ?? 0) * 0.4))}</b>`;
+    mid.append(cp);
+
+    const worn = Object.fromEntries(Object.entries(self.equipment ?? {})
+      .map(([slot, idx]) => [slot, this.game.inventory?.items?.find((x) => x.i === idx)])
+      .filter(([, it]) => it));
+
+    const LABELS = {
+      head: 'ศีรษะ', torso: 'ลำตัว', hands: 'มือ', legs: 'ขา', feet: 'เท้า',
+      weapon: 'อาวุธ', offhand: 'มือรอง', belt: 'เข็มขัด', accessory: 'เครื่องประดับ',
+    };
+    const slotNode = (slot) => {
+      const it = worn[slot];
+      const node = el('div', 'slot doll-slot' + (it ? ` rarity-${it.rarity ?? 'common'}` : ' empty'));
+      node.title = it ? `${it.name}${it.refine ? ` +${it.refine}` : ''} — คลิกเพื่อถอด` : LABELS[slot];
+      if (it) {
+        node.append(itemIcon(it.id, { size: 30 }));
+        if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+        node.addEventListener('click', () => this.game.net.send({ t: 'unequip', slot }));
+      } else {
+        node.append(el('span', 'doll-label', LABELS[slot]));
+      }
+      return node;
+    };
+    for (const slot of ['head', 'torso', 'hands', 'belt']) left.append(slotNode(slot));
+    for (const slot of ['weapon', 'offhand', 'legs', 'feet']) right.append(slotNode(slot));
+    mid.append(slotNode('accessory'));
+    gear.append(left, mid, right);
+
+    const ctx = preview.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    const layers = playerLayers(self.look, Object.fromEntries(
+      Object.entries(worn).map(([slot, it]) => [slot, it.id])
+    ));
+    // the canvas is not in the document yet when this runs, so keep painting
+    // until the sheets are decoded rather than bailing on the first frame
+    let tries = 0;
+    const paint = () => {
+      if (tries++ > 40) return;
+      ctx.clearRect(0, 0, 96, 116);
+      ctx.save();
+      ctx.scale(1.55, 1.55);
+      drawCharacter(ctx, layers, { x: 31, y: 70, anim: 'idle', dir: 2, elapsed: 0 });
+      ctx.restore();
+      if (loadedRatio() < 1 || tries < 3) setTimeout(paint, 200);
+    };
+    paint();
+
+    /* --- stats --- */
     const stats = el('div', 'grid cols-2');
-    const left = el('div');
-    left.innerHTML = `<h3 style="margin:0 0 8px">สเตตัสหลัก <small class="muted">แต้มเหลือ ${self.statPoints}</small></h3>`;
+    const statsLeft = el('div');
+    statsLeft.innerHTML = `<h3 style="margin:0 0 6px">สเตตัสหลัก <small class="muted">แต้มเหลือ ${self.statPoints}</small></h3>`;
     for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) {
       const row = el('div', 'row');
-      row.innerHTML = `<span><b>${k.toUpperCase()}</b> ${self.base[k]}</span>`;
+      row.innerHTML = `<span><b>${k.toUpperCase()}</b> <span class="num">${self.base[k]}</span></span>`;
       const b = el('button', 'btn', `+ (${self.statCosts[k]})`);
       b.disabled = self.statPoints < self.statCosts[k];
       b.addEventListener('click', () => this.game.net.send({ t: 'allocStat', stat: k }));
       row.append(b);
-      left.append(row);
+      statsLeft.append(row);
     }
-    const right = el('div');
-    right.innerHTML = `
-      <h3 style="margin:0 0 8px">ค่าที่ได้จริง</h3>
+    const statsRight = el('div');
+    statsRight.innerHTML = `
+      <h3 style="margin:0 0 6px">ค่าที่ได้จริง</h3>
       ${statRow('ATK', d.atk)}${statRow('MATK', d.matk)}
       ${statRow('DEF', `${d.def} (+${d.softDef})`)}${statRow('MDEF', `${d.mdef} (+${d.softMdef})`)}
       ${statRow('HIT', d.hit)}${statRow('FLEE', d.flee)}
@@ -391,7 +456,7 @@ export class UI {
       ${statRow('ความเร็วเดิน', Math.round(d.moveSpeed))}
       ${statRow('ลดเวลาร่าย', Math.round((1 - d.castFactor) * 100) + '%')}
       ${statRow('น้ำหนักสูงสุด', fmt(self.weightCap ?? d.weight))}`;
-    stats.append(left, right);
+    stats.append(statsLeft, statsRight);
 
     const job = JOBS[self.job];
     const info = el('div');
@@ -401,7 +466,8 @@ export class UI {
     if (job?.next?.length) {
       info.append(el('div', 'muted', `สายต่อไป: ${job.next.map((j) => JOBS[j].nameTh).join(' / ')} (คุยกับครูฝึกเมื่อ Job Lv. ${job.jobLevelToAdvance})`));
     }
-    wrap.append(info, el('hr'), stats);
+
+    wrap.append(gear, info, stats);
     return this.panel('character', 'ตัวละคร', wrap);
   }
 
@@ -678,6 +744,62 @@ export class UI {
     return this.panel('jobchange', 'เปลี่ยนอาชีพ', wrap);
   }
 
+  /** Small reusable picker: a grid of item slots plus a detail pane. */
+  itemPicker({ items, onSelect, key = 'picker', empty = 'ไม่มีไอเทม' }) {
+    const box = el('div', 'grid');
+    const grid = el('div', 'slot-grid');
+    const detail = el('div');
+    if (!items.length) box.append(el('div', 'muted', empty));
+    for (const entry of items) {
+      const it = entry.item;
+      const node = el('div', `slot rarity-${it.rarity ?? 'common'}`
+        + (this.pick?.[key] === entry.id ? ' sel' : ''));
+      node.append(itemIcon(it.id, { size: 32 }));
+      if (entry.qty > 1) node.append(el('span', 'qty num', String(entry.qty)));
+      if (entry.refine) node.append(el('span', 'plus', '+' + entry.refine));
+      node.title = it.nameTh ?? it.name;
+      node.addEventListener('click', () => {
+        this.pick ??= {};
+        this.pick[key] = entry.id;
+        detail.innerHTML = '';
+        detail.append(onSelect(entry));
+        for (const sib of grid.children) sib.classList.remove('sel');
+        node.classList.add('sel');
+      });
+      grid.append(node);
+    }
+    box.append(grid, detail);
+    if (items.length) {
+      const first = items.find((e) => e.id === this.pick?.[key]) ?? items[0];
+      detail.append(onSelect(first));
+      grid.children[items.indexOf(first)]?.classList.add('sel');
+    }
+    return box;
+  }
+
+  /** A titled detail card used by every shop-ish window. */
+  detailCard(it, rows, actions, extra) {
+    const card = el('div', 'win tip');
+    card.style.padding = '10px';
+    const head = el('div');
+    head.style.cssText = 'display:flex;gap:10px;align-items:center';
+    const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
+    ico.append(itemIcon(it.id, { size: 32 }));
+    const meta = el('div');
+    meta.append(el('div', 'tname rarity-' + (it.rarity ?? 'common'), esc(it.nameTh ?? it.name)));
+    if (it.desc) meta.append(el('div', 'muted', esc(it.desc)));
+    head.append(ico, meta);
+    card.append(head);
+    for (const [k, v] of rows) {
+      const r = el('div', 'stat');
+      r.append(el('span', 'muted', k), el('span', 'num', String(v)));
+      card.append(r);
+    }
+    if (extra) card.append(extra);
+    if (actions) card.append(actions);
+    return card;
+  }
+
   openShop(d) {
     if (d.mode === 'refine') return this.openRefine();
     if (d.mode === 'repair') return this.openRepair();
@@ -685,7 +807,8 @@ export class UI {
     if (d.mode === 'warp') return this.openWarp(d);
     if (d.mode === 'sell') return this.openSell();
     this.lastShop = d;
-    const wrap = el('div');
+
+    const wrap = el('div', 'grid');
     const tabs = el('div', 'opts');
     const buyTab = el('button', 'btn primary', 'ซื้อ');
     const sellTab = el('button', 'btn', 'ขาย');
@@ -695,122 +818,181 @@ export class UI {
 
     const renderBuy = () => {
       body.innerHTML = '';
-      const t = el('table');
-      t.innerHTML = '<tr><th>ไอเทม</th><th>ราคา</th><th>สต็อก</th><th></th></tr>';
-      for (const s of d.stock) {
-        const tr = el('tr');
-        tr.innerHTML = `<td>${esc(s.name)}</td><td style="color:var(--gold)">${fmt(s.price)}</td><td class="muted">${s.stock}</td>`;
-        const td = el('td');
-        const qty = el('input');
-        qty.type = 'number'; qty.value = 1; qty.min = 1; qty.style.width = '64px';
-        const b = el('button', 'btn primary', 'ซื้อ');
-        b.addEventListener('click', () => this.game.net.send({ t: 'shopBuy', shop: d.id, id: s.id, qty: Number(qty.value) || 1 }));
-        td.append(qty, b);
-        tr.append(td);
-        t.append(tr);
-      }
-      body.append(t);
+      body.append(this.itemPicker({
+        key: 'shop',
+        items: d.stock.map((s) => ({ id: s.id, item: ITEMS[s.id] ?? { id: s.id, nameTh: s.name }, qty: 1, stock: s.stock, price: s.price })),
+        onSelect: (entry) => {
+          const qty = el('input');
+          qty.type = 'number'; qty.min = 1; qty.max = 999; qty.value = 1;
+          qty.style.width = '80px';
+          qty.addEventListener('focus', () => { this.game.input.textMode = true; });
+          qty.addEventListener('blur', () => { this.game.input.textMode = false; });
+          const actions = el('div', 'opts');
+          actions.style.marginTop = '8px';
+          const buy = el('button', 'btn primary', 'ซื้อ');
+          buy.addEventListener('click', () => this.game.net.send({
+            t: 'shopBuy', shop: d.id, id: entry.id, qty: Number(qty.value) || 1,
+          }));
+          actions.append(qty, buy);
+          return this.detailCard(entry.item, [
+            ['ราคา', fmt(entry.price) + ' AU'],
+            ['คงเหลือ', fmt(entry.stock)],
+            ...(entry.item.atk ? [['ATK', entry.item.atk]] : []),
+            ...(entry.item.def ? [['DEF', entry.item.def]] : []),
+            ...(entry.item.heal ? [['ฟื้น HP', entry.item.heal]] : []),
+            ...(entry.item.level ? [['ต้องเลเวล', entry.item.level]] : []),
+          ], actions);
+        },
+      }));
     };
+
     const renderSell = () => {
       body.innerHTML = '';
-      body.append(el('div', 'muted', 'NPC รับซื้อที่ ~28% ของมูลค่าอ้างอิง และราคาจะตกลงถ้าขายของชิ้นเดิมซ้ำๆ ในวันเดียว — ขายให้ผู้เล่นได้ราคาดีกว่าเสมอ'));
-      const t = el('table');
-      t.innerHTML = '<tr><th>ไอเทม</th><th>ได้รับ/ชิ้น</th><th></th></tr>';
-      for (const it of this.game.inventory.items) {
-        if (it.equipped) continue;
-        const tr = el('tr');
-        tr.innerHTML = `<td>${esc(it.name)} ${it.qty > 1 ? `x${it.qty}` : ''}</td>
-          <td style="color:var(--gold)">${fmt(npcSellPrice(it.value ?? 0, 0))}</td>`;
-        const td = el('td');
-        const b = el('button', 'btn', 'ขาย');
-        b.addEventListener('click', () => this.game.net.send({ t: 'shopSell', index: it.i, qty: it.qty }));
-        td.append(b);
-        tr.append(td);
-        t.append(tr);
-      }
-      body.append(t);
+      body.append(el('div', 'muted', 'NPC รับซื้อราว 28% ของมูลค่าอ้างอิง และราคาจะตกถ้าขายของชิ้นเดิมซ้ำๆ ในวันเดียว'));
+      body.append(this.sellPicker());
     };
+
     buyTab.addEventListener('click', () => { buyTab.className = 'btn primary'; sellTab.className = 'btn'; renderBuy(); });
     sellTab.addEventListener('click', () => { sellTab.className = 'btn primary'; buyTab.className = 'btn'; renderSell(); });
     renderBuy();
     return this.panel('shop', d.name ?? 'ร้านค้า', wrap);
   }
 
+  sellPicker() {
+    const items = (this.game.inventory?.items ?? []).filter((it) => !it.equipped);
+    return this.itemPicker({
+      key: 'sell',
+      items: items.map((it) => ({ id: it.i, item: it, qty: it.qty, refine: it.refine })),
+      empty: 'ไม่มีของให้ขาย',
+      onSelect: (entry) => {
+        const it = entry.item;
+        const unit = npcSellPrice(it.value ?? 0, 0);
+        const qty = el('input');
+        qty.type = 'number'; qty.min = 1; qty.max = it.qty; qty.value = it.qty;
+        qty.style.width = '80px';
+        qty.addEventListener('focus', () => { this.game.input.textMode = true; });
+        qty.addEventListener('blur', () => { this.game.input.textMode = false; });
+        const actions = el('div', 'opts');
+        actions.style.marginTop = '8px';
+        const sell = el('button', 'btn primary', 'ขาย');
+        sell.addEventListener('click', () => this.game.net.send({
+          t: 'shopSell', index: it.i, qty: Number(qty.value) || 1,
+        }));
+        actions.append(qty, sell);
+        return this.detailCard(it, [
+          ['ได้รับต่อชิ้น', fmt(unit) + ' AU'],
+          ['มูลค่าอ้างอิง', fmt(it.value ?? 0) + ' AU'],
+          ['มีอยู่', fmt(it.qty)],
+        ], actions);
+      },
+    });
+  }
+
   openSell() {
-    const wrap = el('div');
-    const t = el('table');
-    t.innerHTML = '<tr><th>ไอเทม</th><th>ได้รับ/ชิ้น</th><th></th></tr>';
-    for (const it of this.game.inventory.items) {
-      if (it.equipped) continue;
-      const tr = el('tr');
-      tr.innerHTML = `<td>${esc(it.name)} ${it.qty > 1 ? `x${it.qty}` : ''}</td><td style="color:var(--gold)">${fmt(npcSellPrice(it.value ?? 0, 0))}</td>`;
-      const td = el('td');
-      const b = el('button', 'btn', 'ขาย');
-      b.addEventListener('click', () => this.game.net.send({ t: 'shopSell', index: it.i, qty: it.qty }));
-      td.append(b); tr.append(td); t.append(tr);
-    }
-    wrap.append(t);
+    const wrap = el('div', 'grid');
+    wrap.append(this.sellPicker());
     return this.panel('shop', 'ขายของ', wrap);
   }
 
   openRefine() {
-    const wrap = el('div');
-    wrap.append(el('div', 'muted', 'ตีบวกคือบ่อดูดออรัมหลักของเกม — +4 ขึ้นไปต้องใช้หินลับรูน และล้มเหลวที่ +8 ขึ้นไปของจะแตก (ใช้น้ำมันศักดิ์สิทธิ์กันได้ 1 ครั้ง)'));
-    const t = el('table');
-    t.innerHTML = '<tr><th>อุปกรณ์</th><th>โอกาสสำเร็จ</th><th>ค่าใช้จ่าย</th><th></th></tr>';
-    for (const it of this.game.inventory.items) {
-      const def = ITEMS[it.id];
-      if (!def?.refinable) continue;
-      const lvl = it.refine ?? 0;
-      const tr = el('tr');
-      tr.innerHTML = `<td>${esc(it.name)} +${lvl}</td>
-        <td>${Math.round(refineChance(lvl) * 100)}%</td>
-        <td style="color:var(--gold)">${fmt(refineCost(def.value, lvl))}</td>`;
-      const td = el('td');
-      const b = el('button', 'btn primary', 'ตีบวก');
-      b.addEventListener('click', () => this.game.net.send({ t: 'refine', index: it.i, oil: false }));
-      const b2 = el('button', 'btn', '+น้ำมัน');
-      b2.addEventListener('click', () => this.game.net.send({ t: 'refine', index: it.i, oil: true }));
-      td.append(b, b2); tr.append(td); t.append(tr);
-    }
-    wrap.append(t);
+    const wrap = el('div', 'grid');
+    wrap.append(el('div', 'muted', 'ตีบวกคือบ่อดูดออรัมหลักของเกม — +4 ขึ้นไปต้องใช้หินลับรูน และล้มเหลวที่ +8 ขึ้นไปของจะแตก (น้ำมันศักดิ์สิทธิ์กันได้ 1 ครั้ง)'));
+    const gear = (this.game.inventory?.items ?? []).filter((it) => ITEMS[it.id]?.refinable);
+    wrap.append(this.itemPicker({
+      key: 'refine',
+      items: gear.map((it) => ({ id: it.i, item: it, refine: it.refine })),
+      empty: 'ไม่มีอุปกรณ์ที่ตีบวกได้',
+      onSelect: (entry) => {
+        const it = entry.item;
+        const lvl = it.refine ?? 0;
+        const def = ITEMS[it.id];
+        const chance = Math.round(refineChance(lvl) * 100);
+        const actions = el('div', 'opts');
+        actions.style.marginTop = '8px';
+        const go = el('button', 'btn primary', `ตีบวกเป็น +${lvl + 1}`);
+        go.addEventListener('click', () => this.game.net.send({ t: 'refine', index: it.i, oil: false }));
+        const oil = el('button', 'btn', 'ใช้น้ำมันศักดิ์สิทธิ์');
+        oil.addEventListener('click', () => this.game.net.send({ t: 'refine', index: it.i, oil: true }));
+        actions.append(go, oil);
+        const risk = el('div', 'muted');
+        risk.textContent = lvl >= 8 ? 'ล้มเหลว = อุปกรณ์แตกสลาย'
+          : lvl >= 1 ? 'ล้มเหลว = ตกลงหนึ่งขั้น' : 'ล้มเหลวไม่มีผลเสีย';
+        return this.detailCard(it, [
+          ['ระดับปัจจุบัน', '+' + lvl],
+          ['โอกาสสำเร็จ', chance + '%'],
+          ['ค่าใช้จ่าย', fmt(refineCost(def.value, lvl)) + ' AU'],
+          ['วัตถุดิบ', lvl >= 4 ? 'หินลับรูน x1' : '—'],
+        ], actions, risk);
+      },
+    }));
     return this.panel('shop', 'ตีบวกอุปกรณ์', wrap);
   }
 
   openRepair() {
-    const wrap = el('div');
-    const t = el('table');
-    t.innerHTML = '<tr><th>อุปกรณ์</th><th>ความคงทน</th><th></th></tr>';
-    for (const it of this.game.inventory.items) {
-      if (it.dur === undefined) continue;
-      const tr = el('tr');
-      tr.innerHTML = `<td>${esc(it.name)}</td><td>${it.dur}/${it.maxDur}</td>`;
-      const td = el('td');
-      const b = el('button', 'btn primary', 'ซ่อม');
-      b.disabled = it.dur >= it.maxDur;
-      b.addEventListener('click', () => this.game.net.send({ t: 'repair', index: it.i }));
-      td.append(b); tr.append(td); t.append(tr);
-    }
-    wrap.append(t);
+    const wrap = el('div', 'grid');
+    const worn = (this.game.inventory?.items ?? []).filter((it) => it.dur !== undefined && it.dur < it.maxDur);
+    const all = el('button', 'btn', 'ซ่อมทั้งหมด');
+    all.addEventListener('click', () => {
+      for (const it of worn) this.game.net.send({ t: 'repair', index: it.i });
+    });
+    wrap.append(all);
+    wrap.append(this.itemPicker({
+      key: 'repair',
+      items: worn.map((it) => ({ id: it.i, item: it, refine: it.refine })),
+      empty: 'อุปกรณ์ทุกชิ้นยังสมบูรณ์',
+      onSelect: (entry) => {
+        const it = entry.item;
+        const missing = it.maxDur - it.dur;
+        const cost = Math.max(20, Math.floor((it.value ?? 0) * 0.004 * missing) + missing * 2);
+        const actions = el('div', 'opts');
+        actions.style.marginTop = '8px';
+        const go = el('button', 'btn primary', 'ซ่อม');
+        go.addEventListener('click', () => this.game.net.send({ t: 'repair', index: it.i }));
+        actions.append(go);
+        return this.detailCard(it, [
+          ['ความคงทน', `${it.dur} / ${it.maxDur}`],
+          ['ค่าซ่อม', fmt(cost) + ' AU'],
+        ], actions);
+      },
+    }));
     return this.panel('shop', 'ซ่อมอุปกรณ์', wrap);
   }
 
   openCraft() {
-    const wrap = el('div');
+    const wrap = el('div', 'grid');
+    const have = (id) => (this.game.inventory?.items ?? [])
+      .filter((x) => x.id === id).reduce((n, x) => n + x.qty, 0);
     for (const [id, r] of Object.entries(RECIPES)) {
-      const row = el('div', 'row');
-      row.innerHTML = `<div><b>${itemName(r.out.id)} x${r.out.qty}</b>
-        <div class="muted">ใช้: ${r.in.map((i) => `${itemName(i.id)} x${i.qty}`).join(', ')} · ค่าธรรมเนียม ${fmt(r.fee)} AU</div></div>`;
-      const btn = el('button', 'btn primary', 'คราฟต์');
-      btn.addEventListener('click', () => this.game.net.send({ t: 'npcAction', action: 'craftDo', recipe: id, times: 1 }));
-      row.append(btn);
-      wrap.append(row);
+      const card = el('div', 'craft-row');
+      const out = el('div', 'slot rarity-' + (ITEMS[r.out.id]?.rarity ?? 'common'));
+      out.append(itemIcon(r.out.id, { size: 32 }));
+      if (r.out.qty > 1) out.append(el('span', 'qty num', String(r.out.qty)));
+      const mid = el('div');
+      mid.append(el('div', '', `<b>${itemName(r.out.id)}</b> x${r.out.qty}`));
+      const mats = el('div', 'craft-mats');
+      let ok = true;
+      for (const need of r.in) {
+        const n = have(need.id);
+        if (n < need.qty) ok = false;
+        const m = el('div', 'craft-mat' + (n < need.qty ? ' short' : ''));
+        m.append(itemIcon(need.id, { size: 20 }));
+        m.append(el('span', 'num', `${Math.min(n, need.qty)}/${need.qty}`));
+        m.title = itemName(need.id);
+        mats.append(m);
+      }
+      mid.append(mats);
+      mid.append(el('div', 'muted', `ค่าธรรมเนียม ${fmt(r.fee)} AU`));
+      const go = el('button', 'btn' + (ok ? ' primary' : ''), 'คราฟต์');
+      go.disabled = !ok;
+      go.addEventListener('click', () => this.game.net.send({ t: 'npcAction', action: 'craftDo', recipe: id, times: 1 }));
+      card.append(out, mid, go);
+      wrap.append(card);
     }
     return this.panel('shop', 'คราฟต์', wrap);
   }
 
   openWarp(d) {
-    const wrap = el('div');
+    const wrap = el('div', 'grid');
     wrap.append(el('div', 'muted', 'ค่าเดินทางเป็นบ่อดูดออรัม — เดินเองฟรีเสมอ'));
     for (const r of d.routes ?? WARP_ROUTES) {
       const row = el('div', 'row');
@@ -824,36 +1006,47 @@ export class UI {
   }
 
   openStorage(d) {
-    const wrap = el('div');
+    const wrap = el('div', 'grid');
     const grid = el('div', 'grid cols-2');
+
     const mine = el('div');
-    mine.innerHTML = '<h3>กระเป๋า</h3>';
-    for (const it of this.game.inventory.items) {
+    mine.append(el('h3', '', 'กระเป๋า'));
+    const mineGrid = el('div', 'slot-grid');
+    for (const it of (this.game.inventory?.items ?? [])) {
       if (it.equipped) continue;
-      const row = el('div', 'row');
-      row.innerHTML = `<span>${esc(it.name)} ${it.qty > 1 ? `x${it.qty}` : ''}</span>`;
-      const b = el('button', 'btn', '→ ฝาก');
-      b.addEventListener('click', () => this.game.net.send({ t: 'storageMove', dir: 'in', index: it.i, qty: it.qty }));
-      row.append(b);
-      mine.append(row);
+      const node = el('div', `slot rarity-${it.rarity ?? 'common'}`);
+      node.append(itemIcon(it.id, { size: 30 }));
+      if (it.qty > 1) node.append(el('span', 'qty num', String(it.qty)));
+      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      node.title = `${it.name} — คลิกเพื่อฝาก`;
+      node.addEventListener('click', () => this.game.net.send({ t: 'storageMove', dir: 'in', index: it.i, qty: it.qty }));
+      mineGrid.append(node);
     }
+    mine.append(mineGrid);
+
     const store = el('div');
-    store.innerHTML = '<h3>คลังเก็บของ</h3>';
+    store.append(el('h3', '', 'คลังเก็บของ'));
+    const storeGrid = el('div', 'slot-grid');
     (d.storage?.items ?? []).forEach((it, i) => {
-      const row = el('div', 'row');
-      row.innerHTML = `<span>${itemName(it.id)} ${it.qty > 1 ? `x${it.qty}` : ''}${it.refine ? ` +${it.refine}` : ''}</span>`;
-      const b = el('button', 'btn', 'ถอน ←');
-      b.addEventListener('click', () => this.game.net.send({ t: 'storageMove', dir: 'out', index: i, qty: it.qty }));
-      row.append(b);
-      store.append(row);
+      const def = ITEMS[it.id] ?? {};
+      const node = el('div', `slot rarity-${def.rarity ?? 'common'}`);
+      node.append(itemIcon(it.id, { size: 30 }));
+      if ((it.qty ?? 1) > 1) node.append(el('span', 'qty num', String(it.qty)));
+      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      node.title = `${def.nameTh ?? it.id} — คลิกเพื่อถอน`;
+      node.addEventListener('click', () => this.game.net.send({ t: 'storageMove', dir: 'out', index: i, qty: it.qty ?? 1 }));
+      storeGrid.append(node);
     });
+    if (!(d.storage?.items ?? []).length) store.append(el('div', 'muted', 'คลังว่างเปล่า'));
+    store.append(storeGrid);
+
     grid.append(mine, store);
     wrap.append(grid);
     return this.panel('storage', 'คลังเก็บของ', wrap);
   }
 
   openMarket(d) {
-    const wrap = el('div');
+    const wrap = el('div', 'grid');
     wrap.append(el('div', 'muted', 'ตลาดผู้เล่น — หักภาษี 5% ทั้งตอนลงขายและตอนขายได้ ประกาศหมดอายุใน 24 ชม.'));
     const tabs = el('div', 'opts');
     const buy = el('button', 'btn primary', 'ซื้อ');
@@ -864,47 +1057,65 @@ export class UI {
 
     const renderBuy = () => {
       body.innerHTML = '';
-      const t = el('table');
-      t.innerHTML = '<tr><th>ไอเทม</th><th>จำนวน</th><th>ราคา</th><th>ต่อชิ้น</th><th>ผู้ขาย</th><th></th></tr>';
-      for (const l of d.listings ?? []) {
-        const tr = el('tr');
-        tr.innerHTML = `<td class="rarity-${l.rarity ?? 'common'}">${esc(l.name)}${l.refine ? ` +${l.refine}` : ''}</td>
-          <td>${l.qty}</td><td style="color:var(--gold)">${fmt(l.price)}</td>
-          <td class="muted">${fmt(l.unit)} <small>(อ้างอิง ${fmt(l.ref)})</small></td><td class="muted">${esc(l.seller)}</td>`;
-        const td = el('td');
+      const list = d.listings ?? [];
+      if (!list.length) { body.append(el('div', 'muted', 'ยังไม่มีใครลงขาย')); return; }
+      for (const l of list) {
+        const row = el('div', 'listing');
+        const ico = el('div', `slot rarity-${l.rarity ?? 'common'}`);
+        ico.append(itemIcon(l.id, { size: 30 }));
+        if (l.qty > 1) ico.append(el('span', 'qty num', String(l.qty)));
+        if (l.refine) ico.append(el('span', 'plus', '+' + l.refine));
+        const mid = el('div');
+        mid.innerHTML = `<b class="rarity-${l.rarity ?? 'common'}">${esc(l.name)}${l.refine ? ` +${l.refine}` : ''}</b> <span class="muted">x${l.qty}</span>
+          <div class="muted num">ชิ้นละ ${fmt(l.unit)} · อ้างอิง ${fmt(l.ref)} · ผู้ขาย ${esc(l.seller)}</div>`;
         const isMine = l.seller === this.game.self?.name;
-        const b = el('button', 'btn ' + (isMine ? 'danger' : 'primary'), isMine ? 'ยกเลิก' : 'ซื้อ');
+        const b = el('button', 'btn ' + (isMine ? 'danger' : 'primary'),
+          isMine ? 'ยกเลิก' : `${fmt(l.price)} AU`);
         b.addEventListener('click', () => this.game.net.send(isMine
           ? { t: 'marketCancel', uid: l.uid } : { t: 'marketBuy', uid: l.uid }));
-        td.append(b); tr.append(td); t.append(tr);
+        row.append(ico, mid, b);
+        body.append(row);
       }
-      body.append(t);
     };
+
     const renderSell = () => {
       body.innerHTML = '';
-      const t = el('table');
-      t.innerHTML = '<tr><th>ไอเทม</th><th>จำนวน</th><th>ราคารวม</th><th></th></tr>';
-      for (const it of this.game.inventory.items) {
-        if (it.equipped) continue;
-        const tr = el('tr');
-        tr.innerHTML = `<td>${esc(it.name)}${it.refine ? ` +${it.refine}` : ''}</td>`;
-        const qtyTd = el('td'), priceTd = el('td'), actTd = el('td');
-        const qty = el('input'); qty.type = 'number'; qty.min = 1; qty.max = it.qty; qty.value = it.qty; qty.style.width = '70px';
-        const price = el('input'); price.type = 'number'; price.min = 1; price.value = Math.max(1, Math.round((it.value ?? 10) * it.qty * 0.8)); price.style.width = '110px';
-        for (const inp of [qty, price]) {
-          inp.addEventListener('focus', () => { this.game.input.textMode = true; });
-          inp.addEventListener('blur', () => { this.game.input.textMode = false; });
-        }
-        const b = el('button', 'btn primary', 'ลงขาย');
-        b.addEventListener('click', () => this.game.net.send({
-          t: 'marketPost', index: it.i, qty: Number(qty.value) || 1, price: Number(price.value) || 1,
-        }));
-        qtyTd.append(qty); priceTd.append(price); actTd.append(b);
-        tr.append(qtyTd, priceTd, actTd);
-        t.append(tr);
-      }
-      body.append(t);
+      const items = (this.game.inventory?.items ?? []).filter((it) => !it.equipped);
+      body.append(this.itemPicker({
+        key: 'market',
+        items: items.map((it) => ({ id: it.i, item: it, qty: it.qty, refine: it.refine })),
+        empty: 'ไม่มีของให้ลงขาย',
+        onSelect: (entry) => {
+          const it = entry.item;
+          const qty = el('input');
+          qty.type = 'number'; qty.min = 1; qty.max = it.qty; qty.value = it.qty;
+          const price = el('input');
+          price.type = 'number'; price.min = 1;
+          price.value = Math.max(1, Math.round((it.value ?? 10) * it.qty * 0.8));
+          for (const inp of [qty, price]) {
+            inp.style.width = '110px';
+            inp.addEventListener('focus', () => { this.game.input.textMode = true; });
+            inp.addEventListener('blur', () => { this.game.input.textMode = false; });
+          }
+          const fields = el('div', 'grid');
+          const r1 = el('div', 'row'); r1.append(el('span', 'muted', 'จำนวน'), qty);
+          const r2 = el('div', 'row'); r2.append(el('span', 'muted', 'ราคารวม (AU)'), price);
+          fields.append(r1, r2);
+          const actions = el('div', 'opts');
+          actions.style.marginTop = '8px';
+          const go = el('button', 'btn primary', 'ลงขาย');
+          go.addEventListener('click', () => this.game.net.send({
+            t: 'marketPost', index: it.i, qty: Number(qty.value) || 1, price: Number(price.value) || 1,
+          }));
+          actions.append(go);
+          return this.detailCard(it, [
+            ['มูลค่าอ้างอิงต่อชิ้น', fmt(it.value ?? 0) + ' AU'],
+            ['ค่าธรรมเนียมลงขาย', '5% ของราคาที่ตั้ง'],
+          ], actions, fields);
+        },
+      }));
     };
+
     buy.addEventListener('click', () => { buy.className = 'btn primary'; sell.className = 'btn'; renderBuy(); });
     sell.addEventListener('click', () => { sell.className = 'btn primary'; buy.className = 'btn'; renderSell(); });
     renderBuy();
