@@ -389,6 +389,7 @@ export class UI {
         this.game.net.send({ t: 'party', cmd: 'state' });
         return this.openParty(this.lastParty);
       case 'settings': return this.openSettings();
+      case 'jobchange': return this.openJobChange();
       case 'trade': return this.lastTrade ? this.openTrade(data ?? this.lastTrade) : this.openTradePicker();
       case 'tradePicker': return this.openTradePicker();
       case 'shop': return this.openShop(data);
@@ -779,25 +780,138 @@ export class UI {
     return this.panel('dialog', d.name, wrap);
   }
 
+  /**
+   * Choosing a path is the biggest decision a character makes, so the window
+   * says what each one actually plays like - not just its stat block - and
+   * shows the trial that pays extra for taking it.
+   */
   openJobChange() {
     const self = this.game.self;
     const job = JOBS[self.job];
-    const wrap = el('div');
-    wrap.append(el('div', 'muted', `Job Level ปัจจุบัน: ${self.jobLevel} / ต้องการ ${job.jobLevelToAdvance ?? 10}`));
+    const need = job.advance ?? { jobLevel: job.jobLevelToAdvance ?? 10 };
+    const quests = this.lastQuests ?? [];
+    const wrap = el('div', 'grid');
+
+    const met = (!need.level || self.level >= need.level)
+      && (!need.jobLevel || self.jobLevel >= need.jobLevel);
+    const req = [
+      need.level ? `เลเวล ${need.level}` : null,
+      need.jobLevel ? `Job Level ${need.jobLevel}` : null,
+    ].filter(Boolean).join(' และ ');
+    const head = el('div', met ? '' : 'muted',
+      met ? `✔ คุณพร้อมเลือกทางแล้ว (ต้องการ${req})`
+        : `ยังไม่ถึงเกณฑ์: ต้องการ${req} — ตอนนี้เลเวล ${self.level} / Job ${self.jobLevel}`);
+    head.style.color = met ? 'var(--good)' : '';
+    wrap.append(head);
+    wrap.append(el('div', 'muted', 'เลือกแล้วเปลี่ยนไม่ได้ (รีเซ็ตสกิลได้ แต่เปลี่ยนสายไม่ได้) · ทุกสายได้ชุดอุปกรณ์เริ่มต้นและสวมให้อัตโนมัติ'));
+
     for (const nid of job.next ?? []) {
       const n = JOBS[nid];
-      const row = el('div', 'row');
-      row.innerHTML = `<div><b>${n.nameTh}</b> <span class="muted">${n.name}</span><div class="muted">${n.desc}</div></div>`;
-      const b = el('button', 'btn primary', 'เลือกอาชีพนี้');
-      b.disabled = self.jobLevel < (job.jobLevelToAdvance ?? 10);
-      b.addEventListener('click', () => {
-        this.game.net.send({ t: 'npcAction', action: 'jobChange', job: nid });
-        this.close('jobchange');
-      });
-      row.append(b);
-      wrap.append(row);
+      const card = el('div', 'job-card');
+      const title = el('div', 'job-head');
+      title.innerHTML = `<b>${esc(n.nameTh)}</b> <span class="muted">${esc(n.name)}</span>`;
+      card.append(title);
+      if (n.pitch) card.append(el('div', 'job-pitch', esc(n.pitch)));
+
+      const facts = el('div', 'job-facts');
+      const growth = Object.entries(n.growth ?? {})
+        .map(([k, v]) => `${k.toUpperCase()} +${v}`).join(' · ');
+      const weapons = (n.weapons ?? []).map((w) => ({
+        blade: 'ดาบ/มีด', spear: 'หอก', bow: 'ธนู', rod: 'คทา',
+      }[w] ?? w)).join(' · ');
+      for (const [k, v] of [
+        ['เลือด', `${Math.round((n.hpMod ?? 1) * 100)}%`],
+        ['มานา', `${Math.round((n.spMod ?? 1) * 100)}%`],
+        ['ความเร็ว', `${Math.round((n.speedMod ?? 1) * 100)}%`],
+        ['โตทาง', growth || '-'],
+        ['อาวุธ', weapons || '-'],
+      ]) {
+        const row = el('div', 'job-fact');
+        row.append(el('span', 'muted', k), el('span', '', v));
+        facts.append(row);
+      }
+      card.append(facts);
+      if (n.play) card.append(el('div', 'muted', esc(n.play)));
+      if (n.forWho) card.append(el('div', 'job-for', '👤 เหมาะกับคน' + esc(n.forWho)));
+
+      const skills = el('div', 'job-skills');
+      for (const sid of (n.skills ?? []).slice(0, 5)) {
+        const sk = SKILLS[sid];
+        if (!sk) continue;
+        const chip = el('span', 'chip');
+        chip.append(skillIcon(sid, { size: 18 }));
+        chip.append(el('span', '', esc(sk.nameTh ?? sk.name)));
+        chip.title = sk.desc ?? '';
+        skills.append(chip);
+      }
+      card.append(skills);
+
+      const kit = (n.starterKit ?? []).map((it) => {
+        const def = ITEMS[it.id];
+        return `${def?.nameTh ?? it.id}${it.qty > 1 ? ` x${it.qty}` : ''}`;
+      }).join(' · ');
+      if (kit) card.append(el('div', 'muted', 'ชุดเริ่มต้น: ' + esc(kit)));
+
+      // the trial: optional, but it pays
+      const trial = n.trial && quests.find((q) => q.id === n.trial);
+      const actions = el('div', 'opts');
+      if (trial) {
+        const done = trial.state?.done;
+        const taken = trial.state && !trial.state.done;
+        const prog = (trial.progress ?? []).map((x) => `${x.have}/${x.need}`).join(' · ');
+        const line = el('div', done ? 'job-trial done' : 'job-trial',
+          done ? `✔ ผ่านบททดสอบ "${esc(trial.name)}" แล้ว — เลือกสายนี้จะได้แต้มสกิลเพิ่ม 1`
+            : `บททดสอบ "${esc(trial.name)}" · ${esc(trial.desc)}${taken ? ` — ความคืบหน้า ${prog}` : ' (ไม่บังคับ ทำแล้วได้ของชุดใหญ่ เงิน และแต้มสกิลเพิ่ม)'}`);
+        card.append(line);
+        if (!done && !taken) {
+          const take = el('button', 'btn', 'รับบททดสอบ');
+          take.addEventListener('click', () => {
+            this.game.net.send({ t: 'quest', cmd: 'accept', id: trial.id });
+            this.game.net.send({ t: 'quest', cmd: 'list' });
+            setTimeout(() => this.open('jobchange'), 350);
+          });
+          actions.append(take);
+        } else if (taken && (trial.progress ?? []).every((x) => x.have >= x.need)) {
+          const claim = el('button', 'btn', 'ส่งบททดสอบ');
+          claim.addEventListener('click', () => {
+            this.game.net.send({ t: 'quest', cmd: 'complete', id: trial.id });
+            this.game.net.send({ t: 'quest', cmd: 'list' });
+            setTimeout(() => this.open('jobchange'), 350);
+          });
+          actions.append(claim);
+        }
+      }
+
+      const pick = el('button', 'btn primary', 'เลือกทางนี้');
+      pick.disabled = !met;
+      pick.addEventListener('click', () => this.confirmJob(n));
+      actions.append(pick);
+      card.append(actions);
+      wrap.append(card);
     }
-    return this.panel('jobchange', 'เปลี่ยนอาชีพ', wrap);
+
+    // the log is what tells us where each trial stands
+    this.game.net.send({ t: 'quest', cmd: 'list' });
+    return this.panel('jobchange', 'เลือกเส้นทางอาชีพ', wrap);
+  }
+
+  /** One last look before a permanent choice. */
+  confirmJob(n) {
+    const wrap = el('div', 'grid');
+    wrap.append(el('div', '', `จะเป็น <b>${esc(n.nameTh)}</b> ใช่ไหม?`));
+    wrap.append(el('div', 'muted', 'เปลี่ยนสายภายหลังไม่ได้ · Job Level จะเริ่มนับใหม่ที่ 1 และได้แต้มสกิลเพิ่มทันที'));
+    const row = el('div', 'opts');
+    const yes = el('button', 'btn primary', 'ยืนยัน');
+    yes.addEventListener('click', () => {
+      this.game.net.send({ t: 'npcAction', action: 'jobChange', job: n.id });
+      this.close('jobconfirm');
+      this.close('jobchange');
+    });
+    const no = el('button', 'btn', 'ขอคิดก่อน');
+    no.addEventListener('click', () => this.close('jobconfirm'));
+    row.append(yes, no);
+    wrap.append(row);
+    return this.panel('jobconfirm', 'ยืนยันการเลือกอาชีพ', wrap);
   }
 
   /** Small reusable picker: a grid of item slots plus a detail pane. */

@@ -9,6 +9,7 @@ import * as Party from './game/party.js';
 import * as Trade from './game/trade.js';
 import * as Quests from './game/quests.js';
 import { ITEMS, RECIPES } from '../shared/data/items.js';
+import { JOBS } from '../shared/data/jobs.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
 import { MAPS } from '../shared/data/maps.js';
 import { dist } from './game/monster.js';
@@ -404,10 +405,14 @@ export class Conn {
     if (!npc || npc.kind !== 'npc') return this.error('ไม่พบ NPC');
     if (dist(p, npc) > 96) return this.error('เข้าไปใกล้ๆ ก่อน');
     this.openNpc = npc.id;
-    const dialog = NPC_DIALOG[npc.npcId] ?? { greet: '...', options: [] };
+    // dialogs are keyed by npc id, but fall back to the role: the trainer is
+    // placed as `guide`, which silently left him with nothing to say - and
+    // with him went job changes and both respec services
+    const dialog = NPC_DIALOG[npc.npcId] ?? NPC_DIALOG[npc.role];
+    if (!dialog) console.warn(`[npc] no dialog for ${npc.npcId} (role ${npc.role})`);
     this.send({
       t: OP.NPC_DIALOG, id: npc.id, npcId: npc.npcId, name: npc.name,
-      greet: dialog.greet, options: dialog.options, role: npc.role,
+      greet: dialog?.greet ?? '...', options: dialog?.options ?? [], role: npc.role,
     });
   }
 
@@ -448,7 +453,13 @@ export class Conn {
       case 'jobChange': {
         const r = p.changeJob(m.job);
         if (r.error) return this.error(r.error);
-        this.notice(`เปลี่ยนอาชีพเป็น ${r.job} แล้ว!`, 'good');
+        const name = JOBS[r.job]?.nameTh ?? r.job;
+        this.notice(`ยินดีด้วย! คุณคือ${name}แล้ว` + (r.trialDone ? ' (+1 แต้มสกิลจากบททดสอบ)' : ''), 'good');
+        if (r.kit?.length) {
+          this.notice('ได้รับชุดเริ่มต้นของอาชีพแล้ว — เปิดกระเป๋าดูได้เลย', 'good');
+        }
+        this.world.broadcastChat({ ch: 'system', text: `${p.name} ก้าวสู่เส้นทาง${name}` });
+        this.sendInventory();
         return this.send({ t: OP.SELF, self: p.selfState() });
       }
       case 'resetStats': {

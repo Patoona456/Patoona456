@@ -1,6 +1,7 @@
 // Quest tracking. State lives on the character record: { [id]: { step, counts, done, at } }
 import { QUESTS } from '../../shared/data/quests.js';
 import { ITEMS } from '../../shared/data/items.js';
+import { JOBS } from '../../shared/data/jobs.js';
 import { markDirty } from '../persistence.js';
 
 export function available(p) {
@@ -8,6 +9,8 @@ export function available(p) {
     const st = p.record.quests[q.id];
     if (st?.done && !q.repeatable) return false;
     if (st?.done && q.repeatable === 'weekly' && Date.now() - st.at < 7 * 86400000) return false;
+    // a path's trial is only on offer while that path is still open to you
+    if (q.path && !(JOBS[p.record.job]?.next ?? []).includes(q.path)) return false;
     return p.record.level >= (q.minLevel ?? 1);
   }).map((q) => ({
     ...q,
@@ -21,6 +24,7 @@ function progressOf(p, q) {
   return q.objectives.map((o, i) => {
     if (o.type === 'collect') return { have: p.countItem(o.item), need: o.count };
     if (o.type === 'jobLevel') return { have: p.record.jobLevel, need: o.count };
+    if (o.type === 'level') return { have: p.record.level, need: o.count };
     return { have: st?.counts?.[i] ?? 0, need: o.count };
   });
 }
@@ -80,6 +84,7 @@ export function complete(world, p, id) {
 
   const r = q.rewards ?? {};
   p.gainExp(r.exp ?? 0, r.jobExp ?? 0, p.zone);
+  if (r.skillPoints) p.record.skillPoints += r.skillPoints;
   if (r.aurum) { p.record.aurum += r.aurum; world.stats.minted += r.aurum; }
   for (const it of r.items ?? []) p.addItem(it.id, it.qty);
   st.done = true;

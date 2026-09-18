@@ -489,6 +489,26 @@ body.touch #expstrip { padding-bottom: calc(3px + var(--safe-b)); }
 body.touch #menu-buttons { top: 42%; }
 body.touch #btn-target { display: none; }   /* the action row already cycles targets */
 
+.job-card {
+  display: grid; gap: 7px; padding: 10px;
+  border: 1px solid var(--edge-soft); border-radius: calc(var(--radius) * .8);
+  background: rgba(0, 0, 0, .22);
+}
+.job-card:hover { border-color: var(--accent); }
+.job-head b { font-size: 15px; }
+.job-pitch { font-size: 13px; color: var(--accent); }
+.job-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px 10px; font-size: 12px; }
+.job-fact { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--edge-soft); padding-bottom: 2px; }
+.job-for { font-size: 12px; color: var(--muted); }
+.job-skills { display: flex; flex-wrap: wrap; gap: 5px; }
+.job-skills .chip { gap: 4px; padding: 2px 8px 2px 4px; }
+.job-skills .chip canvas { image-rendering: pixelated; }
+.job-trial {
+  font-size: 12px; padding: 6px 8px; border-left: 2px solid var(--warn);
+  background: rgba(242, 193, 78, .07);
+}
+.job-trial.done { border-left-color: var(--good); background: rgba(111, 207, 126, .08); }
+
 /* ============================ phones ============================
    The game is built for landscape: a wide field of view, the stick under
    the left thumb and the buttons under the right. Held upright there is

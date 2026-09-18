@@ -366,21 +366,43 @@ export class Player {
     return { ok: true, level: cur + 1 };
   }
 
+  /**
+   * Take a path. The first choice is gated on base level 10 - every
+   * character gets there - and the new job arrives with the gear it needs
+   * to function, because a Marksman without a bow cannot attack at all.
+   * Finishing that path's trial first pays an extra skill point.
+   */
   changeJob(jobId) {
     const r = this.record;
     const cur = jobOf(r.job);
-    if (!cur.next?.includes(jobId)) return { error: 'เปลี่ยนเป็นอาชีพนี้ไม่ได้' };
-    if (r.jobLevel < (cur.jobLevelToAdvance ?? 10)) {
-      return { error: `ต้อง Job Level ${cur.jobLevelToAdvance} ก่อน` };
-    }
+    const next = JOBS[jobId];
+    if (!cur.next?.includes(jobId) || !next) return { error: 'เปลี่ยนเป็นอาชีพนี้ไม่ได้' };
+
+    const need = cur.advance ?? { jobLevel: cur.jobLevelToAdvance ?? 10 };
+    if (need.level && r.level < need.level) return { error: `ต้องถึงเลเวล ${need.level} ก่อน` };
+    if (need.jobLevel && r.jobLevel < need.jobLevel) return { error: `ต้องถึง Job Level ${need.jobLevel} ก่อน` };
+
+    const trialDone = !!(next.trial && r.quests?.[next.trial]?.done);
     r.job = jobId;
     r.jobLevel = 1;
     r.jobExp = 0;
-    r.skillPoints += 2;
+    r.skillPoints += 2 + (trialDone ? 1 : 0);
+
+    const given = [];
+    for (const it of next.starterKit ?? []) {
+      if (this.addItem(it.id, it.qty)) given.push(it);
+    }
+    // wear what came in the kit, so the new job works on the walk out the door
+    for (const [i, st] of this.inventory.entries()) {
+      if (!given.some((g) => g.id === st.id)) continue;
+      const def = ITEMS[st.id];
+      if (def && isEquip(def) && !Object.values(r.equipment).includes(i)) this.equip(i);
+    }
+
     markDirty();
     this.recompute();
     this.hp = this.maxHp; this.sp = this.maxSp;
-    return { ok: true, job: jobId };
+    return { ok: true, job: jobId, trialDone, kit: given };
   }
 
   /* ---------------- serialization ---------------- */

@@ -210,6 +210,8 @@ class Game {
         this.ui.wantQuests = false;
         this.ui.openQuests(m.quests);
       }
+      // the job window shows trial progress, so it wants the fresh log too
+      if (this.ui.openPanels.has('jobchange')) this.ui.openJobChange();
     });
     n.on('tradeState', (m) => {
       if (m.invite) this.audio.play('warn');
@@ -713,7 +715,7 @@ class Game {
           <div class="cc-derived" id="derived"></div>
         </div>
       </div>
-      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ Job Lv.10 ค่อยไปหาครูฝึกฮาลด์ที่เอมเบอร์โฮลด์เพื่อเลือกอาชีพ
+      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ <b>เลเวล 10</b> ไปหาครูฝึกฮาลด์ที่เอมเบอร์โฮลด์เพื่อเลือกอาชีพ
         สถิติที่แจกตอนนี้แค่ทำให้ช่วงต้นถนัดมือ ไม่ได้ล็อกอาชีพในอนาคต</p>
       <div class="opts"><button class="btn primary" id="btn-create">สร้าง</button><button class="btn" id="btn-back">ย้อนกลับ</button></div>`;
 
