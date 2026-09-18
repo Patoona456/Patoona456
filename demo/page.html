@@ -1,6 +1,6 @@
 <title>Emberfall Online</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap">
 <style>
 /*STYLE*/
 
@@ -67,6 +67,7 @@
 </div>
 
 <script>
+  document.body.dataset.ui = "pixel";
   // The server half of this page was written for Node; these two globals are
   // all it needs from that environment.
   globalThis.process = globalThis.process ?? { env: { EMBERFALL_DEV: '1' } };

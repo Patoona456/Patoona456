@@ -7,6 +7,7 @@ import { WARP_ROUTES } from '../../shared/data/npcs.js';
 import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
 import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js';
+import { itemIcon, skillIcon, icon } from './icons.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const el = (tag, cls, html) => {
@@ -43,9 +44,15 @@ export class UI {
     }
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
-      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', F1: 'help' };
+      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', F1: 'settings' };
       if (map[e.code]) { e.preventDefault(); this.toggle(map[e.code]); }
       if (e.code === 'Enter') { e.preventDefault(); $('#chat-input').focus(); }
+      // Escape closes here, synchronously: leaving it to the game loop meant a
+      // panel opened in the same breath got closed a frame later.
+      if (e.code === 'Escape' && this.openPanels.size) {
+        this.closeTop();
+        this.escHandledAt = performance.now();
+      }
     });
   }
 
@@ -120,8 +127,11 @@ export class UI {
     $('#me-job').textContent = `${JOBS[self.job]?.nameTh ?? self.job} Lv.${you?.level ?? self.level}/J${you?.jobLevel ?? self.jobLevel}`;
     setBar('#bar-hp', '#txt-hp', hp, maxHp);
     setBar('#bar-sp', '#txt-sp', sp, maxSp);
-    setBar('#bar-exp', '#txt-exp', you?.exp ?? self.exp, self.expNext, 'EXP');
-    setBar('#bar-jexp', '#txt-jexp', you?.jobExp ?? self.jobExp, self.jobExpNext, 'อาชีพ');
+    setBar('#bar-exp', null, you?.exp ?? self.exp, self.expNext);
+    setBar('#bar-jexp', null, you?.jobExp ?? self.jobExp, self.jobExpNext);
+    const pct = (a, b) => (b > 0 ? ((a / b) * 100).toFixed(1) : '0.0');
+    $('#xp-line').innerHTML = `EXP <b class="num">${pct(you?.exp ?? self.exp, self.expNext)}%</b>`
+      + ` · อาชีพ <b class="num">${pct(you?.jobExp ?? self.jobExp, self.jobExpNext)}%</b>`;
     $('#aurum').textContent = fmt(you?.aurum ?? self.aurum);
     const over = (you?.weight ?? 0) > (you?.weightCap ?? 1);
     $('#netinfo').innerHTML = `ping ${this.game.net.ping}ms · น้ำหนัก <span style="color:${over ? 'var(--bad)' : 'inherit'}">${fmt(you?.weight ?? 0)}/${fmt(you?.weightCap ?? 0)}</span>`;
@@ -164,7 +174,10 @@ export class UI {
       const sk = SKILLS[skillId];
       const slot = el('div', 'slot' + (sk ? '' : ' empty'));
       slot.append(el('span', 'key', String(i + 1)));
-      slot.append(el('span', '', sk ? `${sk.nameTh}<br><small class="muted">Lv${self.skills[skillId] ?? 0}</small>` : '—'));
+      if (sk) {
+        slot.append(skillIcon(skillId, { size: 34 }));
+        slot.title = `${sk.nameTh} Lv.${self.skills[skillId] ?? 0}`;
+      }
       slot.dataset.index = i;
       slot.addEventListener('click', () => this.game.useHotbar(i));
       bar.append(slot);
@@ -182,13 +195,18 @@ export class UI {
       if (!id) return;
       const until = cooldowns?.[id] ?? 0;
       if (until > now) {
-        const cd = el('div', 'cd', Math.ceil((until - now) / 1000));
+        const left = (until - now) / 1000;
+        const total = Math.max(left, this._cdTotal?.[id] ?? left);
+        (this._cdTotal ??= {})[id] = until > (this._cdUntil?.[id] ?? 0) ? left : total;
+        (this._cdUntil ??= {})[id] = until;
+        const cd = el('div', 'cd', Math.ceil(left));
+        cd.style.setProperty('--cd', `${Math.min(100, (left / Math.max(0.1, total)) * 100)}%`);
         slot.append(cd);
       }
     });
   }
 
-  minimap(state, renderer) {
+  minimap(state, renderer) {   /* canvas is sized by the markup */
     const c = $('#minimap');
     if (!renderer.grid || !state.me) return;
     const g = c.getContext('2d');
@@ -242,10 +260,12 @@ export class UI {
 
   panel(name, title, bodyNode) {
     this.close(name);
-    const p = el('div', 'panel');
+    const p = el('div', 'win window');
+    for (const c of ['tl', 'tr', 'bl', 'br']) p.append(el('span', 'corner ' + c));
     const head = el('header');
     head.append(el('h2', '', title));
     const x = el('button', 'close', '✕');
+    x.setAttribute('aria-label', 'ปิด');
     x.addEventListener('click', () => this.close(name));
     head.append(x);
     const body = el('div', 'body');
@@ -258,7 +278,7 @@ export class UI {
 
   open(name, data) {
     const self = this.game.self;
-    if (!self && name !== 'help') return;
+    if (!self && name !== 'settings') return;
     switch (name) {
       case 'character': return this.openCharacter(self);
       case 'inventory': return this.openInventory();
@@ -269,7 +289,7 @@ export class UI {
       case 'party':
         this.game.net.send({ t: 'party', cmd: 'state' });
         return this.openParty(this.lastParty);
-      case 'help': return this.openHelp();
+      case 'settings': return this.openSettings();
       case 'shop': return this.openShop(data);
       case 'market': return this.openMarket(data);
       case 'storage': return this.openStorage(data);
@@ -331,38 +351,98 @@ export class UI {
     if (!wrap) return;
     const inv = this.game.inventory ?? { items: [] };
     wrap.innerHTML = '';
+
     const head = el('div', 'row');
-    head.innerHTML = `<span>ออรัม <b style="color:var(--gold)">${fmt(inv.aurum)}</b></span>
-      <span class="muted">น้ำหนัก ${fmt(inv.weight)}/${fmt(inv.weightCap)}</span>`;
+    head.innerHTML = `<span>ออรัม <b style="color:var(--accent)" class="num">${fmt(inv.aurum)}</b></span>
+      <span class="muted num">น้ำหนัก ${fmt(inv.weight)} / ${fmt(inv.weightCap)}</span>`;
     wrap.append(head);
 
-    const list = el('div', 'item-list');
-    for (const it of inv.items) {
-      const node = el('div', 'item' + (this.selectedInv === it.i ? ' sel' : ''));
-      node.innerHTML = `<div class="ico">${iconFor(it)}</div>
-        <div class="nm"><b class="rarity-${it.rarity ?? 'common'}">${esc(it.name)}${it.refine ? ` +${it.refine}` : ''}</b>
-        <span class="muted">${it.qty > 1 ? 'x' + it.qty + ' · ' : ''}${it.equipped ? 'สวมอยู่ · ' : ''}${it.dur !== undefined ? `คงทน ${it.dur}/${it.maxDur}` : ''}</span></div>`;
+    const filters = el('div', 'opts');
+    for (const [key, label] of [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ'], ['armor', 'เกราะ'],
+      ['consumable', 'ของใช้'], ['material', 'วัตถุดิบ']]) {
+      const b = el('button', 'btn' + ((this.invFilter ?? 'all') === key ? ' primary' : ''), label);
+      b.addEventListener('click', () => { this.invFilter = key; this.renderInventory(); });
+      filters.append(b);
+    }
+    wrap.append(filters);
+
+    const filter = this.invFilter ?? 'all';
+    const shown = inv.items.filter((it) => filter === 'all'
+      || (filter === 'armor' ? it.type === 'armor' : it.type === filter)
+      || (filter === 'material' && it.type === 'ammo'));
+
+    const grid = el('div', 'slot-grid');
+    for (const it of shown) {
+      const broken = it.dur !== undefined && it.dur <= 0;
+      const node = el('div', `slot rarity-${it.rarity ?? 'common'}`
+        + (this.selectedInv === it.i ? ' sel' : '') + (broken ? ' broken' : ''));
+      node.append(itemIcon(it.id, { size: 34 }));
+      if (it.qty > 1) node.append(el('span', 'qty num', String(it.qty)));
+      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      if (it.equipped) node.append(el('span', 'worn'));
+      node.title = it.name;
       node.addEventListener('click', () => { this.selectedInv = it.i; this.renderInventory(); });
       node.addEventListener('dblclick', () => this.useInvItem(it));
-      list.append(node);
+      grid.append(node);
     }
-    wrap.append(list);
+    for (let i = shown.length; i < Math.max(24, Math.ceil(shown.length / 8) * 8); i++) {
+      grid.append(el('div', 'slot empty'));
+    }
+    wrap.append(grid);
 
     const sel = inv.items.find((x) => x.i === this.selectedInv);
-    if (sel) wrap.append(this.itemActions(sel));
+    wrap.append(sel ? this.itemCard(sel) : el('div', 'muted', 'เลือกไอเทมเพื่อดูรายละเอียด'));
     return wrap;
   }
 
+  /** Tooltip-style detail card for one inventory entry. */
+  itemCard(it) {
+    const box = el('div', 'win tip');
+    box.style.padding = '10px';
+    const title = el('div', 'tname rarity-' + (it.rarity ?? 'common'),
+      esc(it.name) + (it.refine ? ` +${it.refine}` : ''));
+    const head = el('div', 'row');
+    head.style.borderTop = 'none';
+    const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
+    ico.append(itemIcon(it.id, { size: 34 }));
+    const meta = el('div');
+    meta.append(title);
+    meta.append(el('div', 'muted', [
+      { weapon: 'อาวุธ', armor: 'เกราะ', consumable: 'ของใช้', material: 'วัตถุดิบ', ammo: 'กระสุน' }[it.type] ?? '',
+      it.wclass, it.level ? `ต้องเลเวล ${it.level}` : '',
+    ].filter(Boolean).join(' · ')));
+    head.append(ico, meta);
+    head.style.justifyContent = 'flex-start';
+    head.style.gap = '10px';
+    box.append(head);
+
+    const stat = (k, v) => {
+      const r = el('div', 'stat');
+      r.append(el('span', 'muted', k), el('span', 'num', String(v)));
+      box.append(r);
+    };
+    if (it.atk) stat('พลังโจมตี', it.atk + (it.refine ? ` (+${it.refine * 2})` : ''));
+    if (it.matk) stat('พลังเวทย์', it.matk);
+    if (it.def) stat('ป้องกัน', it.def + (it.refine ? ` (+${it.refine})` : ''));
+    if (it.mdef) stat('ต้านเวทย์', it.mdef);
+    for (const [k, v] of Object.entries(it.stats ?? {})) stat(k.toUpperCase(), '+' + v);
+    if (it.dur !== undefined) stat('ความคงทน', `${it.dur} / ${it.maxDur}`);
+    if (it.weight) stat('น้ำหนัก', it.weight);
+    if (it.value) stat('มูลค่าอ้างอิง', fmt(it.value) + ' AU');
+    if (it.desc) box.append(el('div', 'flavour', esc(it.desc)));
+
+    box.append(this.itemActions(it));
+    return box;
+  }
+
+  /** Buttons under the detail card. */
   itemActions(it) {
-    const box = el('div');
-    box.style.marginTop = '10px';
-    box.append(el('div', 'muted', itemTooltip(it)));
-    const actions = el('div', 'opts');
-    actions.style.marginTop = '8px';
+    const box = el('div', 'opts');
+    box.style.marginTop = '8px';
     const add = (label, fn, cls = 'btn') => {
       const b = el('button', cls, label);
       b.addEventListener('click', fn);
-      actions.append(b);
+      box.append(b);
     };
     if (it.type === 'weapon' || it.type === 'armor') {
       if (it.equipped) add('ถอด', () => this.game.net.send({ t: 'unequip', slot: it.equipped }));
@@ -372,7 +452,6 @@ export class UI {
     add('ทิ้ง', () => {
       if (confirm(`ทิ้ง ${it.name} ?`)) this.game.net.send({ t: 'dropItem', index: it.i, qty: it.qty });
     }, 'btn danger');
-    box.append(actions);
     return box;
   }
 
@@ -392,9 +471,17 @@ export class UI {
       const lvl = self.skills[id] ?? 0;
       const row = el('div', 'row');
       const info = el('div');
-      info.innerHTML = `<b>${sk.nameTh}</b> <span class="muted">${sk.name} · Lv.${lvl}/${sk.maxLevel ?? 5}</span>
+      info.style.display = 'flex';
+      info.style.gap = '10px';
+      const ico = el('div', 'slot');
+      ico.style.width = ico.style.height = '40px';
+      ico.append(skillIcon(id, { size: 28 }));
+      info.append(ico);
+      const text = el('div');
+      text.innerHTML = `<b>${sk.nameTh}</b> <span class="muted">${sk.name} · Lv.${lvl}/${sk.maxLevel ?? 5}</span>
         <div class="muted">${sk.desc ?? ''}</div>
         <div class="muted">${lvl ? skillNumbers(sk, lvl) : 'ยังไม่ได้เรียน'}</div>`;
+      info.append(text);
       const btns = el('div', 'opts');
       const up = el('button', 'btn primary', '+1');
       up.disabled = self.skillPoints < 1 || lvl >= (sk.maxLevel ?? 5);
@@ -756,9 +843,28 @@ export class UI {
     return this.panel('market', 'ตลาดผู้เล่น', wrap);
   }
 
-  openHelp() {
+  openSettings() {
     const wrap = el('div');
-    wrap.innerHTML = `
+    const themes = el('div');
+    themes.innerHTML = '<h3 style="margin:0 0 6px">หน้าตา UI</h3>';
+    const row = el('div', 'opts');
+    const current = document.body.dataset.ui ?? 'pixel';
+    for (const [key, label, note] of [
+      ['pixel', 'พิกเซล', 'ขอบคม มุมบาก เข้ากับสไปรต์'],
+      ['ornate', 'แฟนตาซี', 'หนังกับทอง แบบ MMO ยุคเก่า'],
+      ['glass', 'มินิมอล', 'กระจกฝ้า บังฉากน้อยที่สุด'],
+    ]) {
+      const b = el('button', 'btn' + (current === key ? ' primary' : ''), label);
+      b.title = note;
+      b.addEventListener('click', () => { setTheme(key); this.open('settings'); });
+      row.append(b);
+    }
+    themes.append(row);
+    themes.append(el('div', 'muted', 'เปลี่ยนได้ตลอดเวลา ระบบจำค่าไว้ในเบราว์เซอร์นี้'));
+    wrap.append(themes, el('hr'));
+
+    const help = el('div');
+    help.innerHTML = `
       <h3>ปุ่มควบคุม</h3>
       <table>
         <tr><th></th><th>จอยเกม</th><th>คีย์บอร์ด</th><th>มือถือ</th></tr>
@@ -779,16 +885,30 @@ export class UI {
         <li>ปาร์ตี้ได้ EXP รวมเพิ่ม 10% ต่อสมาชิกหนึ่งคน (ต้องอยู่ใกล้กัน)</li>
         <li>ล่ามอนสเตอร์ที่เลเวลต่างจากเรามากจะได้ EXP ลดลง ป้องกันการพาวเวอร์เลเวล</li>
       </ul>`;
-    return this.panel('help', 'วิธีเล่น', wrap);
+    wrap.append(help);
+    return this.panel('settings', 'ตั้งค่าและวิธีเล่น', wrap);
   }
 }
 
+/** UI theme lives on <body data-ui>, remembered per browser. */
+export function setTheme(name) {
+  const ok = ['pixel', 'ornate', 'glass'].includes(name) ? name : 'pixel';
+  document.body.dataset.ui = ok;
+  try { localStorage.setItem('emberfall-ui', ok); } catch { /* no storage */ }
+}
+
+export function loadTheme() {
+  let saved = 'pixel';
+  try { saved = localStorage.getItem('emberfall-ui') || 'pixel'; } catch { /* no storage */ }
+  setTheme(saved);
+}
+
 /* ---------------- helpers ---------------- */
-function setBar(barSel, txtSel, cur, max, label) {
+function setBar(barSel, txtSel, cur, max) {
   const pct = max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0;
   $(barSel).style.width = pct + '%';
-  const t = $(txtSel);
-  if (t) t.textContent = label ? `${label} ${pct.toFixed(1)}%` : `${fmt(Math.floor(cur))} / ${fmt(max)}`;
+  const t = txtSel && $(txtSel);
+  if (t) t.textContent = `${fmt(Math.floor(cur))} / ${fmt(max)}`;
 }
 const statRow = (k, v) => `<div class="row"><span class="muted">${k}</span><b>${v}</b></div>`;
 function esc(s) {
@@ -796,18 +916,6 @@ function esc(s) {
 }
 function iconFor(it) {
   return { weapon: '⚔', armor: '🛡', consumable: '🧪', material: '🔩', ammo: '🏹' }[it.type] ?? '📦';
-}
-function itemTooltip(it) {
-  const parts = [];
-  if (it.level) parts.push(`ต้องเลเวล ${it.level}`);
-  if (it.atk) parts.push(`ATK ${it.atk}`);
-  if (it.matk) parts.push(`MATK ${it.matk}`);
-  if (it.def) parts.push(`DEF ${it.def}`);
-  if (it.mdef) parts.push(`MDEF ${it.mdef}`);
-  if (it.stats) for (const [k, v] of Object.entries(it.stats)) parts.push(`${k.toUpperCase()} +${v}`);
-  if (it.weight) parts.push(`น้ำหนัก ${it.weight}`);
-  if (it.value) parts.push(`มูลค่าอ้างอิง ${fmt(it.value)} AU`);
-  return `${it.desc ? it.desc + ' · ' : ''}${parts.join(' · ')}`;
 }
 function skillNumbers(sk, lvl) {
   const bits = [`SP ${skillCost(sk, lvl)}`];

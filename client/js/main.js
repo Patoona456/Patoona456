@@ -2,7 +2,7 @@
 import { Net } from './net.js';
 import { Input, bindTouchControls } from './input.js';
 import { Renderer } from './renderer.js';
-import { UI } from './ui.js';
+import { UI, loadTheme } from './ui.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
 import { TILE } from '../../shared/constants.js';
 import { BLOCKING, decodeGrid } from '../../shared/data/maps.js';
@@ -11,6 +11,8 @@ import { SKILLS } from '../../shared/data/skills.js';
 import { JOBS } from '../../shared/data/jobs.js';
 
 const $ = (s, r = document) => r.querySelector(s);
+
+loadTheme();
 
 class Game {
   constructor() {
@@ -271,7 +273,9 @@ class Game {
     if (inp.consume('interact')) this.interact();
     if (inp.consume('pickup')) this.pickupNearest();
     if (inp.consume('cancel')) {
-      if (this.ui.openPanels.size) this.ui.closeTop();
+      const justHandled = performance.now() - (this.ui.escHandledAt ?? -1e9) < 250;
+      if (justHandled) { /* the UI already closed a panel for this press */ }
+      else if (this.ui.openPanels.size) this.ui.closeTop();
       else { this.state.targetId = null; this.net.send({ t: 'target', id: null }); }
     }
     if (inp.consume('menu')) this.ui.toggle('inventory');
@@ -352,6 +356,7 @@ class Game {
     box.innerHTML = '';
     const c = document.createElement('canvas');
     c.width = c.height = 46;
+    c.style.imageRendering = 'pixelated';
     box.append(c);
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = false;

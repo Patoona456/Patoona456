@@ -3,53 +3,74 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#07090e">
 <meta name="description" content="Emberfall Online - 2D MMORPG เล่นบนเบราว์เซอร์ รองรับจอยและมือถือ">
 <title>Emberfall Online</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap">
 <link rel="stylesheet" href="/client/css/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔥</text></svg>">
 </head>
-<body>
+<body data-ui="pixel">
 <canvas id="game"></canvas>
 
 <!-- ======================= HUD ======================= -->
 <div id="hud" class="hidden">
-  <div id="vitals">
+  <div class="panel" id="vitals">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
     <div class="portrait" id="portrait"></div>
-    <div class="bars">
-      <div class="name-row"><span id="me-name">-</span><span id="me-job" class="muted"></span></div>
+    <div class="stack">
+      <div class="name"><b id="me-name">-</b><span id="me-job" class="muted label"></span></div>
       <div class="bar hp"><i id="bar-hp"></i><span id="txt-hp"></span></div>
       <div class="bar sp"><i id="bar-sp"></i><span id="txt-sp"></span></div>
-      <div class="bar exp"><i id="bar-exp"></i><span id="txt-exp"></span></div>
-      <div class="bar jexp"><i id="bar-jexp"></i><span id="txt-jexp"></span></div>
+      <div class="bar exp"><i id="bar-exp"></i></div>
+      <div class="bar jexp"><i id="bar-jexp"></i></div>
+      <div id="xp-line" class="muted"></div>
     </div>
   </div>
 
-  <div id="target-frame" class="hidden">
-    <div class="name-row"><span id="tg-name"></span><span id="tg-lv" class="muted"></span></div>
+  <div class="panel hidden" id="target-frame">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="row"><b id="tg-name"></b><span id="tg-lv" class="muted"></span></div>
     <div class="bar hp small"><i id="tg-hp"></i></div>
-    <div id="tg-el" class="muted"></div>
+    <div id="tg-el" class="muted num"></div>
   </div>
 
   <div id="topright">
     <div id="zone-name"></div>
-    <div id="purse"><span id="aurum">0</span> <b>AU</b></div>
+    <div class="panel" id="purse"><span id="aurum" class="num">0</span><span class="label" style="font-size:10px">AU</span></div>
     <div id="netinfo" class="muted"></div>
-    <canvas id="minimap" width="140" height="140"></canvas>
+    <div class="panel mini-wrap">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <canvas id="minimap" width="132" height="132"></canvas>
+    </div>
   </div>
 
-  <div id="cast-bar" class="hidden"><i></i><span></span></div>
+  <div id="cast-bar" class="hidden">
+    <div class="bar cast"><i></i><span></span></div>
+  </div>
   <div id="statuses"></div>
-
   <div id="hotbar"></div>
 
   <div id="menu-buttons">
-    <button data-panel="character" title="ตัวละคร (C)">👤</button>
-    <button data-panel="inventory" title="กระเป๋า (I)">🎒</button>
-    <button data-panel="skills" title="สกิล (K)">✨</button>
-    <button data-panel="quests" title="ภารกิจ (J)">📜</button>
-    <button data-panel="party" title="ปาร์ตี้ (P)">👥</button>
-    <button data-panel="help" title="วิธีเล่น (F1)">❓</button>
+    <button class="btn" data-panel="character" title="ตัวละคร (C)" aria-label="ตัวละคร">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+    </button>
+    <button class="btn" data-panel="inventory" title="กระเป๋า (I)" aria-label="กระเป๋า">
+      <svg viewBox="0 0 24 24"><path d="M4 8h16l-1.2 12H5.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+    </button>
+    <button class="btn" data-panel="skills" title="สกิล (K)" aria-label="สกิล">
+      <svg viewBox="0 0 24 24"><path d="M12 3l2.1 5.4L20 10l-4.6 3.3L16.8 19 12 15.9 7.2 19l1.4-5.7L4 10l5.9-1.6z"/></svg>
+    </button>
+    <button class="btn" data-panel="quests" title="ภารกิจ (J)" aria-label="ภารกิจ">
+      <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+    </button>
+    <button class="btn" data-panel="party" title="ปาร์ตี้ (P)" aria-label="ปาร์ตี้">
+      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-3.4 3.4-5 6-5s5 1.6 6 5"/><path d="M15.5 20c.6-2.2 2-3.4 3.6-3.4 1.2 0 2.3.6 2.9 1.8"/></svg>
+    </button>
+    <button class="btn" data-panel="settings" title="ตั้งค่า / วิธีเล่น (F1)" aria-label="ตั้งค่า">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.3M17.6 15.2l2.2 1.3M19.8 7.5l-2.2 1.3M6.4 15.2l-2.2 1.3"/></svg>
+    </button>
   </div>
 </div>
 
@@ -71,7 +92,7 @@
 <div id="chat" class="hidden">
   <div id="chat-log"></div>
   <form id="chat-form">
-    <select id="chat-ch">
+    <select id="chat-ch" aria-label="ช่องแชท">
       <option value="say">รอบตัว</option>
       <option value="party">ปาร์ตี้</option>
       <option value="trade">ซื้อขาย</option>
