@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.resolve(process.argv[2] ?? path.join(root, 'dist', 'demo'));
 
-const CLIENT = ['main', 'input', 'renderer', 'sprites', 'props', 'terrain', 'ui', 'icons', 'audio', 'particles'];
+const CLIENT = ['main', 'input', 'renderer', 'sprites', 'props', 'terrain', 'ui', 'icons', 'audio', 'particles', 'autowalk'];
 
 await mkdir(path.join(out, 'client', 'js'), { recursive: true });
 for (const f of CLIENT) {
