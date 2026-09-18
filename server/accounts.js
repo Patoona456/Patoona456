@@ -39,9 +39,15 @@ export function charsOf(acc) {
 }
 
 export function summary(c) {
+  // what the character is wearing, so the select screen can draw them dressed
+  const worn = {};
+  for (const [slot, idx] of Object.entries(c.equipment ?? {})) {
+    const st = c.inventory?.[idx];
+    if (st) worn[slot] = st.id;
+  }
   return {
     id: c.id, name: c.name, job: c.job, level: c.level, jobLevel: c.jobLevel,
-    map: c.map, look: c.look, aurum: c.aurum,
+    map: c.map, look: c.look, aurum: c.aurum, worn,
   };
 }
 

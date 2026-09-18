@@ -9,7 +9,8 @@ import { TILE } from '../../shared/constants.js';
 import { BLOCKING, decodeGrid } from '../../shared/data/maps.js';
 import { ITEMS } from '../../shared/data/items.js';
 import { SKILLS } from '../../shared/data/skills.js';
-import { JOBS } from '../../shared/data/jobs.js';
+import { JOBS, STARTING_STATS } from '../../shared/data/jobs.js';
+import { deriveStats } from '../../shared/formulas.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -536,6 +537,7 @@ class Game {
   }
 
   showCharSelect() {
+    $('#screen').classList.remove('creating');
     const body = $('#screen-body');
     body.innerHTML = `<p class="muted">บัญชี: ${this.account}</p><div id="char-list"></div>`;
     const list = $('#char-list');
@@ -563,7 +565,7 @@ class Game {
 
       const ctx = cv.getContext('2d');
       ctx.imageSmoothingEnabled = false;
-      const layers = playerLayers(c.look, {});
+      const layers = playerLayers(c.look, c.worn ?? {});
       const paint = () => {
         ctx.clearRect(0, 0, 52, 52);
         drawCharacter(ctx, layers, { x: 26, y: 46, anim: 'idle', dir: 2, elapsed: 0 });
@@ -581,32 +583,64 @@ class Game {
 
   showCharCreate() {
     const look = { gender: 'male', body: 'light', hair: 'plain', hairColor: 'brown', eyes: 'brown' };
+    const stats = { ...STARTING_STATS };
+    const view = { dir: 2, anim: 'walk', spin: true };
+    // the starting kit, so nobody previews their character naked
+    const STARTER = { weapon: 'training_blade', torso: 'cloth_shirt', legs: 'cloth_pants', feet: 'worn_boots' };
     const body = $('#screen-body');
+    $('#screen').classList.add('creating');
     body.innerHTML = `
-      <div class="field"><label>ชื่อตัวละคร</label><input id="cname" type="text" maxlength="16"></div>
-      <div class="preview"><canvas id="cprev" width="128" height="128"></canvas></div>
-      <div class="field"><label>เพศ</label><div class="opts" id="o-gender"></div></div>
-      <div class="field"><label>ผิว</label><div class="opts" id="o-body"></div></div>
-      <div class="field"><label>ทรงผม</label><div class="opts" id="o-hair"></div></div>
-      <div class="field"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
-      <div class="field"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
-      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ Job Lv.10 ค่อยไปหาครูฝึกฮาลด์ที่เอมเบอร์โฮลด์เพื่อเลือกอาชีพ</p>
+      <div class="cc">
+        <div class="cc-left">
+          <div class="cc-stage"><canvas id="cprev" width="220" height="220"></canvas></div>
+          <div class="opts" id="o-dir"></div>
+          <div class="opts" id="o-anim"></div>
+          <button class="btn" id="btn-random">🎲 สุ่มรูปลักษณ์</button>
+        </div>
+        <div class="cc-right">
+          <div class="field">
+            <label>ชื่อตัวละคร <span class="muted" id="name-hint">3–16 ตัวอักษร</span></label>
+            <div class="opts"><input id="cname" type="text" maxlength="16"><button class="btn" id="btn-roll-name">สุ่มชื่อ</button></div>
+          </div>
+          <div class="field"><label>เพศ</label><div class="opts" id="o-gender"></div></div>
+          <div class="field"><label>ผิว</label><div class="opts" id="o-body"></div></div>
+          <div class="field"><label>ทรงผม</label><div class="opts" id="o-hair"></div></div>
+          <div class="field"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
+          <div class="field"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
+          <hr>
+          <div class="field"><label>แนวทางเริ่มต้น <span class="muted">แจกแต้มให้ก่อน ปรับเองได้</span></label>
+            <div class="opts" id="o-path"></div></div>
+          <div class="field">
+            <label>แต้มสถิติ <span class="muted" id="pts-left"></span></label>
+            <div id="statrows"></div>
+          </div>
+          <div class="cc-derived" id="derived"></div>
+        </div>
+      </div>
+      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ Job Lv.10 ค่อยไปหาครูฝึกฮาลด์ที่เอมเบอร์โฮลด์เพื่อเลือกอาชีพ
+        สถิติที่แจกตอนนี้แค่ทำให้ช่วงต้นถนัดมือ ไม่ได้ล็อกอาชีพในอนาคต</p>
       <div class="opts"><button class="btn primary" id="btn-create">สร้าง</button><button class="btn" id="btn-back">ย้อนกลับ</button></div>`;
 
+    /* ---- the preview: turns on its own so every side gets seen ---- */
     const cv = $('#cprev'), ctx = cv.getContext('2d');
     ctx.imageSmoothingEnabled = false;
-    let frame = 0;
-    const paint = () => {
+    let elapsed = 0, spinAt = 0;
+    const paint = (now) => {
       if (!document.body.contains(cv)) return;
-      ctx.clearRect(0, 0, 128, 128);
+      elapsed += 16;
+      if (view.spin && now - spinAt > 1400) { view.dir = (view.dir + 1) % 4; spinAt = now; markDir(); }
+      ctx.clearRect(0, 0, cv.width, cv.height);
       ctx.save();
-      ctx.scale(1.6, 1.6);
-      drawCharacter(ctx, playerLayers(look, {}), { x: 40, y: 74, anim: 'walk', dir: 2, elapsed: (frame += 16) * 4 });
+      ctx.scale(2.6, 2.6);
+      drawCharacter(ctx, playerLayers(look, STARTER), {
+        x: 42, y: 62, anim: view.anim, dir: view.dir, elapsed: elapsed * 4,
+      });
       ctx.restore();
       requestAnimationFrame(paint);
     };
-    paint();
+    requestAnimationFrame(paint);
 
+    /* ---- appearance ---- */
     const options = {
       gender: [['male', 'ชาย'], ['female', 'หญิง']],
       body: [['light', 'ขาว'], ['tanned', 'แทน'], ['dark', 'เข้ม'], ['darkelf', 'ดาร์กเอลฟ์']],
@@ -614,25 +648,140 @@ class Game {
       hairColor: [['black', 'ดำ'], ['brown', 'น้ำตาล'], ['blonde', 'ทอง'], ['white', 'ขาว']],
       eyes: [['blue', 'ฟ้า'], ['brown', 'น้ำตาล'], ['green', 'เขียว'], ['red', 'แดง']],
     };
+    const markLook = () => {
+      for (const [key, vals] of Object.entries(options)) {
+        const box = $('#o-' + key);
+        [...box.children].forEach((b, i) => b.classList.toggle('sel', vals[i][0] === look[key]));
+      }
+    };
     for (const [key, vals] of Object.entries(options)) {
       const box = $('#o-' + key);
       for (const [v, label] of vals) {
         const b = document.createElement('button');
-        b.className = 'opt' + (look[key] === v ? ' sel' : '');
+        b.className = 'opt';
         b.textContent = label;
-        b.onclick = () => {
-          look[key] = v;
-          for (const sib of box.children) sib.classList.remove('sel');
-          b.classList.add('sel');
-        };
+        b.onclick = () => { look[key] = v; markLook(); this.audio.play('ui'); };
         box.append(b);
       }
     }
+    markLook();
+
+    /* ---- camera-ish controls for the preview ---- */
+    const dirBox = $('#o-dir');
+    const dirs = [['⬆ หลัง', 0], ['⬅ ซ้าย', 1], ['⬇ หน้า', 2], ['➡ ขวา', 3]];
+    const markDir = () => [...dirBox.children].forEach((b, i) => b.classList.toggle('sel', dirs[i][1] === view.dir));
+    for (const [label, d] of dirs) {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = label;
+      b.onclick = () => { view.dir = d; view.spin = false; markDir(); };
+      dirBox.append(b);
+    }
+    markDir();
+    const animBox = $('#o-anim');
+    for (const [id, label] of [['idle', 'ยืน'], ['walk', 'เดิน'], ['slash', 'ฟัน'], ['spellcast', 'ร่ายเวท']]) {
+      const b = document.createElement('button');
+      b.className = 'opt' + (view.anim === id ? ' sel' : '');
+      b.textContent = label;
+      b.onclick = () => {
+        view.anim = id;
+        [...animBox.children].forEach((x) => x.classList.remove('sel'));
+        b.classList.add('sel');
+      };
+      animBox.append(b);
+    }
+
+    /* ---- starting stats: the server accepts any spread totalling 30 ---- */
+    const TOTAL = Object.values(STARTING_STATS).reduce((a, v) => a + v, 0);
+    const STAT_LABELS = { str: 'STR พลัง', agi: 'AGI ว่องไว', vit: 'VIT อึด', int: 'INT ปัญญา', dex: 'DEX แม่นยำ', luk: 'LUK โชค' };
+    const PATHS = [
+      ['สมดุล', { str: 5, agi: 5, vit: 5, int: 5, dex: 5, luk: 5 }],
+      ['บุกหน้า', { str: 9, agi: 4, vit: 8, int: 1, dex: 5, luk: 3 }],
+      ['ว่องไว', { str: 6, agi: 9, vit: 4, int: 1, dex: 5, luk: 5 }],
+      ['แม่นธนู', { str: 5, agi: 6, vit: 4, int: 1, dex: 10, luk: 4 }],
+      ['เวทมนตร์', { str: 1, agi: 3, vit: 4, int: 11, dex: 8, luk: 3 }],
+      ['อึดทน', { str: 5, agi: 3, vit: 12, int: 3, dex: 4, luk: 3 }],
+    ];
+    const spent = () => Object.values(stats).reduce((a, v) => a + v, 0);
+    const rows = $('#statrows');
+    const redrawStats = () => {
+      const left = TOTAL - spent();
+      $('#pts-left').textContent = `เหลือ ${left} แต้ม (คนละ 1–12)`;
+      rows.innerHTML = '';
+      for (const key of Object.keys(STARTING_STATS)) {
+        const row = document.createElement('div');
+        row.className = 'statrow';
+        row.innerHTML = `<span>${STAT_LABELS[key]}</span><b class="num" id="s-${key}">${stats[key]}</b>`;
+        const minus = document.createElement('button');
+        minus.className = 'opt'; minus.textContent = '−';
+        minus.disabled = stats[key] <= 1;
+        minus.onclick = () => { stats[key]--; redrawStats(); };
+        const plus = document.createElement('button');
+        plus.className = 'opt'; plus.textContent = '+';
+        plus.disabled = left <= 0 || stats[key] >= 12;
+        plus.onclick = () => { stats[key]++; redrawStats(); };
+        row.append(minus, plus);
+        rows.append(row);
+      }
+      // what those points actually buy, at level 1 as a Novice
+      const d = deriveStats({ level: 1, jobLevel: 1, ...stats }, JOBS.novice);
+      $('#derived').innerHTML = `
+        <div><span>HP</span><b class="num">${d.maxHp}</b></div>
+        <div><span>SP</span><b class="num">${d.maxSp}</b></div>
+        <div><span>ATK</span><b class="num">${d.atk}</b></div>
+        <div><span>MATK</span><b class="num">${d.matk}</b></div>
+        <div><span>แม่น</span><b class="num">${d.hit}</b></div>
+        <div><span>หลบ</span><b class="num">${d.flee}</b></div>
+        <div><span>คริ</span><b class="num">${d.crit}%</b></div>
+        <div><span>ความเร็ว</span><b class="num">${Math.round(d.moveSpeed)}</b></div>`;
+      $('#btn-create').disabled = left !== 0;
+    };
+    const pathBox = $('#o-path');
+    for (const [label, spread] of PATHS) {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = label;
+      b.onclick = () => {
+        Object.assign(stats, spread);
+        [...pathBox.children].forEach((x) => x.classList.remove('sel'));
+        b.classList.add('sel');
+        this.audio.play('ui');
+        redrawStats();
+      };
+      pathBox.append(b);
+    }
+    pathBox.firstChild.classList.add('sel');
+    redrawStats();
+
+    /* ---- name ---- */
+    const name = $('#cname');
+    const SYL_A = ['อา', 'เว', 'คา', 'ธี', 'รู', 'ไซ', 'มิ', 'เอล', 'ทา', 'นอ'];
+    const SYL_B = ['ริน', 'ดอร์', 'ลิส', 'แวน', 'เธีย', 'มาร์', 'เนล', 'ซอร์', 'ฟีน', 'เรน'];
+    const checkName = () => {
+      const v = name.value.trim();
+      const ok = /^[A-Za-z0-9_\u0e00-\u0e7f]{3,16}$/.test(v);
+      $('#name-hint').textContent = !v ? '3–16 ตัวอักษร' : ok ? '✔ ใช้ได้' : 'ใช้ได้เฉพาะ ไทย/อังกฤษ/ตัวเลข/_ ยาว 3–16';
+      $('#name-hint').style.color = !v ? '' : ok ? 'var(--good)' : 'var(--bad)';
+    };
+    name.addEventListener('input', checkName);
+    $('#btn-roll-name').onclick = () => {
+      const pick = (a) => a[Math.floor(Math.random() * a.length)];
+      name.value = pick(SYL_A) + pick(SYL_B);
+      checkName();
+    };
+
+    $('#btn-random').onclick = () => {
+      for (const [key, vals] of Object.entries(options)) look[key] = vals[Math.floor(Math.random() * vals.length)][0];
+      markLook();
+      this.audio.play('ui');
+    };
+
     $('#btn-create').onclick = () => {
       this.screenError('');
-      this.net.send({ t: 'charCreate', name: $('#cname').value.trim(), ...look });
+      this.audio.play('good');
+      this.net.send({ t: 'charCreate', name: name.value.trim(), ...look, stats });
     };
-    $('#btn-back').onclick = () => this.showCharSelect();
+    $('#btn-back').onclick = () => { $('#screen').classList.remove('creating'); this.showCharSelect(); };
   }
 }
 
