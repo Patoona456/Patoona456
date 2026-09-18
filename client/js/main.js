@@ -3,6 +3,7 @@ import { Net } from './net.js';
 import { Input, bindTouchControls } from './input.js';
 import { Renderer } from './renderer.js';
 import { UI, loadTheme } from './ui.js';
+import { Audio } from './audio.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
 import { TILE } from '../../shared/constants.js';
 import { BLOCKING, decodeGrid } from '../../shared/data/maps.js';
@@ -12,6 +13,12 @@ import { JOBS } from '../../shared/data/jobs.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 
+/** Which synth voice each server-side effect speaks with. */
+const FX_SOUND = {
+  aoe: 'aoe', line: 'line', bolt: 'bolt', heal: 'heal', buff: 'buff',
+  debuff: 'debuff', dash: 'dash', ground: 'ground', summon: 'summon',
+};
+
 loadTheme();
 
 class Game {
@@ -19,6 +26,7 @@ class Game {
     this.net = new Net();
     this.input = new Input();
     this.renderer = new Renderer($('#game'));
+    this.audio = new Audio();
     this.ui = new UI(this);
     this.self = null;
     this.inventory = { items: [], aurum: 0, weight: 0, weightCap: 1 };
@@ -62,6 +70,8 @@ class Game {
     n.on('notice', (m) => this.ui.toast(m.text, m.kind === 'good' ? 'good' : m.kind === 'bad' ? 'bad' : m.kind === 'warn' ? 'warn' : 'info'));
     n.on('chars', (m) => { this.account = m.account; this.chars = m.chars; this.showCharSelect(); });
     n.on('zone', (m) => {
+      this.audio.startBed(m.theme);
+      if (this.inWorld) this.audio.play('warp');
       this.renderer.setZone(m);
       this.zone = m;
       this.grid = decodeGrid(m.rle, m.width * m.height);
@@ -81,7 +91,13 @@ class Game {
       this.renderPortrait();
     });
     n.on('inventory', (m) => {
+      const before = this.inventory;
       this.inventory = m;
+      if (this.inWorld && before) {
+        const count = (inv) => (inv.items ?? []).reduce((a, it) => a + (it.qty ?? 1), 0);
+        if (m.aurum > (before.aurum ?? 0)) this.audio.play('coin');
+        else if (count(m) > count(before)) this.audio.play('loot');
+      }
       this.ui.renderInventory();
     });
     n.on('snapshot', (m) => this.onSnapshot(m));
@@ -162,22 +178,37 @@ class Game {
         const onMe = ev.id === this.state.myId;
         r.floater(String(ev.v), at.x, at.y, onMe ? '#ff9a9a' : ev.crit ? '#ffd166' : mine ? '#ffffff' : '#ffb3b3', ev.crit ? 15 : 12);
         if (onMe) r.shake = Math.min(6, ev.v / 30);
+        this.audio.play(onMe ? 'hurt' : ev.crit ? 'crit' : 'hit', at, { gain: mine || onMe ? 1 : 0.55 });
         break;
       }
-      case 'heal': if (at) r.floater('+' + ev.v, at.x, at.y, '#7dffb0'); break;
-      case 'miss': if (at) r.floater('พลาด', at.x, at.y, '#c8d2e0', 11); break;
+      case 'heal':
+        if (at) { r.floater('+' + ev.v, at.x, at.y, '#7dffb0'); this.audio.play('heal', at); }
+        break;
+      case 'miss':
+        if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 11); this.audio.play('miss', at); }
+        break;
       case 'levelup':
         if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 18);
-        if (ev.id === this.state.myId) this.ui.toast(`เลเวลอัพ! Lv.${ev.level} / Job ${ev.jobLevel}`, 'good');
+        if (ev.id === this.state.myId) {
+          this.ui.toast(`เลเวลอัพ! Lv.${ev.level} / Job ${ev.jobLevel}`, 'good');
+          this.audio.play('levelup');
+        }
         break;
       case 'steal': this.ui.toast(`ขโมยได้ ${ITEMS[ev.item]?.nameTh ?? ev.item}`, 'good'); break;
-      case 'fx': r.addFx(ev); break;
-      case 'death': if (ev.id === this.state.myId) this.showDeath(); break;
+      case 'fx':
+        r.addFx(ev);
+        this.audio.play(FX_SOUND[ev.fx] ?? 'cast', { x: ev.x, y: ev.y });
+        break;
+      case 'death':
+        if (ev.id === this.state.myId) { this.audio.play('death'); this.showDeath(); }
+        else this.audio.play('die', at);
+        break;
       default: break;
     }
   }
 
   onDied(m) {
+    this.audio.play('death');
     this.ui.toast(`คุณตาย — เสีย EXP ${m.expLost}`, 'bad');
     this.showDeath();
   }
@@ -223,6 +254,7 @@ class Game {
     this.state.ents = [...this.entities.values()];
     this.state.me = this.predicted;
 
+    this.audio.listener = this.predicted ?? this.audio.listener;
     this.renderer.render(this.state, t);
     this.ui.updateTarget(this.entities.get(this.state.targetId));
     if (t - (this._miniAt ?? 0) > 200) {
@@ -349,6 +381,7 @@ class Game {
     const wantAttack = inp.isHeld('attack');
     if (wantAttack !== this.attacking) {
       this.attacking = wantAttack;
+      if (wantAttack) this.audio.play('swing');
       this.net.send({ t: 'attack', on: wantAttack, id: this.state.targetId });
     }
 

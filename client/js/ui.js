@@ -61,6 +61,11 @@ export class UI {
       const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', F1: 'settings' };
       if (map[e.code]) { e.preventDefault(); this.toggle(map[e.code]); }
       if (e.code === 'Enter') { e.preventDefault(); $('#chat-input').focus(); }
+      if (e.code === 'KeyM') {
+        const muted = this.game.audio.toggleMute();
+        this.toast(muted ? 'ปิดเสียงแล้ว (M)' : 'เปิดเสียงแล้ว (M)', muted ? 'warn' : 'good');
+        if (this.openPanels.has('settings')) this.open('settings');
+      }
       // Escape closes here, synchronously: leaving it to the game loop meant a
       // panel opened in the same breath got closed a frame later.
       if (e.code === 'Escape' && this.openPanels.size) {
@@ -82,6 +87,7 @@ export class UI {
       last.textContent = `${text} x${n}`;
       return;
     }
+    this.game.audio?.play(kind === 'good' ? 'good' : kind === 'bad' ? 'bad' : kind === 'warn' ? 'warn' : 'ui');
     const n = el('div', 'toast ' + kind, text);
     n.dataset.text = text;
     n.dataset.at = Date.now();
@@ -98,6 +104,7 @@ export class UI {
       n.id = 'flash';
       document.body.append(n);
     }
+    this.game.audio?.play('bad', null, { gate: 0.25 });
     n.textContent = text;
     n.classList.remove('show');
     void n.offsetWidth;          // restart the animation
@@ -200,7 +207,7 @@ export class UI {
       slot.append(itemIcon(it.id, { size: 28 }));
       slot.append(el('span', 'qty num', String(it.qty)));
       slot.title = it.name;
-      slot.addEventListener('click', () => this.game.net.send({ t: 'useItem', index: it.i }));
+      slot.addEventListener('click', () => { this.game.audio?.play('potion'); this.game.net.send({ t: 'useItem', index: it.i }); });
       box.append(slot);
     }
     for (let i = items.length; i < 2; i++) box.append(el('div', 'slot empty'));
@@ -318,6 +325,7 @@ export class UI {
   }
 
   close(name) {
+    if (this.openPanels.has(name) && !this._silentClose) this.game.audio?.play('close');
     this.openPanels.get(name)?.remove();
     this.openPanels.delete(name);
   }
@@ -328,7 +336,11 @@ export class UI {
   }
 
   panel(name, title, bodyNode) {
+    const reopen = this.openPanels.has(name);   // a redraw is not a new window
+    this._silentClose = true;
     this.close(name);
+    this._silentClose = false;
+    if (!reopen) this.game.audio?.play('open');
     const p = el('div', 'win window');
     for (const c of ['tl', 'tr', 'bl', 'br']) p.append(el('span', 'corner ' + c));
     const head = el('header');
@@ -583,7 +595,7 @@ export class UI {
       if (it.equipped) add('ถอด', () => this.game.net.send({ t: 'unequip', slot: it.equipped }));
       else add('สวมใส่', () => this.game.net.send({ t: 'equip', index: it.i }), 'btn primary');
     }
-    if (it.type === 'consumable') add('ใช้', () => this.game.net.send({ t: 'useItem', index: it.i }), 'btn primary');
+    if (it.type === 'consumable') add('ใช้', () => { this.game.audio?.play('potion'); this.game.net.send({ t: 'useItem', index: it.i }); }, 'btn primary');
     add('ทิ้ง', () => {
       if (confirm(`ทิ้ง ${it.name} ?`)) this.game.net.send({ t: 'dropItem', index: it.i, qty: it.qty });
     }, 'btn danger');
@@ -591,7 +603,7 @@ export class UI {
   }
 
   useInvItem(it) {
-    if (it.type === 'consumable') this.game.net.send({ t: 'useItem', index: it.i });
+    if (it.type === 'consumable') { this.game.audio?.play('potion'); this.game.net.send({ t: 'useItem', index: it.i }); }
     else if (it.equipped) this.game.net.send({ t: 'unequip', slot: it.equipped });
     else if (it.type === 'weapon' || it.type === 'armor') this.game.net.send({ t: 'equip', index: it.i });
   }
@@ -911,9 +923,9 @@ export class UI {
         const actions = el('div', 'opts');
         actions.style.marginTop = '8px';
         const go = el('button', 'btn primary', `ตีบวกเป็น +${lvl + 1}`);
-        go.addEventListener('click', () => this.game.net.send({ t: 'refine', index: it.i, oil: false }));
+        go.addEventListener('click', () => { this.game.audio?.play('forge'); this.game.net.send({ t: 'refine', index: it.i, oil: false }); });
         const oil = el('button', 'btn', 'ใช้น้ำมันศักดิ์สิทธิ์');
-        oil.addEventListener('click', () => this.game.net.send({ t: 'refine', index: it.i, oil: true }));
+        oil.addEventListener('click', () => { this.game.audio?.play('forge'); this.game.net.send({ t: 'refine', index: it.i, oil: true }); });
         actions.append(go, oil);
         const risk = el('div', 'muted');
         risk.textContent = lvl >= 8 ? 'ล้มเหลว = อุปกรณ์แตกสลาย'
@@ -948,7 +960,7 @@ export class UI {
         const actions = el('div', 'opts');
         actions.style.marginTop = '8px';
         const go = el('button', 'btn primary', 'ซ่อม');
-        go.addEventListener('click', () => this.game.net.send({ t: 'repair', index: it.i }));
+        go.addEventListener('click', () => { this.game.audio?.play('forge'); this.game.net.send({ t: 'repair', index: it.i }); });
         actions.append(go);
         return this.detailCard(it, [
           ['ความคงทน', `${it.dur} / ${it.maxDur}`],
@@ -1123,6 +1135,36 @@ export class UI {
     return this.panel('market', 'ตลาดผู้เล่น', wrap);
   }
 
+  /** Volume sliders. Everything is synthesised, so this is the whole mixer. */
+  audioSettings() {
+    const audio = this.game.audio;
+    const box = el('div');
+    box.innerHTML = '<h3 style="margin:0 0 6px">เสียง</h3>';
+    const mute = el('button', 'btn' + (audio.settings.muted ? ' danger' : ''), audio.settings.muted ? 'ปิดเสียงอยู่' : 'เปิดเสียงอยู่');
+    mute.addEventListener('click', () => { audio.toggleMute(); this.open('settings'); });
+    box.append(mute);
+    for (const [key, label] of [['master', 'เสียงรวม'], ['sfx', 'เอฟเฟกต์'], ['music', 'เพลงบรรยากาศ']]) {
+      const row = el('div', 'row');
+      const name = el('span', '', label);
+      const val = el('span', 'muted num', Math.round(audio.settings[key] * 100) + '%');
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = '0'; slider.max = '100'; slider.step = '5';
+      slider.value = String(Math.round(audio.settings[key] * 100));
+      slider.style.width = '180px';
+      slider.addEventListener('input', () => {
+        audio.set(key, Number(slider.value) / 100);
+        val.textContent = slider.value + '%';
+      });
+      // hearing the change is the only useful preview
+      slider.addEventListener('change', () => audio.play(key === 'music' ? 'buff' : 'hit'));
+      row.append(name, slider, val);
+      box.append(row);
+    }
+    box.append(el('div', 'muted', 'เสียงทั้งหมดสังเคราะห์สดในเบราว์เซอร์ ไม่มีไฟล์เสียงให้โหลด'));
+    return box;
+  }
+
   openSettings() {
     const wrap = el('div');
     const themes = el('div');
@@ -1156,6 +1198,8 @@ export class UI {
     cam.append(camRow);
     cam.append(el('div', 'muted', 'ปุ่มลัด: − / +  ·  จอยเกม: กดแกนอนาล็อกขวา'));
     wrap.append(cam, el('hr'));
+
+    wrap.append(this.audioSettings(), el('hr'));
 
     const help = el('div');
     help.innerHTML = `
