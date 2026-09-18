@@ -47,6 +47,14 @@ export class World {
     this.players.set(p.id, p);
     this.byCharId.set(p.record.id, p);
     const zone = this.zone(p.record.map) ?? this.zone('emberhold');
+    // a character logging in where the map has since grown a wall would be
+    // stuck there forever: put them on the nearest ground they fit on
+    const spot = zone.nearestWalkable(p.x, p.y);
+    if (spot.x !== p.x || spot.y !== p.y) {
+      p.x = spot.x; p.y = spot.y;
+      p.record.x = spot.x; p.record.y = spot.y;
+      markDirty();
+    }
     zone.addPlayer(p);
     p.conn.send(zone.zonePayload());
     p.conn.send({ t: 'self', self: p.selfState() });
@@ -70,8 +78,8 @@ export class World {
     p.record.map = mapId;
     p.x = x; p.y = y;
     if (!target.walkable(p.x, p.y)) {
-      const pos = target.randomWalkable();
-      p.x = pos.x; p.y = pos.y;
+      const near = target.nearestWalkable(p.x, p.y);
+      p.x = near.x; p.y = near.y;
     }
     p.targetId = null;
     p.attacking = false;
@@ -85,13 +93,26 @@ export class World {
   }
 
   respawn(p) {
-    const sp = p.record.savePoint ?? { map: 'emberhold', x: 32 * TILE, y: 26 * TILE };
+    const sp = p.record.savePoint ?? { map: 'emberhold', x: 32 * TILE, y: 28 * TILE };
     p.alive = true;
     p.hp = Math.max(1, Math.floor(p.maxHp * 0.3));
     p.sp = Math.max(1, Math.floor(p.maxSp * 0.3));
     p.statuses = [];
     p.anim = 'idle';
     this.warpPlayer(p, sp.map, sp.x, sp.y);
+  }
+
+  /** Player-facing escape hatch: free a character wedged in scenery. */
+  unstick(p) {
+    const zone = p.zone ?? this.zone(p.record.map);
+    if (!zone) return { error: 'ไม่พบโซน' };
+    if (zone.walkable(p.x, p.y)) return { ok: true, moved: false };
+    const spot = zone.nearestWalkable(p.x, p.y);
+    p.x = spot.x; p.y = spot.y;
+    p.record.x = spot.x; p.record.y = spot.y;
+    markDirty();
+    p.conn?.send({ t: 'self', self: p.selfState() });
+    return { ok: true, moved: true };
   }
 
   onKill(p, monster) { Quests.onKill(p, monster.defId); }

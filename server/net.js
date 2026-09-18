@@ -384,6 +384,13 @@ export class Conn {
     const p = this.player;
     const text = String(m.text ?? '').slice(0, 200).trim();
     if (!text) return;
+    // an escape hatch anyone can reach, in case scenery ever traps a character
+    if (text === '/stuck' || text === '/unstuck') {
+      const r = this.world.unstick(p);
+      if (r.error) return this.error(r.error);
+      return this.notice(r.moved ? 'ย้ายออกจากจุดที่ติดแล้ว' : 'ตรงนี้เดินได้ปกติอยู่แล้ว', r.moved ? 'good' : 'info');
+    }
+
     const ch = ['say', 'party', 'trade', 'world'].includes(m.ch) ? m.ch : 'say';
     if (ch === 'party' && !p.party) return this.error('ยังไม่ได้อยู่ปาร์ตี้');
     this.world.broadcastChat({

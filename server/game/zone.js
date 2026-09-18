@@ -44,6 +44,26 @@ export class Zone {
       && !this.blocked(x - r, y + r) && !this.blocked(x + r, y + r);
   }
 
+  /**
+   * The nearest spot a body actually fits, spiralling out from where it is.
+   * Characters keep their saved position between sessions, so a map edit -
+   * a bigger fountain, a new building - can leave someone wedged in scenery
+   * they used to be standing beside.
+   */
+  nearestWalkable(x, y, maxTiles = 12) {
+    if (this.walkable(x, y)) return { x, y };
+    for (let ring = 1; ring <= maxTiles; ring++) {
+      for (let dy = -ring; dy <= ring; dy++) {
+        for (let dx = -ring; dx <= ring; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;   // ring edge only
+          const nx = x + dx * TILE, ny = y + dy * TILE;
+          if (this.walkable(nx, ny)) return { x: nx, y: ny };
+        }
+      }
+    }
+    return this.randomWalkable();
+  }
+
   randomWalkable(area = null) {
     for (let i = 0; i < 400; i++) {
       const tx = area ? area[0] + Math.floor(this.rand() * area[2]) : 1 + Math.floor(this.rand() * (this.width - 2));
