@@ -18,7 +18,8 @@ git clone --depth 1 https://github.com/makrohn/Universal-LPC-spritesheet.git
 npm run import-lpc -- ./Universal-LPC-spritesheet
 ```
 
-![ต่อสู้ในทุ่งกรีนไมร์](docs/img/combat.png)
+![เมืองเอมเบอร์โฮลด์](docs/img/town.png)
+![สันเขาออร์ควอช](docs/img/ridge.png)
 ![ร้านค้าในเมือง](docs/img/shop.png)
 
 ## ปรัชญาการออกแบบ
@@ -54,9 +55,21 @@ docs/            เอกสารออกแบบเกม เศรษฐ�
 
 ## สถานะตอนนี้
 
+7 โซน · มอนสเตอร์ 19 ชนิด (รวมบอส 2) · NPC 8 ตัวในเมืองที่มีอาคารจริง
+
 เล่นได้จริงตั้งแต่ต้นจนจบลูป: สมัคร → สร้างตัวละคร → เดิน → ตี → เก็บของ →
 เลเวลอัพ → แบ่งแต้ม → เรียนสกิล → เปลี่ยนอาชีพ → ซื้อขาย/ตีบวก/ฝากของ →
 ลงตลาดผู้เล่น → ตั้งปาร์ตี้ → ทำเควสต์ → ล่าบอส
+
+สำหรับทดสอบเนื้อหาเลเวลสูง เปิดโหมดพัฒนา:
+
+```
+EMBERFALL_DEV=1 npm start
+```
+
+แล้วในคอนโซลเบราว์เซอร์: `__game.net.send({t:'devWarp', map:'frostvault'})`
+หรือ `__game.net.send({t:'devBoost', level:70, job:'vanguard'})`
+(ปิดสนิทเมื่อไม่ได้ตั้ง `EMBERFALL_DEV=1`)
 
 ดูงานที่เหลือและลำดับความสำคัญได้ที่ `docs/ROADMAP.md`
 

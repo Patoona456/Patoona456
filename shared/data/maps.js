@@ -85,8 +85,10 @@ export const MAPS = {
       { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
     ],
     spawns: [
-      { mob: 'mire_slime', count: 26 },
+      { mob: 'mire_slime', count: 24 },
       { mob: 'ember_wisp', count: 7 },
+      { mob: 'dusk_bat', count: 10 },
+      { mob: 'thistle_sprite', count: 8 },
     ],
   },
 
@@ -100,9 +102,11 @@ export const MAPS = {
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
     spawns: [
-      { mob: 'husk', count: 22 },
+      { mob: 'husk', count: 20 },
       { mob: 'bandit_scout', count: 16 },
-      { mob: 'ember_wisp', count: 6 },
+      { mob: 'marsh_lurker', count: 12 },
+      { mob: 'thistle_sprite', count: 6 },
+      { mob: 'dusk_bat', count: 6 },
     ],
   },
 
@@ -115,8 +119,10 @@ export const MAPS = {
       { x: 60, y: 64, w: 4, h: 2, to: 'orcwatch', at: [8, 8], label: 'สันเขาออร์ควอช' },
     ],
     spawns: [
-      { mob: 'gravebound', count: 28 },
-      { mob: 'husk', count: 12 },
+      { mob: 'gravebound', count: 24 },
+      { mob: 'husk', count: 10 },
+      { mob: 'bone_archer', count: 14 },
+      { mob: 'crypt_warden', count: 6 },
     ],
   },
 
@@ -129,8 +135,10 @@ export const MAPS = {
       { x: 82, y: 60, w: 4, h: 4, to: 'frostvault', at: [14, 14], label: 'ห้องนิรภัยเยือกแข็ง' },
     ],
     spawns: [
-      { mob: 'orc_scout', count: 26 },
-      { mob: 'dark_raider', count: 18 },
+      { mob: 'orc_scout', count: 24 },
+      { mob: 'dark_raider', count: 16 },
+      { mob: 'orc_shaman', count: 10 },
+      { mob: 'crypt_warden', count: 4 },
       { mob: 'orc_warlord', count: 1, area: [70, 20, 14, 14], boss: true },
     ],
   },
@@ -144,8 +152,9 @@ export const MAPS = {
       { x: 70, y: 70, w: 4, h: 4, to: 'vhaal', at: [24, 41], label: 'ห้องบัลลังก์วาล' },
     ],
     spawns: [
-      { mob: 'frost_husk', count: 30 },
-      { mob: 'crimson_orc', count: 14 },
+      { mob: 'frost_husk', count: 26 },
+      { mob: 'crimson_orc', count: 12 },
+      { mob: 'frost_wight', count: 14 },
     ],
   },
 
@@ -156,7 +165,9 @@ export const MAPS = {
     warps: [{ x: 22, y: 45, w: 4, h: 2, to: 'frostvault', at: [70, 68], label: 'ห้องนิรภัยเยือกแข็ง' }],
     spawns: [
       { mob: 'skeleton_king', count: 1, area: [16, 10, 16, 16], boss: true },
-      { mob: 'gravebound', count: 10 },
+      { mob: 'gravebound', count: 8 },
+      { mob: 'crypt_warden', count: 6 },
+      { mob: 'bone_archer', count: 6 },
     ],
   },
 };

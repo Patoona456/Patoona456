@@ -281,6 +281,36 @@ export class Conn {
         this.world.warpPlayer(p, m.map, tx * TILE, ty * TILE);
         return;
       }
+      // dev-only power-up, so high level content can be tested. EMBERFALL_DEV=1.
+      case 'devBoost': {
+        if (process.env.EMBERFALL_DEV !== '1') return this.error('ปิดใช้งานอยู่');
+        const r = p.record;
+        r.level = Math.min(99, m.level ?? 60);
+        r.jobLevel = 45;
+        r.job = m.job ?? 'vanguard';
+        for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) r[k] = m.stat ?? 60;
+        r.aurum += 1000000;
+        const kit = m.items ?? ['glacier_lance', 'warden_halberd', 'iron_pike', 'ashguard_plate',
+          'plate_cuirass', 'leather_vest', 'golden_helm', 'metal_helm', 'golden_greaves',
+          'metal_greaves', 'golden_boots', 'metal_boots', 'golden_gauntlets', 'metal_gauntlets',
+          'emberheart_amulet', 'band_of_vigor', 'greater_salve'];
+        for (const id of kit) {
+          if ((ITEMS[id]?.level ?? 1) > r.level) continue;      // only what this level may wear
+          p.addItem(id, id === 'greater_salve' ? 50 : 1);
+        }
+        for (const [i, st] of p.inventory.entries()) {
+          const def = ITEMS[st.id];
+          if (def && (def.type === 'weapon' || def.type === 'armor')) { st.refine = 7; p.equip(i); }
+        }
+        for (const sid of m.skills ?? ['cleave', 'skewer', 'taunt', 'bulwark_stance', 'first_aid', 'iron_will']) {
+          r.skills[sid] = 5;
+        }
+        r.hotbar = ['cleave', 'skewer', 'taunt', 'bulwark_stance', 'first_aid', null];
+        p.recompute();
+        p.hp = p.maxHp; p.sp = p.maxSp;
+        this.sendInventory();
+        return this.notice('dev: boosted', 'good');
+      }
       case OP.PARTY: return this.partyCmd(m);
       // the quest log is readable anywhere; only turn-ins need an NPC
 

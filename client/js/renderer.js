@@ -59,11 +59,30 @@ function makeTile(kind, theme, variant = 0) {
     g.beginPath(); g.arc(14 + ox, 14 + oy, rr * 0.78, 0, Math.PI * 2); g.fill();
     g.fillStyle = '#3d7038';
     g.beginPath(); g.arc(12 + ox, 12 + oy, rr * 0.5, 0, Math.PI * 2); g.fill();
-  } else if (kind === TILES.ROCK || kind === TILES.WALL) {
+  } else if (kind === TILES.WALL) {
     g.strokeStyle = 'rgba(0,0,0,0.35)';
     g.strokeRect(0.5, 0.5, TILE - 1, TILE - 1);
     g.fillStyle = 'rgba(255,255,255,0.06)';
     g.fillRect(2, 2, TILE - 4, 3);
+  } else if (kind === TILES.ROCK) {
+    // an outcrop, not a tile: irregular per variant so ridges read as terrain
+    const ground = { ice: '#cdd8e4', rock: '#a8996c', marsh: '#3d5a3c', crypt: '#4a4650' }[theme] ?? '#3f6b3a';
+    g.fillStyle = ground;
+    g.fillRect(0, 0, TILE, TILE);
+    const o = [[0, 0], [-3, 2], [3, -2]][variant % 3];
+    g.fillStyle = pal[1];
+    g.beginPath();
+    g.moveTo(1 + o[0], 24 + o[1]); g.lineTo(6 + o[0], 8 + o[1]); g.lineTo(18 + o[0], 3 + o[1]);
+    g.lineTo(29 + o[0], 11 + o[1]); g.lineTo(31 + o[0], 27 + o[1]); g.lineTo(16 + o[0], 32 + o[1]);
+    g.closePath(); g.fill();
+    g.fillStyle = pal[2];
+    g.beginPath();
+    g.moveTo(6 + o[0], 12 + o[1]); g.lineTo(17 + o[0], 6 + o[1]); g.lineTo(24 + o[0], 13 + o[1]);
+    g.lineTo(13 + o[0], 18 + o[1]);
+    g.closePath(); g.fill();
+    g.globalAlpha = 0.3; g.fillStyle = '#000';
+    g.fillRect(2 + o[0], 26 + o[1], 26, 5);
+    g.globalAlpha = 1;
   } else if (kind === TILES.FLOWER) {
     for (let i = 0; i < 4; i++) {
       g.fillStyle = ['#e0d060', '#d86e9a', '#cfd7ea'][Math.floor(r() * 3)];

@@ -49,7 +49,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .bar.small { height: 7px; }
 .bar i { position: absolute; inset: 0; width: 0; display: block; transition: width .18s ease; }
-.bar span { position: absolute; inset: 0; text-align: center; font-size: 9px; line-height: 11px; text-shadow: 0 1px 2px #000; }
+.bar span { position: absolute; inset: 0; padding: 0 6px; text-align: center; font-size: 9px; line-height: 11px; text-shadow: 0 1px 2px #000; letter-spacing: .3px; }
 .bar.hp i { background: linear-gradient(90deg, #ff6b6b, var(--hp)); }
 .bar.sp i { background: linear-gradient(90deg, #6fb3ff, var(--sp)); }
 .bar.exp i { background: linear-gradient(90deg, #9be8a6, var(--exp)); }
@@ -241,3 +241,27 @@ input[type=number], input[type=text], input[type=password], select {
 .opt { padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; background: #151a26; }
 .opt.sel { border-color: var(--gold); background: rgba(242,193,78,.12); }
 .preview { display: grid; place-items: center; padding: 8px; }
+
+/* transient refusal line, sits just above the hotbar */
+#flash {
+  position: fixed; left: 50%; bottom: calc(76px + var(--safe)); transform: translateX(-50%);
+  background: rgba(30, 14, 18, .92); border: 1px solid #7c3040; color: #ffb3b3;
+  padding: 6px 14px; border-radius: 999px; font-size: 13px; z-index: 45;
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
+}
+#flash.show { opacity: 1; animation: nudge .18s ease; }
+@keyframes nudge { from { transform: translate(-50%, 4px); } to { transform: translate(-50%, 0); } }
+
+/* zone title card */
+#zone-banner {
+  position: fixed; top: 22%; left: 50%; transform: translateX(-50%);
+  text-align: center; z-index: 30; pointer-events: none;
+  opacity: 0; transition: opacity .5s ease;
+}
+#zone-banner.show { opacity: 1; animation: zoneIn .6s ease; }
+#zone-banner b {
+  display: block; font-size: 30px; letter-spacing: 1px;
+  text-shadow: 0 3px 12px #000, 0 0 30px rgba(242,193,78,.35);
+}
+#zone-banner span { display: block; margin-top: 4px; font-size: 13px; color: var(--gold); text-shadow: 0 2px 6px #000; }
+@keyframes zoneIn { from { opacity: 0; transform: translate(-50%, 10px); } }

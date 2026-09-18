@@ -50,10 +50,39 @@ export class UI {
   }
 
   /* ---------------- toasts + chat ---------------- */
+  /** Outcomes worth reading. Deduped, capped, and never more than a few. */
   toast(text, kind = 'info') {
+    const box = $('#toasts');
+    const last = box.lastElementChild;
+    if (last && last.dataset.text === text && Date.now() - Number(last.dataset.at) < 2500) {
+      const n = Number(last.dataset.n ?? 1) + 1;
+      last.dataset.n = n;
+      last.dataset.at = Date.now();
+      last.textContent = `${text} x${n}`;
+      return;
+    }
     const n = el('div', 'toast ' + kind, text);
-    $('#toasts').append(n);
+    n.dataset.text = text;
+    n.dataset.at = Date.now();
+    box.append(n);
+    while (box.childElementCount > 3) box.firstChild.remove();
     setTimeout(() => n.remove(), 3200);
+  }
+
+  /** Refusals ("still on cooldown", "out of range"). One line, no stacking. */
+  flash(text) {
+    let n = $('#flash');
+    if (!n) {
+      n = el('div', '', '');
+      n.id = 'flash';
+      document.body.append(n);
+    }
+    n.textContent = text;
+    n.classList.remove('show');
+    void n.offsetWidth;          // restart the animation
+    n.classList.add('show');
+    clearTimeout(this._flashT);
+    this._flashT = setTimeout(() => n.classList.remove('show'), 1400);
   }
 
   chat(m) {
@@ -65,6 +94,24 @@ export class UI {
     log.scrollTop = log.scrollHeight;
   }
 
+  /** Big fading title when you enter a zone, with its level bracket. */
+  zoneBanner(zone) {
+    let n = $('#zone-banner');
+    if (!n) {
+      n = el('div', '', '');
+      n.id = 'zone-banner';
+      document.body.append(n);
+    }
+    const range = zone.levelRange ? `<span>เลเวลแนะนำ ${zone.levelRange[0]}–${zone.levelRange[1]}</span>`
+      : zone.safe ? '<span>เขตปลอดภัย</span>' : '';
+    n.innerHTML = `<b>${esc(zone.nameTh ?? zone.name)}</b>${range}`;
+    n.classList.remove('show');
+    void n.offsetWidth;
+    n.classList.add('show');
+    clearTimeout(this._bannerT);
+    this._bannerT = setTimeout(() => n.classList.remove('show'), 2600);
+  }
+
   /* ---------------- HUD ---------------- */
   updateVitals(self, you) {
     const hp = you?.hp ?? self.hp, sp = you?.sp ?? self.sp;
@@ -74,7 +121,7 @@ export class UI {
     setBar('#bar-hp', '#txt-hp', hp, maxHp);
     setBar('#bar-sp', '#txt-sp', sp, maxSp);
     setBar('#bar-exp', '#txt-exp', you?.exp ?? self.exp, self.expNext, 'EXP');
-    setBar('#bar-jexp', '#txt-jexp', you?.jobExp ?? self.jobExp, self.jobExpNext, 'JOB');
+    setBar('#bar-jexp', '#txt-jexp', you?.jobExp ?? self.jobExp, self.jobExpNext, 'อาชีพ');
     $('#aurum').textContent = fmt(you?.aurum ?? self.aurum);
     const over = (you?.weight ?? 0) > (you?.weightCap ?? 1);
     $('#netinfo').innerHTML = `ping ${this.game.net.ping}ms · น้ำหนัก <span style="color:${over ? 'var(--bad)' : 'inherit'}">${fmt(you?.weight ?? 0)}/${fmt(you?.weightCap ?? 0)}</span>`;

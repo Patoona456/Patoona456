@@ -48,7 +48,7 @@ class Game {
     const n = this.net;
     n.on('_open', () => this.ui.toast('เชื่อมต่อเซิร์ฟเวอร์แล้ว', 'good'));
     n.on('_close', () => { if (this.inWorld) this.ui.toast('หลุดการเชื่อมต่อ กำลังเชื่อมใหม่…', 'bad'); });
-    n.on('error', (m) => { this.screenError(m.text); this.ui.toast(m.text, 'bad'); });
+    n.on('error', (m) => { this.screenError(m.text); if (this.inWorld) this.ui.flash(m.text); else this.ui.toast(m.text, 'bad'); });
     n.on('notice', (m) => this.ui.toast(m.text, m.kind === 'good' ? 'good' : m.kind === 'bad' ? 'bad' : m.kind === 'warn' ? 'warn' : 'info'));
     n.on('chars', (m) => { this.account = m.account; this.chars = m.chars; this.showCharSelect(); });
     n.on('zone', (m) => {
@@ -57,6 +57,7 @@ class Game {
       this.grid = decodeGrid(m.rle, m.width * m.height);
       $('#zone-name').textContent = m.nameTh ?? m.name;
       this.entities.clear();
+      if (this.inWorld) this.ui.zoneBanner(m);
     });
     n.on('self', (m) => {
       this.self = m.self;
@@ -182,6 +183,7 @@ class Game {
     $('#hud').classList.remove('hidden');
     $('#chat').classList.remove('hidden');
     preloadCommon(this.self.look);
+    if (this.zone) this.ui.zoneBanner(this.zone);
     this.ui.toast('ยินดีต้อนรับสู่ Emberfall — กด F1 เพื่อดูปุ่มควบคุม');
   }
 
@@ -249,6 +251,13 @@ class Game {
   /* ---------------- actions ---------------- */
   handleActions() {
     const inp = this.input;
+    if (this.state.you && !this.state.you.alive) {
+      if (this.attacking) { this.attacking = false; this.net.send({ t: 'attack', on: false }); }
+      if (inp.consume('interact') || inp.consume('cancel')) this.net.send({ t: 'respawn' });
+      for (let i = 1; i <= 6; i++) inp.consume('skill' + i);
+      inp.consume('attack');
+      return;
+    }
 
     // attack is a hold: mirror it to the server only on change
     const wantAttack = inp.isHeld('attack');
