@@ -94,8 +94,14 @@ export function openStore(dir) {
         if (!listings.has(uid)) { sql.prepare('DELETE FROM market WHERE uid = ?').run(uid); seen.market.delete(uid); }
       }
 
+      // A counter that nothing has needed yet is `undefined`, and
+      // JSON.stringify(undefined) is undefined, which SQLite cannot bind -
+      // that threw inside the transaction and silently stopped the whole
+      // world from saving on any server where nobody had founded a guild.
       for (const key of ['version', 'stats', 'nextCharId', 'nextGuildId', 'nextPartyId']) {
-        putMeta.run(key, JSON.stringify(db[key]));
+        const value = db[key];
+        if (value === undefined) continue;
+        putMeta.run(key, JSON.stringify(value));
       }
       sql.exec('COMMIT');
     } catch (e) {
