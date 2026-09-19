@@ -3,6 +3,7 @@ import { SKILLS, val, skillCost } from '../../shared/data/skills.js';
 import { rollDamage } from '../../shared/formulas.js';
 import { applyDamage, healEntity, addStatus, clearStatuses } from './combat.js';
 import { dist, dirTo } from './monster.js';
+import { vecOf } from '../../shared/facing.js';
 import { ITEMS } from '../../shared/data/items.js';
 
 const now = () => Date.now();
@@ -133,7 +134,7 @@ function hitOne(ctx, target, ratioMul = 1) {
 
   // situational bonuses
   if (sk.behindBonus) {
-    const facing = [[0, -1], [-1, 0], [0, 1], [1, 0]][target.dir ?? 2];
+    const facing = vecOf(target.dir ?? 0);
     const to = { x: caster.x - target.x, y: caster.y - target.y };
     const len = Math.hypot(to.x, to.y) || 1;
     if ((to.x / len) * facing[0] + (to.y / len) * facing[1] < -0.2) ratio += val(sk.behindBonus, lvl);
@@ -314,7 +315,7 @@ function doDebuff(ctx) {
 
 function doDash(ctx) {
   const { zone, caster, sk, lvl } = ctx;
-  const facing = [[0, -1], [-1, 0], [0, 1], [1, 0]][caster.dir ?? 2];
+  const facing = vecOf(caster.dir ?? 0);
   let ux = facing[0], uy = facing[1];
   if (ctx.point) {
     const dx = ctx.point.x - caster.x, dy = ctx.point.y - caster.y;

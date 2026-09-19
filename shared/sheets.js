@@ -1,3 +1,5 @@
+import { DIR8_TO_DIR4 } from './facing.js';
+
 // What shape a spritesheet is.
 //
 // Every sheet in this game was the Universal LPC layout - 64x64 frames, 13
@@ -30,9 +32,68 @@ export const LPC = {
   },
   /** Four rows per action: up, left, down, right. */
   dirRows: 4,
+  /** Facing is always one of eight; this is how this sheet folds them. */
+  dirMap: DIR8_TO_DIR4,
 };
 
-export const LAYOUTS = { lpc: LPC };
+/**
+ * The layout the new art is drawn to.
+ *
+ * Taken from the spec on the asset boards: 128x128 frames, a character about
+ * 96 tall standing on a bottom-centre pivot, and eight directions in the
+ * column order DIR8 already names. Eleven actions rather than LPC's six, and
+ * they are different actions - there is a run, two attacks, a death, a sit
+ * and a victory pose, none of which the old sheets had.
+ *
+ * `frames` per action is left at 1 until the real sheets arrive and can be
+ * measured: a board preview shows one image per cell, which says nothing
+ * about how many frames the animation actually has. Everything else here is
+ * stated outright in the spec panel, so it is written down rather than
+ * guessed, and `npm run sheet` will confirm the grid against a real file.
+ */
+export const CHIBI8 = {
+  id: 'chibi8',
+  aliases: null,           // filled in below, once CHIBI_ALIASES exists
+  frame: { w: 128, h: 128 },
+  cols: 1,                 // measured from the first real sheet
+  rows: 88,                // 11 actions x 8 directions
+  /** The art stands on the bottom edge of its frame, not floating in it. */
+  anchor: 1.0,
+  dirRows: 8,
+  dirMap: null,            // eight rows means the facing is the row
+  anims: {
+    idle: { row: 0, frames: 1, fps: 6 },
+    walk: { row: 8, frames: 1, fps: 10 },
+    run: { row: 16, frames: 1, fps: 14 },
+    attack1: { row: 24, frames: 1, fps: 14 },
+    attack2: { row: 32, frames: 1, fps: 14 },
+    skill: { row: 40, frames: 1, fps: 12 },
+    hurt: { row: 48, frames: 1, fps: 10, single: true },
+    die: { row: 56, frames: 1, fps: 8, single: true },
+    sit: { row: 64, frames: 1, fps: 4 },
+    victory: { row: 72, frames: 1, fps: 8 },
+    emote: { row: 80, frames: 1, fps: 8 },
+  },
+};
+
+/**
+ * What the engine's action names mean on a sheet that has different ones.
+ *
+ * The game asks for `slash` because that is what a sword swing has always
+ * been called here; the new art calls it `attack1`. Rather than rename every
+ * call site - and every skill definition, which is data players' characters
+ * are built on - a layout may say what its own name for a thing is.
+ */
+export const CHIBI_ALIASES = {
+  slash: 'attack1',
+  thrust: 'attack2',
+  shoot: 'attack2',
+  spellcast: 'skill',
+};
+
+CHIBI8.aliases = CHIBI_ALIASES;
+
+export const LAYOUTS = { lpc: LPC, chibi8: CHIBI8 };
 
 /**
  * Register a layout. Art that arrives on a different grid gets described here
@@ -49,6 +110,7 @@ export function defineLayout(id, spec) {
     id,
     frame: { ...base.frame, ...(spec.frame ?? {}) },
     anims: { ...base.anims, ...(spec.anims ?? {}) },
+    aliases: { ...(base.aliases ?? {}), ...(spec.aliases ?? {}) },
   };
   LAYOUTS[id] = layout;
   return layout;
@@ -57,19 +119,42 @@ export function defineLayout(id, spec) {
 export function layoutOf(id) { return LAYOUTS[id] ?? LPC; }
 
 /** Which frame of an animation a given elapsed time lands on. */
+/**
+ * An animation on this sheet, by the engine's name for it.
+ *
+ * Falls through the sheet's own aliases, then to idle - so a sheet that has
+ * no separate bow animation still draws something sensible when an archer
+ * shoots, rather than a blank frame or a throw.
+ */
+export function animOf(layout, animName) {
+  return layout.anims[animName]
+    ?? layout.anims[layout.aliases?.[animName]]
+    ?? layout.anims.idle
+    ?? LPC.anims.idle;
+}
+
 export function frameAt(layout, animName, elapsedMs, looping = true) {
-  const a = layout.anims[animName] ?? layout.anims.idle ?? LPC.anims.idle;
+  const a = animOf(layout, animName);
   if (a.frames <= 1) return 0;
   const frame = Math.floor((elapsedMs / 1000) * a.fps);
   return looping ? frame % a.frames : Math.min(frame, a.frames - 1);
 }
 
-/** Which row an animation plays on, for a facing. */
+/**
+ * Which row an animation plays on, for a facing.
+ *
+ * `dir` is always one of the eight. A sheet with eight rows uses it directly;
+ * one with four folds it through its own map, so the caller never has to know
+ * how many directions the art it is about to draw happens to have.
+ */
 export function rowAt(layout, animName, dir) {
-  const a = layout.anims[animName] ?? layout.anims.idle ?? LPC.anims.idle;
+  const a = animOf(layout, animName);
   if (a.single) return a.row;
   const span = layout.dirRows ?? 4;
-  return a.row + (span > 1 ? dir % span : 0);
+  if (span <= 1) return a.row;
+  const facing = ((dir % 8) + 8) % 8;
+  const row = layout.dirMap ? (layout.dirMap[facing] ?? 0) : facing % span;
+  return a.row + (row % span);
 }
 
 /** Where a frame sits inside the sheet, in pixels. */

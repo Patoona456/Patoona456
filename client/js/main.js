@@ -1,5 +1,6 @@
 // Bootstrap: screens -> world loop. Owns client state and talks to server.
 import { Net } from './net.js';
+import { vecOf } from '../../shared/facing.js';
 import { Input, bindTouchControls } from './input.js';
 import { Renderer, ZOOM_STEPS } from './renderer.js';
 import { UI, loadTheme } from './ui.js';
@@ -800,7 +801,7 @@ class Game {
       } else if (target) {
         msg.point = { x: target.x, y: target.y };
       } else {
-        const face = [[0, -1], [-1, 0], [0, 1], [1, 0]][this.entities.get(this.state.myId)?.d ?? 2];
+        const face = vecOf(this.entities.get(this.state.myId)?.d ?? 0);
         msg.point = { x: this.predicted.x + face[0] * 110, y: this.predicted.y + face[1] * 110 };
       }
     }

@@ -1,6 +1,7 @@
 // Monster entity + AI. Simple, readable state machine: idle -> chase -> attack,
 // with leashing back to the spawn anchor and a threat table for parties.
 import { MONSTERS } from '../../shared/data/monsters.js';
+import { facingTo } from '../../shared/facing.js';
 import { TILE } from '../../shared/constants.js';
 
 let seq = 0;
@@ -85,9 +86,8 @@ export class Monster {
 /** Distance helpers used by the AI and by skills. */
 export const dist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 export const dist = (a, b) => Math.sqrt(dist2(a, b));
-export const dirTo = (from, to) => {
-  const dx = to.x - from.x, dy = to.y - from.y;
-  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 3 : 1;
-  return dy > 0 ? 2 : 0;
-};
+// Facing is one of eight now, in sheet order. A sheet with only four rows
+// collapses them on its own; the server does not need to know which art the
+// viewer happens to be running.
+export const dirTo = (from, to) => facingTo(from, to);
 export const LEASH = 16 * TILE;

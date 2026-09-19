@@ -11,6 +11,7 @@ import { tickBoss, resetBoss } from './boss.js';
 import { findPath, lineClear } from '../../shared/pathfind.js';
 import { expGapPenalty } from '../../shared/formulas.js';
 import * as Stall from './stall.js';
+import { facing8 } from '../../shared/facing.js';
 
 const EMPTY_SIGNS = [];
 const EMPTY_SEEN = new Map();
@@ -188,7 +189,7 @@ export class Zone {
     for (const npc of this.def.npcs ?? []) {
       const e = {
         kind: 'npc', id: 'n_' + npc.id, npcId: npc.id, name: npc.name, role: npc.role,
-        x: npc.x * TILE + TILE / 2, y: npc.y * TILE + TILE / 2, dir: 2, anim: 'idle',
+        x: npc.x * TILE + TILE / 2, y: npc.y * TILE + TILE / 2, dir: 0, anim: 'idle',
         alive: true, look: npc.look, shop: npc.shop,
         // An NPC never moves and never changes, so all of it is identity and
         // the motion half is the bare minimum needed to place it.
@@ -472,7 +473,7 @@ export class Zone {
         const len = Math.hypot(p.input.mx, p.input.my) || 1;
         const vx = p.input.mx / len, vy = p.input.my / len;
         this.moveTo(p, p.x + vx * speed * dt, p.y + vy * speed * dt);
-        p.dir = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 3 : 1) : (vy > 0 ? 2 : 0);
+        p.dir = facing8(vx, vy);
         if (!swinging) p.anim = 'walk';
         // moving cancels stealth-breaking? no - but it does cancel casts above
       } else if (!swinging && (p.anim === 'walk' || ONE_SHOT.has(p.anim))) {

@@ -83,7 +83,25 @@ const WEAPON_EITHER = new Set(['bow', 'recurvebow', 'greatbow', 'longspear', 'ar
 const MALE_MISSING = new Set(['steelwand']);
 
 /** Draw order, back to front. */
+/**
+ * Bottom to top. This is the LPC stacking the existing art was drawn for.
+ *
+ * The new sheets state their own order on the equip guide - base, top,
+ * bottom, shoes, gloves, cloak, weapon, accessory - which is not this one:
+ * it puts the shirt under the trousers and hangs a cloak behind the weapon.
+ * A layout therefore carries its own order, and a character is drawn in the
+ * order its body sheet asks for rather than in one global sequence.
+ */
 const ORDER = ['body', 'eyes', 'legs', 'feet', 'torso', 'belt', 'hands', 'head', 'hair', 'weapon', 'offhand'];
+
+/** The order stated on the new art's equip-layer guide. */
+export const CHIBI_ORDER = [
+  'body', 'eyes', 'hair', 'torso', 'legs', 'feet', 'hands',
+  'back', 'belt', 'head', 'face', 'neck', 'weapon', 'offhand', 'accessory',
+];
+
+const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER };
+export function orderFor(layout) { return ORDERS[layout?.id] ?? ORDER; }
 
 /** Build the layer list for a player-shaped entity. */
 export function playerLayers(look, equipment = {}) {
@@ -260,7 +278,7 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
 
   ctx.save();
   if (alpha < 1) ctx.globalAlpha = alpha;
-  for (const layer of ORDER) {
+  for (const layer of orderFor(layout)) {
     const entry = layers[layer];
     if (!entry) continue;
     const url = urlOf(entry);

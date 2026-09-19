@@ -1,5 +1,6 @@
 // Canvas renderer: procedural terrain tiles + LPC paper-doll entities.
 import { TILE, SPRITE, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
+import { vecOf } from '../../shared/facing.js';
 import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
@@ -498,12 +499,12 @@ export class Renderer {
           const wing = ITEMS[e.eq?.wings]?.wing;
           if (wing) {
             drawWings(ctx, wing.style, {
-              x: e.x, y: e.y, dir: e.d ?? 2, t: now + (e.id.charCodeAt(1) ?? 0) * 37,
+              x: e.x, y: e.y, dir: e.d ?? 0, t: now + (e.id.charCodeAt(1) ?? 0) * 37,
               scale: scale * (wing.scale ?? 1), moving: anim === 'walk',
             });
           }
           drawCharacter(ctx, layers, {
-            x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed,
+            x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
             scale,
             alpha: e.inv ? 0.35 : 1,
             tint: e.sprite?.tint ?? null,
@@ -549,7 +550,7 @@ export class Renderer {
     const pulse = 0.72 + 0.28 * Math.sin(now / (520 / tier.pulse) + e.x * 0.05);
     const power = tier.aura * pulse * (swinging ? 1.45 : 1);
 
-    const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed, scale, color: colour };
+    const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed, scale, color: colour };
 
     // A tier with art plays it over the wielder. The code-drawn aura below
     // still runs underneath at a lower weight, so a tier whose sheet has not
@@ -592,7 +593,7 @@ export class Renderer {
       const gap = (swinging ? 110 : 420) / tier.sparks;
       if (now >= due) {
         this.sparkAt.set(e.id, now + gap * (0.6 + Math.random() * 0.8));
-        const side = [[0, -1], [-1, 0], [0, 1], [1, 0]][e.d ?? 2];
+        const side = vecOf(e.d ?? 0);
         this.particles.spark(
           e.x + side[0] * 12 + (Math.random() - 0.5) * 10,
           e.y - 26 + side[1] * 6 + (Math.random() - 0.5) * 10,
@@ -614,7 +615,7 @@ export class Renderer {
     const strength = 0.5 + (tier?.aura ?? 0) * 0.5;
     const pulse = 0.7 + 0.3 * Math.sin(now / 340 + e.x * 0.05);
     const power = strength * pulse * (swinging ? 1.5 : 1);
-    const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed, scale, color: `rgb(${L.main.join(',')})` };
+    const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed, scale, color: `rgb(${L.main.join(',')})` };
     drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.5, blur: 6 });
     drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.55, blur: 1.5 });
 
@@ -624,7 +625,7 @@ export class Renderer {
     const gap = (swinging ? 55 : 130) / (0.6 + strength);
     this.elemAt.set(e.id, now + gap * (0.6 + Math.random() * 0.8));
 
-    const side = [[0, -1], [-1, 0], [0, 1], [1, 0]][e.d ?? 2];
+    const side = vecOf(e.d ?? 0);
     const bx = e.x + side[0] * 12 + (Math.random() - 0.5) * 12;
     const by = e.y - 26 + side[1] * 6 + (Math.random() - 0.5) * 12;
     const main = L.main.join(','), core = L.core.join(',');

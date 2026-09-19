@@ -9,6 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LPC, defineLayout, layoutOf, frameAt, rowAt, frameRect, fits } from '../shared/sheets.js';
 import { GLOW_TIERS, glowTier, tierSheet } from '../shared/refineglow.js';
+import { DIR8, DIR8_VEC, facing8, facingTo, toDir4, vecOf } from '../shared/facing.js';
 import { SPRITE, SHEET_COLS, ANIM } from '../shared/constants.js';
 
 test('the built-in layout still describes the art the game ships with', () => {
@@ -36,9 +37,11 @@ test('every animation fits inside the sheet it claims to be on', () => {
 });
 
 test('a frame is read from the layout, not from a constant', () => {
-  const r = frameRect(LPC, 'walk', 2, 0);
+  // `dir` is one of the eight now; an LPC sheet folds it onto its four, so
+  // facing 2 (left) lands on the LPC left row, which is row 1 of the four.
+  const r = frameRect(LPC, 'walk', DIR8.indexOf('left'), 0);
   assert.equal(r.sw, 64);
-  assert.equal(r.sy, LPC.anims.walk.row * 64 + 2 * 64);
+  assert.equal(r.sy, LPC.anims.walk.row * 64 + 1 * 64);
 
   // Art on another grid: nothing about it is 64, and it still works out.
   const big = defineLayout('test-big', {
