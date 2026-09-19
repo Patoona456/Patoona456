@@ -5,7 +5,7 @@ import { applyDamage, healEntity, addStatus, clearStatuses } from './combat.js';
 import { dist, dirTo } from './monster.js';
 import { vecOf } from '../../shared/facing.js';
 import { ITEMS } from '../../shared/data/items.js';
-import { weaponAllows } from '../../shared/weapons.js';
+import { weaponAllows, poseFor } from '../../shared/weapons.js';
 
 const now = () => Date.now();
 
@@ -59,7 +59,9 @@ export function begin(zone, caster, skillId, opts = {}) {
 
   const castTime = (sk.castTime ?? 0) * (caster.derived?.castFactor ?? 1);
   caster.dir = target ? dirTo(caster, target) : point ? dirTo(caster, point) : caster.dir;
-  caster.anim = sk.anim ?? 'spellcast';
+  // The pose the weapon in hand can actually be drawn in - see poseFor. A
+  // monster has no weapon class, so it plays the skill as authored.
+  caster.anim = poseFor(sk.anim ?? 'spellcast', caster.weaponClass);
   caster.animStart = now();
 
   const payload = { skillId, lvl, spCost, targetId: target?.id ?? null, point };
@@ -205,7 +207,7 @@ function knockback(zone, from, target, distance) {
 /* ------------------------- kinds ------------------------- */
 function doDamage(ctx) {
   const dealt = hitOne(ctx, ctx.target);
-  ctx.zone.pushEvent({ t: 'skill', id: ctx.caster.id, skill: ctx.sk.id, target: ctx.target?.id, anim: ctx.sk.anim });
+  ctx.zone.pushEvent({ t: 'skill', id: ctx.caster.id, skill: ctx.sk.id, target: ctx.target?.id, anim: poseFor(ctx.sk.anim, ctx.caster.weaponClass) });
   return { ok: true, dealt };
 }
 
