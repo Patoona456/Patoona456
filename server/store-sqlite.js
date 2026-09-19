@@ -98,7 +98,7 @@ export function openStore(dir) {
       // JSON.stringify(undefined) is undefined, which SQLite cannot bind -
       // that threw inside the transaction and silently stopped the whole
       // world from saving on any server where nobody had founded a guild.
-      for (const key of ['version', 'stats', 'nextCharId', 'nextGuildId', 'nextPartyId']) {
+      for (const key of ['version', 'stats', 'nextCharId', 'nextGuildId', 'nextPartyId', 'siege']) {
         const value = db[key];
         if (value === undefined) continue;
         putMeta.run(key, JSON.stringify(value));

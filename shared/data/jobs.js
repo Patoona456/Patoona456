@@ -153,7 +153,7 @@ export const JOBS = {
     hpMod: 1.15, spMod: 1.4, speedMod: 1, weapons: ['rod'],
     growth: { int: 4, vit: 2 }, next: [],
     sprite: { torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' },
-    skills: ['greater_mend', 'revive', 'aura_of_dawn'],
+    skills: ['dawnfire', 'greater_mend', 'revive', 'aura_of_dawn'],
   },
   oathkeeper: {
     id: 'oathkeeper', tier: 2, name: 'Oathkeeper', nameTh: 'ผู้ถือคำสาบาน', from: 'warden',

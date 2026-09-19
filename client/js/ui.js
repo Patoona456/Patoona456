@@ -812,6 +812,19 @@ export class UI {
       wrap.append(row);
     }
 
+    // The fortress reads the same whether or not you are in a guild: knowing
+    // who holds it and when it can next be taken is half the reason to join one.
+    if (st?.siege) {
+      const s = st.siege;
+      const box = el('div', 'row');
+      const held = s.owner ? `<b>${esc(s.owner.name)}</b> ถือป้อมอยู่` : 'ยังไม่มีกิลด์ไหนถือป้อม';
+      const when = s.open
+        ? `<b style="color:var(--warn,#e8a33d)">ศึกกำลังเปิด</b>${s.holder ? ` · กำลังยึด ${Math.round(100 * s.progress / s.need)}%` : ''}`
+        : `ศึกครั้งถัดไป ${new Date(s.nextAt).toLocaleString('th-TH', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`;
+      box.innerHTML = `<span>🏰 ลานประลองเถ้า · ${held}<br><span class="muted">${when} · ผู้ถือป้อมไม่ต้องจ่ายค่าบำรุงสัปดาห์นั้น</span></span>`;
+      wrap.append(box);
+    }
+
     const g = st?.guild;
     if (!g) {
       wrap.append(el('div', 'muted',

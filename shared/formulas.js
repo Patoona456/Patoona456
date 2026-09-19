@@ -119,6 +119,24 @@ export function hitChance(attackerHit, defenderFlee) {
   return clamp((attackerHit - defenderFlee + 80) / 100, 0.05, 0.95);
 }
 
+/**
+ * How much of a blow lands on another player.
+ *
+ * PvE damage is tuned so that a level-70 character takes a monster down in
+ * fifteen seconds. Two level-70 characters pointed at each other with the
+ * same numbers kill in two or three, which is not a fight, it is a coin toss
+ * decided by who clicked first. Everything is scaled back and the floor is
+ * raised, so gear still matters but nobody is deleted before they can answer.
+ *
+ * The cap on a single blow is the important half: without it, one burst skill
+ * with a high ratio ends a duel before the telegraph finishes drawing.
+ */
+export const PVP = { scale: 0.42, maxHitPct: 0.28 };
+export function pvpDamage(raw, targetMaxHp) {
+  const scaled = Math.max(1, Math.floor(raw * PVP.scale));
+  return Math.min(scaled, Math.max(1, Math.floor(targetMaxHp * PVP.maxHitPct)));
+}
+
 export function elementMultiplier(attackEl = 'neutral', defenseEl = 'neutral') {
   return ELEMENT_TABLE[attackEl]?.[defenseEl] ?? 1;
 }

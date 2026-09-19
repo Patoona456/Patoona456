@@ -233,7 +233,27 @@ export class Zone {
     if (!a || !b || a === b || !b.alive || b.kind === 'npc') return false;
     const aSide = a.kind === 'player' || (a.kind === 'monster' && a.summon) ? 'good' : 'bad';
     const bSide = b.kind === 'player' || (b.kind === 'monster' && b.summon) ? 'good' : 'bad';
-    return aSide !== bSide;
+    if (aSide === bSide) return aSide === 'good' && this.canDuel(a, b);
+    return true;
+  }
+
+  /**
+   * Whether two people on the same side may swing at each other.
+   *
+   * Opt-in by geography, not by a flag a player can forget they left on: only
+   * a map that declares `pvp` allows it at all, so nobody is ever surprised in
+   * a field they went to for experience. Party and guild are excluded because
+   * the alternative is one person ending a dungeon run out of spite, and a
+   * summoned pet answers to whoever owns it.
+   */
+  canDuel(a, b) {
+    if (!this.def.pvp) return false;
+    const owner = (e) => (e.kind === 'player' ? e : this.players.get(e.owner));
+    const pa = owner(a), pb = owner(b);
+    if (!pa || !pb || pa === pb) return false;
+    if (pa.party && pa.party === pb.party) return false;
+    if (pa.record?.guild && pa.record.guild === pb.record?.guild) return false;
+    return true;
   }
 
   partyMembersNear(p, radius) {
@@ -300,6 +320,17 @@ export class Zone {
     } else if (e.kind === 'player') {
       e.statuses = [];
       e.targetId = null;
+      // Losing a duel is not dying. Charging the usual experience for it would
+      // turn every PvP zone into a place to grief people out of a level, and
+      // paying the winner anything at all would make two accounts feeding each
+      // other the best income in the game. A duel settles nothing but the duel.
+      const duel = killer?.kind === 'player' && this.canDuel(killer, e);
+      if (duel) {
+        this.pushEvent({ t: 'duel', winner: killer.id, loser: e.id });
+        e.conn?.send({ t: 'died', expLost: 0, duel: 1 });
+        killer.conn?.send({ t: 'duelWon', over: e.name });
+        return;
+      }
       // Death costs: 5% of current base EXP, and gear wear. No item loss -
       // losing gear on death would gut the player economy we are protecting.
       const lost = Math.floor(e.record.exp * 0.05);

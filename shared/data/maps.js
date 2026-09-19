@@ -50,6 +50,7 @@ export const MAPS = {
     spawnPoint: [32, 28],
     warps: [
       { x: 32, y: 45, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 12, y: 44, w: 3, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
       { x: 2, y: 24, w: 2, h: 4, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
     ],
     npcs: [
@@ -291,6 +292,20 @@ export const MAPS = {
     spawns: [
       { mob: 'reliquary_warden', count: 1, area: [22, 18, 8, 8], boss: true },
     ],
+  },
+
+  // The only ground in the world where players may swing at each other, and
+  // the only way in is a door you walk through on purpose. Opting in by
+  // geography rather than by a toggle means nobody is ever jumped in a field
+  // they went to for experience, and the fortress the guilds contest sits
+  // here, so the siege and the duelling ground are the same place.
+  ashen_lists: {
+    id: 'ashen_lists', name: 'The Ashen Lists', nameTh: 'ลานประลองเถ้า',
+    width: 44, height: 44, seed: 4411, theme: 'ember', levelRange: [40, 70],
+    pvp: true,
+    spawnPoint: [22, 40],
+    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [16, 41], label: 'เอมเบอร์โฮลด์' }],
+    spawns: [],
   },
 
   vhaal: {

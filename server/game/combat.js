@@ -1,5 +1,5 @@
 // Damage application, status effects, aggro bookkeeping.
-import { rollDamage } from '../../shared/formulas.js';
+import { rollDamage, pvpDamage } from '../../shared/formulas.js';
 
 export const STATUS_DEFS = {
   poison:   { icon: '☠', dot: true, element: 'verdant' },
@@ -43,6 +43,12 @@ export function statusMods(target) {
 /** Absorb through shields first, then HP. Returns damage actually taken. */
 export function applyDamage(zone, attacker, target, amount, opts = {}) {
   if (!target.alive || amount <= 0) return 0;
+
+  // Player against player runs on its own curve. See pvpDamage: PvE numbers
+  // pointed at another character kill in two or three seconds.
+  if (attacker?.kind === 'player' && target.kind === 'player') {
+    amount = pvpDamage(amount, target.maxHp ?? target.derived?.maxHp ?? 1);
+  }
 
   // Aegis / stance style flat reduction
   const taken = target.mods?.dmgTakenPct ?? 0;

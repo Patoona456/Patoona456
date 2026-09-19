@@ -19,7 +19,8 @@ import { QUESTS } from '../shared/data/quests.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { GACHA } from '../server/game/economy.js';
 import { expGapPenalty, npcSellPrice } from '../shared/formulas.js';
-import { val, skillCost } from '../shared/data/skills.js';
+import { SKILLS, val, skillCost } from '../shared/data/skills.js';
+import { ELEMENT_TABLE } from '../shared/constants.js';
 import {
   LEVEL_CAP, KILL_SECONDS, HOURS_TO_CAP, TRAVEL_SECONDS,
   character, killSeconds, monsterDps, survivable, soloMonsters, bestAt, hoursToCap,
@@ -316,7 +317,7 @@ test('every weapon class has a rung to climb at a similar pace', () => {
       bad.push(`${wclass} stops at level ${levels[levels.length - 1]}`);
     }
     for (let i = 1; i < levels.length; i++) {
-      if (levels[i] - levels[i - 1] > 26) bad.push(`${wclass} has nothing between level ${levels[i - 1]} and ${levels[i]}`);
+      if (levels[i] - levels[i - 1] > 22) bad.push(`${wclass} has nothing between level ${levels[i - 1]} and ${levels[i]}`);
     }
   }
   assert.deepEqual(bad, [], bad.join('; '));
@@ -398,6 +399,29 @@ test('the starter field never picks a fight a new character loses', () => {
     const survive = dps > 0 ? c.derived.maxHp / dps : Infinity;
     if (!(survive > secs * 2)) {
       bad.push(`${m.id} kills a fresh character in ${survive.toFixed(0)}s and takes ${secs.toFixed(0)}s to kill`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('no weapon class is locked out of the element table', () => {
+  // The Nightblade killed things twice as slowly as its own sibling branch,
+  // and it was not its skills: every blade in the game was neutral or shade,
+  // the last thirty levels of the world are shade, and the bow had a radiant
+  // option. A class with no answer to the endgame's element is a class nobody
+  // should pick, and no amount of skill tuning fixes it.
+  const worst = { shade: 'radiant' };              // what the endgame is made of
+  const byClass = {};
+  for (const it of Object.values(ITEMS)) {
+    if (it.slot !== 'weapon') continue;
+    (byClass[it.wclass] ??= []).push(it);
+  }
+  const bad = [];
+  for (const [wclass, list] of Object.entries(byClass)) {
+    for (const [enemyEl, answer] of Object.entries(worst)) {
+      const late = list.filter((w) => (w.level ?? 1) >= LEVEL_CAP - 15);
+      const best = Math.max(...late.map((w) => ELEMENT_TABLE[w.element ?? 'neutral']?.[enemyEl] ?? 1), 0);
+      if (best < 1) bad.push(`${wclass} has nothing better than ${best.toFixed(2)}x against ${enemyEl} (wants ${answer})`);
     }
   }
   assert.deepEqual(bad, [], bad.join('; '));

@@ -148,6 +148,7 @@ export const MONSTERS = {
     element: 'frost', race: 'undead', speed: 62, aggressive: true, aggroRange: 210, respawn: 40,
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#8fd7ff' },
     drops: [
+      { id: 'ridgebreaker_pike', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.045 },
       { id: 'frost_tear', chance: 0.10 },
       { id: 'bone_chip', chance: 0.50, qty: [2, 4] },
@@ -283,6 +284,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#cfe8ff', scale: 1.05, layers: { weapon: 'wand' } },
     skills: ['frost_nail'],
     drops: [
+      { id: 'hoarfrost_rod', chance: 0.012 },
       { id: 'mystery_scroll', chance: 0.05 },
       { id: 'frost_tear', chance: 0.16 },
       { id: 'ghoul_sinew', chance: 0.30 },
@@ -343,6 +345,7 @@ export const MONSTERS = {
     sprite: { kind: 'compose', body: 'male/tanned', scale: 1,
       layers: { torso: 'leather', legs: 'pants_red', feet: 'shoes_brown', head: 'cloth_hood', weapon: 'dagger' } },
     drops: [
+      { id: 'marshwood_bow', chance: 0.04 },
       { id: 'mystery_scroll', chance: 0.025 },
       { id: 'iron_ore', chance: 0.24, qty: [1, 3] },
       { id: 'bronze_shortblade', chance: 0.03 },
@@ -410,6 +413,7 @@ export const MONSTERS = {
     aggroRange: 240, attackDelay: 2.0, respawn: 56,
     sprite: { kind: 'blob', shape: 'spiky', color: '#7fb8d8', dark: '#35607c', scale: 1.35 },
     drops: [
+      { id: 'vault_longbow', chance: 0.012 },
       { id: 'plate_cuirass', chance: 0.035 },
       { id: 'bulwark_shield', chance: 0.035 },
       { id: 'mystery_scroll', chance: 0.035 },
@@ -533,6 +537,7 @@ export const MONSTERS = {
       layers: { head: 'cloth_hood', weapon: 'wand' } },
     skills: ['grim_harvest'],
     drops: [
+      { id: 'dawnbrand', chance: 0.014 },
       { id: 'choirbone_torc', chance: 0.016 },
       { id: 'dawnplate_helm', chance: 0.016 },
       { id: 'mystery_scroll', chance: 0.05 },

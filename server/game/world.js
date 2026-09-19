@@ -8,6 +8,7 @@ import * as Quests from './quests.js';
 import * as Party from './party.js';
 import * as Trade from './trade.js';
 import * as Guild from './guild.js';
+import * as Siege from './siege.js';
 
 export class World {
   constructor() {
@@ -27,14 +28,28 @@ export class World {
     Party.sweep();      // clear out whatever a previous run left behind
     // a trade dies when either side walks off, dies or disconnects
     this.tradeSweeper = setInterval(() => Trade.sweep(this), 500);
+    // The siege counts in whole seconds of standing still, so it gets its own
+    // beat rather than riding the 20Hz tick and dividing by twenty.
+    this.siegeTicker = setInterval(() => {
+      const zone = this.zones.get(Siege.SIEGE_MAP);
+      if (!zone) return;
+      const ev = Siege.tick(zone, Date.now());
+      if (!ev) return;
+      zone.pushEvent(ev);
+      if (ev.phase === 'taken' || ev.phase === 'open') {
+        for (const p of this.players.values()) p.conn?.send(ev);
+      }
+    }, 1000);
     this.tradeSweeper.unref?.();
     this.sweeper.unref?.();
+    this.siegeTicker.unref?.();
   }
 
   stop() {
     clearInterval(this.tickHandle);
     clearInterval(this.sweeper);
     clearInterval(this.tradeSweeper);
+    clearInterval(this.siegeTicker);
   }
 
   zone(id) { return this.zones.get(id); }

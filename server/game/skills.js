@@ -141,7 +141,11 @@ function hitOne(ctx, target, ratioMul = 1) {
     hits: Math.max(1, Math.round(val(sk.hits, lvl) || 1)),
     ignoreDef: !!sk.ignoreDef,
     sizeBonus: caster.cards?.size?.[target.size] ?? 0,
-    raceBonus: caster.cards?.race?.[target.race] ?? 0,
+    // Cards are one source of a race bonus; a skill may also be written to
+    // bite a particular kind of thing, which is how a healer gets a reason
+    // to be in an undead zone without becoming a general-purpose nuke.
+    raceBonus: (caster.cards?.race?.[target.race] ?? 0)
+      + (sk.raceBonus?.[target.race] ? val(sk.raceBonus[target.race], lvl) : 0),
     alwaysHit: !!sk.magic,
   });
   if (res.miss) { zone.pushEvent({ t: 'miss', id: target.id, src: caster.id }); return 0; }

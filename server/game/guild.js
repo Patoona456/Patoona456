@@ -22,6 +22,7 @@
 import { db, markDirty } from '../persistence.js';
 import { ITEMS } from '../../shared/data/items.js';
 import { burn } from './economy.js';
+import * as Siege from './siege.js';
 
 /** Founding fee, and what it costs to keep the doors open each week. */
 export const GUILD_COST = 250_000;
@@ -287,6 +288,17 @@ export function chargeUpkeep(world, at = Date.now()) {
   let charged = 0;
   for (const g of Object.values(guilds())) {
     if (at < (g.upkeepDue ?? 0)) continue;
+    // Holding the fortress buys a week off the bill. The prize for a siege is
+    // relief from a drain every other guild is still paying, not a payment -
+    // paying the winner would make the strongest guild richer every week,
+    // which is how a scarce-currency economy ends up with one guild in it.
+    if (Siege.waivesUpkeep(g.id)) {
+      g.upkeepDue = at + UPKEEP_PERIOD;
+      g.inDebt = false;
+      log(g, 'กิลด์ถือป้อมอยู่ — สัปดาห์นี้ไม่ต้องจ่ายค่าบำรุง');
+      charged++;
+      continue;
+    }
     if ((g.aurum ?? 0) >= GUILD_UPKEEP) {
       g.aurum -= GUILD_UPKEEP;
       burn(world, GUILD_UPKEEP, 'guild-upkeep');
@@ -316,15 +328,18 @@ export function announce(world, g, text) {
 /** Everything the guild window shows. */
 export function state(world, p) {
   const g = of(p);
-  if (!g) return { t: 'guildState', guild: null, invite: p.guildInvite ?? null, cost: GUILD_COST };
+  const siege = Siege.status();
+  if (!g) return { t: 'guildState', guild: null, invite: p.guildInvite ?? null, cost: GUILD_COST, siege };
   const me = member(g, p.record.id);
   const week = weekKey();
   const taken = g.taken?.[String(p.record.id)];
   return {
     t: 'guildState',
+    siege,
     guild: {
       id: g.id, name: g.name, notice: g.notice ?? '', aurum: g.aurum ?? 0,
       upkeep: GUILD_UPKEEP, upkeepDue: g.upkeepDue, inDebt: !!g.inDebt,
+      holdsFortress: Siege.waivesUpkeep(g.id),
       myCharId: String(p.record.id),
       myRank: me?.rank ?? 'recruit',
       // Infinity does not survive JSON - it comes out as null - so the

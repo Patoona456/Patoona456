@@ -155,6 +155,18 @@ export const SKILLS = {
     sp: [22, 5], duration: [90, 15], cooldown: [30, -1], anim: 'spellcast', range: 180,
     mods: { strFlat: [1, 1], intFlat: [1, 1], dexFlat: [1, 1] }, desc: 'บัฟทั้งปาร์ตี้ในระยะ',
   }),
+  // The Hierophant owned three skills and not one of them did damage, so the
+  // only attack it had was the Warden's smite and a rod it barely swings. It
+  // levelled three times slower than an Arcanist. This is not a general nuke:
+  // it bites the undead specifically, which is what the last thirty levels of
+  // the world are made of, so the healer gets a place to solo rather than a
+  // second damage career.
+  dawnfire: S({
+    id: 'dawnfire', name: 'Dawnfire', nameTh: 'เพลิงอรุณ', kind: 'aoe', look: 'radiant', target: 'point',
+    sp: [26, 6], ratio: [2.2, 0.6], radius: [92, 8], range: 200, magic: true, element: 'radiant',
+    raceBonus: { undead: [0.6, 0.15] }, castTime: 0.5, cooldown: [7, -0.4], anim: 'spellcast',
+    desc: 'แสงอรุณแผดเผาเป็นวง แรงเป็นพิเศษกับอันเดด',
+  }),
   sanctuary: S({
     id: 'sanctuary', name: 'Sanctuary', nameTh: 'เขตศักดิ์สิทธิ์', kind: 'ground', look: 'radiant', target: 'point',
     sp: [30, 6], duration: [12, 1], radius: [72, 6], range: 140, castTime: 1.2,
@@ -207,12 +219,17 @@ export const SKILLS = {
   }),
   mortal_strike: S({
     id: 'mortal_strike', name: 'Mortal Strike', nameTh: 'ดาบสังหาร', kind: 'damage', look: 'neutral', target: 'enemy',
-    sp: [34, 7], ratio: [2.6, 0.9], range: 40, cooldown: [18, -0.8], anim: 'thrust',
+    // Eighteen seconds made the Nightblade's signature move something it
+    // pressed twice a fight, so its rotation was really the Wayfarer's
+    // backstab and a worse weapon than the Trickster's bow. It levelled
+    // twice as slowly as its own sibling branch. Still the longest cooldown
+    // of any attack in the game, and still the hardest single hit.
+    sp: [30, 6], ratio: [2.8, 0.95], range: 40, cooldown: [11, -0.7], anim: 'thrust',
     weapon: ['blade'], fromStealth: [1.5, 0.2], desc: 'ดาเมจสูงมากเมื่อออกจากการล่องหน',
   }),
   grim_harvest: S({
     id: 'grim_harvest', name: 'Grim Harvest', nameTh: 'เก็บเกี่ยวมรณะ', kind: 'aoe', target: 'self',
-    sp: [40, 8], ratio: [1.3, 0.4], radius: [90, 6], cooldown: [25, -1], anim: 'slash',
+    sp: [36, 7], ratio: [1.5, 0.45], radius: [90, 6], cooldown: [16, -0.8], anim: 'slash',
     element: 'shade', lifesteal: [20, 5], desc: 'ดูดเลือดจากทุกเป้าหมายรอบตัว',
   }),
   smoke_bomb: S({

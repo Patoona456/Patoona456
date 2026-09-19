@@ -172,6 +172,16 @@ export const ITEMS = {
     stats: { str: 3, vit: 2 }, twoHanded: true,
     sprite: { layer: 'weapon', key: 'longspear', gendered: false },
   }),
+  ridgebreaker_pike: W({
+    id: 'ridgebreaker_pike', name: 'Ridgebreaker Pike', nameTh: 'ทวนทลายสันเขา', wclass: 'spear',
+    atk: 62, delay: 1.04, range: 74, level: 42, weight: 140, value: 46000, rarity: 'uncommon',
+    stats: { str: 3 }, sprite: { layer: 'weapon', key: 'spear', gendered: true, tint: '#9a8a6a' },
+  }),
+  marshwood_bow: W({
+    id: 'marshwood_bow', name: 'Marshwood Bow', nameTh: 'ธนูไม้หนอง', wclass: 'bow',
+    atk: 48, delay: 0.93, range: 228, level: 26, weight: 62, value: 19000, rarity: 'common',
+    stats: { dex: 2 }, sprite: { layer: 'weapon', key: 'bow', gendered: true, tint: '#7f6b4e' },
+  }),
   glacier_lance: W({
     id: 'glacier_lance', name: 'Glacier Lance', nameTh: 'ทวนธารน้ำแข็ง', wclass: 'spear',
     atk: 95, delay: 1.06, range: 78, level: 55, weight: 150, value: 138000, rarity: 'epic',
@@ -201,8 +211,34 @@ export const ITEMS = {
   vhaal_warpike: W({
     id: 'vhaal_warpike', name: 'Warpike of Vhaal', nameTh: 'ทวนศึกวาล', wclass: 'spear',
     atk: 118, delay: 1.02, range: 76, level: 62, weight: 210, value: 235000, rarity: 'epic',
-    element: 'shade', stats: { str: 4, vit: 2 },
+    element: 'radiant', stats: { str: 4, vit: 2 },
     sprite: { layer: 'weapon', key: 'spear', gendered: true },
+  }),
+  // The bow ladder jumped from 38 to 62 and the rod from 32 to 58, which is
+  // most of the back half of the game spent on the same weapon. It showed up
+  // as the sharpshooter killing things twice as slowly as anyone else at 50.
+  vault_longbow: W({
+    id: 'vault_longbow', name: 'Vaultwatch Longbow', nameTh: 'ธนูยาวยามนิรภัย', wclass: 'bow',
+    atk: 84, delay: 0.90, range: 236, level: 50, weight: 78, value: 108000, rarity: 'rare',
+    element: 'frost', stats: { dex: 3, agi: 2 },
+    sprite: { layer: 'weapon', key: 'bow', gendered: true },
+  }),
+  hoarfrost_rod: W({
+    id: 'hoarfrost_rod', name: 'Hoarfrost Rod', nameTh: 'คทาเหมันต์', wclass: 'rod',
+    atk: 22, matk: 74, delay: 0.97, range: 62, level: 46, weight: 42, value: 96000, rarity: 'rare',
+    element: 'frost', stats: { int: 4 },
+    sprite: { layer: 'weapon', key: 'wand', gendered: true, fallback: 'wand' },
+  }),
+  // Bows reached the endgame with a radiant weapon and blades did not, so a
+  // blade-only job spent the last ten levels swinging neutral into a world
+  // made of shade - a flat 0.7x, against the bow's 1.9x. That is where the
+  // Nightblade's two-to-one gap against its own sibling branch came from: not
+  // its skills, the element table.
+  dawnbrand: W({
+    id: 'dawnbrand', name: 'Dawnbrand', nameTh: 'ดาบอรุณ', wclass: 'blade',
+    atk: 92, delay: 0.70, range: 46, level: 62, weight: 120, value: 228000, rarity: 'epic',
+    element: 'radiant', stats: { str: 3, agi: 2 },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#f6dc9c' },
   }),
   dawnpiercer: W({
     id: 'dawnpiercer', name: 'Dawnpiercer', nameTh: 'ธนูเจาะอรุณ', wclass: 'bow',
