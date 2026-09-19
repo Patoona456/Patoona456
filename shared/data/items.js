@@ -126,13 +126,13 @@ export const ITEMS = {
   emberfang: W({
     id: 'emberfang', name: 'Emberfang', nameTh: 'เขี้ยวอังคาร', wclass: 'blade',
     atk: 63, delay: 0.72, range: 40, level: 40, weight: 70, value: 42000, rarity: 'rare',
-    element: 'ember', stats: { str: 3, agi: 2 }, crit: 6,
+    element: 'fire', stats: { str: 3, agi: 2 }, crit: 6,
     sprite: { layer: 'weapon', key: 'dagger', gendered: true }, desc: 'มีดที่ยังอุ่นอยู่เสมอ ธาตุไฟ',
   }),
   ashen_edge: W({
     id: 'ashen_edge', name: 'Ashen Edge', nameTh: 'คมเถ้าธุลี', wclass: 'blade',
     atk: 86, delay: 0.68, range: 40, level: 60, weight: 75, value: 168000, rarity: 'epic',
-    element: 'shade', stats: { agi: 4, luk: 3 }, crit: 10, lifesteal: 3,
+    element: 'dark', stats: { agi: 4, luk: 3 }, crit: 10, lifesteal: 3,
     sprite: { layer: 'weapon', key: 'dagger', gendered: true },
     desc: 'ตกจากราชันโครงกระดูกเท่านั้น',
   }),
@@ -185,7 +185,7 @@ export const ITEMS = {
   glacier_lance: W({
     id: 'glacier_lance', name: 'Glacier Lance', nameTh: 'ทวนธารน้ำแข็ง', wclass: 'spear',
     atk: 95, delay: 1.06, range: 78, level: 55, weight: 150, value: 138000, rarity: 'epic',
-    element: 'frost', stats: { str: 4, vit: 3 }, twoHanded: true,
+    element: 'ice', stats: { str: 4, vit: 3 }, twoHanded: true,
     sprite: { layer: 'weapon', key: 'longspear', gendered: false },
   }),
 
@@ -202,7 +202,7 @@ export const ITEMS = {
   stormcaller_bow: W({
     id: 'stormcaller_bow', name: 'Stormcaller Bow', nameTh: 'ธนูเรียกพายุ', wclass: 'bow',
     atk: 68, delay: 0.88, range: 215, level: 38, weight: 70, value: 46000, rarity: 'rare',
-    twoHanded: true, element: 'storm', stats: { dex: 4, agi: 2 },
+    twoHanded: true, element: 'lightning', stats: { dex: 4, agi: 2 },
     sprite: { layer: 'weapon', key: 'greatbow', gendered: false },
   }),
   // Spears stopped at level 55 while every other class had something in the
@@ -211,7 +211,7 @@ export const ITEMS = {
   vhaal_warpike: W({
     id: 'vhaal_warpike', name: 'Warpike of Vhaal', nameTh: 'ทวนศึกวาล', wclass: 'spear',
     atk: 118, delay: 1.02, range: 76, level: 62, weight: 210, value: 235000, rarity: 'epic',
-    element: 'radiant', stats: { str: 4, vit: 2 },
+    element: 'holy', stats: { str: 4, vit: 2 },
     sprite: { layer: 'weapon', key: 'spear', gendered: true },
   }),
   // The bow ladder jumped from 38 to 62 and the rod from 32 to 58, which is
@@ -220,13 +220,13 @@ export const ITEMS = {
   vault_longbow: W({
     id: 'vault_longbow', name: 'Vaultwatch Longbow', nameTh: 'ธนูยาวยามนิรภัย', wclass: 'bow',
     atk: 84, delay: 0.90, range: 236, level: 50, weight: 78, value: 108000, rarity: 'rare',
-    element: 'frost', stats: { dex: 3, agi: 2 },
+    element: 'ice', stats: { dex: 3, agi: 2 },
     sprite: { layer: 'weapon', key: 'bow', gendered: true },
   }),
   hoarfrost_rod: W({
     id: 'hoarfrost_rod', name: 'Hoarfrost Rod', nameTh: 'คทาเหมันต์', wclass: 'rod',
     atk: 22, matk: 74, delay: 0.97, range: 62, level: 46, weight: 42, value: 96000, rarity: 'rare',
-    element: 'frost', stats: { int: 4 },
+    element: 'ice', stats: { int: 4 },
     sprite: { layer: 'weapon', key: 'wand', gendered: true, fallback: 'wand' },
   }),
   // Bows reached the endgame with a radiant weapon and blades did not, so a
@@ -237,13 +237,13 @@ export const ITEMS = {
   dawnbrand: W({
     id: 'dawnbrand', name: 'Dawnbrand', nameTh: 'ดาบอรุณ', wclass: 'blade',
     atk: 92, delay: 0.70, range: 46, level: 62, weight: 120, value: 228000, rarity: 'epic',
-    element: 'radiant', stats: { str: 3, agi: 2 },
+    element: 'holy', stats: { str: 3, agi: 2 },
     sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#f6dc9c' },
   }),
   dawnpiercer: W({
     id: 'dawnpiercer', name: 'Dawnpiercer', nameTh: 'ธนูเจาะอรุณ', wclass: 'bow',
     atk: 98, delay: 0.85, range: 235, level: 62, weight: 78, value: 195000, rarity: 'epic',
-    twoHanded: true, element: 'radiant', stats: { dex: 6, luk: 2 }, crit: 8,
+    twoHanded: true, element: 'holy', stats: { dex: 6, luk: 2 }, crit: 8,
     sprite: { layer: 'weapon', key: 'greatbow', gendered: false },
   }),
 
@@ -265,7 +265,7 @@ export const ITEMS = {
   emberfall_scepter: W({
     id: 'emberfall_scepter', name: 'Emberfall Scepter', nameTh: 'คทาเอมเบอร์ฟอลล์', wclass: 'rod',
     atk: 26, matk: 92, delay: 0.95, range: 66, level: 58, weight: 50, value: 176000, rarity: 'epic',
-    element: 'ember', stats: { int: 7 }, cast: 5,
+    element: 'fire', stats: { int: 7 }, cast: 5,
     sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
   }),
 
@@ -294,7 +294,7 @@ export const ITEMS = {
   leather_vest: A({ id: 'leather_vest', name: 'Leather Vest', nameTh: 'เสื้อหนัง', slot: 'torso', def: 20, level: 16, weight: 90, value: 4400, rarity: 'common', sprite: { layer: 'torso', key: 'leather', gendered: true } }),
   chainmail: A({ id: 'chainmail', name: 'Chainmail', nameTh: 'เกราะโซ่', slot: 'torso', def: 34, level: 28, weight: 220, value: 15000, rarity: 'uncommon', stats: { vit: 2 }, sprite: { layer: 'torso', key: 'chain', gendered: true } }),
   plate_cuirass: A({ id: 'plate_cuirass', name: 'Plate Cuirass', nameTh: 'เกราะอกเหล็กหนา', slot: 'torso', def: 52, level: 45, weight: 380, value: 72000, rarity: 'rare', stats: { vit: 4, str: 2 }, speed: -3, sprite: { layer: 'torso', key: 'plate', gendered: true } }),
-  ashguard_plate: A({ id: 'ashguard_plate', name: 'Ashguard Plate', nameTh: 'เกราะเถ้าผู้พิทักษ์', slot: 'torso', def: 74, mdef: 24, level: 62, weight: 400, value: 240000, rarity: 'epic', stats: { vit: 6, str: 3 }, element: 'ember', sprite: { layer: 'torso', key: 'plate', gendered: true } }),
+  ashguard_plate: A({ id: 'ashguard_plate', name: 'Ashguard Plate', nameTh: 'เกราะเถ้าผู้พิทักษ์', slot: 'torso', def: 74, mdef: 24, level: 62, weight: 400, value: 240000, rarity: 'epic', stats: { vit: 6, str: 3 }, element: 'fire', sprite: { layer: 'torso', key: 'plate', gendered: true } }),
 
   cloth_pants: A({ id: 'cloth_pants', name: 'Cloth Pants', nameTh: 'กางเกงผ้า', slot: 'legs', def: 5, level: 1, weight: 25, value: 130, rarity: 'common', sprite: { layer: 'legs', key: 'pants_white', gendered: true } }),
   scout_pants: A({ id: 'scout_pants', name: 'Scout Pants', nameTh: 'กางเกงสอดแนม', slot: 'legs', def: 9, level: 10, weight: 30, value: 1200, rarity: 'common', stats: { agi: 1 }, sprite: { layer: 'legs', key: 'pants_teal', gendered: true } }),
@@ -326,18 +326,18 @@ export const ITEMS = {
   studded_belt: A({ id: 'studded_belt', name: 'Studded Belt', nameTh: 'เข็มขัดหมุด', slot: 'belt', def: 6, level: 18, weight: 26, value: 4200, rarity: 'common', weightCapBonus: 340, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#7d6a55' } }),
   warband_girdle: A({ id: 'warband_girdle', name: 'Warband Girdle', nameTh: 'เข็มขัดหมู่รบ', slot: 'belt', def: 11, level: 34, weight: 32, value: 21000, rarity: 'uncommon', weightCapBonus: 520, stats: { str: 2 }, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#8c3f34' } }),
   rimebound_sash: A({ id: 'rimebound_sash', name: 'Rimebound Sash', nameTh: 'ผ้าคาดเหมันต์', slot: 'belt', def: 16, mdef: 10, level: 50, weight: 30, value: 74000, rarity: 'rare', weightCapBonus: 700, stats: { vit: 2, int: 2 }, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#6ea8c8' } }),
-  dawnforged_belt: A({ id: 'dawnforged_belt', name: 'Dawnforged Belt', nameTh: 'เข็มขัดตีอรุณ', slot: 'belt', def: 22, mdef: 14, level: 62, weight: 36, value: 175000, rarity: 'epic', weightCapBonus: 900, stats: { str: 3, vit: 3 }, hp: 120, element: 'radiant', sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#e8c877' } }),
+  dawnforged_belt: A({ id: 'dawnforged_belt', name: 'Dawnforged Belt', nameTh: 'เข็มขัดตีอรุณ', slot: 'belt', def: 22, mdef: 14, level: 62, weight: 36, value: 175000, rarity: 'epic', weightCapBonus: 900, stats: { str: 3, vit: 3 }, hp: 120, element: 'holy', sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#e8c877' } }),
 
   banded_shield: A({ id: 'banded_shield', name: 'Banded Shield', nameTh: 'โล่รัดเหล็ก', slot: 'offhand', def: 33, level: 30, weight: 150, value: 17000, rarity: 'common', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#8d9199' } }),
-  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'radiant', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
+  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'holy', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
 
   vow_signet: A({ id: 'vow_signet', name: 'Signet of Vows', nameTh: 'แหวนคำสาบาน', slot: 'accessory', level: 34, weight: 5, value: 32000, rarity: 'rare', refinable: false, stats: { vit: 2, dex: 2 }, hp: 60, sp: 30 }),
   choirbone_torc: A({ id: 'choirbone_torc', name: 'Choirbone Torc', nameTh: 'สร้อยคอกระดูกขับร้อง', slot: 'accessory', level: 64, weight: 7, value: 195000, rarity: 'epic', refinable: false, stats: { int: 4, dex: 3, luk: 2 }, hp: 180, sp: 120, mdef: 18 }),
 
-  dawnplate_helm: A({ id: 'dawnplate_helm', name: 'Dawnplate Helm', nameTh: 'หมวกเกราะอรุณ', slot: 'head', def: 44, mdef: 16, level: 64, weight: 130, value: 190000, rarity: 'epic', stats: { vit: 4, str: 2 }, hp: 140, element: 'radiant', sprite: { layer: 'head', key: 'golden_helm', gendered: true, tint: '#f2d79a' } }),
-  dawnplate_greaves: A({ id: 'dawnplate_greaves', name: 'Dawnplate Greaves', nameTh: 'สนับขาอรุณ', slot: 'legs', def: 50, mdef: 16, level: 62, weight: 205, value: 178000, rarity: 'epic', stats: { vit: 4 }, hp: 130, element: 'radiant', sprite: { layer: 'legs', key: 'golden', gendered: true, tint: '#f2d79a' } }),
-  dawnplate_sabatons: A({ id: 'dawnplate_sabatons', name: 'Dawnplate Sabatons', nameTh: 'รองเท้าเกราะอรุณ', slot: 'feet', def: 37, mdef: 14, level: 62, weight: 150, value: 152000, rarity: 'epic', stats: { agi: 3, vit: 2 }, hp: 110, element: 'radiant', sprite: { layer: 'feet', key: 'golden', gendered: true, tint: '#f2d79a' } }),
-  dawnplate_gauntlets: A({ id: 'dawnplate_gauntlets', name: 'Dawnplate Gauntlets', nameTh: 'ถุงมือเกราะอรุณ', slot: 'hands', def: 33, mdef: 13, level: 64, weight: 120, value: 160000, rarity: 'epic', stats: { str: 3, dex: 2 }, hp: 100, element: 'radiant', sprite: { layer: 'hands', key: 'golden_gloves', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_helm: A({ id: 'dawnplate_helm', name: 'Dawnplate Helm', nameTh: 'หมวกเกราะอรุณ', slot: 'head', def: 44, mdef: 16, level: 64, weight: 130, value: 190000, rarity: 'epic', stats: { vit: 4, str: 2 }, hp: 140, element: 'holy', sprite: { layer: 'head', key: 'golden_helm', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_greaves: A({ id: 'dawnplate_greaves', name: 'Dawnplate Greaves', nameTh: 'สนับขาอรุณ', slot: 'legs', def: 50, mdef: 16, level: 62, weight: 205, value: 178000, rarity: 'epic', stats: { vit: 4 }, hp: 130, element: 'holy', sprite: { layer: 'legs', key: 'golden', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_sabatons: A({ id: 'dawnplate_sabatons', name: 'Dawnplate Sabatons', nameTh: 'รองเท้าเกราะอรุณ', slot: 'feet', def: 37, mdef: 14, level: 62, weight: 150, value: 152000, rarity: 'epic', stats: { agi: 3, vit: 2 }, hp: 110, element: 'holy', sprite: { layer: 'feet', key: 'golden', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_gauntlets: A({ id: 'dawnplate_gauntlets', name: 'Dawnplate Gauntlets', nameTh: 'ถุงมือเกราะอรุณ', slot: 'hands', def: 33, mdef: 13, level: 64, weight: 120, value: 160000, rarity: 'epic', stats: { str: 3, dex: 2 }, hp: 100, element: 'holy', sprite: { layer: 'hands', key: 'golden_gloves', gendered: true, tint: '#f2d79a' } }),
 
   leather_belt: A({ id: 'leather_belt', name: 'Leather Belt', nameTh: 'เข็มขัดหนัง', slot: 'belt', def: 3, level: 4, weight: 20, value: 500, rarity: 'common', weightCapBonus: 200, sprite: { layer: 'belt', key: 'leather', gendered: true } }),
 
@@ -350,9 +350,9 @@ export const ITEMS = {
   /* ================= AMMO ================= */
   wooden_arrow: { id: 'wooden_arrow', name: 'Wooden Arrow', nameTh: 'ลูกธนูไม้', type: 'ammo', ammoFor: 'bow', atk: 3, stack: 2000, weight: 0.2, value: 2, rarity: 'common', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
   iron_arrow: { id: 'iron_arrow', name: 'Iron Arrow', nameTh: 'ลูกธนูเหล็ก', type: 'ammo', ammoFor: 'bow', atk: 9, stack: 2000, weight: 0.3, value: 7, rarity: 'common', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
-  ember_arrow_item: { id: 'ember_arrow_item', name: 'Ember Arrow', nameTh: 'ลูกธนูไฟ', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'ember', stack: 2000, weight: 0.3, value: 22, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
-  frost_arrow_item: { id: 'frost_arrow_item', name: 'Frost Arrow', nameTh: 'ลูกธนูน้ำแข็ง', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'frost', stack: 2000, weight: 0.3, value: 22, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
-  storm_arrow_item: { id: 'storm_arrow_item', name: 'Storm Arrow', nameTh: 'ลูกธนูพายุ', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'storm', stack: 2000, weight: 0.3, value: 24, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
+  ember_arrow_item: { id: 'ember_arrow_item', name: 'Ember Arrow', nameTh: 'ลูกธนูไฟ', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'fire', stack: 2000, weight: 0.3, value: 22, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
+  frost_arrow_item: { id: 'frost_arrow_item', name: 'Frost Arrow', nameTh: 'ลูกธนูน้ำแข็ง', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'ice', stack: 2000, weight: 0.3, value: 22, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
+  storm_arrow_item: { id: 'storm_arrow_item', name: 'Storm Arrow', nameTh: 'ลูกธนูพายุ', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'lightning', stack: 2000, weight: 0.3, value: 24, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
 
   /* ================= CONSUMABLES ================= */
   lesser_salve: C({ id: 'lesser_salve', name: 'Lesser Salve', nameTh: 'ยาสมานเล็ก', heal: 90, cooldown: 4, level: 1, value: 120, rarity: 'common', desc: 'ฟื้น 90 HP - แพงเมื่อเทียบกับรายได้ ใช้ให้คุ้ม' }),
@@ -373,7 +373,7 @@ export const ITEMS = {
   warp_scroll: C({ id: 'warp_scroll', name: 'Warp Scroll', nameTh: 'ม้วนวาร์ป', warp: 'lastTown', cast: 3, cooldown: 60, level: 1, value: 900, rarity: 'common', desc: 'กลับเมืองล่าสุด - ค่าเดินทางคือหนึ่งในบ่อดูดเงินหลัก' }),
   reliquary_seal: M({
     id: 'reliquary_seal', name: 'Reliquary Seal', nameTh: 'ตราผนึกหีบศพ', value: 4200,
-    rarity: 'rare', element: 'radiant',
+    rarity: 'rare', element: 'holy',
     desc: 'ตราที่ผนึกหีบศพไว้ ใช้หลอมเป็นน้ำมันศักดิ์สิทธิ์ได้ — หาได้จากหีบศพจมเท่านั้น',
   }),
   shard_dawn: M({ id: 'shard_dawn', name: 'Dawn Shard', nameTh: 'เศษรุ่งอรุณ', value: 8000, rarity: 'rare', desc: 'ใช้ชุบชีวิต และเป็นวัตถุดิบตีบวกขั้นสูง' }),
@@ -386,9 +386,9 @@ export const ITEMS = {
   bone_chip: M({ id: 'bone_chip', name: 'Bone Chip', nameTh: 'เศษกระดูก', value: 110, rarity: 'common' }),
   orc_tooth: M({ id: 'orc_tooth', name: 'Orc Tooth', nameTh: 'ฟันออร์ค', value: 70, rarity: 'common', desc: 'ของขายทิ้ง - ไม่มีสูตรไหนใช้ จึงตั้งราคาไว้อย่างของขายทิ้งจริงๆ' }),
   ghoul_sinew: M({ id: 'ghoul_sinew', name: 'Ghoul Sinew', nameTh: 'เอ็นผีดิบ', value: 420, rarity: 'uncommon' }),
-  ember_cinder: M({ id: 'ember_cinder', name: 'Ember Cinder', nameTh: 'ถ่านอังคาร', value: 900, rarity: 'uncommon', element: 'ember' }),
-  frost_tear: M({ id: 'frost_tear', name: 'Frost Tear', nameTh: 'หยาดน้ำแข็ง', value: 900, rarity: 'uncommon', element: 'frost' }),
-  storm_quill: M({ id: 'storm_quill', name: 'Storm Quill', nameTh: 'ขนพายุ', value: 950, rarity: 'uncommon', element: 'storm' }),
+  ember_cinder: M({ id: 'ember_cinder', name: 'Ember Cinder', nameTh: 'ถ่านอังคาร', value: 900, rarity: 'uncommon', element: 'fire' }),
+  frost_tear: M({ id: 'frost_tear', name: 'Frost Tear', nameTh: 'หยาดน้ำแข็ง', value: 900, rarity: 'uncommon', element: 'ice' }),
+  storm_quill: M({ id: 'storm_quill', name: 'Storm Quill', nameTh: 'ขนพายุ', value: 950, rarity: 'uncommon', element: 'lightning' }),
   herb_bundle: M({ id: 'herb_bundle', name: 'Herb Bundle', nameTh: 'มัดสมุนไพร', value: 45, rarity: 'common' }),
   iron_ore: M({ id: 'iron_ore', name: 'Iron Ore', nameTh: 'แร่เหล็ก', value: 160, rarity: 'common' }),
   steel_ingot: M({ id: 'steel_ingot', name: 'Steel Ingot', nameTh: 'แท่งเหล็กกล้า', value: 750, rarity: 'common', craftable: true }),

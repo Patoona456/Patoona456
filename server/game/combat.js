@@ -2,8 +2,8 @@
 import { rollDamage, pvpDamage } from '../../shared/formulas.js';
 
 export const STATUS_DEFS = {
-  poison:   { icon: '☠', dot: true, element: 'verdant' },
-  burn:     { icon: '🔥', dot: true, element: 'ember' },
+  poison:   { icon: '☠', dot: true, element: 'earth' },
+  burn:     { icon: '🔥', dot: true, element: 'fire' },
   chill:    { icon: '❄', slow: true },
   root:     { icon: '⛓', root: true },
   stun:     { icon: '💫', stun: true },

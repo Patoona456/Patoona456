@@ -89,8 +89,9 @@ Sword · Great Sword · Dagger · Axe · Spear · Bow · Staff · Wand · Knuckl
 ในเกมตอนนี้ระดับตีบวกอยู่ที่ `shared/refineglow.js` เป็น 7 ขั้น (+1 +3 +5 +7 +8 +10 +12)
 ใส่ `sheet` ต่อขั้นได้แล้ว แต่ถ้าจะใช้ครบ +0..+15 ต้องขยายตารางเป็น 16 ขั้น
 
-ธาตุในเกมมี 7 (`neutral ember frost storm verdant shade radiant`) บอร์ดมี 8
-ต่างกันตรง **Earth** ที่เกมไม่มี และเกมมี `verdant` ที่บอร์ดเรียก Nature/Wind
+ธาตุในเกมตอนนี้คือแปดตัวเดียวกับบอร์ด: `neutral fire ice lightning earth wind
+holy dark` ชื่อเดิมหกตัว (ember frost storm verdant shade radiant) กลายเป็น
+alias ที่ `shared/elements.js` แปลงให้เอง เซฟเก่าจึงยังอ่านออกทั้งสีและดาเมจ
 
 ## สกิล
 บอร์ดมี 24 เอฟเฟค เฟรมละ ~5: Basic Attack, Power Slash, Spin Attack, Pierce, Arrow Shot,

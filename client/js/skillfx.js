@@ -379,7 +379,7 @@ export function drawSkillFx(ctx, f, age) {
  */
 export function drawWarning(ctx, w, now) {
   const k = Math.max(0, Math.min(1, (now - w.t) / w.ms));
-  const el = w.el ?? 'radiant';
+  const el = w.el ?? 'holy';
   ctx.save();
 
   // the ground inside it, sweeping full as the timer runs out

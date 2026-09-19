@@ -1,6 +1,7 @@
 // Derived-stat + damage math. Pure functions, shared so the client can show
 // honest tooltips while the server stays authoritative.
 import { clamp, ELEMENT_TABLE, MAX_MOVE_SPEED, BASE_MOVE_SPEED } from './constants.js';
+import { canonical as canonicalElement } from './elements.js';
 
 /** XP curves ------------------------------------------------------------- */
 // Deliberately steeper than the usual idle-game curve: levels are content,
@@ -138,7 +139,12 @@ export function pvpDamage(raw, targetMaxHp) {
 }
 
 export function elementMultiplier(attackEl = 'neutral', defenseEl = 'neutral') {
-  return ELEMENT_TABLE[attackEl]?.[defenseEl] ?? 1;
+  // Canonicalised on the way in: saved characters carry item stacks tagged
+  // with the names the elements had before they were renamed to match the
+  // art, and a flame sword that quietly became neutral is a bug nobody would
+  // report as one.
+  const a = canonicalElement(attackEl), d = canonicalElement(defenseEl);
+  return ELEMENT_TABLE[a]?.[d] ?? 1;
 }
 
 /**

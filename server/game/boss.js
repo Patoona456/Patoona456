@@ -33,7 +33,7 @@ const TELL = 1300;
  * Mark a patch of floor. `fire` runs when the timer expires, with the list of
  * players still standing in it.
  */
-function telegraph(zone, m, { x, y, r, el = 'radiant', delay = TELL, label = null, fire }) {
+function telegraph(zone, m, { x, y, r, el = 'holy', delay = TELL, label = null, fire }) {
   zone.pushEvent({ t: 'warn', x: Math.round(x), y: Math.round(y), r: Math.round(r), el, ms: delay, label });
   m.pending.push({ at: Date.now() + delay, x, y, r, fire });
 }
@@ -84,7 +84,7 @@ SCRIPTS.warden = (zone, m, t) => {
       healEntity(zone, m, Math.floor(m.maxHp * 0.012 * alive.length));
       for (const id of alive) {
         const a = zone.entities.get(id);
-        zone.pushEvent({ t: 'fx', fx: 'line', el: 'verdant', x: a.x, y: a.y - 20, tx: m.x, ty: m.y - 20 });
+        zone.pushEvent({ t: 'fx', fx: 'line', el: 'earth', x: a.x, y: a.y - 20, tx: m.x, ty: m.y - 20 });
       }
     } else if (m.anchors.length) {
       m.anchors = [];
@@ -111,10 +111,10 @@ SCRIPTS.warden = (zone, m, t) => {
     zone.pushEvent({ t: 'boss', id: m.id, say: 'กระจายตัว!' });
     for (const [r, delay] of [[130, TELL], [230, TELL + 700]]) {
       telegraph(zone, m, {
-        x: m.x, y: m.y, r, el: 'ember', delay, label: 'ถอยออกไป',
+        x: m.x, y: m.y, r, el: 'fire', delay, label: 'ถอยออกไป',
         fire: (hit) => {
-          zone.pushEvent({ t: 'fx', fx: 'nova', el: 'ember', x: m.x, y: m.y, r });
-          for (const p of hit) applyDamage(zone, m, p, Math.floor(m.derived.atk * 3.2), { element: 'ember', magic: true });
+          zone.pushEvent({ t: 'fx', fx: 'nova', el: 'fire', x: m.x, y: m.y, r });
+          for (const p of hit) applyDamage(zone, m, p, Math.floor(m.derived.atk * 3.2), { element: 'fire', magic: true });
         },
       });
     }
@@ -128,10 +128,10 @@ SCRIPTS.warden = (zone, m, t) => {
   if (!pick.length) return;
   const on = pick[Math.floor(Math.random() * pick.length)];
   telegraph(zone, m, {
-    x: on.x, y: on.y, r: 96, el: 'radiant', label: 'หลบ!',
+    x: on.x, y: on.y, r: 96, el: 'holy', label: 'หลบ!',
     fire: (hit) => {
-      zone.pushEvent({ t: 'fx', fx: 'aoe', el: 'radiant', x: on.x, y: on.y, r: 96 });
-      for (const p of hit) applyDamage(zone, m, p, Math.floor(m.derived.atk * 2.4), { element: 'radiant', magic: true });
+      zone.pushEvent({ t: 'fx', fx: 'aoe', el: 'holy', x: on.x, y: on.y, r: 96 });
+      for (const p of hit) applyDamage(zone, m, p, Math.floor(m.derived.atk * 2.4), { element: 'holy', magic: true });
     },
   });
 };
@@ -182,7 +182,7 @@ SCRIPTS.warlord = (zone, m, t) => {
     m.nextPyreTickAt = t + 1000;
     for (const f of m.pyres) {
       for (const p of inside(zone, f.x, f.y, f.r)) {
-        applyDamage(zone, m, p, Math.floor(m.derived.atk * 0.55), { element: 'ember', magic: true });
+        applyDamage(zone, m, p, Math.floor(m.derived.atk * 0.55), { element: 'fire', magic: true });
       }
     }
   }
@@ -211,7 +211,7 @@ SCRIPTS.warlord = (zone, m, t) => {
       const mob = zone.spawnMonster(phase === 3 ? 'crimson_orc' : 'orc_scout', at.x, at.y, {});
       mob.warbandOf = m.id;
       m.warband.push(mob.id);
-      zone.pushEvent({ t: 'fx', fx: 'summon', el: 'ember', x: at.x, y: at.y });
+      zone.pushEvent({ t: 'fx', fx: 'summon', el: 'fire', x: at.x, y: at.y });
     }
     sharpen();
     zone.pushEvent({ t: 'boss', id: m.id, say: 'ฆ่าหมู่รบ! ทุกตัวที่ยืนอยู่ทำให้กรูมแรงขึ้น' });
@@ -225,10 +225,10 @@ SCRIPTS.warlord = (zone, m, t) => {
     const on = living()[Math.floor(Math.random() * Math.max(1, living().length))];
     if (!on) return;
     telegraph(zone, m, {
-      x: on.x, y: on.y, r: 110, el: 'ember', label: 'ไฟจะไม่ดับ',
+      x: on.x, y: on.y, r: 110, el: 'fire', label: 'ไฟจะไม่ดับ',
       fire: () => {
         m.pyres.push({ x: on.x, y: on.y, r: 110 });
-        zone.pushEvent({ t: 'fx', fx: 'ground', el: 'ember', x: on.x, y: on.y, r: 110 });
+        zone.pushEvent({ t: 'fx', fx: 'ground', el: 'fire', x: on.x, y: on.y, r: 110 });
       },
     });
     return;
@@ -247,10 +247,10 @@ SCRIPTS.warlord = (zone, m, t) => {
   for (let i = 1; i <= 4; i++) {
     const fx = m.x + (dx / len) * (len * i / 4), fy = m.y + (dy / len) * (len * i / 4);
     telegraph(zone, m, {
-      x: fx, y: fy, r: 78, el: 'ember', delay: TELL + i * 90, label: i === 4 ? 'ออกจากแนว!' : null,
+      x: fx, y: fy, r: 78, el: 'fire', delay: TELL + i * 90, label: i === 4 ? 'ออกจากแนว!' : null,
       fire: (hit) => {
-        zone.pushEvent({ t: 'fx', fx: 'nova', el: 'ember', x: fx, y: fy, r: 78 });
-        for (const p of hit) applyDamage(zone, m, p, Math.floor(m.derived.atk * 2.1), { element: 'ember' });
+        zone.pushEvent({ t: 'fx', fx: 'nova', el: 'fire', x: fx, y: fy, r: 78 });
+        for (const p of hit) applyDamage(zone, m, p, Math.floor(m.derived.atk * 2.1), { element: 'fire' });
       },
     });
   }
@@ -293,11 +293,11 @@ SCRIPTS.vhaal = (zone, m, t) => {
       m.tether = null;
     } else {
       const apart = Math.hypot(a.x - b.x, a.y - b.y);
-      zone.pushEvent({ t: 'fx', fx: 'line', el: 'frost', x: a.x, y: a.y - 20, tx: b.x, ty: b.y - 20 });
+      zone.pushEvent({ t: 'fx', fx: 'line', el: 'ice', x: a.x, y: a.y - 20, tx: b.x, ty: b.y - 20 });
       if (apart > 160) {
         const bite = Math.floor(m.derived.atk * 0.5 * Math.min(3, apart / 160));
-        applyDamage(zone, m, a, bite, { element: 'frost', magic: true });
-        applyDamage(zone, m, b, bite, { element: 'frost', magic: true });
+        applyDamage(zone, m, a, bite, { element: 'ice', magic: true });
+        applyDamage(zone, m, b, bite, { element: 'ice', magic: true });
       }
     }
   }
@@ -314,7 +314,7 @@ SCRIPTS.vhaal = (zone, m, t) => {
       const up = zone.spawnMonster('crown_thrall', at.x, at.y, {});
       up.courtOf = m.id;
       m.court.push(up.id);
-      zone.pushEvent({ t: 'fx', fx: 'summon', el: 'shade', x: at.x, y: at.y });
+      zone.pushEvent({ t: 'fx', fx: 'summon', el: 'dark', x: at.x, y: at.y });
     }
   }
 
@@ -354,13 +354,13 @@ SCRIPTS.vhaal = (zone, m, t) => {
   zone.pushEvent({ t: 'boss', id: m.id, say: 'เข้ามาใกล้บัลลังก์!' });
   for (const [r, delay] of [[250, TELL], [170, TELL + 650]]) {
     telegraph(zone, m, {
-      x: m.x, y: m.y, r, el: 'frost', delay, label: r === 250 ? 'เข้ามา!' : null,
+      x: m.x, y: m.y, r, el: 'ice', delay, label: r === 250 ? 'เข้ามา!' : null,
       fire: (hit) => {
-        zone.pushEvent({ t: 'fx', fx: 'nova', el: 'frost', x: m.x, y: m.y, r });
+        zone.pushEvent({ t: 'fx', fx: 'nova', el: 'ice', x: m.x, y: m.y, r });
         // Only the ring between this circle and the next one in is lethal.
         for (const p of hit) {
           if (dist(m, p) < r - 80) continue;
-          applyDamage(zone, m, p, Math.floor(m.derived.atk * 2.2), { element: 'frost', magic: true });
+          applyDamage(zone, m, p, Math.floor(m.derived.atk * 2.2), { element: 'ice', magic: true });
         }
       },
     });

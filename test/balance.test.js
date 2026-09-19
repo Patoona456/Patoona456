@@ -410,7 +410,7 @@ test('no weapon class is locked out of the element table', () => {
   // the last thirty levels of the world are shade, and the bow had a radiant
   // option. A class with no answer to the endgame's element is a class nobody
   // should pick, and no amount of skill tuning fixes it.
-  const worst = { shade: 'radiant' };              // what the endgame is made of
+  const worst = { dark: 'holy' };              // what the endgame is made of
   const byClass = {};
   for (const it of Object.values(ITEMS)) {
     if (it.slot !== 'weapon') continue;

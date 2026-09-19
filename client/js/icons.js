@@ -431,10 +431,10 @@ export function skillIconKind(id) {
   if (sk.kind === 'debuff') return 'debuff';
   if (sk.kind === 'dash') return 'dash';
   if (sk.kind === 'summon') return 'summon';
-  if (sk.element === 'ember') return 'fire';
-  if (sk.element === 'frost') return 'frost';
-  if (sk.element === 'storm') return 'storm';
-  if (sk.element === 'radiant') return 'light';
+  if (sk.element === 'fire') return 'fire';
+  if (sk.element === 'ice') return 'frost';
+  if (sk.element === 'lightning') return 'storm';
+  if (sk.element === 'holy') return 'light';
   return sk.kind === 'aoe' || sk.kind === 'ground' ? 'aoe' : 'slash';
 }
 

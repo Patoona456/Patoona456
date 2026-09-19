@@ -41,7 +41,7 @@ export const ANIM = {
 export const SLOTS = ['weapon', 'offhand', 'head', 'torso', 'hands', 'legs', 'feet', 'belt', 'accessory', 'wings'];
 
 /** Elements (rock-paper-scissors style, our own table) -------------------- */
-export const ELEMENTS = ['neutral', 'ember', 'frost', 'storm', 'verdant', 'shade', 'radiant'];
+export const ELEMENTS = ['neutral', 'fire', 'ice', 'lightning', 'earth', 'wind', 'holy', 'dark'];
 
 /**
  * How far above you a monster has to be before it stops minding its own
@@ -56,16 +56,32 @@ export const ELEMENTS = ['neutral', 'ember', 'frost', 'storm', 'verdant', 'shade
 export const LEVEL_AGGRO_GAP = 10;
 
 // ELEMENT_TABLE[attack][defense] = damage multiplier.
+//
+// Eight elements, named after the art sheets so that nothing needs a
+// translation table between what a thing looks like and what it does.
+//
+// Five of them run in one cycle, which is the part players have to learn:
+//
+//     fire > wind > earth > lightning > ice > fire
+//
+// Each beats the next at 1.5x and loses to it at 0.75x, and every element is
+// weak against itself at 0.5x, so a fire sword is the wrong tool for a fire
+// monster no matter how refined it is.
+//
+// Holy and dark sit outside the cycle and only answer each other, hard: 1.9x
+// and 1.75x across, 0.25x into themselves. That pair is the spine of the
+// endgame - the last thirty levels are dark, and a holy weapon is the answer
+// to them - so it is deliberately the sharpest edge in the table.
 export const ELEMENT_TABLE = {
-  neutral: { neutral: 1.00, ember: 1.00, frost: 1.00, storm: 1.00, verdant: 1.00, shade: 0.70, radiant: 1.00 },
-  ember:   { neutral: 1.00, ember: 0.50, frost: 1.75, storm: 1.00, verdant: 1.50, shade: 1.00, radiant: 0.90 },
-  frost:   { neutral: 1.00, ember: 1.50, frost: 0.50, storm: 1.25, verdant: 0.75, shade: 1.00, radiant: 0.90 },
-  storm:   { neutral: 1.00, ember: 1.00, frost: 0.75, storm: 0.50, verdant: 1.50, shade: 1.10, radiant: 0.90 },
-  verdant: { neutral: 1.00, ember: 0.75, frost: 1.25, storm: 0.75, verdant: 0.50, shade: 1.10, radiant: 0.90 },
-  shade:   { neutral: 1.10, ember: 1.00, frost: 1.00, storm: 1.00, verdant: 1.00, shade: 0.25, radiant: 1.75 },
-  radiant: { neutral: 1.00, ember: 1.00, frost: 1.00, storm: 1.00, verdant: 1.00, shade: 1.90, radiant: 0.25 },
+  neutral:   { neutral: 1.00, fire: 1.00, ice: 1.00, lightning: 1.00, earth: 1.00, wind: 1.00, holy: 1.00, dark: 0.70 },
+  fire:      { neutral: 1.00, fire: 0.50, ice: 0.75, lightning: 1.00, earth: 1.00, wind: 1.50, holy: 0.90, dark: 1.00 },
+  wind:      { neutral: 1.00, fire: 0.75, ice: 1.00, lightning: 1.00, earth: 1.50, wind: 0.50, holy: 0.90, dark: 1.00 },
+  earth:     { neutral: 1.00, fire: 1.00, ice: 1.00, lightning: 1.50, earth: 0.50, wind: 0.75, holy: 0.90, dark: 1.00 },
+  lightning: { neutral: 1.00, fire: 1.00, ice: 1.50, lightning: 0.50, earth: 0.75, wind: 1.00, holy: 0.90, dark: 1.00 },
+  ice:       { neutral: 1.00, fire: 1.50, ice: 0.50, lightning: 0.75, earth: 1.00, wind: 1.00, holy: 0.90, dark: 1.00 },
+  holy:      { neutral: 1.00, fire: 1.00, ice: 1.00, lightning: 1.00, earth: 1.00, wind: 1.00, holy: 0.25, dark: 1.90 },
+  dark:      { neutral: 1.10, fire: 1.00, ice: 1.00, lightning: 1.00, earth: 1.00, wind: 1.00, holy: 1.75, dark: 0.25 },
 };
-
 /** Currency -------------------------------------------------------------- */
 // One hard currency only: Aurum (AU). It is deliberately scarce, see docs/ECONOMY.md
 export const CURRENCY = { code: 'AU', name: 'Aurum', nameTh: 'ออรัม' };

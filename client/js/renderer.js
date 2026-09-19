@@ -630,19 +630,19 @@ export class Renderer {
     const by = e.y - 26 + side[1] * 6 + (Math.random() - 0.5) * 12;
     const main = L.main.join(','), core = L.core.join(',');
 
-    if (el === 'ember') {
+    if (el === 'fire') {
       // embers climb and speed up as they go
       this.particles.mote(bx, by, { color: Math.random() < 0.4 ? core : main, g: -90, vy: -18, r: 1.2 + Math.random() * 1.4, life: 0.7, alpha: 0.9 });
-    } else if (el === 'frost') {
+    } else if (el === 'ice') {
       // vapour slides off the blade and settles toward the floor
       this.particles.mote(bx, by, { color: Math.random() < 0.5 ? core : main, g: 26, vx: (Math.random() - 0.5) * 12, vy: 8, r: 1.8 + Math.random() * 2.0, life: 1.1, alpha: 0.75 });
-    } else if (el === 'storm') {
+    } else if (el === 'lightning') {
       // a snap of sparks, gone almost at once
       this.particles.spark(bx, by, { color: Math.random() < 0.5 ? core : main, n: 2, power: 0.8 });
-    } else if (el === 'shade') {
+    } else if (el === 'dark') {
       // smoke pouring down off the edge
       this.particles.mote(bx, by, { color: main, g: 18, vx: (Math.random() - 0.5) * 8, vy: 14, r: 2.2 + Math.random() * 2.4, life: 0.9, alpha: 0.6 });
-    } else if (el === 'radiant') {
+    } else if (el === 'holy') {
       // motes that hang in the air rather than falling
       this.particles.mote(bx, by, { color: Math.random() < 0.5 ? core : main, g: -14, vy: -10, r: 1.1 + Math.random(), life: 1.0, alpha: 0.8 });
     } else {
@@ -692,7 +692,7 @@ export class Renderer {
    * that the people standing nearby look over.
    */
   ascend(e, { big = false, mine = false } = {}) {
-    this.addFx({ fx: 'ascend', el: 'radiant', x: e.x, y: e.y, big, life: big ? 2000 : 1300 });
+    this.addFx({ fx: 'ascend', el: 'holy', x: e.x, y: e.y, big, life: big ? 2000 : 1300 });
     this.particles.ring(e.x, e.y, { color: '255,225,150', n: big ? 34 : 18, power: big ? 1.5 : 0.9 });
     for (let i = 0; i < (big ? 3 : 1); i++) {
       setTimeout(() => this.particles.spark(e.x, e.y - 20, {
@@ -702,7 +702,7 @@ export class Renderer {
     if (mine) {
       this.shake = Math.max(this.shake, big ? 8 : 3);
       this.flashUntil = performance.now() + (big ? 200 : 110);
-      this.flashEl = 'radiant';
+      this.flashEl = 'holy';
     }
   }
 

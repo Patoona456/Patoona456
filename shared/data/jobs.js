@@ -145,7 +145,7 @@ export const JOBS = {
     hpMod: 0.9, spMod: 1.5, speedMod: 1.02, weapons: ['rod'],
     growth: { int: 4, agi: 2 }, next: [],
     sprite: { torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' },
-    skills: ['chain_spark', 'tempest_veil', 'thunder_step'],
+    skills: ['chain_spark', 'wind_cutter', 'tempest_veil', 'thunder_step'],
   },
   hierophant: {
     id: 'hierophant', tier: 2, name: 'Hierophant', nameTh: 'สาธุคุณ', from: 'warden',
@@ -161,7 +161,7 @@ export const JOBS = {
     hpMod: 1.3, spMod: 1.1, speedMod: 0.99, weapons: ['rod', 'blade'],
     growth: { str: 3, vit: 2, int: 2 }, next: [],
     sprite: { torso: 'chain', legs: 'metal', feet: 'metal', head: 'chainhat' },
-    skills: ['oath_strike', 'consecrate', 'shield_of_vows'],
+    skills: ['oath_strike', 'earth_spike', 'consecrate', 'shield_of_vows'],
   },
 };
 

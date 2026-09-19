@@ -62,8 +62,8 @@ test('every element is weak to something and strong against something', () => {
 });
 
 test('an unknown element is treated as neutral rather than throwing', () => {
-  assert.equal(elementMultiplier('nonsense', 'ember'), 1);
-  assert.equal(elementMultiplier('ember', 'nonsense'), 1);
+  assert.equal(elementMultiplier('nonsense', 'fire'), 1);
+  assert.equal(elementMultiplier('fire', 'nonsense'), 1);
 });
 
 test('selling the same thing to an NPC pays less each time', () => {

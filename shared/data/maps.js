@@ -7,7 +7,7 @@ export const TILES = {
   FLOOR: 6, WALL: 7, BRIDGE: 8, SNOW: 9, LAVA: 10, FLOWER: 11, ASH: 12, MOSS: 13,
 };
 export const BLOCKING = new Set([TILES.WATER, TILES.TREE, TILES.ROCK, TILES.WALL, TILES.LAVA]);
-export const HAZARD = { [TILES.LAVA]: { dps: 40, element: 'ember' } };
+export const HAZARD = { [TILES.LAVA]: { dps: 40, element: 'fire' } };
 
 /** tiny deterministic PRNG (mulberry32) */
 export function rng(seed) {
