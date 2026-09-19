@@ -9,6 +9,7 @@ import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprit
 import { TILE } from '../../shared/constants.js';
 import { BLOCKING, decodeGrid } from '../../shared/data/maps.js';
 import { ITEMS } from '../../shared/data/items.js';
+import { rgba as elRgba, triple as elTriple } from '../../shared/elements.js';
 import { SKILLS } from '../../shared/data/skills.js';
 import { JOBS, STARTING_STATS } from '../../shared/data/jobs.js';
 import { deriveStats } from '../../shared/formulas.js';
@@ -291,12 +292,19 @@ class Game {
         if (!at) break;
         const mine = ev.src === this.state.myId;
         const onMe = ev.id === this.state.myId;
-        r.floater(String(ev.v), at.x, at.y, onMe ? '#ff9a9a' : ev.crit ? '#ffd166' : mine ? '#ffffff' : '#ffb3b3', ev.crit ? 15 : 12);
+        const el = ev.el ?? 'neutral';
+        r.floater(String(ev.v), at.x, at.y,
+          onMe ? '#ff9a9a' : ev.crit ? elRgba(el, 'core', 1) : mine ? '#ffffff' : '#ffb3b3',
+          ev.crit ? 17 : 12, { crit: ev.crit });
+        // the blow shoves the body, bursts in its own element, and a crit
+        // holds the frame for a moment
+        r.impact(ev.id, { x: ent.x, y: ent.y, from: this.entities.get(ev.src), el, crit: !!ev.crit });
         if (onMe) r.shake = Math.min(6, ev.v / 30);
+        else if (ev.crit && mine) r.shake = Math.max(r.shake, 3);
         this.audio.play(onMe ? 'hurt' : ev.crit ? 'crit' : 'hit', at, { gain: mine || onMe ? 1 : 0.55 });
         r.spark(ent.x, ent.y - 16, ev.crit
-          ? { color: '255,214,120', n: 12, power: 1.5 }
-          : onMe ? { color: '255,140,140', n: 5 } : { color: '255,228,190', n: 6 });
+          ? { color: elTriple(el, 'core'), n: 14, power: 1.8 }
+          : onMe ? { color: '255,140,140', n: 5 } : { color: elTriple(el, 'main'), n: 6 });
         break;
       }
       case 'heal':
@@ -310,11 +318,17 @@ class Game {
         if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 11); this.audio.play('miss', at); }
         break;
       case 'levelup':
-        if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 18);
+        if (ent) r.ascend(ent, { mine: ev.id === this.state.myId });
+        if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 18, { vx: 0 });
         if (ev.id === this.state.myId) {
           this.ui.toast(`เลเวลอัพ! Lv.${ev.level} / Job ${ev.jobLevel}`, 'good');
           this.audio.play('levelup');
         }
+        break;
+      case 'ascend':
+        if (ent) r.ascend(ent, { big: true, mine: ev.id === this.state.myId });
+        if (at) r.floater(ev.jobTh ?? 'JOB CHANGE', at.x, at.y - 14, '#ffe9a0', 20, { vx: 0 });
+        this.audio.play('levelup', at, { gain: 1.3 });
         break;
       case 'steal': this.ui.toast(`ขโมยได้ ${ITEMS[ev.item]?.nameTh ?? ev.item}`, 'good'); break;
       case 'fx':
@@ -322,9 +336,9 @@ class Game {
         this.audio.play(FX_SOUND[ev.fx] ?? 'cast', { x: ev.x, y: ev.y });
         break;
       case 'death':
-        if (ent) r.poof(ent.x, ent.y - 12, ev.id === this.state.myId ? '200,120,120' : '150,140,160');
+        if (ent) r.death(ent, { el: ev.el, boss: !!ev.boss, me: ev.id === this.state.myId });
         if (ev.id === this.state.myId) { this.audio.play('death'); this.showDeath(); }
-        else this.audio.play('die', at);
+        else this.audio.play('die', at, ev.boss ? { gain: 1.4 } : undefined);
         break;
       default: break;
     }

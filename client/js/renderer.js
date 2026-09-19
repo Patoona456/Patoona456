@@ -9,6 +9,9 @@ import { glowTier } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
+import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf } from './skillfx.js';
+import { Weather } from './weather.js';
+import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 
 // Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
 export const ZOOM_STEPS = [
@@ -18,6 +21,11 @@ export const ZOOM_STEPS = [
   { key: 'near', label: 'ใกล้', note: 'เห็นตัวละครชัดที่สุด', mul: 1.00 },
 ];
 const ZOOM_KEY = 'emberfall-zoom';
+
+/** Blend two [r,g,b] triples; `t` is how far toward `b` to go. */
+function mixRgb(a, b, t) {
+  return [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * t));
+}
 const DEFAULT_ZOOM = ZOOM_STEPS.findIndex((z) => z.key === 'mid');
 
 /**
@@ -61,9 +69,15 @@ export class Renderer {
     this.grid = null;
     this.floaters = [];
     this.fx = [];
+    this.scorch = [];                // floor marks effects leave behind
     this.particles = new Particles();
+    this.weather = new Weather();
+    this.lurch = new Map();          // entity id -> the blow it is still reeling from
+    this.freezeUntil = 0;            // hit-stop: the animation clock holds here
+    this.flashUntil = 0;
     this.steps = new Map();          // entity id -> when its next dust puff is due
     this.sparkAt = new Map();        // entity id -> when its weapon next throws a spark
+    this.elemAt = new Map();         // entity id -> when its weapon next breathes its element
     this.shake = 0;
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -125,13 +139,61 @@ export class Renderer {
     );
     this.props = scenery.concat(painted.overlays).sort((a, b) => a.y - b.y);
     this._miniCache = null;
+    this.weather.setTheme(this.zone.theme ?? 'grass');
   }
 
-  floater(text, x, y, color = '#fff', size = 12) {
-    this.floaters.push({ text, x, y, color, size, t: performance.now(), life: 900, vy: -26 });
+  /**
+   * A number thrown off a hit. It is launched rather than slid: an initial
+   * upward kick plus gravity, with a sideways drift that alternates so a
+   * stream of hits fans out instead of stacking into an unreadable pile.
+   */
+  floater(text, x, y, color = '#fff', size = 12, opts = {}) {
+    this._fanSide = -(this._fanSide ?? 1);
+    this.floaters.push({
+      text, x, y, color, size, t: performance.now(),
+      life: opts.crit ? 1100 : 850,
+      vx: (opts.vx ?? this._fanSide * (10 + Math.random() * 14)),
+      vy: opts.crit ? -92 : -64,
+      g: 150,
+      pop: opts.crit ? 1.55 : 1.2,        // how much bigger it starts
+    });
   }
 
-  addFx(fx) { this.fx.push({ ...fx, t: performance.now() }); }
+  /**
+   * Something was hit. The body lurches away from the blow, an impact burst
+   * goes off in the attacker's element, and a critical stops the world for a
+   * few frames - the oldest trick there is for making a hit land.
+   */
+  impact(id, { x, y, from, el = 'neutral', crit = false, big = false } = {}) {
+    let dx = 0, dy = -1;
+    if (from) {
+      dx = x - from.x; dy = y - from.y;
+      const d = Math.hypot(dx, dy) || 1;
+      dx /= d; dy /= d;
+    }
+    this.lurch.set(id, { t: performance.now(), dx, dy, power: crit ? 7 : big ? 5 : 3 });
+    this.addFx({ fx: 'impact', el, x, y: y - 20, r: crit ? 34 : 22, life: crit ? 300 : 220 });
+    if (crit) {
+      this.freezeUntil = performance.now() + 60;
+      this.flashUntil = performance.now() + 90;
+      this.flashEl = el;
+    }
+  }
+
+  /**
+   * A skill went off. The effect gets a stable seed (so its jitter does not
+   * crawl), its own lifetime, a burst of debris and, if it touched the floor,
+   * a mark that outlives it.
+   */
+  addFx(fx) {
+    const f = { ...fx, t: performance.now(), seed: Math.random() * 6.28, life: fx.life ?? lifeOf(fx) };
+    this.fx.push(f);
+    const mark = scorchOf(f);
+    if (mark) this.scorch.push({ ...mark, t: f.t });
+    const d = debrisOf(f);
+    const at = f.tx != null ? { x: (f.x + f.tx) / 2, y: (f.y + f.ty) / 2 } : f;
+    this.particles.spark(at.x, at.y - 10, d);
+  }
 
   worldToScreen(x, y) {
     const s = this.zoom * this.dpr;
@@ -150,6 +212,10 @@ export class Renderer {
   }
 
   render(state, now) {
+    // hit-stop. Only the *animation* clock is held; positions keep
+    // interpolating, so the world never desyncs from the server for it.
+    if (now < this.freezeUntil) now = this._frozenAt ?? (this._frozenAt = now);
+    else this._frozenAt = null;
     const ctx = this.ctx;
     const s = this.zoom * this.dpr;
     ctx.fillStyle = '#0b0d12';
@@ -185,6 +251,7 @@ export class Renderer {
 
     this.drawTerrain(ctx, halfW, halfH, now);
     this.drawWarps(ctx, now);
+    drawScorch(ctx, this.scorch, now);
     this.drawGroundFx(ctx, state, now);
     this.drawProps(ctx, visibleProps, false, now);
     this.drawGroundItems(ctx, state, now);
@@ -196,7 +263,10 @@ export class Renderer {
     this.particles.drawGlow(ctx);
     ctx.restore();
 
+    this.weather.update(now, this.canvas.width, this.canvas.height);
+    this.weather.draw(ctx, now, this.canvas.width, this.canvas.height);
     this.drawVignette(ctx);
+    this.drawCritFlash(ctx, now);
     this.drawFloaters(ctx, s);
   }
 
@@ -280,17 +350,51 @@ export class Renderer {
     }
   }
 
+  /** Lingering zones a skill left on the floor - poison clouds, storm runes. */
   drawGroundFx(ctx, state, now) {
     for (const f of state.fx ?? []) {
+      const el = f.el ?? 'neutral';
+      const L = elLook(el);
       const left = (f.until - Date.now()) / 1000;
+      const dying = left < 1.2 ? Math.max(0, left / 1.2) : 1;     // warns before it lapses
+      const beat = 0.62 + Math.sin(now / 340 + f.x * 0.03) * 0.18;
       ctx.save();
-      ctx.globalAlpha = 0.25 + Math.sin(now / 200) * 0.08;
-      ctx.fillStyle = '#ffb45e';
-      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 0.6;
-      ctx.strokeStyle = '#ffd9a0';
-      ctx.stroke();
+      ctx.globalAlpha = dying;
+
+      // the pool of colour
+      const g = ctx.createRadialGradient(f.x, f.y, 1, f.x, f.y, f.r);
+      g.addColorStop(0, elRgba(el, 'main', 0.30 * beat));
+      g.addColorStop(0.72, elRgba(el, 'deep', 0.20 * beat));
+      g.addColorStop(1, elRgba(el, 'deep', 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+
+      // its edge, turning slowly so the zone never looks like a decal
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = elRgba(el, 'main', 0.55 * beat);
+      ctx.lineWidth = 1.8;
+      ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.62, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(now / 2600 * (1 + L.spin));
+      ctx.strokeStyle = elRgba(el, 'core', 0.4 * beat);
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * f.r * 0.62, Math.sin(a) * f.r * 0.38);
+        ctx.lineTo(Math.cos(a) * f.r * 0.96, Math.sin(a) * f.r * 0.59);
+        ctx.stroke();
+      }
       ctx.restore();
+      ctx.restore();
+
+      // the zone breathes out its own element
+      if (Math.random() < 0.10 * dying) {
+        const a = Math.random() * Math.PI * 2, rr = Math.random() * f.r;
+        this.particles.spark(f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * 0.62,
+          { color: L.main.join(','), n: 1, power: 0.35 });
+      }
     }
   }
 
@@ -347,6 +451,19 @@ export class Renderer {
       const elapsed = (now - (e._animStart ?? now)) * (e.as ?? 1);
       const hurt = e._hurtUntil && e._hurtUntil > now ? (e._hurtUntil - now) / 200 : 0;
 
+      // reeling from a blow: a short shove away from whoever landed it
+      const lu = this.lurch.get(e.id);
+      let ox = 0, oy = 0;
+      if (lu) {
+        const lk = (now - lu.t) / 170;
+        if (lk >= 1) this.lurch.delete(e.id);
+        else {
+          const push = Math.sin((1 - lk) * Math.PI) * lu.power;
+          ox = lu.dx * push; oy = lu.dy * push;
+        }
+      }
+      if (ox || oy) { ctx.save(); ctx.translate(ox, oy); }
+
       // shadow: sized with the sprite, softened at the rim
       const sc = e.sprite?.scale ?? 1;
       const rx = (e.k === 'n' ? 9 : 10) * sc;
@@ -388,10 +505,11 @@ export class Renderer {
             tint: e.sprite?.tint ?? null,
             flash: hurt,
           });
-          if (e.k === 'p' && e.wr) this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
+          if (e.k === 'p') this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
         }
       }
 
+      if (ox || oy) ctx.restore();
       this.drawNameplate(ctx, e, state, now);
     }
   }
@@ -400,10 +518,28 @@ export class Renderer {
    * Refined weapons burn: a blurred bloom pass, a crisp one on top, and
    * sparks that come off the blade at the levels people actually chase.
    */
+  /**
+   * What a weapon looks like in someone's hands. Two things stack here and
+   * they answer different questions: the refine tier says how much was
+   * *spent* on it (brightness, ground light, spark rate), the element says
+   * what it *is* (hue, and how the flourish behaves). A +0 flame sword still
+   * burns; a +12 plain sword still blazes white.
+   */
   drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now) {
+    if (e.inv) return;
     const tier = glowTier(e.wr);
-    if (!tier || e.inv) return;
-    const colour = `rgb(${tier.color.join(',')})`;
+    const el = ITEMS[e.eq?.weapon]?.element;
+    const elemental = el && el !== 'neutral' ? el : null;
+    if (!tier && !elemental) return;
+
+    const swinging0 = anim === 'slash' || anim === 'thrust' || anim === 'shoot';
+    // an unrefined elemental weapon still gets a low, steady burn
+    if (elemental) this.drawWeaponElement(ctx, e, layers, el, { anim, elapsed, scale, now, swinging: swinging0, tier });
+    if (!tier) return;
+
+    // the tier's own colour, leaned toward the element when there is one
+    const base = elemental ? mixRgb(tier.color, elLook(el).main, 0.55) : tier.color;
+    const colour = `rgb(${base.join(',')})`;
     // breathing, plus a kick while swinging
     const swinging = anim === 'slash' || anim === 'thrust' || anim === 'shoot';
     const pulse = 0.72 + 0.28 * Math.sin(now / (520 / tier.pulse) + e.x * 0.05);
@@ -421,14 +557,14 @@ export class Renderer {
       ctx.globalCompositeOperation = 'lighter';
       const r = tier.light * (0.85 + pulse * 0.25);
       const g = ctx.createRadialGradient(e.x, e.y - 6, 1, e.x, e.y - 6, r);
-      g.addColorStop(0, `rgba(${tier.color.join(',')},${0.26 * power})`);
-      g.addColorStop(0.45, `rgba(${tier.color.join(',')},${0.10 * power})`);
-      g.addColorStop(1, `rgba(${tier.color.join(',')},0)`);
+      g.addColorStop(0, `rgba(${base.join(',')},${0.26 * power})`);
+      g.addColorStop(0.45, `rgba(${base.join(',')},${0.10 * power})`);
+      g.addColorStop(1, `rgba(${base.join(',')},0)`);
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(e.x, e.y - 6, r, 0, Math.PI * 2); ctx.fill();
       // a ring of light on the floor, so the tier reads even in daylight
       ctx.globalAlpha = 0.5 * power;
-      ctx.strokeStyle = `rgba(${tier.color.join(',')},0.55)`;
+      ctx.strokeStyle = `rgba(${base.join(',')},0.55)`;
       ctx.lineWidth = 1.6;
       ctx.beginPath();
       ctx.ellipse(e.x, e.y + 2, 14 + tier.trail * 8, (14 + tier.trail * 8) * 0.4, 0, 0, Math.PI * 2);
@@ -446,9 +582,57 @@ export class Renderer {
         this.particles.spark(
           e.x + side[0] * 12 + (Math.random() - 0.5) * 10,
           e.y - 26 + side[1] * 6 + (Math.random() - 0.5) * 10,
-          { color: tier.color.join(','), n: swinging ? 3 : 1, power: 0.5 + tier.trail },
+          { color: base.join(','), n: swinging ? 3 : 1, power: 0.5 + tier.trail },
         );
       }
+    }
+  }
+
+  /**
+   * The elemental half of a weapon's look: a coloured burn along the blade,
+   * and a flourish that behaves like the element rather than merely being
+   * tinted like it. Fire rises and accelerates, frost sinks and lingers,
+   * storm snaps out and dies, shade pours downward and fades.
+   */
+  drawWeaponElement(ctx, e, layers, el, { anim, elapsed, scale, now, swinging, tier }) {
+    const L = elLook(el);
+    // a plain elemental weapon burns low; a refined one burns with it
+    const strength = 0.5 + (tier?.aura ?? 0) * 0.5;
+    const pulse = 0.7 + 0.3 * Math.sin(now / 340 + e.x * 0.05);
+    const power = strength * pulse * (swinging ? 1.5 : 1);
+    const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed, scale, color: `rgb(${L.main.join(',')})` };
+    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.5, blur: 6 });
+    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.55, blur: 1.5 });
+
+    // the flourish, metered so a crowd of elemental weapons stays cheap
+    const due = this.elemAt.get(e.id) ?? 0;
+    if (now < due) return;
+    const gap = (swinging ? 55 : 130) / (0.6 + strength);
+    this.elemAt.set(e.id, now + gap * (0.6 + Math.random() * 0.8));
+
+    const side = [[0, -1], [-1, 0], [0, 1], [1, 0]][e.d ?? 2];
+    const bx = e.x + side[0] * 12 + (Math.random() - 0.5) * 12;
+    const by = e.y - 26 + side[1] * 6 + (Math.random() - 0.5) * 12;
+    const main = L.main.join(','), core = L.core.join(',');
+
+    if (el === 'ember') {
+      // embers climb and speed up as they go
+      this.particles.mote(bx, by, { color: Math.random() < 0.4 ? core : main, g: -90, vy: -18, r: 1.2 + Math.random() * 1.4, life: 0.7, alpha: 0.9 });
+    } else if (el === 'frost') {
+      // vapour slides off the blade and settles toward the floor
+      this.particles.mote(bx, by, { color: Math.random() < 0.5 ? core : main, g: 26, vx: (Math.random() - 0.5) * 12, vy: 8, r: 1.8 + Math.random() * 2.0, life: 1.1, alpha: 0.75 });
+    } else if (el === 'storm') {
+      // a snap of sparks, gone almost at once
+      this.particles.spark(bx, by, { color: Math.random() < 0.5 ? core : main, n: 2, power: 0.8 });
+    } else if (el === 'shade') {
+      // smoke pouring down off the edge
+      this.particles.mote(bx, by, { color: main, g: 18, vx: (Math.random() - 0.5) * 8, vy: 14, r: 2.2 + Math.random() * 2.4, life: 0.9, alpha: 0.6 });
+    } else if (el === 'radiant') {
+      // motes that hang in the air rather than falling
+      this.particles.mote(bx, by, { color: Math.random() < 0.5 ? core : main, g: -14, vy: -10, r: 1.1 + Math.random(), life: 1.0, alpha: 0.8 });
+    } else {
+      // verdant: seeds drifting sideways on the wind
+      this.particles.mote(bx, by, { color: main, g: 30, vx: (Math.random() - 0.5) * 26, vy: -6, r: 1.3 + Math.random(), life: 0.9, alpha: 0.7 });
     }
   }
 
@@ -458,6 +642,18 @@ export class Renderer {
     if (now < due) return;
     this.steps.set(e.id, now + 260 + Math.random() * 120);
     if (due) this.particles.step(e.x, e.y + 1);
+  }
+
+  /** A single bright frame on a critical, tinted by the element that landed it. */
+  drawCritFlash(ctx, now) {
+    if (now >= this.flashUntil) return;
+    const k = (this.flashUntil - now) / 90;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = k * 0.16;
+    ctx.fillStyle = elRgba(this.flashEl ?? 'neutral', 'core', 1);
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.restore();
   }
 
   /** A soft frame so the eye settles in the middle of the screen. */
@@ -475,9 +671,62 @@ export class Renderer {
     ctx.restore();
   }
 
+  /**
+   * A character came up a level, or took a whole new job. Both are a pillar
+   * of dawn-light; the job change is simply bigger, longer and loud enough
+   * that the people standing nearby look over.
+   */
+  ascend(e, { big = false, mine = false } = {}) {
+    this.addFx({ fx: 'ascend', el: 'radiant', x: e.x, y: e.y, big, life: big ? 2000 : 1300 });
+    this.particles.ring(e.x, e.y, { color: '255,225,150', n: big ? 34 : 18, power: big ? 1.5 : 0.9 });
+    for (let i = 0; i < (big ? 3 : 1); i++) {
+      setTimeout(() => this.particles.spark(e.x, e.y - 20, {
+        color: '255,236,190', n: big ? 16 : 9, power: 1.1,
+      }), i * 180);
+    }
+    if (mine) {
+      this.shake = Math.max(this.shake, big ? 8 : 3);
+      this.flashUntil = performance.now() + (big ? 200 : 110);
+      this.flashEl = 'radiant';
+    }
+  }
+
   /** Hit sparks, called from the game when damage lands. */
   spark(x, y, opts) { this.particles.spark(x, y, opts); }
   poof(x, y, color) { this.particles.poof(x, y, color); }
+
+  /**
+   * Something died. An ordinary kill breaks apart and settles; a boss gets
+   * the whole treatment - a nova in its own element, a shockwave along the
+   * ground, a bleached frame and a camera that will not hold still. The
+   * difference is deliberate: if every kill looked like this one, none would.
+   */
+  death(e, { el = 'neutral', boss = false, me = false } = {}) {
+    const L = elLook(el);
+    const scale = e.sprite?.scale ?? 1;
+    const at = { x: e.x, y: e.y - 16 * scale };
+
+    if (boss) {
+      this.addFx({ fx: 'nova', el, x: at.x, y: at.y, r: 120, life: 900 });
+      this.addFx({ fx: 'impact', el, x: at.x, y: at.y, r: 80, life: 520 });
+      this.particles.ring(e.x, e.y, { color: L.core.join(','), n: 40, power: 1.8 });
+      this.particles.shatter(at.x, at.y, { color: L.main.join(','), n: 34, power: 2.1, spread: 24 });
+      this.particles.poof(at.x, at.y, L.deep.join(','));
+      this.scorch.push({ x: e.x, y: e.y, r: 110, el, life: 4000, t: performance.now() });
+      this.shake = 14;
+      this.flashUntil = performance.now() + 220;
+      this.flashEl = el;
+      this.freezeUntil = performance.now() + 110;
+      return;
+    }
+
+    this.particles.shatter(at.x, at.y, {
+      color: me ? '200,120,120' : L.main.join(','),
+      n: 12, power: 0.9 * scale, spread: 9 * scale,
+    });
+    this.particles.poof(at.x, at.y, me ? '200,120,120' : L.deep.join(','));
+    this.addFx({ fx: 'impact', el, x: at.x, y: at.y, r: 20 * scale, life: 260 });
+  }
 
   drawNameplate(ctx, e, state, now) {
     const isMe = e.id === state.myId;
@@ -520,47 +769,13 @@ export class Renderer {
     }
   }
 
+  /** One-shot skill effects, drawn by element in skillfx.js. */
   drawFx(ctx, now) {
     for (let i = this.fx.length - 1; i >= 0; i--) {
       const f = this.fx[i];
       const age = now - f.t;
-      const life = f.life ?? 420;
-      if (age > life) { this.fx.splice(i, 1); continue; }
-      const k = age / life;
-      ctx.save();
-      ctx.globalAlpha = 1 - k;
-      switch (f.fx) {
-        case 'aoe':
-        case 'debuff':
-        case 'ground':
-          ctx.strokeStyle = '#ffd08a'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(f.x, f.y, (f.r ?? 40) * (0.4 + k * 0.8), 0, Math.PI * 2); ctx.stroke();
-          break;
-        case 'bolt':
-        case 'line':
-        case 'dash':
-          ctx.strokeStyle = f.fx === 'dash' ? '#c9b6ff' : '#9fdcff';
-          ctx.lineWidth = 3 * (1 - k);
-          ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.tx, f.ty); ctx.stroke();
-          break;
-        case 'heal':
-          ctx.fillStyle = '#7dffb0';
-          for (let j = 0; j < 4; j++) {
-            ctx.globalAlpha = (1 - k) * 0.8;
-            ctx.fillRect(f.x - 10 + j * 6, f.y - 20 - k * 22 + (j % 2) * 4, 3, 3);
-          }
-          break;
-        case 'buff':
-          ctx.strokeStyle = '#ffe9a0'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(f.x, f.y - 12, 16 * (1 - k * 0.4), 0, Math.PI * 2); ctx.stroke();
-          break;
-        case 'summon':
-          ctx.strokeStyle = '#a0ffd0'; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(f.x, f.y, 20 * k, 0, Math.PI * 2); ctx.stroke();
-          break;
-        default: break;
-      }
-      ctx.restore();
+      if (age > f.life) { this.fx.splice(i, 1); continue; }
+      drawSkillFx(ctx, f, age);
     }
   }
 
@@ -637,9 +852,12 @@ export class Renderer {
       const age = now - f.t;
       if (age > f.life) { this.floaters.splice(i, 1); continue; }
       const k = age / f.life;
-      const [sx, sy] = this.worldToScreen(f.x, f.y + f.vy * k);
+      const t = age / 1000;
+      const [sx, sy] = this.worldToScreen(f.x + f.vx * t, f.y + f.vy * t + f.g * t * t * 0.5);
       ctx.globalAlpha = 1 - k * k;
-      ctx.font = `bold ${f.size * this.dpr}px system-ui, sans-serif`;
+      // it punches in at full size, then settles - the number itself lands
+      const grow = k < 0.16 ? f.pop - (f.pop - 1) * (k / 0.16) : 1;
+      ctx.font = `bold ${Math.round(f.size * grow * this.dpr)}px system-ui, sans-serif`;
       ctx.lineWidth = 3;
       ctx.strokeStyle = 'rgba(0,0,0,0.9)';
       ctx.strokeText(f.text, sx, sy);

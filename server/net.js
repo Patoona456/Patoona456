@@ -479,6 +479,8 @@ export class Conn {
         if (r.kit?.length) {
           this.notice('ได้รับชุดเริ่มต้นของอาชีพแล้ว — เปิดกระเป๋าดูได้เลย', 'good');
         }
+        // everyone standing nearby sees the pillar, not just the person in it
+        p.zone?.pushEvent({ t: 'ascend', id: p.id, job: r.job, jobTh: name });
         this.world.broadcastChat({ ch: 'system', text: `${p.name} ก้าวสู่เส้นทาง${name}` });
         this.sendInventory();
         return this.send({ t: OP.SELF, self: p.selfState() });

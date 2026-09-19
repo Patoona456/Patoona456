@@ -235,7 +235,12 @@ export class Zone {
     e.anim = 'hurt';
     e.animUntil = now() + 400;
     e.cast = null;
-    this.pushEvent({ t: 'death', id: e.id, by: killer?.id ?? null });
+    // the client dresses the death in the victim's own element, and gives a
+    // boss a send-off an ordinary kill never gets
+    this.pushEvent({
+      t: 'death', id: e.id, by: killer?.id ?? null,
+      el: e.def?.element ?? 'neutral', boss: e.boss ? 1 : 0,
+    });
 
     if (e.kind === 'monster') {
       e.deadUntil = now() + (e.def.respawn ?? 20) * 1000;
@@ -582,7 +587,7 @@ export class Zone {
         mine: !g.owners.length || g.owners.includes(p.id) || g.lockUntil < now() ? 1 : 0 }));
     const fx = this.effects
       .filter((f) => dist2(p, f) < AOI_RADIUS * AOI_RADIUS)
-      .map((f) => ({ skill: f.skill, x: Math.round(f.x), y: Math.round(f.y), r: Math.round(f.radius), until: f.until }));
+      .map((f) => ({ skill: f.skill, x: Math.round(f.x), y: Math.round(f.y), r: Math.round(f.radius), until: f.until, el: f.look ?? f.element }));
     return { t: 'snapshot', map: this.id, ts: now(), ents, ground, fx };
   }
 

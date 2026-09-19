@@ -16,50 +16,50 @@ const S = (o) => ({ maxLevel: 5, castTime: 0, cooldown: [3, -0.1], range: 48, an
 export const SKILLS = {
   /* ---------------- Novice ---------------- */
   first_aid: S({
-    id: 'first_aid', name: 'First Aid', nameTh: 'ปฐมพยาบาล', kind: 'heal', target: 'self',
+    id: 'first_aid', name: 'First Aid', nameTh: 'ปฐมพยาบาล', kind: 'heal', look: 'verdant', target: 'self',
     maxLevel: 3, sp: [8, 2], heal: [22, 18], castTime: 0.6, cooldown: [12, -1], anim: 'spellcast',
     desc: 'ฟื้นเลือดตัวเองเล็กน้อย ทุกอาชีพเรียนได้',
   }),
   shove: S({
-    id: 'shove', name: 'Shove', nameTh: 'ผลัก', kind: 'damage', target: 'enemy',
+    id: 'shove', name: 'Shove', nameTh: 'ผลัก', kind: 'damage', look: 'neutral', target: 'enemy',
     maxLevel: 3, sp: [5, 1], ratio: [1.1, 0.25], knockback: 48, cooldown: [6, -0.5], anim: 'thrust',
     desc: 'ดันศัตรูให้ถอยหลัง ใช้หนีได้',
   }),
 
   /* ---------------- Vanguard ---------------- */
   cleave: S({
-    id: 'cleave', name: 'Cleave', nameTh: 'ฟันกวาด', kind: 'aoe', target: 'self',
+    id: 'cleave', name: 'Cleave', nameTh: 'ฟันกวาด', kind: 'aoe', look: 'neutral', target: 'self',
     sp: [10, 3], ratio: [1.3, 0.35], radius: [60, 6], cooldown: [5, -0.3], anim: 'slash',
     weapon: ['blade', 'spear', 'rod'], desc: 'ฟันกวาดรอบตัว โดนทุกตัวในระยะ',
   }),
   skewer: S({
-    id: 'skewer', name: 'Skewer', nameTh: 'แทงทะลวง', kind: 'damage', target: 'enemy',
+    id: 'skewer', name: 'Skewer', nameTh: 'แทงทะลวง', kind: 'damage', look: 'neutral', target: 'enemy',
     sp: [12, 3], ratio: [1.8, 0.55], range: 72, cooldown: [7, -0.4], anim: 'thrust',
     weapon: ['spear', 'blade'], pierce: 0.3, desc: 'แทงแรง เจาะเกราะ 30%',
   }),
   taunt: S({
-    id: 'taunt', name: 'Taunt', nameTh: 'ยั่วยุ', kind: 'debuff', target: 'enemy',
+    id: 'taunt', name: 'Taunt', nameTh: 'ยั่วยุ', kind: 'debuff', look: 'ember', target: 'enemy',
     maxLevel: 3, sp: [8, 2], radius: [96, 16], aggro: [600, 400], duration: [6, 1],
     cooldown: [14, -1], anim: 'spellcast', desc: 'ดึงความสนใจมอนสเตอร์รอบตัวมาที่ตัวเอง',
   }),
   bulwark_stance: S({
-    id: 'bulwark_stance', name: 'Bulwark Stance', nameTh: 'ท่ายืนกำแพง', kind: 'buff', target: 'self',
+    id: 'bulwark_stance', name: 'Bulwark Stance', nameTh: 'ท่ายืนกำแพง', kind: 'buff', look: 'radiant', target: 'self',
     sp: [14, 3], duration: [20, 4], cooldown: [30, -1], anim: 'spellcast',
     mods: { defPct: [10, 4], speedPct: [-12, 1] }, desc: 'ลดดาเมจที่ได้รับ แลกกับความเร็วเดิน',
   }),
   iron_will: S({
-    id: 'iron_will', name: 'Iron Will', nameTh: 'ใจเหล็ก', kind: 'passive',
+    id: 'iron_will', name: 'Iron Will', nameTh: 'ใจเหล็ก', kind: 'passive', look: 'radiant',
     maxLevel: 5, mods: { maxHpPct: [3, 3], statusRes: [5, 5] }, desc: 'พาสซีฟ: เลือดสูงสุด + ต้านสถานะผิดปกติ',
   }),
 
   /* ---------------- Wayfarer ---------------- */
   backstab: S({
-    id: 'backstab', name: 'Backstab', nameTh: 'ลอบแทงหลัง', kind: 'damage', target: 'enemy',
+    id: 'backstab', name: 'Backstab', nameTh: 'ลอบแทงหลัง', kind: 'damage', look: 'shade', target: 'enemy',
     sp: [10, 3], ratio: [1.5, 0.5], behindBonus: [0.8, 0.3], range: 40, cooldown: [6, -0.4],
     anim: 'thrust', weapon: ['blade'], desc: 'แรงขึ้นมากเมื่อโจมตีจากด้านหลัง',
   }),
   shadow_step: S({
-    id: 'shadow_step', name: 'Shadow Step', nameTh: 'ก้าวเงา', kind: 'dash', target: 'point',
+    id: 'shadow_step', name: 'Shadow Step', nameTh: 'ก้าวเงา', kind: 'dash', look: 'shade', target: 'point',
     maxLevel: 3, sp: [12, 2], distance: [120, 30], cooldown: [10, -1.5], anim: 'spellcast',
     desc: 'พุ่งไปตามทิศที่หัน ผ่านศัตรูได้',
   }),
@@ -70,35 +70,35 @@ export const SKILLS = {
     element: 'verdant', desc: 'ติดพิษ ทำดาเมจต่อเนื่อง',
   }),
   evasion: S({
-    id: 'evasion', name: 'Evasion', nameTh: 'ตัวลื่น', kind: 'passive',
+    id: 'evasion', name: 'Evasion', nameTh: 'ตัวลื่น', kind: 'passive', look: 'shade',
     mods: { fleeFlat: [6, 6], speedPct: [1, 1] }, desc: 'พาสซีฟ: หลบและความเร็วเพิ่ม',
   }),
   pilfer: S({
-    id: 'pilfer', name: 'Pilfer', nameTh: 'ล้วงกระเป๋า', kind: 'damage', target: 'enemy',
+    id: 'pilfer', name: 'Pilfer', nameTh: 'ล้วงกระเป๋า', kind: 'damage', look: 'shade', target: 'enemy',
     maxLevel: 5, sp: [10, 2], ratio: [0.6, 0.1], range: 40, cooldown: [20, -1], anim: 'thrust',
     steal: { chance: [12, 4] }, desc: 'มีโอกาสขโมยของจากมอนสเตอร์ (ครั้งเดียวต่อตัว)',
   }),
 
   /* ---------------- Marksman ---------------- */
   aimed_shot: S({
-    id: 'aimed_shot', name: 'Aimed Shot', nameTh: 'ยิงเล็ง', kind: 'damage', target: 'enemy',
+    id: 'aimed_shot', name: 'Aimed Shot', nameTh: 'ยิงเล็ง', kind: 'damage', look: 'neutral', target: 'enemy',
     sp: [10, 3], ratio: [1.6, 0.5], range: 220, castTime: 0.5, cooldown: [5, -0.3],
     anim: 'shoot', weapon: ['bow'], ammo: 1, desc: 'ยิงแม่นหนึ่งนัด ระยะไกล',
   }),
   volley: S({
-    id: 'volley', name: 'Volley', nameTh: 'ระดมยิง', kind: 'aoe', target: 'point',
+    id: 'volley', name: 'Volley', nameTh: 'ระดมยิง', kind: 'aoe', look: 'neutral', target: 'point',
     sp: [18, 5], ratio: [0.85, 0.2], radius: [72, 8], range: 220, castTime: 0.8,
     cooldown: [12, -0.6], anim: 'shoot', weapon: ['bow'], ammo: 3, hits: [3, 1],
     desc: 'ยิงลงพื้นที่ โดนทุกตัวหลายนัด',
   }),
   pinning_arrow: S({
-    id: 'pinning_arrow', name: 'Pinning Arrow', nameTh: 'ธนูตรึง', kind: 'damage', target: 'enemy',
+    id: 'pinning_arrow', name: 'Pinning Arrow', nameTh: 'ธนูตรึง', kind: 'damage', look: 'neutral', target: 'enemy',
     maxLevel: 3, sp: [12, 3], ratio: [1.0, 0.2], range: 200, cooldown: [14, -1], anim: 'shoot',
     weapon: ['bow'], ammo: 1, status: { type: 'root', chance: [70, 10], duration: [2.5, 0.5] },
     desc: 'ตรึงศัตรูให้เคลื่อนที่ไม่ได้ชั่วครู่',
   }),
   hawk_eye: S({
-    id: 'hawk_eye', name: "Hawk's Eye", nameTh: 'ตาเหยี่ยว', kind: 'passive',
+    id: 'hawk_eye', name: "Hawk's Eye", nameTh: 'ตาเหยี่ยว', kind: 'passive', look: 'radiant',
     mods: { hitFlat: [5, 5], rangePct: [4, 4] }, desc: 'พาสซีฟ: ความแม่นและระยะยิงเพิ่ม',
   }),
   ember_arrow: S({
@@ -129,19 +129,19 @@ export const SKILLS = {
     desc: 'เรียกสายฟ้าลงพื้นที่ โดนหลายครั้ง',
   }),
   mana_font: S({
-    id: 'mana_font', name: 'Mana Font', nameTh: 'บ่อมานา', kind: 'buff', target: 'self',
+    id: 'mana_font', name: 'Mana Font', nameTh: 'บ่อมานา', kind: 'buff', look: 'storm', target: 'self',
     sp: [0, 0], duration: [18, 3], cooldown: [60, -2], anim: 'spellcast',
     mods: { spRegenPct: [40, 20] }, desc: 'ฟื้นมานาเร็วขึ้นชั่วคราว',
   }),
   runic_ward: S({
-    id: 'runic_ward', name: 'Runic Ward', nameTh: 'โล่รูน', kind: 'buff', target: 'ally',
+    id: 'runic_ward', name: 'Runic Ward', nameTh: 'โล่รูน', kind: 'buff', look: 'storm', target: 'ally',
     sp: [20, 5], duration: [15, 2], cooldown: [25, -1], anim: 'spellcast', range: 120,
     shield: [40, 35], desc: 'สร้างโล่ดูดซับดาเมจให้เป้าหมาย',
   }),
 
   /* ---------------- Warden ---------------- */
   mend: S({
-    id: 'mend', name: 'Mend', nameTh: 'สมานแผล', kind: 'heal', target: 'ally',
+    id: 'mend', name: 'Mend', nameTh: 'สมานแผล', kind: 'heal', look: 'verdant', target: 'ally',
     sp: [14, 4], heal: [45, 40], matkRatio: [1.0, 0.25], range: 150, castTime: 0.9,
     cooldown: [2.5, -0.1], anim: 'spellcast', desc: 'ฟื้นเลือดเป้าหมาย แรงตาม INT',
   }),
@@ -151,62 +151,62 @@ export const SKILLS = {
     anim: 'spellcast', magic: true, element: 'radiant', desc: 'แรงเป็นพิเศษกับอันเดดและปีศาจ',
   }),
   blessing: S({
-    id: 'blessing', name: 'Blessing', nameTh: 'พร', kind: 'buff', target: 'party',
+    id: 'blessing', name: 'Blessing', nameTh: 'พร', kind: 'buff', look: 'radiant', target: 'party',
     sp: [22, 5], duration: [90, 15], cooldown: [30, -1], anim: 'spellcast', range: 180,
     mods: { strFlat: [1, 1], intFlat: [1, 1], dexFlat: [1, 1] }, desc: 'บัฟทั้งปาร์ตี้ในระยะ',
   }),
   sanctuary: S({
-    id: 'sanctuary', name: 'Sanctuary', nameTh: 'เขตศักดิ์สิทธิ์', kind: 'ground', target: 'point',
+    id: 'sanctuary', name: 'Sanctuary', nameTh: 'เขตศักดิ์สิทธิ์', kind: 'ground', look: 'radiant', target: 'point',
     sp: [30, 6], duration: [12, 1], radius: [72, 6], range: 140, castTime: 1.2,
     cooldown: [40, -1], anim: 'spellcast', healTick: [18, 12],
     desc: 'วางพื้นที่ฟื้นเลือดให้พวกพ้องที่ยืนอยู่',
   }),
   purge: S({
-    id: 'purge', name: 'Purge', nameTh: 'ชำระล้าง', kind: 'buff', target: 'ally',
+    id: 'purge', name: 'Purge', nameTh: 'ชำระล้าง', kind: 'buff', look: 'radiant', target: 'ally',
     maxLevel: 3, sp: [18, 4], cleanse: true, cooldown: [16, -2], range: 150, anim: 'spellcast',
     desc: 'ล้างสถานะผิดปกติของเป้าหมาย',
   }),
 
   /* ---------------- Tier 2 ---------------- */
   aegis: S({
-    id: 'aegis', name: 'Aegis', nameTh: 'อีจิส', kind: 'buff', target: 'party', maxLevel: 5,
+    id: 'aegis', name: 'Aegis', nameTh: 'อีจิส', kind: 'buff', look: 'radiant', target: 'party', maxLevel: 5,
     sp: [40, 8], duration: [12, 1], cooldown: [60, -2], range: 200, anim: 'spellcast',
     mods: { dmgTakenPct: [-12, -3] }, desc: 'ลดดาเมจที่ทั้งปาร์ตี้ได้รับ',
   }),
   thorn_guard: S({
-    id: 'thorn_guard', name: 'Thorn Guard', nameTh: 'เกราะหนาม', kind: 'buff', target: 'self',
+    id: 'thorn_guard', name: 'Thorn Guard', nameTh: 'เกราะหนาม', kind: 'buff', look: 'verdant', target: 'self',
     sp: [26, 5], duration: [20, 2], cooldown: [35, -1], anim: 'spellcast',
     mods: { reflectPct: [12, 5] }, desc: 'สะท้อนดาเมจกายภาพกลับไปบางส่วน',
   }),
   unbreakable: S({
-    id: 'unbreakable', name: 'Unbreakable', nameTh: 'ไม่แตกสลาย', kind: 'buff', target: 'self',
+    id: 'unbreakable', name: 'Unbreakable', nameTh: 'ไม่แตกสลาย', kind: 'buff', look: 'radiant', target: 'self',
     maxLevel: 3, sp: [50, 10], duration: [6, 1], cooldown: [180, -20], anim: 'spellcast',
     mods: { minHpGuard: 1 }, desc: 'ไม่ตายจากดาเมจใดๆ ชั่วครู่ (เหลือ 1 HP)',
   }),
   bloodthirst: S({
-    id: 'bloodthirst', name: 'Bloodthirst', nameTh: 'กระหายเลือด', kind: 'buff', target: 'self',
+    id: 'bloodthirst', name: 'Bloodthirst', nameTh: 'กระหายเลือด', kind: 'buff', look: 'shade', target: 'self',
     sp: [30, 6], duration: [15, 2], cooldown: [45, -1], anim: 'spellcast',
     mods: { atkPct: [15, 5], lifestealPct: [6, 3], defPct: [-20, 0] },
     desc: 'ตีแรงและดูดเลือด แต่ป้องกันลดลง',
   }),
   whirlwind: S({
-    id: 'whirlwind', name: 'Whirlwind', nameTh: 'พายุหมุน', kind: 'aoe', target: 'self',
+    id: 'whirlwind', name: 'Whirlwind', nameTh: 'พายุหมุน', kind: 'aoe', look: 'neutral', target: 'self',
     sp: [28, 6], ratio: [1.1, 0.3], radius: [84, 8], hits: [3, 0.5], cooldown: [14, -0.5],
     anim: 'slash', desc: 'หมุนฟันรอบตัวหลายครั้ง',
   }),
   reckless_charge: S({
-    id: 'reckless_charge', name: 'Reckless Charge', nameTh: 'พุ่งชนบ้าคลั่ง', kind: 'dash',
+    id: 'reckless_charge', name: 'Reckless Charge', nameTh: 'พุ่งชนบ้าคลั่ง', kind: 'dash', look: 'ember',
     target: 'point', sp: [22, 4], distance: [160, 20], ratio: [1.6, 0.4], radius: 48,
     cooldown: [16, -1], anim: 'thrust', desc: 'พุ่งชนทะลุ ทำดาเมจระหว่างทาง',
   }),
   cloak: S({
-    id: 'cloak', name: 'Cloak', nameTh: 'ล่องหน', kind: 'buff', target: 'self', maxLevel: 5,
+    id: 'cloak', name: 'Cloak', nameTh: 'ล่องหน', kind: 'buff', look: 'shade', target: 'self', maxLevel: 5,
     sp: [24, 4], duration: [10, 2], cooldown: [30, -2], anim: 'spellcast',
     mods: { invisible: 1, speedPct: [-20, 4] }, breakOnAttack: true,
     desc: 'ล่องหน มอนสเตอร์มองไม่เห็น หลุดเมื่อโจมตี',
   }),
   mortal_strike: S({
-    id: 'mortal_strike', name: 'Mortal Strike', nameTh: 'ดาบสังหาร', kind: 'damage', target: 'enemy',
+    id: 'mortal_strike', name: 'Mortal Strike', nameTh: 'ดาบสังหาร', kind: 'damage', look: 'neutral', target: 'enemy',
     sp: [34, 7], ratio: [2.6, 0.9], range: 40, cooldown: [18, -0.8], anim: 'thrust',
     weapon: ['blade'], fromStealth: [1.5, 0.2], desc: 'ดาเมจสูงมากเมื่อออกจากการล่องหน',
   }),
@@ -216,32 +216,32 @@ export const SKILLS = {
     element: 'shade', lifesteal: [20, 5], desc: 'ดูดเลือดจากทุกเป้าหมายรอบตัว',
   }),
   smoke_bomb: S({
-    id: 'smoke_bomb', name: 'Smoke Bomb', nameTh: 'ระเบิดควัน', kind: 'debuff', target: 'self',
+    id: 'smoke_bomb', name: 'Smoke Bomb', nameTh: 'ระเบิดควัน', kind: 'debuff', look: 'shade', target: 'self',
     sp: [26, 5], radius: [96, 8], duration: [6, 1], cooldown: [30, -1], anim: 'spellcast',
     mods: { targetFleePct: [-30, -5] }, desc: 'ศัตรูรอบตัวยิงพลาดง่ายขึ้น',
   }),
   snare_trap: S({
-    id: 'snare_trap', name: 'Snare Trap', nameTh: 'กับดักบ่วง', kind: 'ground', target: 'point',
+    id: 'snare_trap', name: 'Snare Trap', nameTh: 'กับดักบ่วง', kind: 'ground', look: 'verdant', target: 'point',
     sp: [20, 4], duration: [30, 5], radius: [40, 4], range: 90, cooldown: [20, -1],
     anim: 'thrust', trap: { type: 'root', duration: [3, 0.5] }, desc: 'วางกับดักตรึงศัตรูที่เหยียบ',
   }),
   sleight: S({
-    id: 'sleight', name: 'Sleight', nameTh: 'มือไว', kind: 'passive',
+    id: 'sleight', name: 'Sleight', nameTh: 'มือไว', kind: 'passive', look: 'shade',
     mods: { lukFlat: [2, 2], stealBonus: [5, 5] }, desc: 'พาสซีฟ: LUK และโอกาสขโมยเพิ่ม',
   }),
   piercing_shot: S({
-    id: 'piercing_shot', name: 'Piercing Shot', nameTh: 'ยิงทะลุแนว', kind: 'line', target: 'point',
+    id: 'piercing_shot', name: 'Piercing Shot', nameTh: 'ยิงทะลุแนว', kind: 'line', look: 'neutral', target: 'point',
     sp: [30, 6], ratio: [1.7, 0.5], range: 260, width: 32, castTime: 0.7, cooldown: [12, -0.5],
     anim: 'shoot', weapon: ['bow'], ammo: 2, desc: 'ลูกธนูทะลุศัตรูเป็นแนวตรง',
   }),
   rain_of_arrows: S({
-    id: 'rain_of_arrows', name: 'Rain of Arrows', nameTh: 'ห่าธนู', kind: 'ground', target: 'point',
+    id: 'rain_of_arrows', name: 'Rain of Arrows', nameTh: 'ห่าธนู', kind: 'ground', look: 'neutral', target: 'point',
     sp: [45, 9], ratio: [0.6, 0.18], radius: [96, 8], range: 240, duration: [5, 0.5],
     tickRate: 0.6, cooldown: [30, -1], anim: 'shoot', weapon: ['bow'], ammo: 6,
     desc: 'ฝนธนูตกต่อเนื่องในพื้นที่',
   }),
   steady_aim: S({
-    id: 'steady_aim', name: 'Steady Aim', nameTh: 'เล็งนิ่ง', kind: 'passive',
+    id: 'steady_aim', name: 'Steady Aim', nameTh: 'เล็งนิ่ง', kind: 'passive', look: 'radiant',
     mods: { critFlat: [3, 3], rangePct: [3, 3] }, desc: 'พาสซีฟ: คริติคอลและระยะยิง',
   }),
   meteor_rune: S({
@@ -258,7 +258,7 @@ export const SKILLS = {
     desc: 'พื้นที่น้ำแข็ง ทำดาเมจและชะลอ',
   }),
   rune_overload: S({
-    id: 'rune_overload', name: 'Rune Overload', nameTh: 'รูนโอเวอร์โหลด', kind: 'buff', target: 'self',
+    id: 'rune_overload', name: 'Rune Overload', nameTh: 'รูนโอเวอร์โหลด', kind: 'buff', look: 'storm', target: 'self',
     sp: [0, 0], duration: [12, 1], cooldown: [70, -2], anim: 'spellcast',
     mods: { matkPct: [20, 6], spCostPct: [30, 5] }, desc: 'เวทย์แรงขึ้นแต่เปลือง SP มากขึ้น',
   }),
@@ -269,7 +269,7 @@ export const SKILLS = {
     desc: 'สายฟ้ากระโดดต่อไปยังศัตรูข้างเคียง',
   }),
   tempest_veil: S({
-    id: 'tempest_veil', name: 'Tempest Veil', nameTh: 'ม่านพายุ', kind: 'buff', target: 'self',
+    id: 'tempest_veil', name: 'Tempest Veil', nameTh: 'ม่านพายุ', kind: 'buff', look: 'storm', target: 'self',
     sp: [34, 7], duration: [16, 2], cooldown: [45, -1], anim: 'spellcast',
     mods: { castPct: [15, 5], shockAura: [10, 6] }, desc: 'ร่ายเร็วขึ้น และช็อตศัตรูที่เข้าใกล้',
   }),
@@ -280,17 +280,17 @@ export const SKILLS = {
     desc: 'วาร์ปสั้นๆ ทิ้งดาเมจไว้ที่จุดเดิม',
   }),
   greater_mend: S({
-    id: 'greater_mend', name: 'Greater Mend', nameTh: 'สมานใหญ่', kind: 'heal', target: 'ally',
+    id: 'greater_mend', name: 'Greater Mend', nameTh: 'สมานใหญ่', kind: 'heal', look: 'verdant', target: 'ally',
     sp: [40, 9], heal: [120, 90], matkRatio: [1.8, 0.4], range: 160, castTime: 1.4,
     cooldown: [6, -0.2], anim: 'spellcast', desc: 'ฟื้นเลือดจำนวนมาก',
   }),
   revive: S({
-    id: 'revive', name: 'Revive', nameTh: 'ชุบชีวิต', kind: 'revive', target: 'corpse',
+    id: 'revive', name: 'Revive', nameTh: 'ชุบชีวิต', kind: 'revive', look: 'radiant', target: 'corpse',
     maxLevel: 3, sp: [80, 15], hpPct: [20, 15], range: 100, castTime: 4, cooldown: [120, -20],
     anim: 'spellcast', reagent: 'shard_dawn', desc: 'ชุบเพื่อนที่ตายในที่เกิดเหตุ (ใช้เศษรุ่งอรุณ 1 ชิ้น)',
   }),
   aura_of_dawn: S({
-    id: 'aura_of_dawn', name: 'Aura of Dawn', nameTh: 'ออร่าอรุณ', kind: 'buff', target: 'party',
+    id: 'aura_of_dawn', name: 'Aura of Dawn', nameTh: 'ออร่าอรุณ', kind: 'buff', look: 'radiant', target: 'party',
     sp: [50, 10], duration: [30, 4], cooldown: [90, -2], range: 200, anim: 'spellcast',
     mods: { hpRegenPct: [40, 15], statusRes: [15, 5] }, desc: 'ฟื้นเลือดต่อเนื่องให้ทั้งปาร์ตี้',
   }),
@@ -306,18 +306,18 @@ export const SKILLS = {
     desc: 'พื้นที่ศักดิ์สิทธิ์ เผาอันเดดต่อเนื่อง',
   }),
   shield_of_vows: S({
-    id: 'shield_of_vows', name: 'Shield of Vows', nameTh: 'โล่คำสาบาน', kind: 'buff', target: 'ally',
+    id: 'shield_of_vows', name: 'Shield of Vows', nameTh: 'โล่คำสาบาน', kind: 'buff', look: 'radiant', target: 'ally',
     sp: [32, 7], duration: [14, 2], cooldown: [28, -1], range: 140, anim: 'spellcast',
     shield: [80, 60], mods: { dmgTakenPct: [-8, -2] }, desc: 'โล่ดูดซับ + ลดดาเมจให้เป้าหมาย',
   }),
   call_companion: S({
-    id: 'call_companion', name: 'Call Companion', nameTh: 'เรียกสัตว์คู่ใจ', kind: 'summon',
+    id: 'call_companion', name: 'Call Companion', nameTh: 'เรียกสัตว์คู่ใจ', kind: 'summon', look: 'verdant',
     target: 'self', maxLevel: 5, sp: [45, 8], duration: [120, 30], cooldown: [90, -5],
     anim: 'spellcast', summon: { id: 'companion_wolf', levelPct: [60, 8] },
     desc: 'เรียกหมาป่ามาช่วยสู้',
   }),
   wild_bond: S({
-    id: 'wild_bond', name: 'Wild Bond', nameTh: 'สายใยป่า', kind: 'passive',
+    id: 'wild_bond', name: 'Wild Bond', nameTh: 'สายใยป่า', kind: 'passive', look: 'verdant',
     mods: { summonStatPct: [10, 10], hpRegenPct: [5, 5] }, desc: 'พาสซีฟ: สัตว์เลี้ยงแข็งแกร่งขึ้น',
   }),
 };

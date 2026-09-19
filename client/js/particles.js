@@ -139,6 +139,49 @@ export class Particles {
     }
   }
 
+  /**
+   * One drifting speck with the physics spelled out by the caller. Weapon
+   * auras use it to make each element behave differently: embers rise and
+   * accelerate upward, frost vapour sinks, storm sparks fly and die fast.
+   */
+  mote(x, y, { color = '255,220,160', g = 0, vx = 0, vy = 0, r = 1.4, life = 0.6, alpha = 0.8, shape = 'puff' } = {}) {
+    this.bursts.push({ x, y, vx, vy, g, r, life, maxLife: life, color, alpha, shape });
+  }
+
+  /**
+   * A body coming apart. Unlike `poof`, these are hard chunks: they are
+   * thrown outward, fall under gravity and tumble, so a kill reads as
+   * something breaking rather than something evaporating.
+   */
+  shatter(x, y, { color = '150,140,160', n = 14, power = 1, spread = 14 } = {}) {
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + rnd(-1.5, 1.5);
+      const sp = rnd(40, 150) * power;
+      this.bursts.push({
+        x: x + rnd(-spread, spread), y: y + rnd(-spread, spread),
+        vx: Math.cos(a) * sp * rnd(0.6, 1.6), vy: Math.sin(a) * sp,
+        g: 420, r: rnd(1.4, 3.4) * power, life: rnd(0.5, 1.0), maxLife: 1.0,
+        color, alpha: 0.95, shape: 'spark',
+      });
+    }
+  }
+
+  /**
+   * A ring that leaves the ground travelling outward - the shockwave of
+   * something large going down.
+   */
+  ring(x, y, { color = '255,220,160', n = 26, power = 1 } = {}) {
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rnd(-0.06, 0.06);
+      const sp = rnd(130, 190) * power;
+      this.bursts.push({
+        x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.62,
+        g: 30, r: rnd(1.6, 3.2) * power, life: rnd(0.45, 0.75), maxLife: 0.75,
+        color, alpha: 0.85, shape: 'spark',
+      });
+    }
+  }
+
   /* ---------------- drawing ---------------- */
 
   draw(ctx, now) {

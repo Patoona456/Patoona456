@@ -206,7 +206,7 @@ function doAoe(ctx) {
     if (!zone.isHostile(caster, e)) continue;
     total += hitOne(ctx, e);
   }
-  zone.pushEvent({ t: 'fx', fx: 'aoe', x: center.x, y: center.y, r: radius, skill: sk.id, el: sk.element });
+  zone.pushEvent({ t: 'fx', fx: 'aoe', x: center.x, y: center.y, r: radius, skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true, dealt: total };
 }
 
@@ -226,7 +226,7 @@ function doLine(ctx) {
     if (off > width) continue;
     total += hitOne(ctx, e);
   }
-  zone.pushEvent({ t: 'fx', fx: 'line', x: caster.x, y: caster.y, tx: caster.x + ux * range, ty: caster.y + uy * range, skill: sk.id });
+  zone.pushEvent({ t: 'fx', fx: 'line', x: caster.x, y: caster.y, tx: caster.x + ux * range, ty: caster.y + uy * range, skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true, dealt: total };
 }
 
@@ -242,7 +242,7 @@ function doChain(ctx) {
     mul *= sk.falloff ?? 0.75;
     const next = [...zone.entitiesNear(current, sk.jumpRange ?? 120)]
       .filter((e) => !hitSet.has(e.id) && zone.isHostile(caster, e))[0];
-    if (next) zone.pushEvent({ t: 'fx', fx: 'bolt', x: current.x, y: current.y, tx: next.x, ty: next.y, skill: sk.id });
+    if (next) zone.pushEvent({ t: 'fx', fx: 'bolt', x: current.x, y: current.y, tx: next.x, ty: next.y, skill: sk.id, el: sk.look ?? sk.element });
     current = next;
   }
   return { ok: true, dealt: total };
@@ -253,7 +253,7 @@ function doHeal(ctx) {
   const target = sk.target === 'self' ? caster : (ctx.target ?? caster);
   const power = val(sk.heal, lvl) + (sk.matkRatio ? (caster.derived.matk ?? 0) * val(sk.matkRatio, lvl) : 0);
   const healed = healEntity(zone, target, power);
-  zone.pushEvent({ t: 'fx', fx: 'heal', x: target.x, y: target.y, skill: sk.id });
+  zone.pushEvent({ t: 'fx', fx: 'heal', x: target.x, y: target.y, skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true, healed };
 }
 
@@ -276,7 +276,7 @@ function doBuff(ctx) {
         until: now() + duration, amount: val(sk.shield, lvl) });
     }
     t.recompute?.();
-    zone.pushEvent({ t: 'fx', fx: 'buff', x: t.x, y: t.y, skill: sk.id });
+    zone.pushEvent({ t: 'fx', fx: 'buff', x: t.x, y: t.y, skill: sk.id, el: sk.look ?? sk.element });
   }
   return { ok: true };
 }
@@ -298,7 +298,7 @@ function doDebuff(ctx) {
     }
     t.recompute?.();
   }
-  zone.pushEvent({ t: 'fx', fx: 'debuff', x: caster.x, y: caster.y, r: radius, skill: sk.id });
+  zone.pushEvent({ t: 'fx', fx: 'debuff', x: caster.x, y: caster.y, r: radius, skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true };
 }
 
@@ -320,7 +320,7 @@ function doDash(ctx) {
       if (zone.isHostile(caster, e)) hitOne(ctx, e);
     }
   }
-  zone.pushEvent({ t: 'fx', fx: 'dash', x: from.x, y: from.y, tx: caster.x, ty: caster.y, skill: sk.id });
+  zone.pushEvent({ t: 'fx', fx: 'dash', x: from.x, y: from.y, tx: caster.x, ty: caster.y, skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true };
 }
 
@@ -332,11 +332,11 @@ function doGround(ctx) {
     tickRate: (sk.tickRate ?? 1) * 1000, nextTick: now(),
     ratio: sk.ratio ? val(sk.ratio, lvl) : 0,
     healTick: sk.healTick ? val(sk.healTick, lvl) : 0,
-    magic: !!sk.magic, element: sk.element, lvl,
+    magic: !!sk.magic, element: sk.element, look: sk.look ?? sk.element, lvl,
     trap: sk.trap ? { type: sk.trap.type, duration: val(sk.trap.duration, lvl) } : null,
     status: sk.status ?? null,
   });
-  zone.pushEvent({ t: 'fx', fx: 'ground', x: ctx.point.x, y: ctx.point.y, r: val(sk.radius, lvl), skill: sk.id });
+  zone.pushEvent({ t: 'fx', fx: 'ground', x: ctx.point.x, y: ctx.point.y, r: val(sk.radius, lvl), skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true };
 }
 
@@ -348,7 +348,7 @@ function doSummon(ctx) {
     levelPct: val(sk.summon.levelPct, lvl) * (1 + (caster.mods?.summonStatPct ?? 0) / 100),
     duration: val(sk.duration, lvl),
   });
-  zone.pushEvent({ t: 'fx', fx: 'summon', x: m.x, y: m.y, skill: sk.id });
+  zone.pushEvent({ t: 'fx', fx: 'summon', x: m.x, y: m.y, skill: sk.id, el: sk.look ?? sk.element });
   return { ok: true };
 }
 
