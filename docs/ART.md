@@ -72,16 +72,37 @@ sprite: { layer: 'weapon', key: 'ชื่อไฟล์', gendered: true, tint
 | คลาส | ยืม `key` | ชื่อไฟล์ที่ควรจะเป็น |
 |---|---|---|
 | sword | `dagger` | `weapon/<เพศ>/sword.png` |
-| greatsword | `longspear` (either) | `weapon/either/greatsword.png` |
+| greatsword | `dagger` | `weapon/<เพศ>/greatsword.png` |
 | dagger | `dagger` | ตรงอยู่แล้ว |
 | axe | `dagger` | `weapon/<เพศ>/axe.png` |
 | knuckle | `dagger` | `weapon/<เพศ>/knuckle.png` |
 | throwing | `dagger` | `weapon/<เพศ>/throwing.png` |
 | staff | `wand` / `steelwand` | `weapon/<เพศ>/staff.png` |
 | wand | `wand` / `steelwand` | ตรงอยู่แล้ว |
-| special | `longspear` / `steelwand` | `weapon/<เพศ>/special.png` |
+| special | `dagger` / `steelwand` | `weapon/<เพศ>/special.png` |
 
 โล่ (`shield`) ใช้ชั้น `offhand` อยู่แล้ว ไม่ต้องยืม
+
+### ชีต LPC วาดแยกตามท่า — เลือกชีตให้ตรงท่าที่อาวุธนั้นฟาด
+
+นี่ไม่ใช่เรื่องความสวย แต่เป็นเรื่องมองเห็นหรือไม่เห็น ชีต LPC แต่ละใบวาดเฉพาะ
+ท่าที่อาวุธชนิดนั้นใช้จริง ท่าที่เหลือ**ว่างเปล่า** เช่น
+
+| ชีต | ท่าที่มีจริง |
+|---|---|
+| `dagger` | ยืน · เดิน · ฟัน |
+| `spear` | ยืน · เดิน · แทง |
+| `longspear` | **แทงอย่างเดียว** ไม่มีท่ายืนหรือเดิน |
+| `wand` `steelwand` | ฟันอย่างเดียว |
+| `bow` `recurvebow` `greatbow` | ยิงอย่างเดียว |
+
+เคยพลาดมาแล้ว: ดาบใหญ่ชี้ไปที่ `longspear` ซึ่งไม่มีท่าฟัน อาวุธจึง**หายไปทั้งเล่ม**
+ทุกท่า และออร่าตีบวกหายตามไปด้วย เพราะออร่าวาดจากชั้นอาวุธ — +15 กลายเป็นตัวเปล่า
+ตารางไอเทมดูถูกทุกบรรทัด แต่จอว่าง
+
+ธนูกับคทาไม่มีท่ายืนเป็นเรื่องปกติของ LPC (ธนูอยู่บนหลังจนกว่าจะยิง) กฎจึงแคบ
+แต่สำคัญ: **ท่าที่คลาสนั้นฟาด ชีตต้องมี** `test/e2e/art.test.js` เปิดไฟล์ PNG จริง
+แล้วนับพิกเซลเพื่อบังคับข้อนี้
 
 มอนใน `shared/data/monsters.js`:
 ```js

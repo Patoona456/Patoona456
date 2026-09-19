@@ -171,7 +171,7 @@ export const ITEMS = {
     id: 'warden_halberd', name: 'Warden Halberd', nameTh: 'ง้าวผู้พิทักษ์', wclass: 'spear',
     atk: 62, delay: 1.10, range: 76, level: 30, weight: 140, value: 21000, rarity: 'uncommon',
     stats: { str: 3, vit: 2 }, twoHanded: true,
-    sprite: { layer: 'weapon', key: 'longspear', gendered: false },
+    sprite: { layer: 'weapon', key: 'spear', gendered: true },
   }),
   ridgebreaker_pike: W({
     id: 'ridgebreaker_pike', name: 'Ridgebreaker Pike', nameTh: 'ทวนทลายสันเขา', wclass: 'spear',
@@ -187,7 +187,7 @@ export const ITEMS = {
     id: 'glacier_lance', name: 'Glacier Lance', nameTh: 'ทวนธารน้ำแข็ง', wclass: 'spear',
     atk: 95, delay: 1.06, range: 78, level: 55, weight: 150, value: 138000, rarity: 'epic',
     element: 'ice', stats: { str: 4, vit: 3 }, twoHanded: true,
-    sprite: { layer: 'weapon', key: 'longspear', gendered: false },
+    sprite: { layer: 'weapon', key: 'spear', gendered: true },
   }),
 
   short_bow: W({
@@ -320,26 +320,26 @@ export const ITEMS = {
   iron_greatsword: W({
     id: 'iron_greatsword', name: 'Iron Greatsword', nameTh: 'ดาบใหญ่เหล็ก', wclass: 'greatsword',
     atk: 58, delay: 1.30, range: 62, level: 12, weight: 180, value: 4200, rarity: 'common',
-    twoHanded: true, sprite: { layer: 'weapon', key: 'longspear', gendered: false },
+    twoHanded: true, sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#aeb4bd' },
     desc: 'ต้องใช้สองมือ และต้องเหวี่ยงให้ถูกจังหวะ ไม่งั้นเสียท่า',
   }),
   ruin_cleaver: W({
     id: 'ruin_cleaver', name: 'Ruin Cleaver', nameTh: 'ดาบผ่าซาก', wclass: 'greatsword',
     atk: 92, delay: 1.28, range: 64, level: 28, weight: 200, value: 22000, rarity: 'uncommon',
     twoHanded: true, stats: { str: 4 },
-    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#b0a292' },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#b0a292' },
   }),
   stormbreaker: W({
     id: 'stormbreaker', name: 'Stormbreaker', nameTh: 'ดาบทลายพายุ', wclass: 'greatsword',
     atk: 124, delay: 1.26, range: 66, level: 44, weight: 220, value: 92000, rarity: 'rare',
     twoHanded: true, element: 'lightning', stats: { str: 5, vit: 2 },
-    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#ffe260' },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ffe260' },
   }),
   emberfall_greatsword: W({
     id: 'emberfall_greatsword', name: 'Emberfall Greatsword', nameTh: 'มหาดาบเพลิงร่วง', wclass: 'greatsword',
     atk: 168, delay: 1.24, range: 68, level: 62, weight: 250, value: 240000, rarity: 'epic',
     twoHanded: true, element: 'fire', stats: { str: 6, vit: 3 },
-    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#ff7a3c' },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ff7a3c' },
     desc: 'หนักจนคนธรรมดายกไม่ขึ้น และร้อนจนต้องพันด้ามด้วยหนังสามชั้น',
   }),
 
@@ -458,7 +458,7 @@ export const ITEMS = {
     id: 'warlords_banner', name: "Warlord's Banner", nameTh: 'ธงจอมทัพ', wclass: 'special',
     atk: 62, matk: 62, delay: 1.00, range: 80, level: 50, weight: 140, value: 180000, rarity: 'epic',
     twoHanded: true, element: 'holy', stats: { str: 2, agi: 2, vit: 2, int: 2, dex: 2, luk: 2 },
-    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#e8d29a' },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#e8d29a' },
     desc: 'ธงที่กรูมปักไว้กลางสนาม ใครถอนขึ้นก็ถือได้ ไม่ว่าจะเป็นอาชีพอะไร',
   }),
   heart_of_emberfall: W({

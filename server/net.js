@@ -330,7 +330,10 @@ export class Conn {
         for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) r[k] = m.stat ?? 60;
         r.aurum += 1000000;
         Econ.mint(this.world, 1000000, 'dev');   // counted, so the dashboard still reconciles
-        const kit = m.items ?? ['glacier_lance', 'warden_halberd', 'iron_pike', 'ashguard_plate',
+        // The kit is what a QA session actually wants to look at, so it
+        // carries one of each of the newer weapon classes rather than three
+        // spears. Anything above this level is skipped, not force-equipped.
+        const kit = m.items ?? ['emberfall_greatsword', 'riftsplitter', 'glacier_lance', 'ashguard_plate',
           'plate_cuirass', 'leather_vest', 'golden_helm', 'metal_helm', 'golden_greaves',
           'metal_greaves', 'golden_boots', 'metal_boots', 'golden_gauntlets', 'metal_gauntlets',
           'emberheart_amulet', 'band_of_vigor', 'greater_salve'];
