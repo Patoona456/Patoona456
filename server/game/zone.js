@@ -6,8 +6,25 @@ import { TILE, AOI_RADIUS, ANIM } from '../../shared/constants.js';
 import { Monster, dist, dist2, dirTo, LEASH } from './monster.js';
 import { applyDamage, healEntity, basicAttack, statusMods, addStatus } from './combat.js';
 import * as Skills from './skills.js';
+import { tickBoss, resetBoss } from './boss.js';
+import { findPath, lineClear } from '../../shared/pathfind.js';
 
 const now = () => Date.now();
+
+/**
+ * Which reset window we are in, as a sortable string.
+ *
+ * The week turns over on Monday 00:00 UTC for everyone, rather than rolling
+ * seven days from each character's own kill: a fixed edge means a guild can
+ * agree on "we run it Tuesday" without anybody's personal timer drifting.
+ */
+function weekKey(at = Date.now()) {
+  const d = new Date(at);
+  const day = (d.getUTCDay() + 6) % 7;               // Monday = 0
+  d.setUTCDate(d.getUTCDate() - day);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
 const LOOT_LOCK_MS = 25000;     // finder keeps priority this long
 const LOOT_LIFE_MS = 120000;
 
@@ -120,6 +137,38 @@ export class Zone {
     if (this.walkable(e.x, ny, r)) e.y = ny;
     e.x = Math.max(TILE, Math.min((this.width - 1) * TILE, e.x));
     e.y = Math.max(TILE, Math.min((this.height - 1) * TILE, e.y));
+  }
+
+  /**
+   * The unit vector a chasing monster should move along this tick.
+   *
+   * In the open, that is simply the direction of the target - searching a
+   * grid every frame to walk in a straight line would be pure waste. Only
+   * when something solid is between them does it fall back to a path, which
+   * is kept and re-walked for half a second before being recomputed.
+   */
+  chaseStep(m, target, t) {
+    const straight = () => {
+      const d = dist(m, target) || 1;
+      return { x: (target.x - m.x) / d, y: (target.y - m.y) / d };
+    };
+    if (lineClear(this.grid, this.width, this.height, m, target)) {
+      m.path = null;
+      return straight();
+    }
+
+    // re-plan when the path is stale, spent, or the target has moved off it
+    const drifted = m.pathGoal && dist2(m.pathGoal, target) > (3 * TILE) ** 2;
+    if (!m.path?.length || t >= (m.pathAt ?? 0) || drifted) {
+      m.path = findPath(this.grid, this.width, this.height, m, target) ?? [];
+      m.pathGoal = { x: target.x, y: target.y };
+      m.pathAt = t + 500;
+    }
+    while (m.path.length && dist(m, m.path[0]) < 10) m.path.shift();
+    if (!m.path.length) return straight();      // nowhere to go: push at it anyway
+    const wp = m.path[0];
+    const d = dist(m, wp) || 1;
+    return { x: (wp.x - m.x) / d, y: (wp.y - m.y) / d };
   }
 
   /* ---------------- population ---------------- */
@@ -273,14 +322,38 @@ export class Zone {
     const mult = 1 + 0.1 * (share.length - 1);
     const exp = (m.def.exp ?? 0) * mult / share.length;
     const jobExp = (m.def.jobExp ?? 0) * mult / share.length;
+    const weekly = m.def.lockout === 'weekly' ? weekKey() : null;
     for (const p of share) {
       const gap = Math.abs(p.record.level - m.level);
-      const penalty = gap > 20 ? 0.25 : gap > 12 ? 0.6 : 1;   // no power-levelling
+      let penalty = gap > 20 ? 0.25 : gap > 12 ? 0.6 : 1;     // no power-levelling
+      if (weekly && (p.record.lockouts?.[m.defId] ?? null) === weekly) penalty *= 0.25;
       p.gainExp(exp * penalty, jobExp * penalty, this);
       this.world.onKill(p, m);
     }
 
-    const ownerIds = share.map((p) => p.id);
+    // A locked boss pays its hoard to each character once a week. Repeat
+    // kills still give a quarter of the experience - helping a friend clear
+    // it should not be a waste of an evening - but the loot that feeds the
+    // refine sink is capped by the calendar, not by how long you can play.
+    let ownerIds = share.map((p) => p.id);
+    if (m.def.lockout === 'weekly') {
+      const key = weekKey();
+      const fresh = share.filter((p) => (p.record.lockouts?.[m.defId] ?? null) !== key);
+      for (const p of share) {
+        const locked = !fresh.includes(p);
+        p.conn?.send({
+          t: 'notice', kind: locked ? 'warn' : 'good',
+          text: locked
+            ? `${m.name}: สัปดาห์นี้รับรางวัลไปแล้ว (ได้ EXP 25%)`
+            : `${m.name}: ได้รางวัลประจำสัปดาห์แล้ว — ครั้งต่อไปสัปดาห์หน้า`,
+        });
+        if (locked) continue;
+        p.record.lockouts = { ...(p.record.lockouts ?? {}), [m.defId]: key };
+      }
+      ownerIds = fresh.map((p) => p.id);
+      if (!ownerIds.length) return;         // everyone had already claimed it
+    }
+
     // drops
     for (const d of m.def.drops ?? []) {
       if (Math.random() > d.chance) continue;
@@ -415,11 +488,28 @@ export class Zone {
         if (p.sp < p.maxSp) p.sp = Math.min(p.maxSp, p.sp + Math.ceil(spr));
       }
 
-      // warps (with a grace period so arriving on top of a pad never bounces)
+      // Warps. A timed grace period was not enough on its own: a map whose
+      // arrival point sits on a pad sent the player straight back, and doing
+      // nothing for a second did not help because they were still standing on
+      // it when the second ran out. So a pad only fires once the player has
+      // been seen off every pad on this map since they arrived.
       if (t < (p.warpSafeUntil ?? 0)) continue;
+      const onPad = (this.def.warps ?? []).some((w) => {
+        const wx = w.x * TILE, wy = w.y * TILE;
+        return p.x >= wx && p.x <= wx + w.w * TILE && p.y >= wy && p.y <= wy + w.h * TILE;
+      });
+      if (!onPad) { p.padArmed = true; continue; }
+      if (!p.padArmed) continue;
       for (const w of this.def.warps ?? []) {
         const wx = w.x * TILE, wy = w.y * TILE;
         if (p.x >= wx && p.x <= wx + w.w * TILE && p.y >= wy && p.y <= wy + w.h * TILE) {
+          const gate = this.world.partyGate(p, w.to);
+          if (gate) {
+            // held at the door rather than bounced back and forth across it
+            p.warpSafeUntil = t + 2500;
+            p.conn?.send({ t: 'notice', text: gate, kind: 'warn' });
+            break;
+          }
           this.world.warpPlayer(p, w.to, w.at[0] * TILE, w.at[1] * TILE);
           break;
         }
@@ -447,6 +537,9 @@ export class Zone {
       if (target && (!target.alive || target.zone !== this && target.kind === 'player')) target = null;
       if (target && statusMods(target).invisible) target = null;
 
+      // a scripted boss runs its own fight on top of the ordinary AI
+      if (m.def.script) tickBoss(this, m, t);
+
       // acquire
       if (!target && t >= m.nextThinkAt) {
         m.nextThinkAt = t + 400;
@@ -470,6 +563,7 @@ export class Zone {
         m.target = null; m.threat.clear(); target = null;
         m.hp = m.maxHp;   // full reset, classic leash behaviour
         m.tapped.clear();
+        if (m.def.script) resetBoss(this, m);
       }
 
       const speed = m.speed * (1 + sm.slowPct / 100);
@@ -477,8 +571,8 @@ export class Zone {
         const d = dist(m, target);
         if (d > m.attackRange) {
           if (!sm.rooted) {
-            const ux = (target.x - m.x) / (d || 1), uy = (target.y - m.y) / (d || 1);
-            this.moveTo(m, m.x + ux * speed * dt, m.y + uy * speed * dt);
+            const step = this.chaseStep(m, target, t);
+            this.moveTo(m, m.x + step.x * speed * dt, m.y + step.y * speed * dt);
             if (!inOneShot(m, t)) m.anim = 'walk';
           }
           m.dir = dirTo(m, target);

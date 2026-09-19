@@ -71,6 +71,26 @@ export class World {
     markDirty();
   }
 
+  /**
+   * The Reliquary doors only open for a group. Returns the reason to refuse,
+   * or null to let them through.
+   *
+   * The check counts party members *in the zone they are leaving*, which is
+   * the honest test: a party list with five names in five different towns is
+   * not a party, and the dungeon is built on the assumption that the people
+   * who walk in walk in together.
+   */
+  partyGate(p, mapId) {
+    const need = MAPS[mapId]?.party ?? 0;
+    if (!need) return null;
+    if (!p.party) return `ประตูนี้เปิดให้เฉพาะปาร์ตี้ ${need} คนขึ้นไป — หาเพื่อนก่อน`;
+    const here = [...(p.zone?.players.values() ?? [])]
+      .filter((o) => o.party === p.party && o.alive).length;
+
+    if (here < need) return `ต้องมีเพื่อนร่วมปาร์ตี้อยู่ด้วยกันอย่างน้อย ${need} คน (ตอนนี้ ${here})`;
+    return null;
+  }
+
   warpPlayer(p, mapId, x, y) {
     const target = this.zone(mapId);
     if (!target) return;
@@ -85,6 +105,7 @@ export class World {
     p.attacking = false;
     p.cast = null;
     p.warpSafeUntil = Date.now() + 1200;
+    p.padArmed = false;            // must step off a pad before one fires again
     target.addPlayer(p);
     if (target.def.safe) p.record.savePoint = { map: mapId, x: p.x, y: p.y };
     p.conn.send(target.zonePayload());

@@ -262,6 +262,66 @@ export const MONSTERS = {
     aurum: { chance: 0.30, min: 20, max: 52 },
   }),
 
+  /* ---------------- Sunken Reliquary (party dungeon, 60+) ----------------
+     Each of these answers a different solo habit. The sentinel punishes
+     standing still, the choirmaster punishes ignoring a caster, the anchor
+     punishes fighting one thing at a time, and the shade punishes letting
+     anything reach the back line. Alone you can beat any one of them; the
+     dungeon never sends one. */
+  reliquary_sentinel: M({
+    id: 'reliquary_sentinel', name: 'Reliquary Sentinel', nameTh: 'ทหารยามหีบศพ', level: 62,
+    hp: 9800, atk: 372, def: 96, mdef: 58, hit: 232, flee: 158, exp: 5400, jobExp: 3300,
+    element: 'radiant', race: 'undead', size: 'large', speed: 74, aggressive: true,
+    aggroRange: 260, attackDelay: 1.7, respawn: 70,
+    sprite: { kind: 'sheet', key: 'skeleton', tint: '#e8dcc0', scale: 1.22, layers: { head: 'metal_helm', torso: 'plate', weapon: 'longspear' } },
+    drops: [
+      { id: 'reliquary_seal', chance: 0.22 },
+      { id: 'runed_whetstone', chance: 0.16, qty: [1, 2] },
+      { id: 'mystery_scroll', chance: 0.05 },
+    ],
+    aurum: { chance: 0.35, min: 60, max: 150 },
+  }),
+  reliquary_choir: M({
+    id: 'reliquary_choir', name: 'Choir of Ash', nameTh: 'คณะขับร้องเถ้า', level: 63,
+    hp: 5600, atk: 210, matk: 428, def: 44, mdef: 104, hit: 236, flee: 186, exp: 5000, jobExp: 3100,
+    element: 'shade', race: 'undead', speed: 88, aggressive: true, aggroRange: 300,
+    attackRange: 190, attackDelay: 2.0, respawn: 70,
+    sprite: { kind: 'sheet', key: 'ghoul', tint: '#b79ad8', scale: 1.05, layers: { head: 'cloth_hood', weapon: 'steelwand' } },
+    skills: ['grim_harvest'],
+    drops: [
+      { id: 'reliquary_seal', chance: 0.20 },
+      { id: 'mana_draught', chance: 0.20, qty: [1, 3] },
+      { id: 'mystery_scroll', chance: 0.05 },
+    ],
+    aurum: { chance: 0.35, min: 55, max: 140 },
+  }),
+  reliquary_anchor: M({
+    id: 'reliquary_anchor', name: 'Grave Anchor', nameTh: 'สมอหลุมศพ', level: 64,
+    hp: 16000, atk: 300, def: 130, mdef: 96, hit: 220, flee: 96, exp: 6200, jobExp: 3800,
+    element: 'neutral', race: 'undead', size: 'large', speed: 52, aggressive: true,
+    aggroRange: 220, attackRange: 56, attackDelay: 2.2, respawn: 90,
+    sprite: { kind: 'sheet', key: 'skeleton', tint: '#9aa4b0', scale: 1.4, layers: { torso: 'plate', head: 'chainhat' } },
+    drops: [
+      { id: 'reliquary_seal', chance: 0.30 },
+      { id: 'steel_ingot', chance: 0.30, qty: [2, 4] },
+      { id: 'blessing_oil', chance: 0.05 },
+    ],
+    aurum: { chance: 0.45, min: 90, max: 210 },
+  }),
+  reliquary_shade: M({
+    id: 'reliquary_shade', name: 'Cloister Shade', nameTh: 'เงาระเบียง', level: 63,
+    hp: 4200, atk: 402, def: 38, mdef: 50, hit: 262, flee: 232, exp: 4600, jobExp: 2900,
+    element: 'shade', race: 'undead', size: 'small', speed: 132, aggressive: true,
+    aggroRange: 340, attackDelay: 1.0, respawn: 60,
+    sprite: { kind: 'blob', color: '#6a4a86', scale: 0.95 },
+    drops: [
+      { id: 'reliquary_seal', chance: 0.18 },
+      { id: 'shard_dawn', chance: 0.02 },
+      { id: 'mystery_scroll', chance: 0.05 },
+    ],
+    aurum: { chance: 0.30, min: 50, max: 130 },
+  }),
+
   /* ---------------- bosses ---------------- */
   orc_warlord: M({
     id: 'orc_warlord', name: 'Orc Warlord Gruum', nameTh: 'จอมทัพออร์ค กรูม', level: 55,
@@ -279,6 +339,30 @@ export const MONSTERS = {
       { id: 'emberheart_amulet', chance: 0.02 },
     ],
     aurum: { chance: 1.0, min: 2500, max: 6000 },
+  }),
+  reliquary_warden: M({
+    id: 'reliquary_warden', name: 'Warden of the Reliquary', nameTh: 'ผู้เฝ้าหีบศพ', level: 68,
+    boss: true, hp: 145000, atk: 470, matk: 400, def: 110, mdef: 100, hit: 268, flee: 200,
+    exp: 78000, jobExp: 50000, element: 'radiant', race: 'undead', size: 'large',
+    speed: 80, aggressive: true, aggroRange: 460, attackRange: 56, attackDelay: 1.4,
+    respawn: 900, lockout: 'weekly',
+    sprite: {
+      kind: 'sheet', key: 'skeleton', tint: '#ffe6b0', scale: 1.7,
+      layers: { head: 'golden_helm', torso: 'plate_arms', hands: 'golden_gloves', weapon: 'longspear' },
+    },
+    // the fight is scripted in server/game/boss.js, not left to the random
+    // skill roll every other monster uses
+    script: 'warden',
+    drops: [
+      { id: 'reliquary_seal', chance: 1.0, qty: [4, 7] },
+      { id: 'boss_casket', chance: 1.0 },
+      { id: 'dawn_casket', chance: 0.5 },
+      { id: 'warden_halberd', chance: 0.06 },
+      { id: 'ashguard_plate', chance: 0.05 },
+      { id: 'blessing_oil', chance: 0.4, qty: [1, 2] },
+      { id: 'shard_dawn', chance: 1.0, qty: [4, 10] },
+    ],
+    aurum: { chance: 1.0, min: 4000, max: 9000 },
   }),
   skeleton_king: M({
     id: 'skeleton_king', name: 'Skeleton King Vhaal', nameTh: 'ราชันโครงกระดูก วาล', level: 65,

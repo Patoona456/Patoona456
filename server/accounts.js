@@ -109,6 +109,7 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     playtime: 0, created: Date.now(), lastSeen: Date.now(),
     npcSales: {},                 // itemId -> count sold today (price dampener)
     salesDay: 0,
+    lockouts: {},                 // bossId -> the week its hoard was claimed
   };
   db.characters[id] = c;
   acc.chars.push(id);

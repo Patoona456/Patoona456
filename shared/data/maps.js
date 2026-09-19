@@ -182,11 +182,101 @@ export const MAPS = {
     warps: [
       { x: 6, y: 6, w: 4, h: 4, to: 'orcwatch', at: [78, 58], label: 'สันเขาออร์ควอช' },
       { x: 70, y: 70, w: 4, h: 4, to: 'vhaal', at: [24, 41], label: 'ห้องบัลลังก์วาล' },
+      { x: 8, y: 70, w: 4, h: 4, to: 'reliquary1', at: [9, 24], label: 'หีบศพจม (ปาร์ตี้ 2 คน)' },
     ],
     spawns: [
       { mob: 'frost_husk', count: 26 },
       { mob: 'crimson_orc', count: 12 },
       { mob: 'frost_wight', count: 14 },
+    ],
+  },
+
+  /* ---------------- The Sunken Reliquary: a party dungeon, three floors ----
+     Hand-drawn rather than generated. Corridors are two tiles wide so a
+     party moves in file and the person in front is the person who gets hit,
+     and every hall has pillars: cover to break line of sight, and something
+     the monsters' pathfinding has to actually solve. */
+  reliquary1: {
+    id: 'reliquary1', name: 'Sunken Reliquary - Cloister', nameTh: 'หีบศพจม - ระเบียงคด',
+    kind: 'dungeon', width: 64, height: 48, seed: 8001, theme: 'crypt', levelRange: [60, 70],
+    party: 2,                       // the door will not open for fewer
+    spawnPoint: [9, 24],
+    warps: [
+      { x: 4, y: 22, w: 3, h: 4, to: 'frostvault', at: [13, 71], label: 'ห้องนิรภัยเยือกแข็ง' },
+      { x: 58, y: 22, w: 3, h: 4, to: 'reliquary2', at: [9, 30], label: 'ชั้นสอง — ห้องสวด' },
+    ],
+    rooms: [
+      { x: 3, y: 20, w: 9, h: 9 },                       // entry
+      { x: 18, y: 8, w: 16, h: 14, pillars: 4 },         // north hall
+      { x: 18, y: 28, w: 16, h: 14, pillars: 4 },        // south hall
+      { x: 40, y: 18, w: 18, h: 14, pillars: 5 },        // west approach
+    ],
+    halls: [
+      { from: [12, 23], to: [18, 13] },
+      { from: [12, 24], to: [18, 33] },
+      { from: [33, 14], to: [40, 23] },
+      { from: [33, 34], to: [40, 25] },
+      { from: [25, 21], to: [25, 29], vfirst: true },    // a shortcut between halls
+    ],
+    spawns: [
+      { mob: 'reliquary_sentinel', count: 4, area: [18, 8, 16, 14] },
+      { mob: 'reliquary_shade', count: 5, area: [18, 28, 16, 14] },
+      { mob: 'reliquary_choir', count: 3, area: [40, 18, 18, 14] },
+      { mob: 'reliquary_sentinel', count: 2, area: [40, 18, 18, 14] },
+    ],
+  },
+  reliquary2: {
+    id: 'reliquary2', name: 'Sunken Reliquary - Choir', nameTh: 'หีบศพจม - ห้องสวด',
+    kind: 'dungeon', width: 64, height: 64, seed: 8002, theme: 'crypt', levelRange: [62, 70],
+    party: 2,
+    spawnPoint: [9, 30],
+    warps: [
+      { x: 4, y: 28, w: 3, h: 4, to: 'reliquary1', at: [55, 24], label: 'ชั้นหนึ่ง — ระเบียงคด' },
+      { x: 57, y: 30, w: 3, h: 4, to: 'reliquary3', at: [26, 52], label: 'ชั้นสาม — ห้องหีบ' },
+    ],
+    rooms: [
+      { x: 4, y: 26, w: 8, h: 9 },
+      { x: 16, y: 6, w: 14, h: 12, pillars: 4 },
+      { x: 16, y: 44, w: 14, h: 14, pillars: 4 },
+      { x: 24, y: 24, w: 18, h: 14, pillars: 6 },        // the long room, most of the fight
+      { x: 46, y: 26, w: 12, h: 12, pillars: 4 },
+    ],
+    halls: [
+      { from: [12, 29], to: [24, 29] },
+      { from: [22, 17], to: [30, 25], vfirst: true },
+      { from: [22, 43], to: [30, 36], vfirst: true },
+      { from: [41, 30], to: [46, 30] },
+      { from: [52, 37], to: [52, 44], vfirst: true },
+      { from: [30, 44], to: [52, 44] },
+    ],
+    hazards: [
+      { x: 33, y: 29, w: 4, h: 4, tile: 'LAVA' },        // the brazier pit in the middle
+    ],
+    spawns: [
+      { mob: 'reliquary_choir', count: 5, area: [16, 6, 14, 12] },
+      { mob: 'reliquary_anchor', count: 2, area: [24, 24, 18, 14] },
+      { mob: 'reliquary_shade', count: 6, area: [24, 24, 18, 14] },
+      { mob: 'reliquary_sentinel', count: 4, area: [16, 44, 14, 14] },
+      { mob: 'reliquary_choir', count: 3, area: [46, 26, 12, 12] },
+    ],
+  },
+  reliquary3: {
+    id: 'reliquary3', name: 'Sunken Reliquary - Vault', nameTh: 'หีบศพจม - ห้องหีบ',
+    kind: 'dungeon', width: 52, height: 60, seed: 8003, theme: 'crypt', levelRange: [64, 70],
+    party: 2,
+    spawnPoint: [26, 52],
+    warps: [
+      { x: 24, y: 55, w: 4, h: 3, to: 'reliquary2', at: [54, 31], label: 'ชั้นสอง — ห้องสวด' },
+    ],
+    rooms: [
+      { x: 22, y: 50, w: 8, h: 8 },                      // the way in
+      { x: 10, y: 10, w: 32, h: 32, pillars: 8 },        // the arena: wide, four pillars
+    ],
+    halls: [
+      { from: [25, 49], to: [25, 42], vfirst: true },
+    ],
+    spawns: [
+      { mob: 'reliquary_warden', count: 1, area: [22, 18, 8, 8], boss: true },
     ],
   },
 
@@ -204,8 +294,79 @@ export const MAPS = {
   },
 };
 
+/**
+ * Rooms joined by corridors, for maps that declare `kind: 'dungeon'`.
+ *
+ * The other zones are noise fields with a path carved through them, which
+ * suits open country but makes a poor dungeon: noise has no doorways, and a
+ * corridor you cannot see the end of is what makes a dungeon tense. These
+ * are hand-placed instead - every room and every link is written down in the
+ * map - so the layout is the same for everyone and the fights can be built
+ * around specific corners.
+ */
+function buildDungeon(map) {
+  const { width: w, height: h } = map;
+  const T = TILES;
+  const g = new Uint8Array(w * h).fill(T.WALL);
+
+  const carveRect = (x, y, rw, rh, tile) => {
+    for (let y2 = y; y2 < y + rh; y2++) {
+      for (let x2 = x; x2 < x + rw; x2++) {
+        if (x2 < 1 || y2 < 1 || x2 >= w - 1 || y2 >= h - 1) continue;
+        g[y2 * w + x2] = tile;
+      }
+    }
+  };
+
+  for (const rm of map.rooms ?? []) {
+    carveRect(rm.x, rm.y, rm.w, rm.h, rm.tile ?? T.FLOOR);
+    // a pillar grid inside the larger halls: cover to break line of sight,
+    // and something for a path to have to go around
+    if (rm.pillars) {
+      for (let py = rm.y + 2; py < rm.y + rm.h - 2; py += rm.pillars) {
+        for (let px = rm.x + 2; px < rm.x + rm.w - 2; px += rm.pillars) {
+          g[py * w + px] = T.WALL;
+        }
+      }
+    }
+  }
+
+  // corridors: L-shaped, horizontal leg first unless told otherwise
+  for (const c of map.halls ?? []) {
+    const wide = c.w ?? 2;
+    const [x1, y1] = c.from, [x2, y2] = c.to;
+    if (c.vfirst) {
+      carveRect(x1, Math.min(y1, y2), wide, Math.abs(y2 - y1) + wide, T.FLOOR);
+      carveRect(Math.min(x1, x2), y2, Math.abs(x2 - x1) + wide, wide, T.FLOOR);
+    } else {
+      carveRect(Math.min(x1, x2), y1, Math.abs(x2 - x1) + wide, wide, T.FLOOR);
+      carveRect(x2, Math.min(y1, y2), wide, Math.abs(y2 - y1) + wide, T.FLOOR);
+    }
+  }
+
+  for (const hz of map.hazards ?? []) carveRect(hz.x, hz.y, hz.w, hz.h, TILES[hz.tile] ?? T.LAVA);
+  return g;
+}
+
 /** Build the tile grid for a map. Same input => same output, always. */
 export function buildGrid(map) {
+  if (map.kind === 'dungeon') {
+    const g = buildDungeon(map);
+    // the same pads every other map gets: a warp or a spawn must be standable
+    const open = (x, y, ww = 2, hh = 2) => {
+      for (let y2 = y - 1; y2 < y + hh + 1; y2++) {
+        for (let x2 = x - 1; x2 < x + ww + 1; x2++) {
+          if (x2 <= 0 || y2 <= 0 || x2 >= map.width - 1 || y2 >= map.height - 1) continue;
+          const i = y2 * map.width + x2;
+          if (BLOCKING.has(g[i])) g[i] = TILES.FLOOR;
+        }
+      }
+    };
+    for (const wp of map.warps ?? []) open(wp.x, wp.y, wp.w, wp.h);
+    if (map.spawnPoint) open(map.spawnPoint[0] - 2, map.spawnPoint[1] - 2, 5, 5);
+    for (const sp of map.spawns ?? []) if (sp.area) open(sp.area[0], sp.area[1], sp.area[2], sp.area[3]);
+    return g;
+  }
   const { width: w, height: h, seed, theme } = map;
   const g = new Uint8Array(w * h);
   const r = rng(seed);

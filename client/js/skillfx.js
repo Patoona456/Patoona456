@@ -368,6 +368,51 @@ export function drawSkillFx(ctx, f, age) {
   ctx.restore();
 }
 
+/**
+ * A patch of floor that is about to become dangerous.
+ *
+ * The whole point is that it must be readable at a glance while people are
+ * fighting, so it does three things at once: an outline that is there from
+ * the first frame, a fill that sweeps round like a clock so the remaining
+ * time is a *quantity* and not a guess, and a rim that thickens as the
+ * moment arrives. It is deliberately not pretty - it is a warning.
+ */
+export function drawWarning(ctx, w, now) {
+  const k = Math.max(0, Math.min(1, (now - w.t) / w.ms));
+  const el = w.el ?? 'radiant';
+  ctx.save();
+
+  // the ground inside it, sweeping full as the timer runs out
+  ctx.beginPath();
+  ctx.ellipse(w.x, w.y, w.r, w.r * 0.62, 0, 0, TAU);
+  ctx.fillStyle = rgba(el, 'deep', 0.24);
+  ctx.fill();
+  ctx.save();
+  ctx.clip();
+  ctx.beginPath();
+  ctx.moveTo(w.x, w.y);
+  ctx.arc(w.x, w.y, w.r * 1.7, -Math.PI / 2, -Math.PI / 2 + TAU * k);
+  ctx.closePath();
+  ctx.fillStyle = rgba(el, 'main', 0.30);
+  ctx.fill();
+  ctx.restore();
+
+  // the edge, which is what the eye actually catches
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineWidth = 2 + k * 3.5;
+  ctx.strokeStyle = rgba(el, k > 0.8 ? 'core' : 'main', 0.55 + k * 0.45);
+  ctx.beginPath();
+  ctx.ellipse(w.x, w.y, w.r, w.r * 0.62, 0, 0, TAU);
+  ctx.stroke();
+
+  // and a last flare in the final fifth, so it is impossible to miss
+  if (k > 0.8) {
+    ctx.globalAlpha = (k - 0.8) * 5;
+    disc(ctx, el, w.x, w.y, w.r, 0.3);
+  }
+  ctx.restore();
+}
+
 /** How long each kind of effect should live, in ms. */
 export function lifeOf(f) {
   return { ground: 1500, heal: 700, buff: 900, summon: 700, dash: 320, aoe: 520, nova: 520, impact: 220, ascend: 1400 }[f.fx] ?? 460;

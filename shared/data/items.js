@@ -274,6 +274,11 @@ export const ITEMS = {
   herbal_stew: C({ id: 'herbal_stew', name: 'Herbal Stew', nameTh: 'สตูว์สมุนไพร', heal: 140, healSp: 60, regen: { hp: 6, sp: 4, duration: 90 }, cooldown: 30, level: 12, value: 320, rarity: 'common', craftable: true }),
   antidote: C({ id: 'antidote', name: 'Antidote', nameTh: 'ยาถอนพิษ', cleanse: ['poison'], cooldown: 5, level: 1, value: 150, rarity: 'common' }),
   warp_scroll: C({ id: 'warp_scroll', name: 'Warp Scroll', nameTh: 'ม้วนวาร์ป', warp: 'lastTown', cast: 3, cooldown: 60, level: 1, value: 900, rarity: 'common', desc: 'กลับเมืองล่าสุด - ค่าเดินทางคือหนึ่งในบ่อดูดเงินหลัก' }),
+  reliquary_seal: M({
+    id: 'reliquary_seal', name: 'Reliquary Seal', nameTh: 'ตราผนึกหีบศพ', value: 4200,
+    rarity: 'rare', element: 'radiant',
+    desc: 'ตราที่ผนึกหีบศพไว้ ใช้หลอมเป็นน้ำมันศักดิ์สิทธิ์ได้ — หาได้จากหีบศพจมเท่านั้น',
+  }),
   shard_dawn: M({ id: 'shard_dawn', name: 'Dawn Shard', nameTh: 'เศษรุ่งอรุณ', value: 8000, rarity: 'rare', desc: 'ใช้ชุบชีวิต และเป็นวัตถุดิบตีบวกขั้นสูง' }),
 
   /* ================= MATERIALS ================= */
@@ -317,6 +322,7 @@ export const RECIPES = {
   ember_arrow_item: { out: { id: 'ember_arrow_item', qty: 30 }, in: [{ id: 'iron_arrow', qty: 30 }, { id: 'ember_cinder', qty: 1 }], fee: 120, station: 'forge' },
   runed_whetstone: { out: { id: 'runed_whetstone', qty: 1 }, in: [{ id: 'steel_ingot', qty: 2 }, { id: 'bone_chip', qty: 4 }], fee: 400, station: 'forge' },
   blessing_oil: { out: { id: 'blessing_oil', qty: 1 }, in: [{ id: 'shard_dawn', qty: 1 }, { id: 'runed_whetstone', qty: 2 }], fee: 2500, station: 'forge' },
+  blessing_oil_seal: { out: { id: 'blessing_oil', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 6 }], fee: 2000, station: 'forge' },
   hunters_fang: { out: { id: 'hunters_fang', qty: 1 }, in: [{ id: 'steel_ingot', qty: 4 }, { id: 'wolf_fang', qty: 6 }], fee: 1800, station: 'forge' },
   emberfang: { out: { id: 'emberfang', qty: 1 }, in: [{ id: 'hunters_fang', qty: 1 }, { id: 'ember_cinder', qty: 8 }, { id: 'steel_ingot', qty: 6 }], fee: 12000, station: 'forge' },
 };

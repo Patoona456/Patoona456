@@ -9,7 +9,7 @@ import { glowTier } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
-import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf } from './skillfx.js';
+import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from './skillfx.js';
 import { Weather } from './weather.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 
@@ -70,6 +70,7 @@ export class Renderer {
     this.floaters = [];
     this.fx = [];
     this.scorch = [];                // floor marks effects leave behind
+    this.warnings = [];              // patches of floor about to become lethal
     this.particles = new Particles();
     this.weather = new Weather();
     this.lurch = new Map();          // entity id -> the blow it is still reeling from
@@ -139,6 +140,8 @@ export class Renderer {
     );
     this.props = scenery.concat(painted.overlays).sort((a, b) => a.y - b.y);
     this._miniCache = null;
+    this.warnings.length = 0;
+    this.scorch.length = 0;
     this.weather.setTheme(this.zone.theme ?? 'grass');
   }
 
@@ -252,6 +255,7 @@ export class Renderer {
     this.drawTerrain(ctx, halfW, halfH, now);
     this.drawWarps(ctx, now);
     drawScorch(ctx, this.scorch, now);
+    this.drawWarnings(ctx, now);
     this.drawGroundFx(ctx, state, now);
     this.drawProps(ctx, visibleProps, false, now);
     this.drawGroundItems(ctx, state, now);
@@ -766,6 +770,19 @@ export class Renderer {
       ctx.font = '8px system-ui, sans-serif';
       ctx.fillStyle = '#fff';
       ctx.fillText(e.st, e.x, top - 13);
+    }
+  }
+
+  /** A boss is about to hit this floor. Added by the game from a `warn` event. */
+  warn(w) {
+    this.warnings.push({ ...w, t: performance.now() });
+  }
+
+  drawWarnings(ctx, now) {
+    for (let i = this.warnings.length - 1; i >= 0; i--) {
+      const w = this.warnings[i];
+      if (now - w.t > w.ms) { this.warnings.splice(i, 1); continue; }
+      drawWarning(ctx, w, now);
     }
   }
 

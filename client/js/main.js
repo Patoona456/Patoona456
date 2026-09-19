@@ -335,6 +335,15 @@ class Game {
         r.addFx(ev);
         this.audio.play(FX_SOUND[ev.fx] ?? 'cast', { x: ev.x, y: ev.y });
         break;
+      case 'warn':
+        r.warn(ev);
+        this.audio.play('cast', { x: ev.x, y: ev.y }, { gain: 0.5 });
+        break;
+      case 'boss':
+        // the fight talks: phase changes and what to do about them
+        this.ui.chat({ ch: 'system', text: ev.say });
+        this.ui.flash(ev.say);
+        break;
       case 'death':
         if (ent) r.death(ent, { el: ev.el, boss: !!ev.boss, me: ev.id === this.state.myId });
         if (ev.id === this.state.myId) { this.audio.play('death'); this.showDeath(); }
@@ -1061,3 +1070,5 @@ class Game {
 
 // exposed for debugging and for automated smoke tests
 window.__game = new Game();
+// exposed for automated tests: the same pathfinder the game steers itself with
+window.__findPath = findPath;
