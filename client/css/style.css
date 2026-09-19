@@ -571,7 +571,7 @@ body.landscape-ui #quest-track { display: none; }
 /* the rail hangs under the map card instead of fighting it for the corner */
 body.landscape-ui #menu-buttons {
   top: 160px; bottom: auto; left: auto; transform: none; right: 6px; gap: 4px;
-  /* short rows under the map, clear of the thumbs. Four across keeps seven
+  /* short rows under the map, clear of the thumbs. Four across keeps eight
      buttons to two rows - at three across the rail grew into the action bar. */
   grid-template-columns: repeat(4, auto);
 }

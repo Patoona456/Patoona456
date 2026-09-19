@@ -5,6 +5,7 @@ import { db, markDirty } from './persistence.js';
 import { Player } from './game/player.js';
 import * as Skills from './game/skills.js';
 import * as Econ from './game/economy.js';
+import * as Stall from './game/stall.js';
 import * as Party from './game/party.js';
 import * as Guild from './game/guild.js';
 import * as Trade from './game/trade.js';
@@ -258,6 +259,32 @@ export class Conn {
         this.sendInventory();
       });
       case OP.MARKET_LIST: return this.send(Econ.marketList({ q: m.q }));
+      // A stall needs no NPC: the shopkeeper is another player, standing there.
+      case OP.STALL_OPEN: {
+        const r = Stall.openStall(p.zone, p, m.title, m.offers);
+        if (r.error) return this.error(r.error);
+        this.notice(`เปิดแผงแล้ว ${r.offers} รายการ`);
+        return this.send({ t: 'stall', mine: Stall.stallOf(p) });
+      }
+      case OP.STALL_CLOSE:
+        Stall.close(p, 'ปิดแผงแล้ว');
+        return;
+      case OP.STALL_BROWSE: {
+        const r = Stall.browse(p.zone, p, m.seller);
+        if (r.error) return this.error(r.error);
+        return this.send({ t: 'stall', view: r.stall });
+      }
+      case OP.STALL_BUY: {
+        const r = Stall.buy(this.world, p.zone, p, m.seller, m.slot | 0, m.qty | 0 || 1);
+        if (r.error) return this.error(r.error);
+        this.notice(`ซื้อ ${ITEMS[r.id]?.nameTh} x${r.qty} จาก ${r.sellerName} ราคา ${r.paid}`);
+        this.sendInventory();
+        const seller = p.zone.players.get(m.seller);
+        seller?.conn?.send({ t: 'notice', text: `ขาย ${ITEMS[r.id]?.nameTh} x${r.qty} ได้ ${r.paid - r.tax} ออรัม` });
+        if (seller?.conn?.sendInventory) seller.conn.sendInventory();
+        const again = Stall.browse(p.zone, p, m.seller);
+        return this.send({ t: 'stall', view: again.ok ? again.stall : null });
+      }
       case OP.MARKET_POST: return this.guardNpc(['market'], () => {
         const r = Econ.marketPost(this.world, p, m.index | 0, m.qty | 0 || 1, m.price | 0);
         if (r.error) return this.error(r.error);

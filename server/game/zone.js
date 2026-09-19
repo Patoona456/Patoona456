@@ -10,6 +10,7 @@ import * as Skills from './skills.js';
 import { tickBoss, resetBoss } from './boss.js';
 import { findPath, lineClear } from '../../shared/pathfind.js';
 import { expGapPenalty } from '../../shared/formulas.js';
+import * as Stall from './stall.js';
 
 const now = () => Date.now();
 
@@ -731,7 +732,13 @@ export class Zone {
     const fx = this.effects
       .filter((f) => dist2(p, f) < AOI_RADIUS * AOI_RADIUS)
       .map((f) => ({ skill: f.skill, x: Math.round(f.x), y: Math.round(f.y), r: Math.round(f.radius), until: f.until, el: f.look ?? f.element }));
-    return { t: 'snapshot', map: this.id, ts: now(), ents, ground, fx };
+    // Shop signs ride the snapshot so a stall is something you see in the
+    // world and walk up to, rather than a row in yet another list.
+    const stalls = Stall.signs(this).filter((sg) => {
+      const owner = this.players.get(sg.id);
+      return owner && dist2(p, owner) < AOI_RADIUS * AOI_RADIUS;
+    });
+    return { t: 'snapshot', map: this.id, ts: now(), ents, ground, fx, stalls };
   }
 
   zonePayload() {

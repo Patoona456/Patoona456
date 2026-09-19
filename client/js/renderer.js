@@ -757,6 +757,27 @@ export class Renderer {
       ctx.fillRect(e.x - w / 2, top, w * pct, 3);
     }
 
+    // A shop sign, so a stall is a thing you notice walking past rather than
+    // a row in a list. Drawn above the health bar and under the name.
+    const stall = e.k === 'p' && (state.stalls ?? []).find((sg) => sg.id === e.id);
+    if (stall) {
+      ctx.save();
+      ctx.font = '600 10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      const label = `\u{1F6D2} ${stall.title}`;
+      const w = ctx.measureText(label).width + 10;
+      const y = top - 16;
+      ctx.fillStyle = 'rgba(24,18,10,0.82)';
+      ctx.strokeStyle = '#e8b45a';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect?.(e.x - w / 2, y - 10, w, 13, 3) ?? ctx.rect(e.x - w / 2, y - 10, w, 13);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#f2d79a';
+      ctx.fillText(label, e.x, y);
+      ctx.restore();
+    }
+
     // Anything this far above you attacks on sight, whether or not its kind
     // normally does. That rule is invisible unless we say so, and an invisible
     // rule that kills you is just an ambush - so the plate says it plainly.

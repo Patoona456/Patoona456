@@ -65,7 +65,7 @@ export class UI {
     }
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
-      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade' };
+      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade', KeyV: 'stall' };
       if (map[e.code]) { e.preventDefault(); this.toggle(map[e.code]); }
       if (e.code === 'Enter') { e.preventDefault(); $('#chat-input').focus(); }
       if (e.code === 'KeyM') {
@@ -408,6 +408,8 @@ export class UI {
       case 'tradePicker': return this.openTradePicker();
       case 'shop': return this.openShop(data);
       case 'market': return this.openMarket(data);
+      case 'stall': return this.openStall(data ?? this.lastStall);
+      case 'stallView': return this.openStallView(data);
       case 'storage': return this.openStorage(data);
       case 'dialog': return this.openDialog(data);
       default: return null;
@@ -1475,6 +1477,99 @@ export class UI {
     grid.append(mine, store);
     wrap.append(grid);
     return this.panel('storage', 'คลังเก็บของ', wrap);
+  }
+
+  /* ---------------- player stalls ---------------- */
+
+  /**
+   * Your own stall: pick up to eight things out of your bag, price them, and
+   * stand there. The goods stay in the bag - what is listed is a promise to
+   * sell, not an escrow - so closing the window never has to give anything
+   * back and nothing can be duplicated by a badly timed disconnect.
+   */
+  openStall(d) {
+    const wrap = el('div', 'grid');
+    const mine = d?.mine ?? null;
+    wrap.append(el('div', 'muted',
+      'ตั้งแผงได้เฉพาะในเมือง และต้องยืนเฝ้าเอง · ไม่มีค่าธรรมเนียมตอนตั้ง หักภาษี 5% เมื่อขายได้<br>' +
+      'ของยังอยู่ในกระเป๋าคุณจนกว่าจะมีคนซื้อ เดินออกจากเมืองหรือออกเกมแล้วแผงปิดเอง'));
+
+    if (mine) {
+      const list = el('div', 'grid');
+      for (const o of mine.offers) {
+        const row = el('div', 'row');
+        row.innerHTML = `<span>${esc(ITEMS[o.id]?.nameTh ?? o.id)} x${o.qty}</span><b>${o.price.toLocaleString()} AU</b>`;
+        list.append(row);
+      }
+      wrap.append(el('div', 'muted', `กำลังเปิดแผง: <b>${esc(mine.title)}</b>`), list);
+      const stop = el('button', 'btn', 'ปิดแผง');
+      stop.addEventListener('click', () => { this.game.net.send({ t: 'stallClose' }); this.close('stall'); });
+      wrap.append(stop);
+      return this.panel('stall', 'แผงขายของ', wrap);
+    }
+
+    const title = el('input');
+    title.type = 'text'; title.placeholder = 'ชื่อแผง'; title.maxLength = 24;
+    this.textInput(title);
+    wrap.append(title);
+
+    // One row per inventory slot the player ticks, with its own price.
+    const picked = new Map();
+    const rows = el('div', 'grid');
+    const inv = this.game.state.inventory ?? [];
+    inv.forEach((st, index) => {
+      if (!st) return;
+      const def = ITEMS[st.id];
+      if (!def) return;
+      const row = el('div', 'row');
+      const tick = el('input');
+      tick.type = 'checkbox';
+      const price = el('input');
+      price.type = 'number'; price.min = 1; price.value = Math.max(1, def.value ?? 1);
+      price.style.width = '110px';
+      this.textInput(price);
+      const sync = () => {
+        if (tick.checked) picked.set(index, { index, qty: st.qty ?? 1, price: Math.max(1, price.value | 0) });
+        else picked.delete(index);
+      };
+      tick.addEventListener('change', sync);
+      price.addEventListener('input', sync);
+      row.append(tick, el('span', '', `${def.nameTh} x${st.qty ?? 1}`), price);
+      rows.append(row);
+    });
+    wrap.append(rows);
+
+    const go = el('button', 'btn primary', 'เปิดแผง');
+    go.addEventListener('click', () => {
+      this.game.net.send({ t: 'stallOpen', title: title.value.trim(), offers: [...picked.values()] });
+    });
+    wrap.append(go);
+    return this.panel('stall', 'ตั้งแผงขายของ', wrap);
+  }
+
+  /** Somebody else's stall, as seen by whoever walked up to the sign. */
+  openStallView(view) {
+    const wrap = el('div', 'grid');
+    if (!view) {
+      wrap.append(el('div', 'muted', 'แผงนี้ปิดไปแล้ว'));
+      return this.panel('stallView', 'แผงขายของ', wrap);
+    }
+    wrap.append(el('div', 'muted', `<b>${esc(view.title)}</b> · ผู้ขาย ${esc(view.name)}`));
+    for (const o of view.offers) {
+      const row = el('div', 'row');
+      const label = `${esc(o.name)}${o.refine ? ` +${o.refine}` : ''} x${o.qty}`;
+      row.innerHTML = `<span>${label}</span><b>${o.price.toLocaleString()} AU</b>`;
+      if (o.gone || o.qty <= 0) {
+        row.append(el('span', 'muted', 'ขายไปแล้ว'));
+      } else {
+        const b = el('button', 'btn primary', 'ซื้อ');
+        b.addEventListener('click', () =>
+          this.game.net.send({ t: 'stallBuy', seller: view.seller, slot: o.slot, qty: o.qty }));
+        row.append(b);
+      }
+      wrap.append(row);
+    }
+    return this.panel('stallView', 'แผงขายของ', wrap);
   }
 
   openMarket(d) {

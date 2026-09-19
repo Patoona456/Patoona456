@@ -224,6 +224,12 @@ class Game {
       if (this.ui.openPanels.has('party')) this.ui.open('party', m);
       if (m.invite) this.ui.toast(`${m.invite.from} ชวนเข้าปาร์ตี้ — เปิดเมนูปาร์ตี้เพื่อตอบรับ`, 'warn');
     });
+    n.on('stall', (m) => {
+      if (m.view !== undefined) return m.view ? this.ui.open('stallView', m.view) : this.ui.close('stallView');
+      this.ui.lastStall = m;
+      if (m.why) this.ui.toast(m.why, 'info');
+      if (this.ui.openPanels.has('stall')) this.ui.open('stall', m);
+    });
     n.on('guildState', (m) => {
       this.ui.lastGuild = m;
       if (this.ui.openPanels.has('guild')) this.ui.open('guild', m);
@@ -251,6 +257,7 @@ class Game {
     const now = performance.now();
     this.state.ground = m.ground;
     this.state.fx = m.fx;
+    this.state.stalls = m.stalls ?? [];
     this.state.you = m.you;
 
     // entity interpolation buffers
@@ -742,7 +749,24 @@ class Game {
   interact() {
     const npc = this.nearest('n', 90);
     if (npc) return this.net.send({ t: 'npcInteract', id: npc.id });
+    // A stall answers to the same button an NPC shop does, because to the
+    // person walking up to it that is exactly what it is.
+    const stall = this.nearestStall(120);
+    if (stall) return this.net.send({ t: 'stallBrowse', seller: stall.id });
     this.pickupNearest();
+  }
+
+  nearestStall(range) {
+    const me = this.predicted;
+    let best = null, bestD = range;
+    for (const sg of this.state.stalls ?? []) {
+      if (sg.id === this.state.myId) continue;
+      const e = this.entities.get(sg.id);
+      if (!e) continue;
+      const d = Math.hypot(e.x - me.x, e.y - me.y);
+      if (d < bestD) { best = sg; bestD = d; }
+    }
+    return best;
   }
 
   pickupNearest() {

@@ -9,6 +9,7 @@ import * as Party from './party.js';
 import * as Trade from './trade.js';
 import * as Guild from './guild.js';
 import * as Siege from './siege.js';
+import * as Stall from './stall.js';
 
 export class World {
   constructor() {
@@ -24,7 +25,7 @@ export class World {
 
   start() {
     this.tickHandle = setInterval(() => this.tick(), TICK_MS);
-    this.sweeper = setInterval(() => { sweepMarket(); Guild.chargeUpkeep(this); Party.sweep(); }, 60000);
+    this.sweeper = setInterval(() => { sweepMarket(); Guild.chargeUpkeep(this); Party.sweep(); Stall.sweep(this); }, 60000);
     Party.sweep();      // clear out whatever a previous run left behind
     // a trade dies when either side walks off, dies or disconnects
     this.tradeSweeper = setInterval(() => Trade.sweep(this), 500);
@@ -81,6 +82,7 @@ export class World {
   removePlayer(p) {
     p.persist();
     Trade.cancel(this, p, 'อีกฝ่ายออกจากเกม');
+    Stall.close(p);                       // a shopkeeper who logged out is not a shop
     // the party is written down now, so logging off is not leaving it - a
     // group survives one member's connection dropping mid-dungeon
     p.zone?.removePlayer(p);
@@ -112,6 +114,7 @@ export class World {
   warpPlayer(p, mapId, x, y) {
     const target = this.zone(mapId);
     if (!target) return;
+    Stall.close(p, 'ย้ายแผนที่แล้ว');     // and neither is one that walked away
     p.zone?.removePlayer(p);
     p.record.map = mapId;
     p.x = x; p.y = y;
