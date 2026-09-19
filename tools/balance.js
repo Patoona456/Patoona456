@@ -18,6 +18,7 @@ import { MONSTERS } from '../shared/data/monsters.js';
 import { MAPS } from '../shared/data/maps.js';
 import { ITEMS, CRAFTING_INPUTS } from '../shared/data/items.js';
 import { JOBS } from '../shared/data/jobs.js';
+import { SKILLS, val, skillCost } from '../shared/data/skills.js';
 import { QUESTS } from '../shared/data/quests.js';
 import { baseExpToNext, deriveStats, expGapPenalty, npcSellPrice, rollDamage, statCost } from '../shared/formulas.js';
 import { pathToFileURL } from 'node:url';
@@ -33,11 +34,66 @@ export const HOURS_TO_CAP = { min: 12, max: 45 };
  * A believable character at a level: every stat point spent, and the best
  * gear the level can wear. Not an optimised build - an ordinary one.
  */
-export function character(level) {
+/**
+ * Which jobs a character of this level could actually be.
+ *
+ * Novice until the job change at 10, a first-tier job until 45, a second-tier
+ * one after that. Judging the game by a novice with a stick - which is what
+ * this tool did until it learned about skills - understates every fight in
+ * the back half of the game.
+ */
+export function jobsAt(level) {
+  const tier = level >= 45 ? 2 : level >= 10 ? 1 : 0;
+  const jobs = Object.values(JOBS).filter((j) => (j.tier ?? 0) === tier);
+  return jobs.length ? jobs : [JOBS.novice];
+}
+
+// Where each archetype puts its stat points. Not optimal builds - the obvious
+// ones, which is what most people play.
+const STAT_PLANS = {
+  vanguard: ['str', 'vit', 'str', 'agi', 'dex'],
+  bulwark: ['vit', 'str', 'vit', 'agi', 'dex'],
+  ravager: ['str', 'str', 'agi', 'vit', 'dex'],
+  wayfarer: ['agi', 'str', 'agi', 'dex', 'luk'],
+  nightblade: ['agi', 'str', 'luk', 'dex', 'agi'],
+  trickster: ['agi', 'dex', 'str', 'luk', 'vit'],
+  marksman: ['dex', 'agi', 'str', 'vit', 'luk'],
+  sharpshooter: ['dex', 'dex', 'agi', 'str', 'luk'],
+  beastcaller: ['dex', 'agi', 'vit', 'str', 'int'],
+  runecaster: ['int', 'dex', 'int', 'vit', 'agi'],
+  arcanist: ['int', 'int', 'dex', 'vit', 'agi'],
+  stormsinger: ['int', 'dex', 'int', 'agi', 'vit'],
+  warden: ['int', 'vit', 'dex', 'agi', 'str'],
+  hierophant: ['int', 'int', 'vit', 'dex', 'agi'],
+  oathkeeper: ['vit', 'int', 'str', 'dex', 'agi'],
+  novice: ['str', 'agi', 'str', 'vit', 'dex'],
+};
+
+/** Every skill this job can use, including what it inherited. */
+export function skillsOf(job) {
+  const out = [];
+  let j = job;
+  const seen = new Set();
+  while (j) {
+    for (const id of j.skills ?? []) if (!seen.has(id)) { seen.add(id); out.push(id); }
+    j = j.from ? JOBS[j.from] : (j.tier ? JOBS.novice : null);
+    if (j === JOBS.novice && seen.has('first_aid')) break;
+  }
+  for (const id of JOBS.novice?.skills ?? []) if (!seen.has(id)) { seen.add(id); out.push(id); }
+  return out.map((id) => SKILLS[id]).filter(Boolean);
+}
+
+/**
+ * A believable character at a level: every stat point spent the way that job
+ * spends them, the best gear the level can wear, and every skill point put
+ * into the attacks it would actually press.
+ */
+export function character(level, jobId) {
+  const job = JOBS[jobId] ?? jobsAt(level)[0];
   let points = 0;
   for (let l = 2; l <= level; l++) points += 3 + Math.floor(l / 10);
   const base = { str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 };
-  const order = ['str', 'agi', 'str', 'vit', 'dex'];
+  const order = STAT_PLANS[job.id] ?? STAT_PLANS.novice;
   let i = 0;
   while (points > 0) {
     const stat = order[i++ % order.length];
@@ -46,38 +102,61 @@ export function character(level) {
     base[stat] += 1;
     points -= cost;
   }
+
+  const allowed = job.weapons ? new Set(job.weapons) : null;
   const affordable = (slot) => Object.values(ITEMS)
     .filter((it) => it.slot === slot && (it.level ?? 1) <= level && it.type !== 'ammo')
+    .filter((it) => slot !== 'weapon' || !allowed || allowed.has(it.wclass))
     .sort((a, b) => (b.level ?? 0) - (a.level ?? 0));
-  const gear = { atk: 0, def: 0, hp: 0 };
+  // Gear carries more than armour points: a rod's whole contribution is matk,
+  // and most mid-tier pieces hand out stat points. Leaving both out made the
+  // report read every caster as several times worse than it is.
+  const gear = { atk: 0, matk: 0, def: 0, mdef: 0, hp: 0, sp: 0 };
+  const addStats = (g) => {
+    for (const [k, v] of Object.entries(g.stats ?? {})) gear[k] = (gear[k] ?? 0) + v;
+  };
   for (const slot of ['head', 'torso', 'legs', 'feet', 'hands']) {
     const g = affordable(slot)[0];
-    if (g) { gear.def += g.def ?? 0; gear.hp += g.hp ?? 0; }
+    if (g) {
+      gear.def += g.def ?? 0; gear.mdef += g.mdef ?? 0;
+      gear.hp += g.hp ?? 0; gear.sp += g.sp ?? 0;
+      addStats(g);
+    }
   }
-  const stats = { ...base, level, jobLevel: Math.min(50, level) };
-  const job = JOBS.novice ?? { hpMod: 1, spMod: 1 };
+  const jobLevel = Math.min(50, Math.max(1, level - 5));
+  const stats = { ...base, level, jobLevel };
 
-  // A player at this level owns more than one weapon. Keeping the best of each
-  // element is what anyone actually does - the element table swings damage by
-  // up to 7x, so judging a monster against a single weapon says nothing about
-  // whether that monster is worth fighting.
+  // Skill points: one per job level, plus what the job change hands over.
+  // Spread over the attacks this job would press, best-first.
+  const attacks = skillsOf(job).filter((sk) => sk.kind === 'damage' || sk.kind === 'aoe');
+  const learned = new Map();
+  let sp = jobLevel + 2;
+  for (const sk of attacks) {
+    const take = Math.min(sk.maxLevel ?? 5, Math.max(0, sp));
+    if (take > 0) { learned.set(sk.id, take); sp -= take; }
+  }
+
   const byElement = new Map();
   for (const w of affordable('weapon')) {
     const el = w.element ?? 'neutral';
     if (!byElement.has(el)) byElement.set(el, w);
   }
-  const weapons = [...byElement.values()].map((w) => ({
-    item: w,
-    delay: w.delay ?? 1,
-    derived: { ...deriveStats(stats, job, { ...gear, atk: w.atk ?? 0 }), element: 'neutral', weaponElement: w.element ?? 'neutral' },
-  }));
+  const weapons = [...byElement.values()].map((w) => {
+    const g = { ...gear, atk: gear.atk + (w.atk ?? 0), matk: gear.matk + (w.matk ?? 0) };
+    for (const [k, v] of Object.entries(w.stats ?? {})) g[k] = (g[k] ?? 0) + v;
+    return {
+      item: w,
+      delay: w.delay ?? 1,
+      derived: { ...deriveStats(stats, job, g), element: 'neutral', weaponElement: w.element ?? 'neutral' },
+    };
+  });
   if (!weapons.length) {
     weapons.push({ item: null, delay: 1, derived: { ...deriveStats(stats, job, gear), element: 'neutral', weaponElement: 'neutral' } });
   }
-  const main = weapons.reduce((a, b) => ((b.derived.atk ?? 0) > (a.derived.atk ?? 0) ? b : a));
+  const power = (x) => Math.max(x.derived.atk ?? 0, x.derived.matk ?? 0);
+  const main = weapons.reduce((a, b) => (power(b) > power(a) ? b : a));
   return {
-    level,
-    weapons,
+    level, job, weapons, learned, attacks,
     atk: main.derived.atk,
     weapon: main.item?.nameTh ?? '(มือเปล่า)',
     delay: main.delay,
@@ -112,8 +191,86 @@ export function defenderOf(mob) {
   };
 }
 
-/** Average seconds to kill one of these, with the best weapon on the belt. */
-export function killSeconds(c, mob, samples = 2000) {
+/**
+ * Damage per second for one weapon against one monster, playing the way a
+ * person plays: press whatever attack is off cooldown and affordable, swing
+ * the weapon in the gaps, and run dry on SP if the rotation is too greedy.
+ *
+ * Auto-attacks alone are not what the game looks like after level ten, and a
+ * tool that measured only auto-attacks was quietly tuning the whole bestiary
+ * against a novice with a stick.
+ */
+function rotationDps(c, w, d, seconds = 90) {
+  const a = w.derived;
+  const swing = Math.max(0.2, w.delay * (a.aspdFactor ?? 1));
+  const usable = (c.attacks ?? [])
+    .filter((sk) => c.learned?.has(sk.id))
+    .filter((sk) => !sk.weapon || !w.item || sk.weapon.includes(w.item.wclass))
+    .map((sk) => {
+      const lvl = c.learned.get(sk.id);
+      return {
+        sk, lvl,
+        sp: skillCost(sk, lvl),
+        cd: Math.max(0.5, val(sk.cooldown, lvl)),
+        cast: (sk.castTime ?? 0) * (a.castFactor ?? 1),
+        ratio: val(sk.ratio, lvl),
+        hits: Math.max(1, Math.round(val(sk.hits, lvl) || 1)),
+        magic: !!sk.magic,
+        element: sk.element ?? (sk.magic ? 'neutral' : (a.weaponElement ?? 'neutral')),
+        pierce: sk.pierce ?? 0,
+        ignoreDef: !!sk.ignoreDef,
+        ready: 0,
+      };
+    })
+    .sort((x, y) => (y.ratio * y.hits) - (x.ratio * x.hits));
+
+  const strike = (o) => {
+    const r = rollDamage(a, d, o);
+    return r.damage * (1 + (o.pierce ?? 0));
+  };
+
+  let t = 0, nextSwing = 0, damage = 0;
+  let sp = a.maxSp ?? 0;
+  const regenEvery = 4, regenPer = (a.spRegen ?? 1);      // in combat, not doubled
+  let nextRegen = regenEvery;
+
+  while (t < seconds) {
+    const pick = usable.find((u) => u.ready <= t && u.sp <= sp);
+    const tNext = Math.min(
+      pick ? t : Infinity,
+      nextSwing,
+      nextRegen,
+      ...usable.filter((u) => u.ready > t && u.sp <= sp).map((u) => u.ready),
+    );
+    if (pick) {
+      sp -= pick.sp;
+      t += pick.cast;
+      damage += strike({
+        ratio: pick.ratio, magic: pick.magic, element: pick.element,
+        hits: pick.hits, ignoreDef: pick.ignoreDef, pierce: pick.pierce,
+        alwaysHit: pick.magic,
+      });
+      pick.ready = t + pick.cd;
+      nextSwing = Math.max(nextSwing, t + swing * 0.5);   // a cast delays the swing
+      continue;
+    }
+    if (nextSwing <= tNext) {
+      t = Math.max(t, nextSwing);
+      damage += strike({});
+      nextSwing = t + swing;
+      continue;
+    }
+    t = Math.max(t + 0.05, Math.min(tNext, t + 2));
+    while (nextRegen <= t) { sp = Math.min(a.maxSp ?? 0, sp + regenPer); nextRegen += regenEvery; }
+  }
+  return damage / seconds;
+}
+
+/**
+ * Average seconds to kill one of these, with the best weapon on the belt and
+ * the skills this character has learned.
+ */
+export function killSeconds(c, mob, samples = 800) {
   const d = defenderOf(mob);
   return sampled(() => {
     let best = Infinity;
@@ -121,8 +278,11 @@ export function killSeconds(c, mob, samples = 2000) {
       let total = 0;
       for (let i = 0; i < samples; i++) total += rollDamage(w.derived, d).damage;
       const perSwing = total / samples;
-      if (perSwing <= 1) continue;
-      const secs = (mob.hp / perSwing) * w.delay * (w.derived.aspdFactor ?? 1);
+      const swing = Math.max(0.2, w.delay * (w.derived.aspdFactor ?? 1));
+      let dps = perSwing / swing;
+      if (c.learned?.size) dps = Math.max(dps, rotationDps(c, w, d));
+      if (dps <= 0.2) continue;
+      const secs = mob.hp / dps;
       if (secs < best) best = secs;
     }
     return best;
@@ -162,6 +322,31 @@ export function survivable(c, mob, secs) {
   return dps * secs * 3 <= sustain;
 }
 
+/** One built character per job available at this level. Cached: building a
+ *  character walks the whole item table, and the reports ask constantly. */
+const charCache = new Map();
+export function charsAt(level) {
+  if (!charCache.has(level)) charCache.set(level, jobsAt(level).map((j) => character(level, j.id)));
+  return charCache.get(level);
+}
+
+/**
+ * The ordinary experience of fighting this monster at this level.
+ *
+ * Ten second-tier jobs kill the same monster at wildly different speeds, and
+ * balancing against any one of them balances against nobody. The median job
+ * is the one the content has to work for; the spread is what tells you a job
+ * is broken, and `npm run balance -- jobs` prints it.
+ */
+export function typical(level, mob) {
+  const rated = charsAt(level)
+    .map((c) => ({ c, secs: killSeconds(c, mob) }))
+    .filter((r) => isFinite(r.secs))
+    .sort((a, b) => a.secs - b.secs);
+  if (!rated.length) return null;
+  return rated[Math.floor(rated.length / 2)];
+}
+
 /** Monsters a player can reach without a party. */
 export function soloMonsters() {
   const ids = new Set();
@@ -174,16 +359,15 @@ export function soloMonsters() {
 
 /** The fastest experience a solo player can earn at this level, and on what. */
 export function bestAt(level, pool = soloMonsters()) {
-  const c = character(level);
   let best = null;
   for (const mob of pool) {
     if (mob.level - level > 14) continue;             // out of reach solo
-    const secs = killSeconds(c, mob);
-    if (!isFinite(secs)) continue;
-    if (!survivable(c, mob, secs)) continue;
+    const t = typical(level, mob);
+    if (!t) continue;
+    if (!survivable(t.c, mob, t.secs)) continue;
     const penalty = expGapPenalty(level, mob.level);  // the level-gap EXP cut
-    const rate = (mob.exp * penalty) / (secs + TRAVEL_SECONDS);
-    if (!best || rate > best.rate) best = { mob, secs, rate, penalty, c };
+    const rate = (mob.exp * penalty) / (t.secs + TRAVEL_SECONDS);
+    if (!best || rate > best.rate) best = { mob, secs: t.secs, rate, penalty, c: t.c };
   }
   return best;
 }
@@ -257,19 +441,20 @@ const num = (s, n) => String(s).padStart(n);
 function kills() {
   console.log('\n=== เวลาตีมอนที่เลเวลใกล้เคียงกัน ===');
   console.log('เป้า: ' + KILL_SECONDS.min + '-' + KILL_SECONDS.max + ' วินาทีต่อตัว ตลอดทั้งเกม\n');
-  console.log('เลเวล   ATK  อาวุธ                  มอน                       HP   วิ/ตัว  EXP/วิ');
+  console.log('เลเวล   ATK  อาชีพ(ค่ากลาง)  มอน                       HP   วิ/ตัว  EXP/วิ');
   const pool = soloMonsters();
   for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
-    const c = character(lv);
     const near = pool.filter((m) => Math.abs(m.level - lv) <= 4);
     if (!near.length) {
-      console.log(`${num(lv, 5)} ${num(c.atk, 5)}  ${pad(c.weapon, 20)} — ไม่มีมอนเลเวลนี้ในโซนเดี่ยว —`);
+      console.log(`${num(lv, 5)} — ไม่มีมอนเลเวลนี้ในโซนเดี่ยว —`);
       continue;
     }
-    const best = near.map((m) => ({ m, s: killSeconds(c, m) }))
-      .sort((a, b) => (b.m.exp / b.s) - (a.m.exp / a.s))[0];
-    const flag = best.s > KILL_SECONDS.max ? '  << ช้าเกิน' : best.s < KILL_SECONDS.min ? '  << เร็วเกิน' : '';
-    console.log(`${num(lv, 5)} ${num(c.atk, 5)}  ${pad(c.weapon, 20)} ${pad(best.m.nameTh, 22)} ${num(best.m.hp, 6)} ${num(best.s.toFixed(1), 7)} ${num((best.m.exp / best.s).toFixed(0), 7)}${flag}`);
+    const best = near.map((m) => ({ m, t: typical(lv, m) })).filter((x) => x.t)
+      .sort((a, b) => (b.m.exp / b.t.secs) - (a.m.exp / a.t.secs))[0];
+    if (!best) continue;
+    const { secs } = best.t, c = best.t.c;
+    const flag = secs > KILL_SECONDS.max ? '  << ช้าเกิน' : secs < KILL_SECONDS.min ? '  << เร็วเกิน' : '';
+    console.log(`${num(lv, 5)} ${num(c.atk, 5)}  ${pad(c.job.nameTh, 14)} ${pad(best.m.nameTh, 22)} ${num(best.m.hp, 6)} ${num(secs.toFixed(1), 7)} ${num((best.m.exp / secs).toFixed(0), 7)}${flag}`);
   }
 }
 
@@ -282,12 +467,11 @@ function zones() {
       .map((x) => MONSTERS[x]).filter((m) => m && !m.boss);
     if (spawns.length < 2) continue;
     const mid = Math.round(spawns.reduce((n, m) => n + m.level, 0) / spawns.length);
-    const c = character(mid);
     // A party map is fought by a party. Judging its monsters by one player's
     // damage made the dungeon's designed damage sponges look like mistakes.
     const hands = map.party ? 4 : 1;
     const rated = spawns.map((m) => ({
-      m, rate: m.exp / (killSeconds(c, m) / hands),
+      m, rate: m.exp / ((typical(Math.min(LEVEL_CAP, mid), m)?.secs ?? Infinity) / hands),
       // Ambient low-level spawns are scenery on purpose: a level-4 bat in a
       // level-12 swamp is not a monster anyone was meant to farm at 12, and
       // neither is the tutorial slime once you have left the first field.
@@ -342,6 +526,29 @@ function curve() {
 
 // Only print when run directly: the test suite and the tuning scripts import
 // the helpers above and must not get a report dumped into their output.
+function jobs() {
+  console.log('\n=== แต่ละอาชีพฆ่าของในเลเวลตัวเองได้เร็วแค่ไหน ===');
+  console.log('ตัวเลขคือวินาทีต่อมอน เทียบกันในเลเวลเดียวกัน');
+  console.log('ถ้าช่องว่างระหว่างเร็วสุดกับช้าสุดเกิน 3 เท่า แปลว่ามีอาชีพที่เล่นไม่ได้จริง\n');
+  const pool = soloMonsters();
+  for (const lv of [10, 20, 30, 40, 50, 60, 70]) {
+    const near = pool.filter((m) => Math.abs(m.level - lv) <= 4);
+    if (!near.length) continue;
+    const rows = charsAt(lv).map((c) => {
+      const times = near.map((m) => killSeconds(c, m)).filter(isFinite).sort((a, b) => a - b);
+      return { c, secs: times.length ? times[0] : Infinity };
+    }).sort((a, b) => a.secs - b.secs);
+    const fastest = rows[0].secs;
+    const slowest = rows[rows.length - 1].secs;
+    console.log(`เลเวล ${lv}  (ช่องว่าง ${(slowest / fastest).toFixed(1)} เท่า)${slowest / fastest > 3 ? '  << กว้างเกินไป' : ''}`);
+    for (const r of rows) {
+      const bar = '#'.repeat(Math.max(1, Math.round(18 * fastest / r.secs)));
+      console.log(`   ${pad(r.c.job.nameTh, 16)} ${num(r.secs.toFixed(1) + 's', 8)}  ${bar}`);
+    }
+    console.log('');
+  }
+}
+
 function money() {
   console.log('\n=== เงินต่อชั่วโมง ===');
   console.log('docs/ECONOMY.md สัญญาว่าเลเวล 10-20 ได้สุทธิหลักร้อย AU/ชม.');
@@ -371,4 +578,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (!what || what === 'zones') zones();
   if (!what || what === 'curve') curve();
   if (!what || what === 'money') money();
+  if (!what || what === 'jobs') jobs();
 }

@@ -100,7 +100,12 @@ export function deriveStats(c, job, gear = {}) {
   // economy permanently in the red. Resting is meant to be the free option
   // that costs time; potions are what you buy to skip the sitting down.
   const hpRegen = Math.max(1, Math.floor(maxHp / 35 + s.vit / 5));
-  const spRegen = Math.max(1, Math.floor(maxSp / 90 + s.int / 6));
+  // SP is what makes a rotation a rotation. At a ninetieth of the pool a tick
+  // a level-70 character regained three quarters of a point a second against
+  // skills costing twenty to seventy, so every job in the game opened with
+  // its skills and then auto-attacked - which is exactly how the balance
+  // report read the whole bestiary before it learned about skills at all.
+  const spRegen = Math.max(1, Math.floor(maxSp / 18 + s.int / 4));
 
   return {
     ...s, maxHp, maxSp, atk, matk, def, mdef, softDef, softMdef,

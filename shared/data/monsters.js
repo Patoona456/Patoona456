@@ -31,7 +31,7 @@ export const MONSTERS = {
   }),
   ember_wisp: M({
     id: 'ember_wisp', name: 'Ember Wisp', nameTh: 'ดวงไฟเร่ร่อน', level: 6,
-    hp: 70, atk: 20, matk: 24, def: 3, mdef: 14, hit: 65, flee: 84, exp: 26, jobExp: 16,
+    hp: 80, atk: 20, matk: 24, def: 3, mdef: 14, hit: 65, flee: 84, exp: 24, jobExp: 15,
     element: 'ember', race: 'spirit', size: 'small', speed: 96, attackRange: 130,
     // passive in the starter field: new characters should choose their fights
     attackDelay: 2.0, aggressive: false, aggroRange: 170, respawn: 20,
@@ -45,7 +45,7 @@ export const MONSTERS = {
   }),
   bristle_boar: M({
     id: 'bristle_boar', name: 'Bristle Boar', nameTh: 'หมูป่าขนแข็ง', level: 7,
-    hp: 110, atk: 30, def: 7, mdef: 4, hit: 61, flee: 75, exp: 38, jobExp: 24,
+    hp: 130, atk: 30, def: 7, mdef: 4, hit: 61, flee: 75, exp: 46, jobExp: 29,
     element: 'verdant', race: 'beast', speed: 66, aggressive: true,
     aggroRange: 160, attackDelay: 1.8, respawn: 20,
     sprite: { kind: 'blob', shape: 'spiky', color: '#8a6a4a', scale: 0.95 },
@@ -58,7 +58,7 @@ export const MONSTERS = {
   }),
   husk: M({
     id: 'husk', name: 'Ashen Husk', nameTh: 'ซากเถ้า', level: 10,
-    hp: 170, atk: 38, def: 9, mdef: 6, hit: 62, flee: 77, exp: 84, jobExp: 52,
+    hp: 150, atk: 38, def: 9, mdef: 6, hit: 62, flee: 77, exp: 80, jobExp: 50,
     element: 'shade', race: 'undead', speed: 58, aggressive: true, aggroRange: 190, respawn: 22,
     sprite: { kind: 'sheet', key: 'ghoul' },
     drops: [
@@ -71,7 +71,7 @@ export const MONSTERS = {
   }),
   bandit_scout: M({
     id: 'bandit_scout', name: 'Bandit Scout', nameTh: 'โจรสอดแนม', level: 14,
-    hp: 160, atk: 43, def: 14, mdef: 8, hit: 70, flee: 86, exp: 144, jobExp: 89,
+    hp: 260, atk: 43, def: 14, mdef: 8, hit: 70, flee: 86, exp: 144, jobExp: 89,
     race: 'human', speed: 88, aggressive: true, aggroRange: 210, attackDelay: 1.35, respawn: 25,
     sprite: {
       kind: 'compose', body: 'male/tanned',
@@ -89,7 +89,7 @@ export const MONSTERS = {
   }),
   gravebound: M({
     id: 'gravebound', name: 'Gravebound', nameTh: 'โครงกระดูกพันธนาการ', level: 20,
-    hp: 390, atk: 62, def: 22, mdef: 12, hit: 71, flee: 87, exp: 264, jobExp: 164,
+    hp: 440, atk: 62, def: 22, mdef: 12, hit: 71, flee: 87, exp: 258, jobExp: 160,
     element: 'shade', race: 'undead', speed: 66, aggressive: true, aggroRange: 200, respawn: 28,
     sprite: { kind: 'sheet', key: 'skeleton' },
     drops: [
@@ -103,7 +103,7 @@ export const MONSTERS = {
   }),
   orc_scout: M({
     id: 'orc_scout', name: 'Orc Scout', nameTh: 'ออร์คลูกไล่', level: 27,
-    hp: 1060, atk: 73, def: 30, mdef: 14, hit: 79, flee: 89, exp: 546, jobExp: 339,
+    hp: 1170, atk: 73, def: 30, mdef: 14, hit: 79, flee: 89, exp: 558, jobExp: 346,
     race: 'demon', size: 'large', speed: 76, aggressive: true, aggroRange: 220,
     attackDelay: 1.7, respawn: 30,
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'spear' } },
@@ -117,7 +117,7 @@ export const MONSTERS = {
   }),
   dark_raider: M({
     id: 'dark_raider', name: 'Dusk Raider', nameTh: 'นักบุกยามพลบ', level: 34,
-    hp: 330, atk: 78, matk: 45, def: 34, mdef: 30, hit: 88, flee: 107, exp: 610, jobExp: 378,
+    hp: 770, atk: 78, matk: 45, def: 34, mdef: 30, hit: 88, flee: 107, exp: 592, jobExp: 367,
     element: 'shade', race: 'human', speed: 104, aggressive: true, aggroRange: 240,
     attackDelay: 1.15, respawn: 35,
     sprite: {
@@ -135,7 +135,7 @@ export const MONSTERS = {
   }),
   frost_husk: M({
     id: 'frost_husk', name: 'Rime Husk', nameTh: 'ซากเยือกแข็ง', level: 42,
-    hp: 3150, atk: 154, matk: 118, def: 42, mdef: 48, hit: 89, flee: 105, exp: 786, jobExp: 487,
+    hp: 3500, atk: 154, matk: 118, def: 42, mdef: 48, hit: 89, flee: 105, exp: 808, jobExp: 501,
     element: 'frost', race: 'undead', speed: 62, aggressive: true, aggroRange: 210, respawn: 40,
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#8fd7ff' },
     drops: [
@@ -149,7 +149,7 @@ export const MONSTERS = {
   }),
   crimson_orc: M({
     id: 'crimson_orc', name: 'Crimson Orc', nameTh: 'ออร์คเลือดเดือด', level: 50,
-    hp: 2460, atk: 122, def: 54, mdef: 34, hit: 98, flee: 111, exp: 1370, jobExp: 849,
+    hp: 3350, atk: 122, def: 54, mdef: 34, hit: 98, flee: 111, exp: 1400, jobExp: 868,
     element: 'ember', race: 'demon', size: 'large', speed: 84, aggressive: true,
     aggroRange: 260, attackDelay: 1.5, respawn: 45,
     sprite: { kind: 'sheet', key: 'red_orc', layers: { weapon: 'longspear' }, scale: 1.1 },
@@ -165,7 +165,7 @@ export const MONSTERS = {
 
   dusk_bat: M({
     id: 'dusk_bat', name: 'Dusk Flitter', nameTh: 'ค้างคาวสนธยา', level: 4,
-    hp: 40, atk: 16, def: 2, mdef: 6, hit: 67, flee: 90, exp: 14, jobExp: 9,
+    hp: 50, atk: 16, def: 2, mdef: 6, hit: 67, flee: 90, exp: 14, jobExp: 9,
     element: 'shade', race: 'beast', size: 'small', speed: 128, respawn: 14,
     aggressive: true, aggroRange: 140, attackDelay: 1.2,
     sprite: { kind: 'blob', color: '#6b5a8c', scale: 0.62, float: true },
@@ -178,7 +178,7 @@ export const MONSTERS = {
   }),
   thistle_sprite: M({
     id: 'thistle_sprite', name: 'Thistle Sprite', nameTh: 'ภูตหนาม', level: 9,
-    hp: 160, atk: 30, matk: 44, def: 6, mdef: 22, hit: 63, flee: 82, exp: 46, jobExp: 29,
+    hp: 100, atk: 30, matk: 44, def: 6, mdef: 22, hit: 63, flee: 82, exp: 50, jobExp: 31,
     element: 'verdant', race: 'plant', size: 'small', speed: 72, attackRange: 140,
     attackDelay: 2.2, respawn: 24,
     sprite: { kind: 'blob', color: '#8ad06a', glow: true, scale: 0.78, float: true },
@@ -193,7 +193,7 @@ export const MONSTERS = {
   }),
   marsh_lurker: M({
     id: 'marsh_lurker', name: 'Marsh Lurker', nameTh: 'ผู้ซุ่มหนองน้ำ', level: 17,
-    hp: 360, atk: 59, def: 18, mdef: 10, hit: 69, flee: 84, exp: 196, jobExp: 122,
+    hp: 320, atk: 59, def: 18, mdef: 10, hit: 69, flee: 84, exp: 196, jobExp: 122,
     element: 'verdant', race: 'human', speed: 64, aggressive: true, aggroRange: 120,
     attackDelay: 1.5, respawn: 26,
     sprite: {
@@ -210,7 +210,7 @@ export const MONSTERS = {
   }),
   bone_archer: M({
     id: 'bone_archer', name: 'Bone Archer', nameTh: 'นักธนูกระดูก', level: 24,
-    hp: 520, atk: 95, def: 16, mdef: 14, hit: 75, flee: 91, exp: 346, jobExp: 215,
+    hp: 610, atk: 95, def: 16, mdef: 14, hit: 75, flee: 91, exp: 344, jobExp: 213,
     element: 'shade', race: 'undead', speed: 70, aggressive: true, aggroRange: 250,
     attackRange: 170, attackDelay: 2.0, respawn: 30,
     sprite: { kind: 'sheet', key: 'skeleton', layers: { weapon: 'bow' } },
@@ -224,7 +224,7 @@ export const MONSTERS = {
   }),
   crypt_warden: M({
     id: 'crypt_warden', name: 'Crypt Warden', nameTh: 'ผู้เฝ้าสุสาน', level: 31,
-    hp: 670, atk: 95, def: 42, mdef: 25, hit: 80, flee: 89, exp: 714, jobExp: 443,
+    hp: 1020, atk: 95, def: 42, mdef: 25, hit: 80, flee: 89, exp: 690, jobExp: 428,
     element: 'shade', race: 'undead', size: 'large', speed: 62, aggressive: true,
     aggroRange: 210, attackRange: 62, attackDelay: 2.1, respawn: 48,
     sprite: {
@@ -244,7 +244,7 @@ export const MONSTERS = {
   }),
   orc_shaman: M({
     id: 'orc_shaman', name: 'Orc Shaman', nameTh: 'หมอผีออร์ค', level: 33,
-    hp: 600, atk: 65, matk: 126, def: 24, mdef: 46, hit: 82, flee: 99, exp: 558, jobExp: 346,
+    hp: 1090, atk: 65, matk: 126, def: 24, mdef: 46, hit: 82, flee: 99, exp: 560, jobExp: 347,
     element: 'ember', race: 'demon', speed: 72, aggressive: true, aggroRange: 250,
     attackRange: 160, attackDelay: 2.4, respawn: 36,
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'wand', head: 'cloth_hood' } },
@@ -260,7 +260,7 @@ export const MONSTERS = {
   }),
   frost_wight: M({
     id: 'frost_wight', name: 'Frost Wight', nameTh: 'ภูตเยือกแข็ง', level: 46,
-    hp: 3330, atk: 127, matk: 136, def: 46, mdef: 62, hit: 97, flee: 115, exp: 932, jobExp: 578,
+    hp: 3760, atk: 127, matk: 136, def: 46, mdef: 62, hit: 97, flee: 115, exp: 922, jobExp: 572,
     element: 'frost', race: 'undead', speed: 96, aggressive: true, aggroRange: 240,
     attackRange: 150, attackDelay: 1.8, respawn: 44,
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#cfe8ff', scale: 1.05, layers: { weapon: 'wand' } },
@@ -296,7 +296,7 @@ export const MONSTERS = {
   }),
   fen_spore: M({
     id: 'fen_spore', name: 'Fen Spore', nameTh: 'สปอร์หนองน้ำ', level: 16,
-    hp: 280, atk: 44, matk: 78, def: 10, mdef: 26, hit: 65, flee: 83, exp: 130, jobExp: 81,
+    hp: 250, atk: 44, matk: 78, def: 10, mdef: 26, hit: 65, flee: 83, exp: 126, jobExp: 78,
     element: 'verdant', race: 'plant', size: 'small', speed: 44, respawn: 22,
     attackRange: 120, attackDelay: 2.1,
     sprite: { kind: 'blob', shape: 'floater', color: '#9ad06a', float: true, scale: 0.9 },
@@ -308,7 +308,7 @@ export const MONSTERS = {
   }),
   grave_moth: M({
     id: 'grave_moth', name: 'Grave Moth', nameTh: 'ผีเสื้อสุสาน', level: 22,
-    hp: 280, atk: 67, def: 16, mdef: 34, hit: 82, flee: 105, exp: 226, jobExp: 140,
+    hp: 320, atk: 67, def: 16, mdef: 34, hit: 82, flee: 105, exp: 216, jobExp: 134,
     element: 'shade', race: 'beast', size: 'small', speed: 128, aggressive: true,
     aggroRange: 210, attackDelay: 1.2, respawn: 26,
     sprite: { kind: 'blob', shape: 'floater', color: '#7a6a9c', float: true, scale: 0.85 },
@@ -320,7 +320,7 @@ export const MONSTERS = {
   }),
   tomb_robber: M({
     id: 'tomb_robber', name: 'Tomb Robber', nameTh: 'โจรปล้นสุสาน', level: 26,
-    hp: 710, atk: 64, def: 26, mdef: 18, hit: 81, flee: 99, exp: 390, jobExp: 242,
+    hp: 870, atk: 64, def: 26, mdef: 18, hit: 81, flee: 99, exp: 392, jobExp: 243,
     element: 'neutral', race: 'human', speed: 100, aggressive: true,
     aggroRange: 230, attackDelay: 1.3, respawn: 34,
     sprite: { kind: 'compose', body: 'male/tanned', scale: 1,
@@ -334,7 +334,7 @@ export const MONSTERS = {
   }),
   cairn_wisp: M({
     id: 'cairn_wisp', name: 'Cairn Wisp', nameTh: 'ดวงไฟกองหิน', level: 30,
-    hp: 400, atk: 53, matk: 107, def: 14, mdef: 60, hit: 83, flee: 104, exp: 372, jobExp: 231,
+    hp: 570, atk: 53, matk: 107, def: 14, mdef: 60, hit: 83, flee: 104, exp: 350, jobExp: 217,
     element: 'shade', race: 'undead', size: 'small', speed: 92, aggressive: true,
     aggroRange: 250, attackRange: 150, attackDelay: 1.9, respawn: 30,
     sprite: { kind: 'blob', shape: 'wisp', color: '#8f6ad0', glow: true, float: true, scale: 0.9 },
@@ -347,7 +347,7 @@ export const MONSTERS = {
   }),
   ridge_hound: M({
     id: 'ridge_hound', name: 'Ridge Hound', nameTh: 'หมาป่าสันเขา', level: 36,
-    hp: 540, atk: 77, def: 34, mdef: 22, hit: 94, flee: 114, exp: 628, jobExp: 389,
+    hp: 1110, atk: 77, def: 34, mdef: 22, hit: 94, flee: 114, exp: 644, jobExp: 399,
     element: 'storm', race: 'beast', speed: 138, aggressive: true,
     aggroRange: 280, attackDelay: 1.0, respawn: 34,
     sprite: { kind: 'blob', shape: 'crawler', color: '#8a6a4a', dark: '#4a3424', scale: 1.05 },
@@ -360,7 +360,7 @@ export const MONSTERS = {
   }),
   stone_grub: M({
     id: 'stone_grub', name: 'Stone Grub', nameTh: 'หนอนหิน', level: 39,
-    hp: 1770, atk: 168, def: 49, mdef: 23, hit: 83, flee: 94, exp: 980, jobExp: 608,
+    hp: 1830, atk: 168, def: 49, mdef: 23, hit: 83, flee: 94, exp: 976, jobExp: 605,
     element: 'neutral', race: 'beast', size: 'large', speed: 42, respawn: 46,
     attackDelay: 2.3,
     sprite: { kind: 'blob', shape: 'spiky', color: '#9a8c74', dark: '#5c5342', scale: 1.25 },
@@ -373,7 +373,7 @@ export const MONSTERS = {
   }),
   rime_shard: M({
     id: 'rime_shard', name: 'Rime Shard', nameTh: 'สะเก็ดเหมันต์', level: 43,
-    hp: 3250, atk: 97, matk: 127, def: 34, mdef: 78, hit: 92, flee: 111, exp: 850, jobExp: 527,
+    hp: 3540, atk: 97, matk: 127, def: 34, mdef: 78, hit: 92, flee: 111, exp: 836, jobExp: 518,
     element: 'frost', race: 'formless', speed: 86, aggressive: true,
     aggroRange: 250, attackRange: 140, attackDelay: 1.8, respawn: 40,
     sprite: { kind: 'blob', shape: 'shard', color: '#a8dcff', dark: '#5b93c4', float: true, glow: true, scale: 1.05 },
@@ -386,7 +386,7 @@ export const MONSTERS = {
   }),
   glacier_maw: M({
     id: 'glacier_maw', name: 'Glacier Maw', nameTh: 'เขี้ยวธารน้ำแข็ง', level: 48,
-    hp: 5080, atk: 165, def: 57, mdef: 61, hit: 95, flee: 107, exp: 1306, jobExp: 810,
+    hp: 5270, atk: 165, def: 57, mdef: 61, hit: 95, flee: 107, exp: 1320, jobExp: 818,
     element: 'frost', race: 'beast', size: 'large', speed: 74, aggressive: true,
     aggroRange: 240, attackDelay: 2.0, respawn: 56,
     sprite: { kind: 'blob', shape: 'spiky', color: '#7fb8d8', dark: '#35607c', scale: 1.35 },
@@ -399,7 +399,7 @@ export const MONSTERS = {
   }),
   hoar_stalker: M({
     id: 'hoar_stalker', name: 'Hoar Stalker', nameTh: 'นักล่าเกล็ดน้ำแข็ง', level: 52,
-    hp: 3690, atk: 127, def: 46, mdef: 52, hit: 107, flee: 128, exp: 1110, jobExp: 688,
+    hp: 4050, atk: 127, def: 46, mdef: 52, hit: 107, flee: 128, exp: 1096, jobExp: 680,
     element: 'frost', race: 'human', speed: 132, aggressive: true,
     aggroRange: 300, attackDelay: 1.05, respawn: 52,
     sprite: { kind: 'compose', body: 'female/darkelf', scale: 1.05,
@@ -414,7 +414,7 @@ export const MONSTERS = {
   }),
   vault_sentry: M({
     id: 'vault_sentry', name: 'Vault Sentry', nameTh: 'ยามห้องนิรภัย', level: 56,
-    hp: 3620, atk: 204, def: 62, mdef: 88, hit: 101, flee: 113, exp: 1688, jobExp: 1047,
+    hp: 4890, atk: 204, def: 62, mdef: 88, hit: 101, flee: 113, exp: 1646, jobExp: 1021,
     element: 'neutral', race: 'undead', size: 'large', speed: 68, aggressive: true,
     aggroRange: 250, attackDelay: 2.1, respawn: 70,
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#b8c4d0', scale: 1.3,
@@ -429,7 +429,7 @@ export const MONSTERS = {
   }),
   ember_revenant: M({
     id: 'ember_revenant', name: 'Ember Revenant', nameTh: 'ผีคืนชีพเพลิง', level: 58,
-    hp: 3430, atk: 129, matk: 160, def: 54, mdef: 96, hit: 106, flee: 126, exp: 1272, jobExp: 789,
+    hp: 3690, atk: 129, matk: 160, def: 54, mdef: 96, hit: 106, flee: 126, exp: 1280, jobExp: 794,
     element: 'ember', race: 'undead', speed: 96, aggressive: true,
     aggroRange: 290, attackRange: 160, attackDelay: 1.7, respawn: 74,
     sprite: { kind: 'blob', shape: 'wisp', color: '#ff7a3d', glow: true, float: true, scale: 1.2 },
@@ -451,7 +451,7 @@ export const MONSTERS = {
 
   throne_knight: M({
     id: 'throne_knight', name: 'Throne Knight', nameTh: 'อัศวินบัลลังก์', level: 61,
-    hp: 2630, atk: 186, def: 68, mdef: 56, hit: 107, flee: 126, exp: 1372, jobExp: 851,
+    hp: 4550, atk: 186, def: 68, mdef: 56, hit: 107, flee: 126, exp: 1374, jobExp: 852,
     element: 'shade', race: 'undead', speed: 84, aggressive: true,
     aggroRange: 260, attackDelay: 1.6, respawn: 60,
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#c8b9d8', scale: 1.15,
@@ -466,7 +466,7 @@ export const MONSTERS = {
   }),
   pyre_wisp: M({
     id: 'pyre_wisp', name: 'Pyre Wisp', nameTh: 'ดวงไฟเชิงตะกอน', level: 63,
-    hp: 2700, atk: 129, matk: 194, def: 34, mdef: 88, hit: 114, flee: 140, exp: 1058, jobExp: 656,
+    hp: 3670, atk: 129, matk: 194, def: 34, mdef: 88, hit: 114, flee: 140, exp: 1036, jobExp: 642,
     element: 'ember', race: 'formless', size: 'small', speed: 126, aggressive: true,
     aggroRange: 300, attackRange: 150, attackDelay: 1.4, respawn: 48,
     sprite: { kind: 'blob', shape: 'wisp', color: '#ffb05a', glow: true, float: true, scale: 1 },
@@ -479,7 +479,7 @@ export const MONSTERS = {
   }),
   crown_thrall: M({
     id: 'crown_thrall', name: 'Crown Thrall', nameTh: 'ข้ารับใช้มงกุฎ', level: 66,
-    hp: 9830, atk: 198, def: 62, mdef: 72, hit: 110, flee: 123, exp: 2000, jobExp: 1240,
+    hp: 9010, atk: 198, def: 62, mdef: 72, hit: 110, flee: 123, exp: 2068, jobExp: 1282,
     element: 'shade', race: 'undead', size: 'large', speed: 76, aggressive: true,
     aggroRange: 270, attackDelay: 1.9, respawn: 76,
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#9a86b8', scale: 1.3,
@@ -494,7 +494,7 @@ export const MONSTERS = {
   }),
   bone_choirmaster: M({
     id: 'bone_choirmaster', name: 'Bone Choirmaster', nameTh: 'ผู้นำขับร้องกระดูก', level: 69,
-    hp: 7210, atk: 132, matk: 188, def: 58, mdef: 112, hit: 114, flee: 135, exp: 1630, jobExp: 1011,
+    hp: 6580, atk: 132, matk: 188, def: 58, mdef: 112, hit: 114, flee: 135, exp: 1628, jobExp: 1009,
     element: 'shade', race: 'undead', speed: 92, aggressive: true,
     aggroRange: 310, attackRange: 175, attackDelay: 1.7, respawn: 80,
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#d8c8a8', scale: 1.2,

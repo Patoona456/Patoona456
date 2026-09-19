@@ -137,6 +137,25 @@ export const ITEMS = {
     desc: 'ตกจากราชันโครงกระดูกเท่านั้น',
   }),
 
+  // Blades had a rung at level 8 and nothing else did, so for four levels a
+  // spear, a bow or a rod user was still swinging the weapon they started
+  // with while a blade user had already upgraded. The balance report showed
+  // it as a caster killing things four times slower than a vanguard.
+  ashwood_pike: W({
+    id: 'ashwood_pike', name: 'Ashwood Pike', nameTh: 'ทวนไม้เถ้า', wclass: 'spear',
+    atk: 30, delay: 1.02, range: 72, level: 9, weight: 90, value: 1500, rarity: 'common',
+    sprite: { layer: 'weapon', key: 'spear', gendered: true },
+  }),
+  hunting_bow: W({
+    id: 'hunting_bow', name: 'Hunting Bow', nameTh: 'ธนูล่าสัตว์', wclass: 'bow',
+    atk: 25, delay: 0.94, range: 220, level: 9, weight: 55, value: 1450, rarity: 'common',
+    sprite: { layer: 'weapon', key: 'bow', gendered: true },
+  }),
+  birch_rod: W({
+    id: 'birch_rod', name: 'Birchbark Rod', nameTh: 'ไม้เท้าเปลือกเบิร์ช', wclass: 'rod',
+    atk: 11, matk: 25, delay: 1.0, range: 60, level: 9, weight: 36, value: 1500, rarity: 'common',
+    stats: { int: 1 }, sprite: { layer: 'weapon', key: 'wand', gendered: true },
+  }),
   worn_spear: W({
     id: 'worn_spear', name: 'Worn Spear', nameTh: 'หอกเก่า', wclass: 'spear',
     atk: 18, delay: 1.05, range: 66, level: 1, weight: 90, value: 260, rarity: 'common',
@@ -175,6 +194,15 @@ export const ITEMS = {
     atk: 68, delay: 0.88, range: 215, level: 38, weight: 70, value: 46000, rarity: 'rare',
     twoHanded: true, element: 'storm', stats: { dex: 4, agi: 2 },
     sprite: { layer: 'weapon', key: 'greatbow', gendered: false },
+  }),
+  // Spears stopped at level 55 while every other class had something in the
+  // sixties, so a vanguard's last fifteen levels were spent on a weapon the
+  // rest of the game had already left behind.
+  vhaal_warpike: W({
+    id: 'vhaal_warpike', name: 'Warpike of Vhaal', nameTh: 'ทวนศึกวาล', wclass: 'spear',
+    atk: 118, delay: 1.02, range: 76, level: 62, weight: 210, value: 235000, rarity: 'epic',
+    element: 'shade', stats: { str: 4, vit: 2 },
+    sprite: { layer: 'weapon', key: 'spear', gendered: true },
   }),
   dawnpiercer: W({
     id: 'dawnpiercer', name: 'Dawnpiercer', nameTh: 'ธนูเจาะอรุณ', wclass: 'bow',

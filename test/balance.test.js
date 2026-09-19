@@ -16,17 +16,22 @@ import { MAPS } from '../shared/data/maps.js';
 import { ITEMS, RECIPES, CRAFTING_INPUTS } from '../shared/data/items.js';
 import { SHOPS } from '../shared/data/npcs.js';
 import { expGapPenalty, npcSellPrice } from '../shared/formulas.js';
+import { val, skillCost } from '../shared/data/skills.js';
 import {
   LEVEL_CAP, KILL_SECONDS, HOURS_TO_CAP, TRAVEL_SECONDS,
   character, killSeconds, monsterDps, survivable, soloMonsters, bestAt, hoursToCap,
-  bestHeal, incomePerHour,
+  bestHeal, incomePerHour, typical, charsAt,
 } from '../tools/balance.js';
 
 test('every solo monster dies in a sensible number of seconds', () => {
+  // Measured by the median job of that level, which is what the reports and
+  // the tuning pass use. Ten second-tier jobs kill the same thing at very
+  // different speeds; holding every one of them to the same band would mean
+  // a tank must kill as fast as an arcanist, which is not the game.
   const bad = [];
   for (const mob of soloMonsters()) {
-    const c = character(Math.min(LEVEL_CAP, mob.level));
-    const secs = killSeconds(c, mob);
+    const t = typical(Math.min(LEVEL_CAP, mob.level), mob);
+    const secs = t ? t.secs : Infinity;
     if (!(secs >= KILL_SECONDS.min && secs <= KILL_SECONDS.max)) {
       bad.push(`${mob.id} (Lv${mob.level}) ${isFinite(secs) ? secs.toFixed(1) + 's' : 'unkillable'}`);
     }
@@ -43,10 +48,9 @@ test('there is something worth killing, and something survivable, at every level
 test('a solo monster cannot kill a same-level character faster than it dies', () => {
   const bad = [];
   for (const mob of soloMonsters()) {
-    const c = character(Math.min(LEVEL_CAP, mob.level));
-    const secs = killSeconds(c, mob);
-    if (!isFinite(secs)) continue;
-    const cost = monsterDps(mob, c) * secs / (c.derived.maxHp || 1);
+    const t = typical(Math.min(LEVEL_CAP, mob.level), mob);
+    if (!t) continue;
+    const cost = monsterDps(mob, t.c) * t.secs / (t.c.derived.maxHp || 1);
     if (cost > 0.6) bad.push(`${mob.id} costs ${(cost * 100).toFixed(0)}% of the health bar`);
   }
   assert.deepEqual(bad, [], bad.join(', '));
@@ -86,11 +90,10 @@ test('monsters sharing a zone are all worth killing', () => {
       .map((x) => MONSTERS[x]).filter((m) => m && !m.boss);
     if (spawns.length < 2) continue;
     const mid = Math.round(spawns.reduce((n, m) => n + m.level, 0) / spawns.length);
-    const c = character(Math.min(LEVEL_CAP, mid));
     const hands = map.party ? 4 : 1;
     const rated = spawns
       .filter((m) => Math.abs(m.level - mid) <= 6 && m.level >= mid * 0.55)   // ambient spawns are scenery
-      .map((m) => m.exp / (killSeconds(c, m) / hands))
+      .map((m) => m.exp / ((typical(Math.min(LEVEL_CAP, mid), m)?.secs ?? Infinity) / hands))
       .sort((a, b) => b - a);
     if (rated.length < 2) continue;
     const worst = rated[rated.length - 1] / rated[0];
@@ -153,7 +156,8 @@ test('healing keeps pace with the health bar', () => {
   const bad = [];
   for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
     const potion = bestHeal(lv);
-    const bar = character(lv).derived.maxHp;
+    // The squishiest job is the one a potion has to be worth something to.
+    const bar = Math.min(...charsAt(lv).map((c) => c.derived.maxHp));
     if (!potion) { bad.push(`nothing heals a level-${lv} character`); continue; }
     const share = potion.heal / bar;
     if (share < 0.25) bad.push(`level ${lv}: best potion refills ${(share * 100).toFixed(0)}% of the bar`);
@@ -230,4 +234,87 @@ test('every recipe can actually be made from things that drop', () => {
     }
   }
   assert.deepEqual(unreachable, [], unreachable.join('; '));
+});
+
+/* --- what the skill model made visible ----------------------------------
+   None of these could be asserted while the balance model only understood
+   auto-attacks, because until then every job looked the same. */
+
+test('no job is left several times behind the others', () => {
+  const bad = [];
+  const pool = soloMonsters();
+  for (const lv of [10, 20, 30, 40, 50, 60, 70]) {
+    const near = pool.filter((m) => Math.abs(m.level - lv) <= 4);
+    if (!near.length) continue;
+    const times = charsAt(lv).map((c) => {
+      const t = near.map((m) => killSeconds(c, m)).filter(isFinite).sort((a, b) => a - b);
+      return { job: c.job.id, secs: t.length ? t[0] : Infinity };
+    }).sort((a, b) => a.secs - b.secs);
+    const spread = times[times.length - 1].secs / times[0].secs;
+    // A tank is meant to kill slower than an arcanist. Several times slower
+    // is not a trade-off, it is a job nobody can level.
+    if (spread > 3.5) {
+      bad.push(`level ${lv}: ${times[0].job} ${times[0].secs.toFixed(1)}s vs ${times[times.length - 1].job} ${times[times.length - 1].secs.toFixed(1)}s`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('every job can sustain a fight long enough to finish it', () => {
+  // Kill speed alone says nothing: a squishy job that kills fast is fine, and
+  // a tough one that kills slowly is fine. A job that dies before it finishes
+  // is not, whichever side it fails on.
+  const bad = [];
+  for (const lv of [20, 40, 60, 70]) {
+    const near = soloMonsters().filter((m) => Math.abs(m.level - lv) <= 4);
+    if (!near.length) continue;
+    for (const c of charsAt(lv)) {
+      const kills = near.map((m) => {
+        const secs = killSeconds(c, m);
+        const dps = monsterDps(m, c);
+        return dps > 0 && isFinite(secs) ? (c.derived.maxHp / dps) / secs : Infinity;
+      }).sort((a, b) => b - a)[0];
+      if (kills < 2) bad.push(`level ${lv} ${c.job.id} manages ${kills.toFixed(1)} kills a health bar`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('SP regenerates fast enough for skills to be the loop, not the opener', () => {
+  const bad = [];
+  for (const lv of [20, 40, 60, 70]) {
+    for (const c of charsAt(lv)) {
+      const cheapest = (c.attacks ?? [])
+        .filter((sk) => c.learned?.has(sk.id))
+        .map((sk) => ({ sp: skillCost(sk, c.learned.get(sk.id)), cd: Math.max(0.5, val(sk.cooldown, c.learned.get(sk.id))) }))
+        .sort((a, b) => (a.sp / a.cd) - (b.sp / b.cd))[0];
+      if (!cheapest) continue;
+      const perSecond = (c.derived.spRegen ?? 1) / 4;             // in combat
+      if (perSecond * cheapest.cd < cheapest.sp * 0.4) {
+        bad.push(`level ${lv} ${c.job.id} regains ${(perSecond * cheapest.cd).toFixed(0)} SP per ${cheapest.cd.toFixed(0)}s against a ${cheapest.sp} SP skill`);
+      }
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('every weapon class has a rung to climb at a similar pace', () => {
+  const ladders = {};
+  for (const it of Object.values(ITEMS)) {
+    if (it.slot !== 'weapon') continue;
+    (ladders[it.wclass] ??= []).push(it.level ?? 1);
+  }
+  const bad = [];
+  for (const [wclass, levels] of Object.entries(ladders)) {
+    levels.sort((a, b) => a - b);
+    // A class whose best weapon stops well short of the cap leaves whoever
+    // plays it swinging something the rest of the game has left behind.
+    if (levels[levels.length - 1] < LEVEL_CAP - 12) {
+      bad.push(`${wclass} stops at level ${levels[levels.length - 1]}`);
+    }
+    for (let i = 1; i < levels.length; i++) {
+      if (levels[i] - levels[i - 1] > 26) bad.push(`${wclass} has nothing between level ${levels[i - 1]} and ${levels[i]}`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
 });
