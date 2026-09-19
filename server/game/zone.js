@@ -9,6 +9,7 @@ import { mint } from './economy.js';
 import * as Skills from './skills.js';
 import { tickBoss, resetBoss } from './boss.js';
 import { findPath, lineClear } from '../../shared/pathfind.js';
+import { expGapPenalty } from '../../shared/formulas.js';
 
 const now = () => Date.now();
 
@@ -325,8 +326,7 @@ export class Zone {
     const jobExp = (m.def.jobExp ?? 0) * mult / share.length;
     const weekly = m.def.lockout === 'weekly' ? weekKey() : null;
     for (const p of share) {
-      const gap = Math.abs(p.record.level - m.level);
-      let penalty = gap > 20 ? 0.25 : gap > 12 ? 0.6 : 1;     // no power-levelling
+      let penalty = expGapPenalty(p.record.level, m.level);   // no power-levelling
       if (weekly && (p.record.lockouts?.[m.defId] ?? null) === weekly) penalty *= 0.25;
       p.gainExp(exp * penalty, jobExp * penalty, this);
       this.world.onKill(p, m);

@@ -16,6 +16,23 @@ export function statCost(current) {
   return Math.floor((current - 1) / 10) + 2;
 }
 
+/**
+ * How much of a monster's experience actually lands, given the level gap.
+ *
+ * A flat band with a cliff at its edge produced the worst outcome the balance
+ * report can show: one cheap low-level monster staying the single best thing
+ * to kill for twenty-five levels, because a character could outlevel it by a
+ * dozen and still collect every point. The falloff below you is therefore
+ * smooth and steep, while anything at or above your level pays in full - the
+ * risk is its own argument. Being dragged onto something far out of reach is
+ * leeching, and pays accordingly.
+ */
+export function expGapPenalty(playerLevel, mobLevel) {
+  const gap = mobLevel - playerLevel;
+  if (gap >= -4) return Math.min(1, Math.max(0.25, Math.pow(0.9, gap - 14)));
+  return Math.max(0.05, Math.pow(0.86, -gap - 4));
+}
+
 /** Derived stats --------------------------------------------------------- */
 export function deriveStats(c, job, gear = {}) {
   const lv = c.level, jl = c.jobLevel;
@@ -28,8 +45,13 @@ export function deriveStats(c, job, gear = {}) {
     luk: c.luk + (gear.luk || 0),
   };
 
+  // Health has to grow fast enough that a same-level monster costs a fraction
+  // of the bar rather than most of it. On the old curve a level-70 character
+  // had under a thousand health against monsters hitting for two hundred and
+  // fifty, so every solo fight in the last twenty levels was a coin flip and
+  // the balance report could not find a single survivable hunting ground.
   const maxHp = Math.floor(
-    (40 + lv * 7 + s.vit * 5 + lv * s.vit * 0.14 + jl * 2) * (job.hpMod ?? 1)
+    (45 + lv * 16 + s.vit * 6 + lv * s.vit * 0.3 + jl * 3) * (job.hpMod ?? 1)
   ) + (gear.hp || 0);
   const maxSp = Math.floor(
     (24 + lv * 2.4 + s.int * 4 + lv * s.int * 0.07 + jl * 1.2) * (job.spMod ?? 1)
@@ -43,9 +65,17 @@ export function deriveStats(c, job, gear = {}) {
   ) + (gear.matk || 0);
 
   const softDef = Math.floor(s.vit * 0.55 + lv / 6);
-  const softMdef = Math.floor(s.int * 0.45 + s.vit * 0.2 + lv / 8);
+  const softMdef = Math.floor(s.vit * 0.45 + s.int * 0.35 + lv / 6);
   const def = (gear.def || 0);            // hard def: % reduction source
-  const mdef = (gear.mdef || 0);
+  // Magic resistance has to have a floor that armour and INT only add to.
+  // Hard def is a diminishing reduction against a denominator that grows with
+  // the defender's own level, so a stat sourced purely from gear and INT ends
+  // up at zero for anyone who skips both - and seven items in the whole game
+  // carry mdef. A level-70 character in full plate was being two-shot by any
+  // caster. This baseline lands magic at roughly the same ~1/3 reduction that
+  // ordinary armour already gives against weapons; INT builds and mdef gear
+  // go above it, as they should.
+  const mdef = Math.floor(lv * 2.2 + s.vit * 1.2 + s.int * 2) + (gear.mdef || 0);
 
   const hit = Math.floor(80 + s.dex + lv / 2 + (gear.hit || 0));
   const flee = Math.floor(60 + s.agi + lv / 2.4 + (gear.flee || 0));

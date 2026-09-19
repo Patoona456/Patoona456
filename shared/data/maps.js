@@ -299,9 +299,10 @@ export const MAPS = {
     warps: [{ x: 22, y: 45, w: 4, h: 2, to: 'frostvault', at: [70, 68], label: 'ห้องนิรภัยเยือกแข็ง' }],
     spawns: [
       { mob: 'skeleton_king', count: 1, area: [16, 10, 16, 16], boss: true },
-      { mob: 'gravebound', count: 8 },
-      { mob: 'crypt_warden', count: 6 },
-      { mob: 'bone_archer', count: 6 },
+      { mob: 'throne_knight', count: 12 },
+      { mob: 'pyre_wisp', count: 10 },
+      { mob: 'crown_thrall', count: 8 },
+      { mob: 'bone_choirmaster', count: 6 },
     ],
   },
 };

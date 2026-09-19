@@ -280,12 +280,11 @@ export const QUESTS = {
   /* --- ห้องบัลลังก์วาล (56-70) ------------------------------------------- */
   q_vhaal_court: {
     id: 'q_vhaal_court', name: 'ราชสำนักที่ตายแล้ว', giver: 'board', minLevel: 60, zone: 'vhaal',
-    desc: 'กวาดบริวารของวาล: โครงกระดูกพันธนาการ 30 ตัว และผู้เฝ้าสุสาน 12 ตน',
+    desc: 'กวาดบริวารของวาล: อัศวินบัลลังก์ 30 ตน และข้ารับใช้มงกุฎ 12 ตน',
     objectives: [
-      { type: 'kill', mob: 'gravebound', count: 30 },
-      { type: 'kill', mob: 'crypt_warden', count: 12 },
+      { type: 'kill', mob: 'throne_knight', count: 30 },
+      { type: 'kill', mob: 'crown_thrall', count: 12 },
     ],
-    // the court is full of low-level bones: the pay follows the fight, not the zone
     rewards: { exp: 40000, jobExp: 25000, aurum: 24000, items: [{ id: 'shard_dawn', qty: 2 }] },
   },
   q_warlord: {
