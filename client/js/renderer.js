@@ -1,5 +1,5 @@
 // Canvas renderer: procedural terrain tiles + LPC paper-doll entities.
-import { TILE, SPRITE } from '../../shared/constants.js';
+import { TILE, SPRITE, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
 import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
@@ -757,14 +757,35 @@ export class Renderer {
       ctx.fillRect(e.x - w / 2, top, w * pct, 3);
     }
 
+    // Anything this far above you attacks on sight, whether or not its kind
+    // normally does. That rule is invisible unless we say so, and an invisible
+    // rule that kills you is just an ambush - so the plate says it plainly.
+    const hunts = e.k === 'm' && !e.sum && (e.lv ?? 0) - (state.myLevel ?? 1) > LEVEL_AGGRO_GAP;
+
     ctx.font = (e.boss ? 'bold 9px' : '8px') + ' system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.lineWidth = 2;
     ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-    const label = e.k === 'm' ? `${e.n} Lv${e.lv}` : e.k === 'n' ? `[${e.n}]` : `${e.n}`;
+    const label = e.k === 'm' ? `${hunts ? '\u203c ' : ''}${e.n} Lv${e.lv}` : e.k === 'n' ? `[${e.n}]` : `${e.n}`;
     ctx.strokeText(label, e.x, top - 4);
-    ctx.fillStyle = e.k === 'n' ? '#9fe0b0' : e.k === 'm' ? (e.boss ? '#ffb45e' : '#ffd9d9') : (isMe ? '#b9f6c7' : '#cfe4ff');
+    ctx.fillStyle = e.k === 'n' ? '#9fe0b0'
+      : e.k === 'm' ? (hunts ? '#ff8a8a' : e.boss ? '#ffb45e' : '#ffd9d9')
+        : (isMe ? '#b9f6c7' : '#cfe4ff');
     ctx.fillText(label, e.x, top - 4);
+
+    // and a slow pulse under its feet, readable from across the screen where
+    // an eight-pixel name plate is not
+    if (hunts) {
+      const beat = 0.35 + 0.25 * Math.sin(now / 320 + e.x * 0.05);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(255,90,90,${beat})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(e.x, e.y + 2, 16, 7, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     if (e.st) {
       ctx.font = '8px system-ui, sans-serif';

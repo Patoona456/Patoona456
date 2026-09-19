@@ -400,6 +400,8 @@ class Game {
     if (me) { me.x = this.predicted.x; me.y = this.predicted.y; }
     this.state.ents = [...this.entities.values()];
     this.state.me = this.predicted;
+    // the renderer marks whatever is far enough above you to hunt on sight
+    this.state.myLevel = this.self?.level ?? 1;
 
     this.audio.listener = this.predicted ?? this.audio.listener;
     this.renderer.render(this.state, t);

@@ -43,6 +43,18 @@ export const SLOTS = ['weapon', 'offhand', 'head', 'torso', 'hands', 'legs', 'fe
 /** Elements (rock-paper-scissors style, our own table) -------------------- */
 export const ELEMENTS = ['neutral', 'ember', 'frost', 'storm', 'verdant', 'shade', 'radiant'];
 
+/**
+ * How far above you a monster has to be before it stops minding its own
+ * business. Anything more than this many levels over a player hunts them on
+ * sight, whether or not its definition says `aggressive`.
+ *
+ * This is the fence around the level bands. Without it a level 5 character
+ * can walk to the ice fields, stand next to something that would kill them
+ * in one hit, and loot whatever a passing party leaves behind. With it, the
+ * high zones push back on their own and the map teaches its own order.
+ */
+export const LEVEL_AGGRO_GAP = 10;
+
 // ELEMENT_TABLE[attack][defense] = damage multiplier.
 export const ELEMENT_TABLE = {
   neutral: { neutral: 1.00, ember: 1.00, frost: 1.00, storm: 1.00, verdant: 1.00, shade: 0.70, radiant: 1.00 },

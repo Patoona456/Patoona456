@@ -2,7 +2,7 @@
 import { MAPS, buildGrid, encodeGrid, TILES, BLOCKING, HAZARD, rng } from '../../shared/data/maps.js';
 import { MONSTERS } from '../../shared/data/monsters.js';
 import { ITEMS } from '../../shared/data/items.js';
-import { TILE, AOI_RADIUS, ANIM } from '../../shared/constants.js';
+import { TILE, AOI_RADIUS, ANIM, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
 import { Monster, dist, dist2, dirTo, LEASH } from './monster.js';
 import { applyDamage, healEntity, basicAttack, statusMods, addStatus } from './combat.js';
 import * as Skills from './skills.js';
@@ -547,12 +547,29 @@ export class Zone {
           const owner = this.players.get(m.owner);
           const near = owner ? [...this.entitiesNear(owner, 220)].find((e) => this.isHostile(m, e)) : null;
           if (near) { m.target = near.id; target = near; }
-        } else if (m.def.aggressive) {
-          let best = null, bestD = m.aggroRange;
+        } else {
+          // Who this monster is willing to start on, and from how far.
+          //
+          // Two rules stack. A monster marked `aggressive` starts on anyone,
+          // as before. On top of that, *any* monster - grazing or not - starts
+          // on a player far enough beneath it, and the further beneath they
+          // are the further off it notices them. That second rule is what
+          // makes the level bands mean something: walking into the ice fields
+          // at level 12 should not be a sightseeing trip, and it is the
+          // distance that sells it. Something thirty levels above you should
+          // be coming before you have finished reading its name.
+          let best = null, bestD = Infinity;
           for (const p of this.players.values()) {
             if (!p.alive || statusMods(p).invisible) continue;
+            const gap = m.level - p.record.level;
+            const outclassed = gap > LEVEL_AGGRO_GAP;
+            if (!m.def.aggressive && !outclassed) continue;
+            // up to double the usual range, reached at twenty levels past the gap
+            const reach = outclassed
+              ? m.aggroRange * (1 + Math.min(1, (gap - LEVEL_AGGRO_GAP) / 20))
+              : m.aggroRange;
             const d = dist(m, p);
-            if (d < bestD) { best = p; bestD = d; }
+            if (d < reach && d < bestD) { best = p; bestD = d; }
           }
           if (best) { m.target = best.id; target = best; m.threat.set(best.id, 1); }
         }
