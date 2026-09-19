@@ -56,16 +56,30 @@ export class Monster {
   get attackRange() { return this.def.attackRange ?? 40; }
   get speed() { return this.def.speed ?? 70; }
 
-  netState() {
+  /** What changes every tick. */
+  netMotion() {
     return {
-      id: this.id, k: 'm', n: this.name, def: this.defId,
+      id: this.id, k: 'm',
       x: Math.round(this.x), y: Math.round(this.y), d: this.dir, a: this.anim,
       ast: this.animStart, as: this.animSpeed !== 1 ? +this.animSpeed.toFixed(2) : undefined,
-      hp: this.hp, mhp: this.maxHp, lv: this.level, boss: this.boss ? 1 : 0,
-      sprite: this.def.sprite, sum: this.summon ? 1 : 0,
+      hp: this.hp, mhp: this.maxHp,
       st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
     };
   }
+
+  /**
+   * What never changes once it has spawned - which for a monster is all of
+   * it. The whole sprite definition, with its layer table, was going out ten
+   * times a second for every creature on screen.
+   */
+  netIdentity() {
+    return {
+      n: this.name, def: this.defId, lv: this.level,
+      boss: this.boss ? 1 : 0, sprite: this.def.sprite, sum: this.summon ? 1 : 0,
+    };
+  }
+
+  netState() { return { ...this.netMotion(), ...this.netIdentity() }; }
 }
 
 /** Distance helpers used by the AI and by skills. */

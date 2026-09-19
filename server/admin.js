@@ -53,9 +53,19 @@ export function snapshot(world) {
   const richest = [...chars].sort((a, b) => (b.aurum ?? 0) - (a.aurum ?? 0)).slice(0, 10)
     .map((c) => ({ name: c.name, level: c.level, aurum: c.aurum ?? 0, guild: db.guilds?.[c.guild]?.name ?? null }));
 
+  // How the process itself is doing. An economy dashboard that cannot tell
+  // you the heap is growing or that entities are piling up is only half a
+  // dashboard, and these are the numbers `npm run soak` watches for drift.
+  const mem = process.memoryUsage();
+  let entities = 0;
+  for (const zone of world.zones.values()) entities += zone.entities.size;
+
   return {
     uptimeMs: Date.now() - (st.started ?? Date.now()),
     online: world.players.size,
+    entities,
+    heapUsed: mem.heapUsed,
+    rss: mem.rss,
     accounts: Object.keys(db.accounts ?? {}).length,
     characters: chars.length,
     guilds: Object.values(db.guilds ?? {}).map((g) => ({

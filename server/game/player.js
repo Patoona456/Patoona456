@@ -164,6 +164,7 @@ export class Player {
   }
 
   recompute() {
+    this.idv = (this.idv ?? 0) + 1;      // appearance may have changed
     const job = jobOf(this.record.job);
     const gear = this.gearBonuses();
     const bm = this.buffMods();
@@ -462,22 +463,40 @@ export class Player {
   }
 
   /** Compact per-tick view for other players. */
-  netState() {
+  /**
+   * What changes ten times a second.
+   *
+   * Everything about a character that a viewer needs *constantly* is here,
+   * and everything that almost never changes is in netIdentity. Sending a
+   * name, a face, a job and nine equipment slots at 10Hz to everyone in sight
+   * put a hundred and fifty players in one town at four hundred kilobytes a
+   * second each - four hundred megabits off the server, for data that had not
+   * changed since they logged in.
+   */
+  netMotion() {
     return {
-      id: this.id, k: 'p', n: this.name, x: Math.round(this.x), y: Math.round(this.y),
-      d: this.dir, a: this.anim, hp: this.hp, mhp: this.maxHp, lv: this.record.level,
+      id: this.id, k: 'p', x: Math.round(this.x), y: Math.round(this.y),
+      d: this.dir, a: this.anim, hp: this.hp, mhp: this.maxHp,
       ast: this.animStart, as: this.animSpeed !== 1 ? +this.animSpeed.toFixed(2) : undefined,
-      job: this.record.job, look: this.look,
+      st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
+      inv: this.mods.invisible ? 1 : 0,
+    };
+  }
+
+  /** What changes when you equip something, level up, or change job. */
+  netIdentity() {
+    return {
+      n: this.name, lv: this.record.level, job: this.record.job, look: this.look,
       eq: Object.fromEntries(Object.entries(this.record.equipment)
         .map(([slot, idx]) => [slot, this.inventory[idx]?.id])
         .filter(([, id]) => id)),
       // refine level of the weapon, so everyone can see what you carry
       wr: this.equippedItem('weapon')?.stack.refine ?? 0,
-      st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
       party: this.party ?? null,
-      inv: this.mods.invisible ? 1 : 0,
     };
   }
+
+  netState() { return { ...this.netMotion(), ...this.netIdentity() }; }
 
   persist() {
     const r = this.record;

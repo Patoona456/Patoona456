@@ -12,6 +12,9 @@ import { findPath, lineClear } from '../../shared/pathfind.js';
 import { expGapPenalty } from '../../shared/formulas.js';
 import * as Stall from './stall.js';
 
+const EMPTY_SIGNS = [];
+const EMPTY_SEEN = new Map();
+
 const now = () => Date.now();
 
 /**
@@ -187,10 +190,15 @@ export class Zone {
         kind: 'npc', id: 'n_' + npc.id, npcId: npc.id, name: npc.name, role: npc.role,
         x: npc.x * TILE + TILE / 2, y: npc.y * TILE + TILE / 2, dir: 2, anim: 'idle',
         alive: true, look: npc.look, shop: npc.shop,
-        netState() {
-          return { id: this.id, k: 'n', n: this.name, x: Math.round(this.x), y: Math.round(this.y),
-            d: this.dir, a: 'idle', role: this.role, npcId: this.npcId, look: this.look };
+        // An NPC never moves and never changes, so all of it is identity and
+        // the motion half is the bare minimum needed to place it.
+        netMotion() {
+          return { id: this.id, k: 'n', x: Math.round(this.x), y: Math.round(this.y), d: this.dir, a: 'idle' };
         },
+        netIdentity() {
+          return { n: this.name, role: this.role, npcId: this.npcId, look: this.look };
+        },
+        netState() { return { ...this.netMotion(), ...this.netIdentity() }; },
       };
       this.entities.set(e.id, e);
     }
@@ -717,14 +725,33 @@ export class Zone {
   }
 
   /* ---------------- snapshots ---------------- */
+
+  /** Called once per tick, before the per-player snapshots are built. */
+  refreshStallSigns() {
+    this.stallSigns = Stall.signs(this);
+  }
+
   snapshotFor(p) {
     const ents = [];
+    // What this viewer already knows about each entity's appearance. The
+    // client merges snapshots onto what it has, so anything unchanged can
+    // simply be left out - and a name, a face and nine equipment slots are
+    // unchanged essentially always. Rebuilt every snapshot rather than
+    // updated, because the client drops entities that fall out of range and
+    // the two sides have to forget in step or somebody turns invisible.
+    const knew = p.seenIdentity ?? EMPTY_SEEN;
+    const nowSeen = new Map();
     for (const e of this.entities.values()) {
       if (!e.alive && e.kind !== 'player') continue;
       if (e.kind === 'monster' && e.hp <= 0) continue;
       if (dist2(p, e) > AOI_RADIUS * AOI_RADIUS) continue;
-      ents.push(e.netState());
+      const idv = e.idv ?? 0;
+      nowSeen.set(e.id, idv);
+      const state = e.netMotion();
+      if (knew.get(e.id) !== idv) Object.assign(state, e.netIdentity());
+      ents.push(state);
     }
+    p.seenIdentity = nowSeen;
     const ground = this.ground
       .filter((g) => dist2(p, g) < AOI_RADIUS * AOI_RADIUS)
       .map((g) => ({ uid: g.uid, id: g.id, qty: g.qty, x: Math.round(g.x), y: Math.round(g.y),
@@ -733,11 +760,16 @@ export class Zone {
       .filter((f) => dist2(p, f) < AOI_RADIUS * AOI_RADIUS)
       .map((f) => ({ skill: f.skill, x: Math.round(f.x), y: Math.round(f.y), r: Math.round(f.radius), until: f.until, el: f.look ?? f.element }));
     // Shop signs ride the snapshot so a stall is something you see in the
-    // world and walk up to, rather than a row in yet another list.
-    const stalls = Stall.signs(this).filter((sg) => {
-      const owner = this.players.get(sg.id);
-      return owner && dist2(p, owner) < AOI_RADIUS * AOI_RADIUS;
-    });
+    // world and walk up to, rather than a row in yet another list. The list
+    // is built once per tick by the caller: rebuilding it here would make
+    // drawing signs quadratic in the number of people in a town.
+    const open = this.stallSigns ?? EMPTY_SIGNS;
+    const stalls = open.length
+      ? open.filter((sg) => {
+        const owner = this.players.get(sg.id);
+        return owner && dist2(p, owner) < AOI_RADIUS * AOI_RADIUS;
+      })
+      : open;
     return { t: 'snapshot', map: this.id, ts: now(), ents, ground, fx, stalls };
   }
 

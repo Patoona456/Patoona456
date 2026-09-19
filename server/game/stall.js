@@ -31,8 +31,18 @@ const open = new Map();          // playerId -> { title, offers: [{index, qty, p
 export function stallOf(p) { return open.get(p?.id) ?? null; }
 export function isOpen(p) { return open.has(p?.id); }
 
-/** Everything a client needs to draw a sign over somebody's head. */
+/**
+ * Everything a client needs to draw a sign over somebody's head.
+ *
+ * Walks the zone's players, so it must be called once per tick and not once
+ * per snapshot: snapshots are built per player, and calling this inside that
+ * loop made drawing shop signs quadratic in the number of people standing in
+ * a town - which is the one place they all stand. At two hundred players in
+ * Emberhold that was four hundred thousand iterations a second to report,
+ * almost always, that nobody had a stall open.
+ */
 export function signs(zone) {
+  if (!open.size) return EMPTY;            // the overwhelmingly common case
   const out = [];
   for (const p of zone.players.values()) {
     const s = open.get(p.id);
@@ -40,6 +50,7 @@ export function signs(zone) {
   }
   return out;
 }
+const EMPTY = [];
 
 export function close(p, why = null) {
   if (!open.has(p.id)) return false;

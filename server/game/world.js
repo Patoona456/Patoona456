@@ -195,6 +195,7 @@ export class World {
     for (const zone of this.zones.values()) {
       if (!zone.players.size) { zone.drainEvents(); continue; }
       const events = zone.drainEvents();
+      zone.refreshStallSigns();          // once per tick, not once per player
       for (const p of zone.players.values()) {
         const snap = zone.snapshotFor(p);
         snap.ev = events;
