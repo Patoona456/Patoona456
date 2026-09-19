@@ -27,6 +27,9 @@ export const SHOPS = {
       { id: 'hand_axe', stock: 5 },
       { id: 'wooden_shield', stock: 5 },
       { id: 'leather_belt', stock: 5 },
+      { id: 'wool_scarf', stock: 6 },
+      { id: 'travelers_cloak', stock: 6 },
+      { id: 'reading_lenses', stock: 6 },
     ],
   },
   smith: {
@@ -53,6 +56,8 @@ export const SHOPS = {
       { id: 'guard_sword', stock: 3 },
       { id: 'iron_greatsword', stock: 3 },
       { id: 'bone_wand', stock: 3 },
+      { id: 'padded_jerkin', stock: 4 },
+      { id: 'cloth_mask', stock: 4 },
       { id: 'iron_ore', stock: 200, restock: 600 },
     ],
   },

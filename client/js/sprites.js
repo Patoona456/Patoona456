@@ -73,6 +73,10 @@ export function layerUrl(layer, key, gender = 'male') {
     case 'hair': return `${BASE}/hair/${gender}/${key}.png`;     // key = "style/color"
     case 'weapon':
       return WEAPON_EITHER.has(key) ? `${BASE}/weapon/either/${key}.png` : `${BASE}/weapon/${gender}/${key}.png`;
+    // Armour is worn over the shirt and has no sheets of its own yet, so it
+    // borrows the torso folder. docs/ART.md lists this with the other
+    // placeholders; when armour art lands, this case goes away.
+    case 'armor': return `${BASE}/torso/${gender}/${key}.png`;
     default: return `${BASE}/${layer}/${gender}/${key}.png`;
   }
 }
@@ -92,12 +96,12 @@ const MALE_MISSING = new Set(['steelwand']);
  * A layout therefore carries its own order, and a character is drawn in the
  * order its body sheet asks for rather than in one global sequence.
  */
-const ORDER = ['body', 'eyes', 'legs', 'feet', 'torso', 'belt', 'hands', 'head', 'hair', 'weapon', 'offhand'];
+const ORDER = ['body', 'eyes', 'legs', 'feet', 'torso', 'armor', 'belt', 'hands', 'head', 'hair', 'weapon', 'offhand'];
 
 /** The order stated on the new art's equip-layer guide. */
 export const CHIBI_ORDER = [
   'body', 'eyes', 'hair', 'torso', 'legs', 'feet', 'hands',
-  'back', 'belt', 'head', 'face', 'neck', 'weapon', 'offhand', 'accessory',
+  'back', 'armor', 'belt', 'head', 'face', 'neck', 'weapon', 'offhand', 'accessory',
 ];
 
 const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER };

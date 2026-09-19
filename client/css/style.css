@@ -394,7 +394,7 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .doll { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; justify-content: center; }
-.doll-col { display: grid; gap: 6px; }
+.doll-col { display: grid; gap: 4px; align-content: start; }
 .doll-mid { display: grid; gap: 6px; justify-items: center; }
 .doll-view {
   width: 96px; height: 116px; image-rendering: pixelated;
@@ -402,7 +402,11 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 }
 .doll-cp { font-size: 13px; }
 .doll-cp b { color: var(--accent); }
-.doll-slot { width: 46px; height: 46px; }
+/* Seven slots a side rather than four, since the boards added five places
+   to wear things. Smaller squares keep the column shorter than the character
+   next to it; on a phone the columns go two wide instead of one tall. */
+.doll-slot { width: 40px; height: 40px; }
+@media (max-width: 680px) { .doll-col { grid-template-columns: repeat(2, auto); } }
 .doll-label { font-size: 9px; color: var(--muted); text-align: center; line-height: 1.1; padding: 2px; }
 
 .trade-side { align-content: start; }

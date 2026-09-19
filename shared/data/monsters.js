@@ -115,6 +115,7 @@ export const MONSTERS = {
     attackDelay: 1.7, respawn: 30,
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'spear' } },
     drops: [
+      { id: 'surveyor_lenses', chance: 0.03 },
       { id: 'ruin_cleaver', chance: 0.018 },
       { id: 'chainmail', chance: 0.05 },
       { id: 'banded_shield', chance: 0.06 },
@@ -151,6 +152,7 @@ export const MONSTERS = {
     element: 'ice', race: 'undead', speed: 62, aggressive: true, aggroRange: 210, respawn: 40,
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#8fd7ff' },
     drops: [
+      { id: 'ashsilk_scarf', chance: 0.02 },
       { id: 'quarry_maul', chance: 0.016 },
       { id: 'ridgebreaker_pike', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.045 },
@@ -168,6 +170,7 @@ export const MONSTERS = {
     aggroRange: 260, attackDelay: 1.5, respawn: 45,
     sprite: { kind: 'sheet', key: 'red_orc', layers: { weapon: 'longspear' }, scale: 1.1 },
     drops: [
+      { id: 'plague_mask', chance: 0.018 },
       { id: 'mystery_scroll', chance: 0.05 },
       { id: 'orc_tooth', chance: 0.55, qty: [1, 3] },
       { id: 'ember_cinder', chance: 0.18 },
@@ -238,6 +241,7 @@ export const MONSTERS = {
     attackRange: 170, attackDelay: 2.0, respawn: 30,
     sprite: { kind: 'sheet', key: 'skeleton', layers: { weapon: 'bow' } },
     drops: [
+      { id: 'caravan_scarf', chance: 0.035 },
       { id: 'bearded_axe', chance: 0.02 },
       { id: 'band_of_vigor', chance: 0.04 },
       { id: 'mystery_scroll', chance: 0.03 },
@@ -258,6 +262,7 @@ export const MONSTERS = {
     },
     skills: ['cleave'],
     drops: [
+      { id: 'scaled_harness', chance: 0.03 },
       { id: 'grovewarden_staff', chance: 0.025 },
       { id: 'metal_boots', chance: 0.05 },
       { id: 'metal_gauntlets', chance: 0.05 },
@@ -278,6 +283,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'wand', head: 'cloth_hood' } },
     skills: ['ember_bolt', 'storm_sigil'],
     drops: [
+      { id: 'bandit_mask', chance: 0.03 },
       { id: 'card_orc', chance: 0.004 },
       { id: 'runesteel_rod', chance: 0.035 },
       { id: 'ring_of_focus', chance: 0.05 },
@@ -297,6 +303,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#cfe8ff', scale: 1.05, layers: { weapon: 'wand' } },
     skills: ['frost_nail'],
     drops: [
+      { id: 'nightfall_cloak', chance: 0.018 },
       { id: 'tidebreaker', chance: 0.014 },
       { id: 'card_wight', chance: 0.004 },
       { id: 'hoarfrost_rod', chance: 0.012 },
@@ -362,6 +369,7 @@ export const MONSTERS = {
     sprite: { kind: 'compose', body: 'male/tanned', scale: 1,
       layers: { torso: 'leather', legs: 'pants_red', feet: 'shoes_brown', head: 'cloth_hood', weapon: 'dagger' } },
     drops: [
+      { id: 'wolfpelt_cloak', chance: 0.03 },
       { id: 'marshwood_bow', chance: 0.04 },
       { id: 'mystery_scroll', chance: 0.025 },
       { id: 'iron_ore', chance: 0.24, qty: [1, 3] },
@@ -435,6 +443,7 @@ export const MONSTERS = {
     aggroRange: 240, attackDelay: 2.0, respawn: 56,
     sprite: { kind: 'blob', shape: 'spiky', color: '#7fb8d8', dark: '#35607c', scale: 1.35 },
     drops: [
+      { id: 'warplate_harness', chance: 0.018 },
       { id: 'tideglass_wand', chance: 0.015 },
       { id: 'vault_longbow', chance: 0.012 },
       { id: 'plate_cuirass', chance: 0.035 },
@@ -453,6 +462,7 @@ export const MONSTERS = {
     sprite: { kind: 'compose', body: 'female/darkelf', scale: 1.05,
       layers: { torso: 'leather', legs: 'pants_white', feet: 'shoes_black', head: 'leather_cap', weapon: 'dagger' } },
     drops: [
+      { id: 'truesight_lenses', chance: 0.018 },
       { id: 'card_stalker', chance: 0.004 },
       { id: 'rimebound_sash', chance: 0.04 },
       { id: 'golden_boots', chance: 0.03 },
@@ -513,6 +523,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#c8b9d8', scale: 1.15,
       layers: { head: 'chainhat', torso: 'chain', weapon: 'spear' } },
     drops: [
+      { id: 'dawnweave_cloak', chance: 0.014 },
       { id: 'riftsplitter', chance: 0.012 },
       { id: 'dawnplate_sabatons', chance: 0.02 },
       { id: 'vhaal_warpike', chance: 0.012 },
@@ -545,6 +556,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#9a86b8', scale: 1.3,
       layers: { head: 'golden_helm', torso: 'plate' } },
     drops: [
+      { id: 'dawnsteel_harness', chance: 0.012 },
       { id: 'dawnfang', chance: 0.012 },
       { id: 'card_thrall', chance: 0.004 },
       { id: 'dawnplate_greaves', chance: 0.018 },
@@ -565,6 +577,7 @@ export const MONSTERS = {
       layers: { head: 'cloth_hood', weapon: 'wand' } },
     skills: ['grim_harvest'],
     drops: [
+      { id: 'dawnglass_lenses', chance: 0.012 },
       { id: 'card_choir', chance: 0.004 },
       { id: 'dawnbrand', chance: 0.014 },
       { id: 'choirbone_torc', chance: 0.016 },
@@ -591,6 +604,7 @@ export const MONSTERS = {
     aggroRange: 260, attackDelay: 1.7, respawn: 70,
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#e8dcc0', scale: 1.22, layers: { head: 'metal_helm', torso: 'plate', weapon: 'longspear' } },
     drops: [
+      { id: 'choirsilk_scarf', chance: 0.014 },
       { id: 'sunfire_javelins', chance: 0.012 },
       { id: 'reliquary_seal', chance: 0.22 },
       { id: 'runed_whetstone', chance: 0.16, qty: [1, 2] },
@@ -674,6 +688,7 @@ export const MONSTERS = {
     // skill roll every other monster uses
     script: 'warden',
     drops: [
+      { id: 'revenant_mask', chance: 0.012 },
       { id: 'dawnwood_staff', chance: 0.012 },
       { id: 'dawnward_aegis', chance: 0.1 },
       { id: 'dawnpiercer', chance: 0.08 },

@@ -343,7 +343,9 @@ export class Conn {
         }
         for (const [i, st] of p.inventory.entries()) {
           const def = ITEMS[st.id];
-          if (def && (def.type === 'weapon' || def.type === 'armor')) { st.refine = 7; p.equip(i); }
+          if (!def || (def.type !== 'weapon' && def.type !== 'armor')) continue;
+          if (def.refinable) st.refine = 7;    // a cloak cannot be refined; do not pretend
+          p.equip(i);
         }
         for (const sid of m.skills ?? ['cleave', 'skewer', 'taunt', 'bulwark_stance', 'first_aid', 'iron_will']) {
           r.skills[sid] = 5;

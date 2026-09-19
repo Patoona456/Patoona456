@@ -10,7 +10,8 @@ import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js
 import { itemIcon, skillIcon, icon } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
 import { drawWings } from './wings.js';
-import { SLOTS } from '../../shared/constants.js';
+import { drawBehind, drawInFront, apparelOf } from './apparel.js';
+import { SLOTS, slotName } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
 import { gameClock, skyAt } from '../../shared/daycycle.js';
 import { glowTier, glowCss, specialMarks, signatureOf, SPECIAL_MARKS, SIGNATURES } from '../../shared/refineglow.js';
@@ -442,10 +443,7 @@ export class UI {
       .map(([slot, idx]) => [slot, this.game.inventory?.items?.find((x) => x.i === idx)])
       .filter(([, it]) => it));
 
-    const LABELS = {
-      head: 'ศีรษะ', torso: 'ลำตัว', hands: 'มือ', legs: 'ขา', feet: 'เท้า',
-      weapon: 'อาวุธ', offhand: 'มือรอง', belt: 'เข็มขัด', accessory: 'เครื่องประดับ', wings: 'ปีก',
-    };
+    const LABELS = Object.fromEntries(SLOTS.map((s) => [s, slotName(s)]));
     const slotNode = (slot) => {
       const it = worn[slot];
       const node = el('div', 'slot doll-slot' + (it ? ` rarity-${it.rarity ?? 'common'}` : ' empty'));
@@ -459,8 +457,10 @@ export class UI {
       }
       return node;
     };
-    for (const slot of ['head', 'torso', 'hands', 'belt']) left.append(slotNode(slot));
-    for (const slot of ['weapon', 'offhand', 'legs', 'feet']) right.append(slotNode(slot));
+    // Fifteen slots, seven a side and two under the character. The columns
+    // read head to foot so the doll matches where things are worn.
+    for (const slot of ['head', 'glasses', 'mask', 'scarf', 'torso', 'armor', 'hands']) left.append(slotNode(slot));
+    for (const slot of ['weapon', 'offhand', 'belt', 'legs', 'feet', 'cloak']) right.append(slotNode(slot));
     mid.append(slotNode('accessory'));
     mid.append(slotNode('wings'));
     gear.append(left, mid, right);
@@ -483,7 +483,14 @@ export class UI {
       const pose = { x: 31, y: 70, anim: 'idle', dir: 2, elapsed: 0 };
       const wing = worn.wings && ITEMS[worn.wings.id]?.wing;
       if (wing) drawWings(ctx, wing.style, { x: 31, y: 70, dir: 2, t, scale: wing.scale ?? 1 });
+      // the code-drawn slots, same order the world draws them in
+      const dress = { x: 31, y: 70, dir: 2, t, scale: 1, moving: false };
+      const apparel = apparelOf(Object.fromEntries(
+        Object.entries(worn).map(([slot, it]) => [slot, it.id])
+      ), ITEMS);
+      drawBehind(ctx, apparel, dress);
       drawCharacter(ctx, layers, pose);
+      drawInFront(ctx, apparel, dress);
       if (tier) {
         // the same aura the world shows, so the doll matches the field
         const pulse = 0.72 + 0.28 * Math.sin(t / (520 / tier.pulse));

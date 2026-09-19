@@ -38,7 +38,9 @@ export const ANIM = {
 };
 
 /** Equipment slots ------------------------------------------------------- */
-export const SLOTS = ['weapon', 'offhand', 'head', 'torso', 'hands', 'legs', 'feet', 'belt', 'accessory', 'wings'];
+// Fifteen slots, described one place: shared/slots.js. Re-exported here
+// because half the game already imports its constants from this file.
+export { SLOTS, SLOT_INFO, NEW_SLOTS, slotName } from './slots.js';
 
 /** Elements (rock-paper-scissors style, our own table) -------------------- */
 export const ELEMENTS = ['neutral', 'fire', 'ice', 'lightning', 'earth', 'wind', 'holy', 'dark'];

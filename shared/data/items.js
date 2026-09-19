@@ -469,6 +469,137 @@ export const ITEMS = {
     desc: 'ถ่านก้อนสุดท้ายที่ยังไม่ดับ ของโลกที่เหลือแต่เถ้า',
   }),
 
+
+  /* ================= ARMOUR, CLOAK, SCARF, GLASSES, MASK =================
+     The five slots the art boards have and the game did not. Four of them
+     are worn on top of something that was already there, which is the point:
+     a breastplate over a shirt, a cloak over a back, a scarf over a collar.
+
+     They are deliberately light on power. The board's five are fashion
+     first - if a cloak carried a weapon's worth of stats then everyone wears
+     the same cloak and the slot is a tax, not a choice. So armour buys DEF
+     and pays in speed, and the other four trade in the numbers that decide
+     whether you get hit rather than how hard you hit back. None of them
+     carries ATK at all. */
+
+  // --- armour, worn over the shirt --------------------------------------
+  padded_jerkin: A({
+    id: 'padded_jerkin', name: 'Padded Jerkin', nameTh: 'เสื้อเกราะนวม', slot: 'armor',
+    def: 9, level: 10, weight: 90, value: 2600, rarity: 'common', speed: -1,
+    desc: 'ผ้าหนาหลายชั้นเย็บทับกัน ถูกที่สุดที่ยังเรียกว่าเกราะได้',
+    sprite: { layer: 'armor', key: 'leather', gendered: true },
+  }),
+  scaled_harness: A({
+    id: 'scaled_harness', name: 'Scaled Harness', nameTh: 'เกราะเกล็ด', slot: 'armor',
+    def: 16, mdef: 4, level: 30, weight: 150, value: 20000, rarity: 'uncommon',
+    stats: { vit: 1 }, speed: -2,
+    sprite: { layer: 'armor', key: 'chain', gendered: true },
+  }),
+  warplate_harness: A({
+    id: 'warplate_harness', name: 'Warplate Harness', nameTh: 'เกราะศึกเหล็กหนา', slot: 'armor',
+    def: 25, mdef: 6, level: 48, weight: 260, value: 86000, rarity: 'rare',
+    stats: { vit: 2 }, speed: -3,
+    sprite: { layer: 'armor', key: 'plate', gendered: true },
+  }),
+  dawnsteel_harness: A({
+    id: 'dawnsteel_harness', name: 'Dawnsteel Harness', nameTh: 'เกราะเหล็กอรุณ', slot: 'armor',
+    def: 34, mdef: 10, level: 64, weight: 300, value: 220000, rarity: 'epic',
+    stats: { vit: 3 }, hp: 120, speed: -4, element: 'holy',
+    desc: 'หนักจนเดินช้าลงจริงๆ และคุ้มจนไม่มีใครบ่น',
+    sprite: { layer: 'armor', key: 'plate', gendered: true, tint: '#f0d89c' },
+  }),
+
+  // --- cloak: the back slot, separate from wings ------------------------
+  travelers_cloak: A({
+    id: 'travelers_cloak', name: "Traveler's Cloak", nameTh: 'ผ้าคลุมนักเดินทาง', slot: 'cloak',
+    def: 3, level: 6, weight: 30, value: 900, rarity: 'common', refinable: false, speed: 2,
+    cloak: { style: 'wool' },
+    desc: 'กันลมกันฝน และทำให้เดินได้ทั้งวันโดยไม่หมดแรง',
+  }),
+  wolfpelt_cloak: A({
+    id: 'wolfpelt_cloak', name: 'Wolfpelt Cloak', nameTh: 'ผ้าคลุมหนังหมาป่า', slot: 'cloak',
+    def: 6, mdef: 4, level: 26, weight: 45, value: 14000, rarity: 'uncommon', refinable: false, speed: 3,
+    cloak: { style: 'pelt' },
+  }),
+  nightfall_cloak: A({
+    id: 'nightfall_cloak', name: 'Nightfall Cloak', nameTh: 'ผ้าคลุมราตรี', slot: 'cloak',
+    mdef: 12, level: 46, weight: 50, value: 76000, rarity: 'rare', refinable: false,
+    flee: 8, speed: 4, element: 'dark', cloak: { style: 'shadow' },
+  }),
+  dawnweave_cloak: A({
+    id: 'dawnweave_cloak', name: 'Dawnweave Cloak', nameTh: 'ผ้าคลุมทอแสงอรุณ', slot: 'cloak',
+    def: 10, mdef: 20, level: 62, weight: 55, value: 210000, rarity: 'epic', refinable: false,
+    hp: 140, speed: 5, element: 'holy', cloak: { style: 'dawn' },
+  }),
+
+  // --- scarf: the neck --------------------------------------------------
+  wool_scarf: A({
+    id: 'wool_scarf', name: 'Wool Scarf', nameTh: 'ผ้าพันคอขนสัตว์', slot: 'scarf',
+    def: 2, level: 4, weight: 12, value: 500, rarity: 'common', refinable: false,
+    scarf: { color: '#b8503f' },
+  }),
+  caravan_scarf: A({
+    id: 'caravan_scarf', name: 'Caravan Scarf', nameTh: 'ผ้าพันคอกองคาราวาน', slot: 'scarf',
+    mdef: 5, sp: 20, level: 24, weight: 14, value: 11000, rarity: 'common', refinable: false,
+    scarf: { color: '#c9a44c' },
+  }),
+  ashsilk_scarf: A({
+    id: 'ashsilk_scarf', name: 'Ashsilk Scarf', nameTh: 'ผ้าพันคอไหมเถ้า', slot: 'scarf',
+    mdef: 11, sp: 50, level: 44, weight: 16, value: 68000, rarity: 'rare', refinable: false,
+    cast: 3, scarf: { color: '#7e6f86' },
+  }),
+  choirsilk_scarf: A({
+    id: 'choirsilk_scarf', name: 'Choirsilk Scarf', nameTh: 'ผ้าพันคอไหมขับร้อง', slot: 'scarf',
+    mdef: 18, sp: 90, hp: 80, level: 62, weight: 18, value: 196000, rarity: 'epic', refinable: false,
+    cast: 5, element: 'holy', scarf: { color: '#e8d9a6' },
+  }),
+
+  // --- glasses: what you can see ----------------------------------------
+  reading_lenses: A({
+    id: 'reading_lenses', name: 'Reading Lenses', nameTh: 'แว่นอ่านหนังสือ', slot: 'glasses',
+    hit: 3, level: 8, weight: 6, value: 800, rarity: 'common', refinable: false,
+    glasses: { style: 'round', color: '#cfd6df' },
+    desc: 'ไม่ได้ทำมาเพื่อการต่อสู้ แต่เล็งแม่นขึ้นจริง',
+  }),
+  surveyor_lenses: A({
+    id: 'surveyor_lenses', name: "Surveyor's Lenses", nameTh: 'แว่นช่างสำรวจ', slot: 'glasses',
+    hit: 8, level: 28, weight: 7, value: 13000, rarity: 'uncommon', refinable: false,
+    glasses: { style: 'square', color: '#b4a06a' },
+  }),
+  truesight_lenses: A({
+    id: 'truesight_lenses', name: 'Truesight Lenses', nameTh: 'แว่นตาจริง', slot: 'glasses',
+    hit: 16, crit: 3, level: 48, weight: 8, value: 82000, rarity: 'rare', refinable: false,
+    glasses: { style: 'round', color: '#8fd0ff' },
+  }),
+  dawnglass_lenses: A({
+    id: 'dawnglass_lenses', name: 'Dawnglass Lenses', nameTh: 'แว่นแก้วอรุณ', slot: 'glasses',
+    hit: 26, crit: 6, level: 64, weight: 8, value: 214000, rarity: 'epic', refinable: false,
+    element: 'holy', glasses: { style: 'square', color: '#ffd678' },
+  }),
+
+  // --- mask: what you show ----------------------------------------------
+  cloth_mask: A({
+    id: 'cloth_mask', name: 'Cloth Mask', nameTh: 'ผ้าปิดหน้า', slot: 'mask',
+    def: 2, level: 12, weight: 10, value: 1000, rarity: 'common', refinable: false,
+    mask: { style: 'wrap', color: '#8d8578' },
+  }),
+  bandit_mask: A({
+    id: 'bandit_mask', name: 'Bandit Mask', nameTh: 'หน้ากากโจร', slot: 'mask',
+    def: 4, flee: 6, level: 32, weight: 12, value: 18000, rarity: 'uncommon', refinable: false,
+    mask: { style: 'wrap', color: '#3c3f4a' },
+  }),
+  plague_mask: A({
+    id: 'plague_mask', name: 'Plague Mask', nameTh: 'หน้ากากหมอโรคระบาด', slot: 'mask',
+    def: 6, mdef: 8, level: 50, weight: 14, value: 90000, rarity: 'rare', refinable: false,
+    mask: { style: 'beak', color: '#cbbf9a' },
+    desc: 'จะงอยยาวๆ นั่นเคยใส่สมุนไพรไว้ข้างใน ตอนนี้ไม่มีใครจำได้แล้วว่าได้ผลไหม',
+  }),
+  revenant_mask: A({
+    id: 'revenant_mask', name: 'Revenant Mask', nameTh: 'หน้ากากผีคืนชีพ', slot: 'mask',
+    def: 10, mdef: 14, crit: 5, level: 64, weight: 15, value: 218000, rarity: 'epic', refinable: false,
+    element: 'dark', mask: { style: 'skull', color: '#e4dccb' },
+  }),
+
   /* ================= OFFHAND ================= */
   wooden_shield: A({
     id: 'wooden_shield', name: 'Wooden Shield', nameTh: 'โล่ไม้', slot: 'offhand', wclass: 'shield',

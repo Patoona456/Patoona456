@@ -1,6 +1,6 @@
 // Canvas renderer: procedural terrain tiles + LPC paper-doll entities.
 import { TILE, SPRITE, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
-import { vecOf } from '../../shared/facing.js';
+import { vecOf, toDir4 } from '../../shared/facing.js';
 import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
@@ -8,6 +8,7 @@ import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers } from './sprites.js';
 import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
+import { drawBehind, drawInFront, apparelOf } from './apparel.js';
 import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
 import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from './skillfx.js';
@@ -503,6 +504,15 @@ export class Renderer {
               scale: scale * (wing.scale ?? 1), moving: anim === 'walk',
             });
           }
+          // The four slots drawn in code rather than from a sheet. The cloak
+          // hangs behind the body, so it goes on before it; the scarf, the
+          // glasses and the mask go over the top further down.
+          const worn = apparelOf(e.eq, ITEMS);
+          const dress = {
+            x: e.x, y: e.y, dir: toDir4(e.d ?? 0), scale,
+            t: now + (e.id.charCodeAt(1) ?? 0) * 37, moving: anim === 'walk',
+          };
+          drawBehind(ctx, worn, dress);
           drawCharacter(ctx, layers, {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
             scale,
@@ -510,6 +520,7 @@ export class Renderer {
             tint: e.sprite?.tint ?? null,
             flash: hurt,
           });
+          drawInFront(ctx, worn, dress);
           if (e.k === 'p') this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
         }
       }

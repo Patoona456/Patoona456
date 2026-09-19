@@ -96,6 +96,60 @@ export const SHAPES = {
     }
   },
   belt(c) { px(c, 4, 13, 24, 7, '#6b4f34'); px(c, 13, 11, 8, 11, '#c9a227'); px(c, 15, 14, 4, 5, '#3a2c18'); },
+  // The five places the art boards added. A breastplate reads as heavier
+  // than the shirt it goes over, so it keeps the rivets and loses the neck.
+  harness(c) {
+    c.fillStyle = '#9aa6b6'; c.beginPath();
+    c.moveTo(8, 9); c.lineTo(24, 9); c.lineTo(24, 16); c.lineTo(20, 27); c.lineTo(12, 27); c.lineTo(8, 16);
+    c.closePath(); c.fill();
+    px(c, 8, 9, 16, 2, '#d3dde9');
+    px(c, 8, 16, 16, 2, '#65717f');
+    for (const x of [10, 21]) { disc(c, x, 12, 2.4, '#5d6a79'); disc(c, x, 23, 2.4, '#5d6a79'); }
+    px(c, 15, 11, 2, 15, '#7d8a9a');
+  },
+  cloak(c) {
+    c.fillStyle = '#5d4f7a'; c.beginPath();
+    c.moveTo(11, 6); c.lineTo(21, 6); c.lineTo(27, 27); c.lineTo(19, 24); c.lineTo(16, 28);
+    c.lineTo(13, 24); c.lineTo(5, 27); c.closePath(); c.fill();
+    px(c, 11, 6, 10, 3, '#8a79ad');                         // collar
+    disc(c, 16, 8, 2.2, '#e0b64a');                         // clasp
+  },
+  scarf(c) {
+    px(c, 5, 12, 22, 6, '#b8503f');
+    c.fillStyle = '#8f3a2d';
+    c.beginPath(); c.moveTo(18, 18); c.lineTo(26, 22); c.lineTo(17, 27); c.closePath(); c.fill();
+    px(c, 5, 12, 22, 2, '#d4705f');
+  },
+  glasses(c) {
+    c.strokeStyle = '#cfd6df'; c.lineWidth = 2.4;
+    c.fillStyle = 'rgba(150,205,255,.35)';
+    for (const x of [10, 22]) { c.beginPath(); c.arc(x, 16, 5.5, 0, Math.PI * 2); c.fill(); c.stroke(); }
+    c.beginPath(); c.moveTo(15.5, 16); c.lineTo(16.5, 16); c.stroke();
+    c.beginPath(); c.moveTo(4.5, 14); c.lineTo(2, 12); c.moveTo(27.5, 14); c.lineTo(30, 12); c.stroke();
+  },
+  // Wings fell through to the breastplate glyph, which is what every wing in
+  // the game has been showing in the bag since they were added.
+  wings(c) {
+    for (const side of [-1, 1]) {
+      c.save(); c.translate(16, 16); c.scale(side, 1);
+      c.fillStyle = '#e9d9a8'; c.beginPath();
+      c.moveTo(1, -6); c.quadraticCurveTo(13, -10, 14, 2);
+      c.quadraticCurveTo(9, 0, 1, 7); c.closePath(); c.fill();
+      c.fillStyle = '#c0aa74'; c.beginPath();
+      c.moveTo(1, 0); c.quadraticCurveTo(9, -1, 13, 1);
+      c.quadraticCurveTo(8, 2, 1, 7); c.closePath(); c.fill();
+      c.restore();
+    }
+    px(c, 15, 8, 2, 16, '#9a8a5c');
+  },
+  mask(c) {
+    c.fillStyle = '#cbbf9a'; c.beginPath();
+    c.moveTo(7, 8); c.lineTo(25, 8); c.lineTo(25, 17); c.lineTo(16, 28); c.lineTo(7, 17);
+    c.closePath(); c.fill();
+    px(c, 7, 8, 18, 2, '#e6dcc0');
+    px(c, 10, 13, 4, 3, '#3a3327'); px(c, 18, 13, 4, 3, '#3a3327');   // eye holes
+    px(c, 14, 19, 4, 4, '#3a3327');
+  },
   ring(c) {
     c.strokeStyle = '#e0b64a'; c.lineWidth = 4; c.beginPath(); c.arc(16, 19, 8, 0, Math.PI * 2); c.stroke();
     disc(c, 16, 9, 4.5, '#ff6b8a');
@@ -399,7 +453,10 @@ export function itemIconKind(id) {
   if (it.type === 'armor') {
     if (it.slot === 'head') return id.includes('hood') ? 'hood' : 'helm';
     if (it.slot === 'accessory') return 'ring';
-    return { torso: 'armor', legs: 'legs', feet: 'boots', hands: 'gloves', belt: 'belt', offhand: 'shield' }[it.slot] ?? 'armor';
+    return {
+      torso: 'armor', legs: 'legs', feet: 'boots', hands: 'gloves', belt: 'belt', offhand: 'shield',
+      armor: 'harness', cloak: 'cloak', scarf: 'scarf', glasses: 'glasses', mask: 'mask', wings: 'wings',
+    }[it.slot] ?? 'armor';
   }
   return 'crate';
 }
