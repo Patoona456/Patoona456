@@ -609,6 +609,7 @@ export const MONSTERS = {
     id: 'orc_warlord', name: 'Orc Warlord Gruum', nameTh: 'จอมทัพออร์ค กรูม', level: 55,
     boss: true, hp: 30000, atk: 355, def: 80, mdef: 55, hit: 111, flee: 122,
     exp: 26000, jobExp: 16000, element: 'ember', race: 'demon', size: 'large',
+    script: 'warlord',
     speed: 92, aggressive: true, aggroRange: 380, attackDelay: 1.3, respawn: 3600,
     sprite: { kind: 'sheet', key: 'red_orc', layers: { weapon: 'longspear' }, scale: 1.45 },
     skills: ['whirlwind', 'reckless_charge'],
@@ -652,6 +653,7 @@ export const MONSTERS = {
     id: 'skeleton_king', name: 'Skeleton King Vhaal', nameTh: 'ราชันโครงกระดูก วาล', level: 65,
     boss: true, hp: 52000, atk: 430, matk: 350, def: 95, mdef: 90, hit: 118, flee: 130,
     exp: 52000, jobExp: 32000, element: 'shade', race: 'undead', size: 'large',
+    script: 'vhaal',
     speed: 86, aggressive: true, aggroRange: 400, attackDelay: 1.25, respawn: 5400,
     sprite: {
       kind: 'sheet', key: 'skeleton', scale: 1.5,

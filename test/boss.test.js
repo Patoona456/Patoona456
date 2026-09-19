@@ -13,7 +13,8 @@ const def = MONSTERS.reliquary_warden;
 /** Block for `ms` without a timer, so the boss's wall-clock timers advance. */
 const wait = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
-function fight() {
+function fight(defId = 'reliquary_warden') {
+  const bossDef = MONSTERS[defId];
   const events = [];
   const spawned = [];
   const player = (name, x, y) => ({
@@ -43,14 +44,14 @@ function fight() {
   };
 
   const m = {
-    id: 'boss', name: def.nameTh, defId: 'reliquary_warden', def, alive: true,
-    hp: def.hp, maxHp: def.hp, x: 0, y: 0, statuses: [], mods: {},
-    derived: { atk: def.atk, matk: def.matk, level: def.level, maxHp: def.hp },
-    target: 'TANK', element: def.element, threat: new Map(),
+    id: 'boss', name: bossDef.nameTh, defId, def: bossDef, alive: true,
+    hp: bossDef.hp, maxHp: bossDef.hp, x: 0, y: 0, statuses: [], mods: {},
+    derived: { atk: bossDef.atk, matk: bossDef.matk, level: bossDef.level, maxHp: bossDef.hp },
+    target: 'TANK', element: bossDef.element, threat: new Map(),
   };
   zone.entities.set('boss', m);
   const tick = () => tickBoss(zone, m, Date.now());
-  return { zone, m, tank, away, events, spawned, tick };
+  return { zone, m, def: bossDef, tank, away, events, spawned, tick };
 }
 
 test('it warns before it hits, and only hits what is standing in the mark', (t) => {
@@ -146,4 +147,95 @@ test('a monster without a script is left alone', () => {
   const before = f.events.length;
   f.tick();
   assert.equal(f.events.length, before, 'tickBoss acted on a monster that has no script');
+});
+
+/* --- Gruum -------------------------------------------------------------- */
+
+test('the warlord charges whoever stood furthest away, not whoever he was hitting', () => {
+  const f = fight('orc_warlord');
+  f.tick();                                    // phase one, arms the first mechanic
+  wait(1500);
+  const before = f.events.length;
+  f.tick();
+  const warns = f.events.slice(before).filter((e) => e.t === 'warn');
+  assert.ok(warns.length >= 3, `a charge should mark a lane, got ${warns.length} marks`);
+  // The lane runs from the boss toward AWAY (2000,2000), not toward his target.
+  const last = warns[warns.length - 1];
+  assert.ok(last.x > 500 && last.y > 500, `the lane went to ${last.x},${last.y} instead of downfield`);
+  assert.equal(f.away.hp, 9000, 'it hit before the warning expired');
+
+  wait(2200);
+  f.tick();
+  assert.ok(f.away.hp < 9000, 'standing at the end of the lane cost nothing');
+});
+
+test('the warband sharpens him, and stops when it is cleared', () => {
+  const f = fight('orc_warlord');
+  f.m.hp = Math.floor(f.def.hp * 0.5);         // phase two
+  f.tick();                                    // announces the horn
+  wait(1500);
+  f.tick();                                    // and they arrive
+  assert.ok(f.spawned.length >= 2, 'no warband appeared');
+  assert.ok((f.m.mods.atkPct ?? 0) > 0, 'the warband is not making him hit harder');
+
+  const sharpened = f.m.mods.atkPct;
+  for (const a of f.spawned) a.alive = false;
+  f.tick();
+  assert.ok((f.m.mods.atkPct ?? 0) < sharpened, 'he stayed sharpened after the warband died');
+});
+
+test('a leashed warlord does not hand the next party a lit floor', () => {
+  const f = fight('orc_warlord');
+  f.m.hp = Math.floor(f.def.hp * 0.2);         // phase three
+  f.tick();
+  f.m.pyres = [{ x: 0, y: 0, r: 110 }];
+  resetBoss(f.zone, f.m);
+  assert.deepEqual(f.m.pyres, [], 'the fires were still burning');
+  assert.deepEqual(f.m.warband, [], 'the warband survived the reset');
+  assert.equal(f.m.mods.atkPct, 0, 'he reset still sharpened');
+  for (const a of f.spawned) assert.ok(!f.zone.entities.has(a.id), 'a summon outlived the reset');
+});
+
+/* --- Vhaal -------------------------------------------------------------- */
+
+test('the king kills the rim and spares the middle, the opposite of the Warden', () => {
+  const f = fight('skeleton_king');
+  f.tank.x = 0; f.tank.y = 0;                  // at the throne
+  f.away.x = 220; f.away.y = 0;                // out on the rim, inside the ring
+  f.tick();
+  wait(1500);
+  f.tick();                                    // raises the rings
+  wait(2400);
+  f.tick();                                    // they land
+  assert.equal(f.tank.hp, 9000, 'standing at the throne was punished');
+  assert.ok(f.away.hp < 9000, 'standing on the rim was safe');
+});
+
+test('the tether bills two players for standing apart, and stops when they close up', () => {
+  const f = fight('skeleton_king');
+  f.m.hp = Math.floor(f.def.hp * 0.4);         // phase two
+  // Drive mechanics until the tether is the one that comes up.
+  for (let i = 0; i < 6 && !f.m.tether; i++) { f.m.nextMechanicAt = 0; f.tick(); }
+  assert.ok(f.m.tether, 'the tether never went out');
+  assert.ok(f.tank.statuses.some((s) => s.key === 'vhaal_tether'), 'nobody was told they were tethered');
+
+  f.away.x = 2000; f.away.y = 2000;            // stretched
+  const hp = f.tank.hp;
+  wait(1600);
+  f.tick();
+  assert.ok(f.tank.hp < hp, 'the tether did not bite while stretched');
+
+  f.away.x = f.tank.x + 20; f.away.y = f.tank.y;
+  const closed = f.tank.hp;
+  wait(1100);
+  f.tick();
+  assert.equal(f.tank.hp, closed, 'it kept biting after they closed up');
+});
+
+test('the court keeps standing back up in the last quarter', () => {
+  const f = fight('skeleton_king');
+  f.m.hp = Math.floor(f.def.hp * 0.15);        // phase three
+  f.tick();
+  assert.ok(f.spawned.length >= 1, 'the court never rose');
+  assert.ok(f.m.mods.atkPct > 0, 'he did not enrage at a quarter');
 });
