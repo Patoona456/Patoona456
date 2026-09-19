@@ -13,7 +13,8 @@ import { drawWings } from './wings.js';
 import { SLOTS } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
 import { gameClock, skyAt } from '../../shared/daycycle.js';
-import { glowTier, glowCss } from '../../shared/refineglow.js';
+import { glowTier, glowCss, specialMarks, signatureOf, SPECIAL_MARKS, SIGNATURES } from '../../shared/refineglow.js';
+import { WEAPON_CLASSES } from '../../shared/weapons.js';
 import { MAPS } from '../../shared/data/maps.js';
 
 /** Zone ids to the names players see, for quest rows. */
@@ -526,7 +527,7 @@ export class UI {
     const info = el('div');
     info.innerHTML = `<div class="row"><span>อาชีพ</span><b>${job?.nameTh} (${job?.name})</b></div>
       <div class="muted" style="padding:4px 0">${job?.desc ?? ''}</div>
-      <div class="row"><span>อาวุธที่ใช้ได้</span><b>${(job?.weapons ?? []).join(', ')}</b></div>`;
+      <div class="row"><span>อาวุธที่ใช้ได้</span><b>${(job?.weapons ?? []).map((w) => WEAPON_CLASSES[w]?.nameTh ?? w).join(', ')}</b></div>`;
     if (job?.next?.length) {
       info.append(el('div', 'muted', `สายต่อไป: ${job.next.map((j) => JOBS[j].nameTh).join(' / ')} (คุยกับครูฝึกเมื่อ Job Lv. ${job.jobLevelToAdvance})`));
     }
@@ -613,9 +614,28 @@ export class UI {
       line.style.fontSize = '12px';
       meta.append(line);
     }
+    // A weapon's look is four independent things (see shared/refineglow.js);
+    // the tooltip says all of them, because a player who cannot tell why
+    // their sword is glowing green has a mystery, not a feature.
+    const sig = signatureOf(it);
+    if (sig) {
+      const line = el('div', '', `❖ ${SIGNATURES[sig].nameTh}`);
+      line.style.color = `rgb(${SIGNATURES[sig].color.join(',')})`;
+      line.style.fontSize = '12px';
+      meta.append(line);
+    }
+    const marks = specialMarks(it);
+    if (marks.length) {
+      const line = el('div', '', marks.map((m) => `◆ ${SPECIAL_MARKS[m].nameTh}`).join(' '));
+      line.style.color = `rgb(${SPECIAL_MARKS[marks[0]].color.join(',')})`;
+      line.style.fontSize = '12px';
+      meta.append(line);
+    }
     meta.append(el('div', 'muted', [
       { weapon: 'อาวุธ', armor: 'เกราะ', consumable: 'ของใช้', material: 'วัตถุดิบ', ammo: 'กระสุน' }[it.type] ?? '',
-      it.wclass, it.level ? `ต้องเลเวล ${it.level}` : '',
+      WEAPON_CLASSES[it.wclass]?.nameTh ?? it.wclass,
+      it.twoHanded ? 'สองมือ' : '',
+      it.level ? `ต้องเลเวล ${it.level}` : '',
     ].filter(Boolean).join(' · ')));
     head.append(ico, meta);
     head.style.justifyContent = 'flex-start';

@@ -6,7 +6,7 @@ import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers } from './sprites.js';
-import { glowTier } from '../../shared/refineglow.js';
+import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
@@ -566,8 +566,10 @@ export class Renderer {
     drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.70 * weight, blur: 2.5 });
     drawRefineGlow(ctx, layers, { ...opts, alpha: Math.min(0.95, power * 0.9) * weight, blur: 0 });
 
-    // light cast on the ground around the wielder, at the higher tiers
-    if (tier.light) {
+    // light cast on the ground around the wielder, once the tier is drawing
+    // the `circle` primitive - which tier does is the table's call, not a
+    // threshold guessed at here
+    if (tier.light && hasOverlay(tier, 'circle')) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       const r = tier.light * (0.85 + pulse * 0.25);
@@ -588,7 +590,7 @@ export class Renderer {
     }
 
     // embers drifting off the blade
-    if (tier.sparks) {
+    if (tier.sparks && hasOverlay(tier, 'spark')) {
       const due = this.sparkAt.get(e.id) ?? 0;
       const gap = (swinging ? 110 : 420) / tier.sparks;
       if (now >= due) {

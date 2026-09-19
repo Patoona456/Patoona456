@@ -86,8 +86,8 @@ test('the refine tiers climb, and the fire ones come first', () => {
     assert.equal(t.color.length, 3);
     last = t;
   }
-  assert.deepEqual(GLOW_TIERS.slice(0, 4).map((t) => t.at), [1, 3, 5, 7],
-    'the fire tiers are not at +1 +3 +5 +7');
+  assert.deepEqual(GLOW_TIERS.filter((t) => t.band === 'ember').map((t) => t.at), [1, 2, 3, 4, 5, 6, 7],
+    'the fire band is not +1 through +7');
 });
 
 test('a tier with no art falls back to the aura rather than going dark', () => {

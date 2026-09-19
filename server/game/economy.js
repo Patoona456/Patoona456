@@ -2,6 +2,7 @@
 import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
 import { SHOPS, HEAL_PRICE_PER_LEVEL, STORAGE_FEE, WARP_ROUTES, RESET_STAT_PRICE, RESET_SKILL_PRICE } from '../../shared/data/npcs.js';
 import { npcSellPrice, marketTax, refineChance, refineCost } from '../../shared/formulas.js';
+import { MAX_REFINE } from '../../shared/refineglow.js';
 import { STARTING_STATS } from '../../shared/data/jobs.js';
 import { db, markDirty } from '../persistence.js';
 
@@ -236,7 +237,7 @@ export function refine(world, p, index, useOil) {
   const def = ITEMS[st.id];
   if (!def || !def.refinable) return { error: 'ไอเทมนี้ตีบวกไม่ได้' };
   const lvl = st.refine ?? 0;
-  if (lvl >= 15) return { error: 'ตีบวกสูงสุดแล้ว (+15)' };
+  if (lvl >= MAX_REFINE) return { error: `ตีบวกสูงสุดแล้ว (+${MAX_REFINE})` };
 
   const cost = refineCost(def.value, lvl);
   if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost} ออรัม` };

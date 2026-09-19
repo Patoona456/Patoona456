@@ -121,7 +121,7 @@ export const ITEMS = {
   hunters_fang: W({
     id: 'hunters_fang', name: "Hunter's Fang", nameTh: 'เขี้ยวนายพราน', wclass: 'dagger',
     atk: 41, delay: 0.72, range: 40, level: 20, weight: 60, value: 6800, rarity: 'uncommon',
-    stats: { agi: 2 }, crit: 4, sprite: { layer: 'weapon', key: 'dagger', gendered: true },
+    stats: { agi: 2 }, crit: 4, marks: ['poison'], sprite: { layer: 'weapon', key: 'dagger', gendered: true },
     desc: 'เบาและเร็ว เหมาะกับสายคริติคอล',
   }),
   emberfang: W({
@@ -133,7 +133,7 @@ export const ITEMS = {
   ashen_edge: W({
     id: 'ashen_edge', name: 'Ashen Edge', nameTh: 'คมเถ้าธุลี', wclass: 'dagger',
     atk: 86, delay: 0.68, range: 40, level: 60, weight: 75, value: 168000, rarity: 'epic',
-    element: 'dark', stats: { agi: 4, luk: 3 }, crit: 10, lifesteal: 3,
+    element: 'dark', stats: { agi: 4, luk: 3 }, crit: 10, lifesteal: 3, marks: ['curse'],
     sprite: { layer: 'weapon', key: 'dagger', gendered: true },
     desc: 'ตกจากราชันโครงกระดูกเท่านั้น',
   }),
@@ -266,7 +266,7 @@ export const ITEMS = {
   emberfall_scepter: W({
     id: 'emberfall_scepter', name: 'Emberfall Scepter', nameTh: 'คทาเอมเบอร์ฟอลล์', wclass: 'wand',
     atk: 26, matk: 92, delay: 0.95, range: 66, level: 58, weight: 50, value: 176000, rarity: 'epic',
-    element: 'fire', stats: { int: 7 }, cast: 5,
+    element: 'fire', stats: { int: 7 }, cast: 5, marks: ['manaburn'],
     sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
   }),
 
@@ -352,7 +352,7 @@ export const ITEMS = {
   bearded_axe: W({
     id: 'bearded_axe', name: 'Bearded Axe', nameTh: 'ขวานเครา', wclass: 'axe',
     atk: 56, delay: 1.08, range: 46, level: 24, weight: 120, value: 16000, rarity: 'uncommon',
-    stats: { str: 3 }, crit: 3,
+    stats: { str: 3 }, crit: 3, marks: ['bleed'],
     sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#9c8f7c' },
   }),
   quarry_maul: W({
@@ -433,7 +433,7 @@ export const ITEMS = {
   dawnwood_staff: W({
     id: 'dawnwood_staff', name: 'Dawnwood Staff', nameTh: 'ไม้เท้าไม้อรุณ', wclass: 'staff',
     atk: 30, matk: 108, delay: 1.02, range: 68, level: 62, weight: 62, value: 250000, rarity: 'epic',
-    element: 'holy', twoHanded: true, stats: { int: 8, dex: 2 }, cast: 6,
+    element: 'holy', twoHanded: true, stats: { int: 8, dex: 2 }, cast: 6, marks: ['heal'],
     sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
     desc: 'ไม้ที่ตัดตอนแสงแรกแตะยอดเท่านั้น ตัดช้ากว่านั้นก็เป็นแค่ไม้',
   }),
@@ -529,7 +529,7 @@ export const ITEMS = {
   dawnforged_belt: A({ id: 'dawnforged_belt', name: 'Dawnforged Belt', nameTh: 'เข็มขัดตีอรุณ', slot: 'belt', def: 22, mdef: 14, level: 62, weight: 36, value: 175000, rarity: 'epic', weightCapBonus: 900, stats: { str: 3, vit: 3 }, hp: 120, element: 'holy', sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#e8c877' } }),
 
   banded_shield: A({ id: 'banded_shield', name: 'Banded Shield', nameTh: 'โล่รัดเหล็ก', slot: 'offhand', wclass: 'shield', def: 33, level: 30, weight: 150, value: 17000, rarity: 'common', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#8d9199' } }),
-  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', wclass: 'shield', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'holy', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
+  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', wclass: 'shield', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'holy', marks: ['shield'], sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
 
   vow_signet: A({ id: 'vow_signet', name: 'Signet of Vows', nameTh: 'แหวนคำสาบาน', slot: 'accessory', level: 34, weight: 5, value: 32000, rarity: 'rare', refinable: false, stats: { vit: 2, dex: 2 }, hp: 60, sp: 30 }),
   choirbone_torc: A({ id: 'choirbone_torc', name: 'Choirbone Torc', nameTh: 'สร้อยคอกระดูกขับร้อง', slot: 'accessory', level: 64, weight: 7, value: 195000, rarity: 'epic', refinable: false, stats: { int: 4, dex: 3, luk: 2 }, hp: 180, sp: 120, mdef: 18 }),
