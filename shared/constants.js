@@ -115,6 +115,7 @@ export const OP = {
   MARKET_POST: 'marketPost',
   MARKET_BUY: 'marketBuy',
   MARKET_CANCEL: 'marketCancel',
+  SOCKET: 'socket',
   REFINE: 'refine',
   REPAIR: 'repair',
   PARTY: 'party',

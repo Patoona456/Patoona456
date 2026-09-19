@@ -27,7 +27,7 @@ export const SHOPS = {
   },
   smith: {
     id: 'smith', name: 'โรงตีเหล็กบอร์ก',
-    buysAnything: true, services: ['refine', 'repair', 'craft'],
+    buysAnything: true, services: ['refine', 'socket', 'repair', 'craft'],
     stock: [
       { id: 'brown_tunic', stock: 6 },
       { id: 'teal_tunic', stock: 6 },
@@ -80,6 +80,7 @@ export const NPC_DIALOG = {
     options: [
       { label: 'ดูของขาย', action: 'shop', shop: 'smith' },
       { label: 'ตีบวก (Refine)', action: 'refine' },
+      { label: 'ฝังการ์ด', action: 'socket' },
       { label: 'ซ่อมอุปกรณ์', action: 'repair' },
       { label: 'คราฟต์ของ', action: 'craft' },
       { label: 'ขายของ', action: 'sell' },

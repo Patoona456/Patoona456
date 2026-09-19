@@ -65,6 +65,7 @@ export const MONSTERS = {
     element: 'shade', race: 'undead', speed: 58, aggressive: true, aggroRange: 190, respawn: 22,
     sprite: { kind: 'sheet', key: 'ghoul' },
     drops: [
+      { id: 'card_husk', chance: 0.004 },
       { id: 'mystery_scroll', chance: 0.025 },
       { id: 'bone_chip', chance: 0.32 },
       { id: 'rat_pelt', chance: 0.30 },
@@ -266,6 +267,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'wand', head: 'cloth_hood' } },
     skills: ['ember_bolt', 'storm_sigil'],
     drops: [
+      { id: 'card_orc', chance: 0.004 },
       { id: 'runesteel_rod', chance: 0.035 },
       { id: 'ring_of_focus', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.04 },
@@ -284,6 +286,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#cfe8ff', scale: 1.05, layers: { weapon: 'wand' } },
     skills: ['frost_nail'],
     drops: [
+      { id: 'card_wight', chance: 0.004 },
       { id: 'hoarfrost_rod', chance: 0.012 },
       { id: 'mystery_scroll', chance: 0.05 },
       { id: 'frost_tear', chance: 0.16 },
@@ -332,6 +335,7 @@ export const MONSTERS = {
     aggroRange: 210, attackDelay: 1.2, respawn: 26,
     sprite: { kind: 'blob', shape: 'floater', color: '#7a6a9c', float: true, scale: 0.85 },
     drops: [
+      { id: 'card_moth', chance: 0.004 },
       { id: 'mystery_scroll', chance: 0.02 },
       { id: 'bone_chip', chance: 0.28, qty: [1, 2] },
     ],
@@ -386,6 +390,7 @@ export const MONSTERS = {
     attackDelay: 2.3,
     sprite: { kind: 'blob', shape: 'spiky', color: '#9a8c74', dark: '#5c5342', scale: 1.25 },
     drops: [
+      { id: 'card_grub', chance: 0.004 },
       { id: 'metal_helm', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'iron_ore', chance: 0.40, qty: [2, 5] },
@@ -430,6 +435,7 @@ export const MONSTERS = {
     sprite: { kind: 'compose', body: 'female/darkelf', scale: 1.05,
       layers: { torso: 'leather', legs: 'pants_white', feet: 'shoes_black', head: 'leather_cap', weapon: 'dagger' } },
     drops: [
+      { id: 'card_stalker', chance: 0.004 },
       { id: 'rimebound_sash', chance: 0.04 },
       { id: 'golden_boots', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.04 },
@@ -519,6 +525,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#9a86b8', scale: 1.3,
       layers: { head: 'golden_helm', torso: 'plate' } },
     drops: [
+      { id: 'card_thrall', chance: 0.004 },
       { id: 'dawnplate_greaves', chance: 0.018 },
       { id: 'dawnforged_belt', chance: 0.02 },
       { id: 'mystery_scroll', chance: 0.05 },
@@ -537,6 +544,7 @@ export const MONSTERS = {
       layers: { head: 'cloth_hood', weapon: 'wand' } },
     skills: ['grim_harvest'],
     drops: [
+      { id: 'card_choir', chance: 0.004 },
       { id: 'dawnbrand', chance: 0.014 },
       { id: 'choirbone_torc', chance: 0.016 },
       { id: 'dawnplate_helm', chance: 0.016 },
@@ -619,6 +627,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'red_orc', layers: { weapon: 'longspear' }, scale: 1.45 },
     skills: ['whirlwind', 'reckless_charge'],
     drops: [
+      { id: 'card_warlord', chance: 0.05 },
       { id: 'boss_casket', chance: 1.0 },
       { id: 'skeleton_crown', chance: 0.30 },
       { id: 'runed_whetstone', chance: 1.0, qty: [2, 5] },
@@ -666,6 +675,7 @@ export const MONSTERS = {
     },
     skills: ['grim_harvest', 'meteor_rune'],
     drops: [
+      { id: 'card_king', chance: 0.05 },
       { id: 'vow_signet', chance: 0.12 },
       { id: 'boss_casket', chance: 1.0 },
       { id: 'dawn_casket', chance: 0.35 },

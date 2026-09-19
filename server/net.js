@@ -285,6 +285,12 @@ export class Conn {
         const again = Stall.browse(p.zone, p, m.seller);
         return this.send({ t: 'stall', view: again.ok ? again.stall : null });
       }
+      case OP.SOCKET: return this.guardNpc(['smith'], () => {
+        const r = Econ.socket(this.world, p, m.gear | 0, m.card | 0);
+        if (r.error) return this.error(r.error);
+        this.notice(`ฝัง ${ITEMS[r.card]?.nameTh} ลง ${ITEMS[r.gear]?.nameTh} แล้ว (${r.used}/${r.max})`);
+        this.sendInventory();
+      });
       case OP.MARKET_POST: return this.guardNpc(['market'], () => {
         const r = Econ.marketPost(this.world, p, m.index | 0, m.qty | 0 || 1, m.price | 0);
         if (r.error) return this.error(r.error);
@@ -466,6 +472,7 @@ export class Conn {
       case 'shop': return this.send(Econ.shopPayload(m.shop ?? npc.shop ?? 'general'));
       case 'sell': return this.send({ t: OP.SHOP, mode: 'sell', id: npc.npcId, name: npc.name, stock: [] });
       case 'refine': return this.send({ t: OP.SHOP, mode: 'refine', id: npc.npcId, name: npc.name });
+      case 'socket': return this.send({ t: OP.SHOP, mode: 'socket', id: npc.npcId, name: npc.name });
       case 'repair': return this.send({ t: OP.SHOP, mode: 'repair', id: npc.npcId, name: npc.name });
       case 'craft': return this.send({ t: OP.SHOP, mode: 'craft', id: npc.npcId, name: npc.name, recipes: RECIPES });
       case 'craftDo': {

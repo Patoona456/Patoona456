@@ -232,6 +232,23 @@ export const SKILLS = {
     sp: [36, 7], ratio: [1.5, 0.45], radius: [90, 6], cooldown: [16, -0.8], anim: 'slash',
     element: 'shade', lifesteal: [20, 5], desc: 'ดูดเลือดจากทุกเป้าหมายรอบตัว',
   }),
+  // The Bulwark and the Trickster each owned three skills and not one of them
+  // was an attack, so both leaned entirely on what the tier below gave them.
+  // Neither of these is a damage career: the Bulwark's scales with how much
+  // punishment it has absorbed, and the Trickster's pays in what it steals.
+  shield_crush: S({
+    id: 'shield_crush', name: 'Shield Crush', nameTh: 'ทุบด้วยโล่', kind: 'damage', look: 'radiant', target: 'enemy',
+    sp: [22, 5], ratio: [1.9, 0.55], range: 46, cooldown: [7, -0.4], anim: 'slash',
+    weapon: ['blade', 'spear', 'rod'], aggro: [400, 200],
+    desc: 'ทุบด้วยโล่ ดึงความสนใจไปพร้อมกัน — แรงขึ้นตามค่า DEF',
+    scaleWith: 'def',
+  }),
+  cutpurse_strike: S({
+    id: 'cutpurse_strike', name: 'Cutpurse Strike', nameTh: 'ฟันชิงทรัพย์', kind: 'damage', look: 'shade', target: 'enemy',
+    sp: [18, 4], ratio: [2.2, 0.6], range: 44, cooldown: [6, -0.35], anim: 'thrust',
+    weapon: ['blade', 'bow'], lifesteal: [8, 2],
+    desc: 'ฟันแล้วฉกติดมือ ดูดเลือดเล็กน้อย',
+  }),
   smoke_bomb: S({
     id: 'smoke_bomb', name: 'Smoke Bomb', nameTh: 'ระเบิดควัน', kind: 'debuff', look: 'shade', target: 'self',
     sp: [26, 5], radius: [96, 8], duration: [6, 1], cooldown: [30, -1], anim: 'spellcast',

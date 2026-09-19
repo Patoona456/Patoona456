@@ -102,3 +102,15 @@ test('the fortress stands in the one zone where players may fight', () => {
   assert.ok(map.pvp, 'the fortress is somewhere players cannot fight over it');
   assert.ok(Siege.THRONE.x < map.width && Siege.THRONE.y < map.height, 'the throne is off the map');
 });
+
+test('the holder gains experience, and still no Aurum', () => {
+  const zone = ground({ A: 1 });
+  for (let i = 0; i < Siege.CAPTURE_SECONDS + 2; i++) Siege.tick(zone, openAt);
+  assert.ok(Siege.HOLDER_EXP_BONUS > 0, 'holding the fortress is worth nothing');
+  assert.ok(Siege.HOLDER_EXP_BONUS <= 0.15, 'the holder bonus is large enough to distort the curve');
+
+  // The prize has to stay outside the currency, or the strongest guild
+  // compounds. Experience is not currency; everything else here would be.
+  const src = readFileSync(new URL('../server/game/siege.js', import.meta.url), 'utf8');
+  assert.ok(!/\baurum\b/i.test(src), 'the siege module touches Aurum');
+});

@@ -89,7 +89,7 @@ export const JOBS = {
     hpMod: 1.6, spMod: 0.8, speedMod: 0.95, weapons: ['blade', 'spear', 'rod'],
     growth: { vit: 4, str: 2 }, next: [],
     sprite: { torso: 'plate', legs: 'metal', feet: 'metal', head: 'metal_helm', hands: 'metal_gloves' },
-    skills: ['aegis', 'thorn_guard', 'unbreakable'],
+    skills: ['shield_crush', 'aegis', 'thorn_guard', 'unbreakable'],
   },
   ravager: {
     id: 'ravager', tier: 2, name: 'Ravager', nameTh: 'ผู้บ้าคลั่ง', from: 'vanguard',
@@ -113,7 +113,7 @@ export const JOBS = {
     hpMod: 1.0, spMod: 1.05, speedMod: 1.1, weapons: ['blade', 'bow'],
     growth: { luk: 4, agi: 2 }, next: [],
     sprite: { torso: 'shirt_brown', legs: 'pants_teal', feet: 'shoes_brown' },
-    skills: ['smoke_bomb', 'snare_trap', 'sleight'],
+    skills: ['cutpurse_strike', 'smoke_bomb', 'snare_trap', 'sleight'],
   },
   sharpshooter: {
     id: 'sharpshooter', tier: 2, name: 'Sharpshooter', nameTh: 'มือแม่นปืนธนู', from: 'marksman',

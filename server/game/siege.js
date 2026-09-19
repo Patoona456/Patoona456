@@ -31,6 +31,8 @@ export const SIEGE_MAP = 'ashen_lists';
 export const THRONE = { x: 22, y: 14, r: 96 };
 /** Sunday, 20:00 UTC, for one hour. */
 export const WINDOW = { day: 0, hour: 20, minutes: 60 };
+/** What members of the holding guild gain, on top of the waived upkeep. */
+export const HOLDER_EXP_BONUS = 0.05;
 /** Seconds of uncontested standing needed to take it. */
 export const CAPTURE_SECONDS = 90;
 

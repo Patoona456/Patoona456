@@ -219,13 +219,17 @@ function rotationDps(c, w, d, seconds = 90) {
         element: sk.element ?? (sk.magic ? 'neutral' : (a.weaponElement ?? 'neutral')),
         pierce: sk.pierce ?? 0,
         ignoreDef: !!sk.ignoreDef,
+        // A skill may hit with something other than the weapon, and a model
+        // that does not know that reads a tank as worse than it is.
+        scaleWith: sk.scaleWith ?? null,
         ready: 0,
       };
     })
     .sort((x, y) => (y.ratio * y.hits) - (x.ratio * x.hits));
 
+  const withDef = { ...a, atk: (a.atk ?? 0) + (a.def ?? 0) + (a.softDef ?? 0) * 2 };
   const strike = (o) => {
-    const r = rollDamage(a, d, o);
+    const r = rollDamage(o.scaleWith === 'def' ? withDef : a, d, o);
     return r.damage * (1 + (o.pierce ?? 0));
   };
 
@@ -248,7 +252,7 @@ function rotationDps(c, w, d, seconds = 90) {
       damage += strike({
         ratio: pick.ratio, magic: pick.magic, element: pick.element,
         hits: pick.hits, ignoreDef: pick.ignoreDef, pierce: pick.pierce,
-        alwaysHit: pick.magic,
+        scaleWith: pick.scaleWith, alwaysHit: pick.magic,
       });
       pick.ready = t + pick.cd;
       nextSwing = Math.max(nextSwing, t + swing * 0.5);   // a cast delays the swing
@@ -411,7 +415,7 @@ export function incomePerHour(level) {
       const it = ITEMS[d.id];
       if (!it) return n;
       const qty = Array.isArray(d.qty) ? (d.qty[0] + d.qty[1]) / 2 : (d.qty ?? 1);
-      return n + d.chance * qty * npcSellPrice(it.value ?? 0, 0, it.rarity, isEquip(it) ? 'equip' : CRAFTING_INPUTS.has(it.id));
+      return n + d.chance * qty * npcSellPrice(it.value ?? 0, 0, it.rarity, (isEquip(it) || it.type === 'card') ? 'equip' : CRAFTING_INPUTS.has(it.id));
     }, 0);
 
   // Two honest extremes, because real play sits between them: rest off every

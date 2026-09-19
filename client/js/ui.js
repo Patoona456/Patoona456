@@ -1,5 +1,5 @@
 // All DOM: HUD, chat, panels. The game loop only calls into this module.
-import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS, isEquip } from '../../shared/data/items.js';
+import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
 import { SKILLS, val, skillCost } from '../../shared/data/skills.js';
 import { JOBS } from '../../shared/data/jobs.js';
 import { QUESTS } from '../../shared/data/quests.js';
@@ -1232,7 +1232,56 @@ export class UI {
     return card;
   }
 
+  /**
+   * Socketing, at the smith's bench next to refining - which is where it
+   * belongs, because it is the same kind of decision: permanent, and made on
+   * one specific object rather than on a type of object.
+   */
+  openSocket() {
+    const wrap = el('div', 'grid');
+    wrap.append(el('div', 'muted',
+      'การ์ดที่ฝังแล้ว <b>ถอดออกไม่ได้</b> — เลือกของก่อน แล้วเลือกการ์ดที่จะฝัง'));
+    const inv = this.game.inventory?.items ?? [];
+    const gear = inv.filter((it) => socketsOf(ITEMS[it.id]) > 0);
+    const cards = inv.filter((it) => ITEMS[it.id]?.type === 'card');
+    if (!cards.length) wrap.append(el('div', 'muted', 'ยังไม่มีการ์ดในกระเป๋า'));
+
+    wrap.append(this.itemPicker({
+      key: 'socket',
+      items: gear.map((it) => ({ id: it.i, item: it, refine: it.refine })),
+      empty: 'ไม่มีของที่ฝังการ์ดได้',
+      onSelect: (entry) => {
+        const it = entry.item;
+        const def = ITEMS[it.id];
+        const max = socketsOf(def);
+        const fitted = it.cards ?? [];
+        const body = el('div', 'grid');
+        for (const c of cards) {
+          const cd = ITEMS[c.id];
+          const row = el('div', 'row');
+          row.innerHTML = `<span>${esc(cd.nameTh)}<br><span class="muted">${esc(cd.desc ?? '')}</span></span>`;
+          const ok = cardFits(cd, def) && fitted.length < max && !fitted.includes(c.id);
+          const b = el('button', ok ? 'btn primary' : 'btn', ok ? 'ฝัง' : 'ฝังไม่ได้');
+          if (ok) {
+            b.addEventListener('click', () => {
+              this.game.audio?.play('forge');
+              this.game.net.send({ t: 'socket', gear: it.i, card: c.i });
+            });
+          } else { b.disabled = true; }
+          row.append(b);
+          body.append(row);
+        }
+        return this.detailCard(it, [
+          ['รูการ์ด', `${fitted.length}/${max}`],
+          ['ฝังอยู่', fitted.length ? fitted.map((id) => ITEMS[id]?.nameTh ?? id).join(', ') : '—'],
+        ], body, el('div', 'muted', 'ฝังแล้วถอดไม่ได้ คิดให้ดีก่อน'));
+      },
+    }));
+    return this.panel('shop', 'ฝังการ์ด', wrap);
+  }
+
   openShop(d) {
+    if (d.mode === 'socket') return this.openSocket();
     if (d.mode === 'refine') return this.openRefine();
     if (d.mode === 'repair') return this.openRepair();
     if (d.mode === 'craft') return this.openCraft();
@@ -1300,7 +1349,7 @@ export class UI {
       empty: 'ไม่มีของให้ขาย',
       onSelect: (entry) => {
         const it = entry.item;
-        const unit = npcSellPrice(it.value ?? 0, 0, it.rarity, isEquip(it) ? 'equip' : CRAFTING_INPUTS.has(it.id));
+        const unit = npcSellPrice(it.value ?? 0, 0, it.rarity, (isEquip(it) || it.type === 'card') ? 'equip' : CRAFTING_INPUTS.has(it.id));
         const qty = el('input');
         qty.type = 'number'; qty.min = 1; qty.max = it.qty; qty.value = it.qty;
         qty.style.width = '80px';

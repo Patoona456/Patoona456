@@ -397,6 +397,68 @@ export const ITEMS = {
   skeleton_crown: M({ id: 'skeleton_crown', name: 'Cracked Crown', nameTh: 'มงกุฎร้าว', value: 60000, rarity: 'epic', desc: 'ของจากบอส - มีค่ามากในตลาดผู้เล่น' }),
 };
 
+/**
+ * Cards.
+ *
+ * `cards.size` and `cards.race` have been hooks in the damage formula since
+ * it was written, with nothing anywhere filling them in. A card is what fills
+ * them: a rare drop that goes into a socket and stays there.
+ *
+ * Socketing is permanent, and that is the point rather than a limitation. A
+ * card you can pull back out is a card everybody owns one of and moves around
+ * as needed; a card that commits is a decision, and the gear it went into
+ * becomes a specific thing somebody made rather than a generic drop. It is
+ * the same argument the refine system already makes, and the reason this
+ * game's items are supposed to hold value.
+ *
+ * `fits` is which kind of gear takes it: 'weapon', 'armor', or 'any'.
+ */
+const CARD = (o) => ({ type: 'card', stack: 99, weight: 1, refinable: false, ...o });
+
+export const CARDS = {
+  card_husk: CARD({ id: 'card_husk', name: 'Husk Card', nameTh: 'การ์ดซากเถ้า', value: 42000, rarity: 'rare',
+    fits: 'weapon', card: { race: { undead: 0.2 } }, desc: 'ดาเมจต่ออันเดด +20%' }),
+  card_orc: CARD({ id: 'card_orc', name: 'Orc Card', nameTh: 'การ์ดออร์ค', value: 46000, rarity: 'rare',
+    fits: 'weapon', card: { race: { demon: 0.2 }, stats: { str: 2 } }, desc: 'ดาเมจต่อปีศาจ +20% และ STR +2' }),
+  card_grub: CARD({ id: 'card_grub', name: 'Stone Grub Card', nameTh: 'การ์ดหนอนหิน', value: 52000, rarity: 'rare',
+    fits: 'weapon', card: { size: { large: 0.25 } }, desc: 'ดาเมจต่อเป้าหมายขนาดใหญ่ +25%' }),
+  card_moth: CARD({ id: 'card_moth', name: 'Grave Moth Card', nameTh: 'การ์ดผีเสื้อสุสาน', value: 48000, rarity: 'rare',
+    fits: 'weapon', card: { size: { small: 0.25 } }, desc: 'ดาเมจต่อเป้าหมายขนาดเล็ก +25%' }),
+  card_wight: CARD({ id: 'card_wight', name: 'Frost Wight Card', nameTh: 'การ์ดภูตเยือกแข็ง', value: 64000, rarity: 'epic',
+    fits: 'armor', card: { stats: { vit: 3 }, mdef: 12 }, desc: 'VIT +3 และ MDEF +12' }),
+  card_stalker: CARD({ id: 'card_stalker', name: 'Hoar Stalker Card', nameTh: 'การ์ดนักล่าเกล็ดน้ำแข็ง', value: 70000, rarity: 'epic',
+    fits: 'armor', card: { flee: 14, stats: { agi: 2 } }, desc: 'FLEE +14 และ AGI +2' }),
+  card_choir: CARD({ id: 'card_choir', name: 'Choirmaster Card', nameTh: 'การ์ดผู้นำขับร้อง', value: 140000, rarity: 'epic',
+    fits: 'any', card: { stats: { int: 4 }, sp: 120 }, desc: 'INT +4 และ SP +120' }),
+  card_thrall: CARD({ id: 'card_thrall', name: 'Crown Thrall Card', nameTh: 'การ์ดข้ารับใช้มงกุฎ', value: 160000, rarity: 'epic',
+    fits: 'any', card: { stats: { str: 3, vit: 2 }, hp: 160 }, desc: 'STR +3 VIT +2 และ HP +160' }),
+  card_warlord: CARD({ id: 'card_warlord', name: 'Warlord Card', nameTh: 'การ์ดจอมทัพ', value: 320000, rarity: 'legendary',
+    fits: 'weapon', card: { race: { undead: 0.15, demon: 0.15, beast: 0.15 }, stats: { str: 4 } },
+    desc: 'ดาเมจต่ออันเดด/ปีศาจ/สัตว์ร้าย +15% และ STR +4' }),
+  card_king: CARD({ id: 'card_king', name: 'Skeleton King Card', nameTh: 'การ์ดราชันโครงกระดูก', value: 380000, rarity: 'legendary',
+    fits: 'armor', card: { stats: { vit: 4, int: 3 }, hp: 240, mdef: 18 },
+    desc: 'VIT +4 INT +3 HP +240 และ MDEF +18' }),
+};
+Object.assign(ITEMS, CARDS);
+
+/** How many cards a piece of gear can take. Only real gear has sockets. */
+export function socketsOf(def) {
+  if (!def) return 0;
+  if (def.sockets != null) return def.sockets;
+  if (def.type !== 'weapon' && def.type !== 'armor') return 0;
+  // Everything a player can wear takes one, and the late epics take two -
+  // which is what makes an endgame piece worth chasing a second time.
+  return (def.level ?? 1) >= 60 ? 2 : 1;
+}
+
+/** Whether this card may go into this piece. */
+export function cardFits(cardDef, gearDef) {
+  if (!cardDef?.card || !gearDef) return false;
+  const kind = gearDef.type === 'weapon' ? 'weapon' : gearDef.type === 'armor' ? 'armor' : null;
+  if (!kind) return false;
+  return cardDef.fits === 'any' || cardDef.fits === kind;
+}
+
 export const RARITY_COLORS = {
   common: '#cfd8dc', uncommon: '#66bb6a', rare: '#42a5f5', epic: '#ab47bc', legendary: '#ffa726',
 };

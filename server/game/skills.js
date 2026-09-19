@@ -112,12 +112,18 @@ export function resolve(zone, caster, payload) {
 }
 
 function attackerCard(caster, sk) {
-  return {
+  const card = {
     ...caster.derived,
     element: caster.element,
     weaponElement: caster.weaponElement,
     critPower: caster.critPower ?? 0,
   };
+  // A skill may be written to hit with something other than the weapon. A
+  // tank's shield bash that scaled off attack power would just be a worse
+  // version of everyone else's; scaling off the armour it is wearing is what
+  // makes it a tank's attack and not a consolation prize.
+  if (sk.scaleWith === 'def') card.atk = (card.atk ?? 0) + (card.def ?? 0) + (card.softDef ?? 0) * 2;
+  return card;
 }
 
 function hitOne(ctx, target, ratioMul = 1) {

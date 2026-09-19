@@ -2,6 +2,7 @@
 import { deriveStats, baseExpToNext, jobExpToNext, statCost } from '../../shared/formulas.js';
 import { ITEMS, isEquip } from '../../shared/data/items.js';
 import { JOBS, jobOf, availableSkills } from '../../shared/data/jobs.js';
+import * as Siege from './siege.js';
 import { SKILLS, val } from '../../shared/data/skills.js';
 import { MAX_BASE_LEVEL, MAX_JOB_LEVEL, SLOTS, STAT_CAP, TILE } from '../../shared/constants.js';
 import { markDirty } from '../persistence.js';
@@ -66,6 +67,8 @@ export class Player {
   gearBonuses() {
     const g = { str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0, atk: 0, matk: 0, def: 0, mdef: 0,
       hit: 0, flee: 0, crit: 0, hp: 0, sp: 0, speed: 0, cast: 0, aspd: 0, weightCap: null };
+    // Rebuilt from scratch every time, or unequipping a card keeps its bonus.
+    this.cards = { size: {}, race: {} };
     let weightCapBonus = 0;
     this.weaponElement = 'neutral';
     this.weaponDelay = 1.2;
@@ -95,6 +98,24 @@ export class Player {
       g.speed += (def.speed ?? 0) * refMul;
       g.cast += (def.cast ?? 0) * refMul;
       weightCapBonus += def.weightCapBonus ?? 0;
+
+      // Sockets. A card's bonus is not scaled by refine and does not die with
+      // a broken item's stats: it is the card that is doing the work, not the
+      // gear, and the two are only ever separated by destroying one of them.
+      for (const cid of stack.cards ?? []) {
+        const c = ITEMS[cid]?.card;
+        if (!c) continue;
+        for (const [k, v] of Object.entries(c.stats ?? {})) g[k] += v;
+        for (const k of ['atk', 'matk', 'def', 'mdef', 'hit', 'flee', 'crit', 'hp', 'sp', 'speed', 'cast', 'aspd']) {
+          if (c[k]) g[k] += c[k];
+        }
+        for (const [size, v] of Object.entries(c.size ?? {})) {
+          this.cards.size[size] = (this.cards.size[size] ?? 0) + v;
+        }
+        for (const [race, v] of Object.entries(c.race ?? {})) {
+          this.cards.race[race] = (this.cards.race[race] ?? 0) + v;
+        }
+      }
 
       if (slot === 'weapon' && !broken) {
         this.weaponElement = def.element ?? 'neutral';
@@ -316,6 +337,14 @@ export class Player {
   /* ---------------- progression ---------------- */
   gainExp(exp, jobExp, zone) {
     const r = this.record;
+    // Holding the fortress is worth something beyond a waived bill, and the
+    // one reward that cannot distort a scarce-currency economy is the one
+    // that is not currency. It is small, it is visible, and it is the reason
+    // to turn up on Sunday rather than let somebody else have it.
+    if (r.guild && Siege.waivesUpkeep(r.guild)) {
+      exp *= 1 + Siege.HOLDER_EXP_BONUS;
+      jobExp *= 1 + Siege.HOLDER_EXP_BONUS;
+    }
     let levelled = false;
     if (r.level < MAX_BASE_LEVEL) {
       r.exp += Math.max(0, Math.floor(exp));

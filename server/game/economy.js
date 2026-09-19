@@ -1,5 +1,5 @@
 // Everything that moves Aurum. The design goal: many small sinks, few faucets.
-import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip } from '../../shared/data/items.js';
+import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
 import { SHOPS, HEAL_PRICE_PER_LEVEL, STORAGE_FEE, WARP_ROUTES, RESET_STAT_PRICE, RESET_SKILL_PRICE } from '../../shared/data/npcs.js';
 import { npcSellPrice, marketTax, refineChance, refineCost } from '../../shared/formulas.js';
 import { STARTING_STATS } from '../../shared/data/jobs.js';
@@ -86,7 +86,7 @@ export function sell(world, p, index, qty) {
   const soldToday = p.record.npcSales[st.id] ?? 0;
 
   let gained = 0;
-  const dampen = isEquip(def) ? 'equip' : CRAFTING_INPUTS.has(def.id);
+  const dampen = (isEquip(def) || def.type === 'card') ? 'equip' : CRAFTING_INPUTS.has(def.id);
   for (let i = 0; i < qty; i++) gained += npcSellPrice(def.value, soldToday + i, def.rarity, dampen);
   // broken / worn gear is worth less
   if (isEquip(def) && st.dur !== undefined) gained = Math.floor(gained * (0.4 + 0.6 * (st.dur / (def.durability ?? 100))));
@@ -193,6 +193,43 @@ export function shardShop(p) {
 }
 
 /* ---------------- refine ---------------- */
+/**
+ * Put a card into a piece of gear, for good.
+ *
+ * There is no un-socket, and there is deliberately no item that provides one.
+ * A card that can be moved is a card one person owns and rotates through
+ * whatever they are wearing; a card that commits makes the piece it went into
+ * a particular thing that somebody built, which is the only way a crafting
+ * and trading economy produces objects worth talking about.
+ */
+export function socket(world, p, gearIndex, cardIndex) {
+  const gear = p.inventory[gearIndex];
+  const card = p.inventory[cardIndex];
+  if (!gear || !card) return { error: 'ไม่พบไอเทม' };
+  if (gearIndex === cardIndex) return { error: 'เลือกคนละช่อง' };
+  const gearDef = ITEMS[gear.id], cardDef = ITEMS[card.id];
+  if (!gearDef || !cardDef) return { error: 'ไอเทมไม่ถูกต้อง' };
+  if (cardDef.type !== 'card') return { error: 'ช่องที่สองต้องเป็นการ์ด' };
+  if (!cardFits(cardDef, gearDef)) return { error: 'การ์ดนี้ใส่กับของชิ้นนี้ไม่ได้' };
+
+  const max = socketsOf(gearDef);
+  if (max <= 0) return { error: 'ของชิ้นนี้ไม่มีรูใส่การ์ด' };
+  const fitted = gear.cards ?? [];
+  if (fitted.length >= max) return { error: `ใส่ได้สูงสุด ${max} ใบ` };
+  if (fitted.includes(card.id)) return { error: 'ใส่การ์ดใบเดิมซ้ำไม่ได้' };
+
+  // A stack of identical gear has to be split, or one card would bless all of
+  // them. Gear never stacks in this game, but the check costs nothing and the
+  // day somebody makes it stack is the day this would silently duplicate.
+  if ((gear.qty ?? 1) > 1) return { error: 'แยกของออกเป็นชิ้นเดียวก่อน' };
+
+  gear.cards = [...fitted, card.id];
+  p.removeItemAt(cardIndex, 1);
+  p.recompute();
+  markDirty();
+  return { ok: true, gear: gear.id, card: card.id, used: gear.cards.length, max };
+}
+
 export function refine(world, p, index, useOil) {
   const st = p.inventory[index];
   if (!st) return { error: 'ไม่พบไอเทม' };
