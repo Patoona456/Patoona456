@@ -12,6 +12,7 @@ import { findPath, lineClear } from '../../shared/pathfind.js';
 import { expGapPenalty } from '../../shared/formulas.js';
 import * as Stall from './stall.js';
 import { facing8 } from '../../shared/facing.js';
+import { swingAnim } from '../../shared/weapons.js';
 
 const EMPTY_SIGNS = [];
 const EMPTY_SEEN = new Map();
@@ -497,8 +498,7 @@ export class Zone {
             const delay = Math.max(0.28, p.weaponDelay * p.derived.aspdFactor);
             p.nextAttackAt = t + delay * 1000;
             p.dir = dirTo(p, target);
-            startSwing(p, p.weaponClass === 'bow' ? 'shoot' : p.weaponClass === 'spear' ? 'thrust' : 'slash',
-              t, delay * 1000);
+            startSwing(p, swingAnim(p.weaponClass), t, delay * 1000);
             if (p.weaponClass === 'bow' && !p.consumeAmmo(1)) {
               p.conn?.send({ t: 'error', text: 'ลูกธนูหมด' });
               p.attacking = false;

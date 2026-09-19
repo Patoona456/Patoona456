@@ -97,6 +97,7 @@ export const MONSTERS = {
     element: 'dark', race: 'undead', speed: 66, aggressive: true, aggroRange: 200, respawn: 28,
     sprite: { kind: 'sheet', key: 'skeleton' },
     drops: [
+      { id: 'iron_knuckles', chance: 0.02 },
       { id: 'crimson_pants', chance: 0.06 },
       { id: 'studded_belt', chance: 0.07 },
       { id: 'mystery_scroll', chance: 0.03 },
@@ -114,6 +115,7 @@ export const MONSTERS = {
     attackDelay: 1.7, respawn: 30,
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'spear' } },
     drops: [
+      { id: 'ruin_cleaver', chance: 0.018 },
       { id: 'chainmail', chance: 0.05 },
       { id: 'banded_shield', chance: 0.06 },
       { id: 'mystery_scroll', chance: 0.035 },
@@ -149,6 +151,7 @@ export const MONSTERS = {
     element: 'ice', race: 'undead', speed: 62, aggressive: true, aggroRange: 210, respawn: 40,
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#8fd7ff' },
     drops: [
+      { id: 'quarry_maul', chance: 0.016 },
       { id: 'ridgebreaker_pike', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.045 },
       { id: 'frost_tear', chance: 0.10 },
@@ -192,7 +195,13 @@ export const MONSTERS = {
   }),
   thistle_sprite: M({
     id: 'thistle_sprite', name: 'Thistle Sprite', nameTh: 'ภูตหนาม', level: 9,
-    hp: 115, atk: 30, matk: 44, def: 6, mdef: 22, hit: 63, flee: 82, exp: 50, jobExp: 31,
+    // 115 HP was tuned against a novice who, through an accident of the old
+    // four-class weapon table, was holding a caster's rod: `rod` reached
+    // level 9 and `blade` stopped at 8, so the gear picker handed a starting
+    // fighter the wand. With `dagger` and `wand` as separate classes the
+    // novice swings a knife like it always should have, and this had to grow
+    // to stay a fight rather than a formality.
+    hp: 132, atk: 30, matk: 44, def: 6, mdef: 22, hit: 63, flee: 82, exp: 54, jobExp: 33,
     element: 'earth', race: 'plant', size: 'small', speed: 72, attackRange: 140,
     attackDelay: 2.2, respawn: 24,
     sprite: { kind: 'blob', color: '#8ad06a', glow: true, scale: 0.78, float: true },
@@ -229,6 +238,7 @@ export const MONSTERS = {
     attackRange: 170, attackDelay: 2.0, respawn: 30,
     sprite: { kind: 'sheet', key: 'skeleton', layers: { weapon: 'bow' } },
     drops: [
+      { id: 'bearded_axe', chance: 0.02 },
       { id: 'band_of_vigor', chance: 0.04 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'bone_chip', chance: 0.40, qty: [1, 2] },
@@ -248,6 +258,7 @@ export const MONSTERS = {
     },
     skills: ['cleave'],
     drops: [
+      { id: 'grovewarden_staff', chance: 0.025 },
       { id: 'metal_boots', chance: 0.05 },
       { id: 'metal_gauntlets', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.04 },
@@ -286,6 +297,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#cfe8ff', scale: 1.05, layers: { weapon: 'wand' } },
     skills: ['frost_nail'],
     drops: [
+      { id: 'tidebreaker', chance: 0.014 },
       { id: 'card_wight', chance: 0.004 },
       { id: 'hoarfrost_rod', chance: 0.012 },
       { id: 'mystery_scroll', chance: 0.05 },
@@ -335,6 +347,7 @@ export const MONSTERS = {
     aggroRange: 210, attackDelay: 1.2, respawn: 26,
     sprite: { kind: 'blob', shape: 'floater', color: '#7a6a9c', float: true, scale: 0.85 },
     drops: [
+      { id: 'steel_chakram', chance: 0.025 },
       { id: 'card_moth', chance: 0.004 },
       { id: 'mystery_scroll', chance: 0.02 },
       { id: 'bone_chip', chance: 0.28, qty: [1, 2] },
@@ -363,6 +376,7 @@ export const MONSTERS = {
     aggroRange: 250, attackRange: 150, attackDelay: 1.9, respawn: 30,
     sprite: { kind: 'blob', shape: 'wisp', color: '#8f6ad0', glow: true, float: true, scale: 0.9 },
     drops: [
+      { id: 'ember_saber', chance: 0.02 },
       { id: 'mystery_scroll', chance: 0.025 },
       { id: 'bone_chip', chance: 0.30, qty: [1, 3] },
       { id: 'mana_draught', chance: 0.10 },
@@ -376,6 +390,7 @@ export const MONSTERS = {
     aggroRange: 280, attackDelay: 1.0, respawn: 34,
     sprite: { kind: 'blob', shape: 'crawler', color: '#8a6a4a', dark: '#4a3424', scale: 1.05 },
     drops: [
+      { id: 'monks_fists', chance: 0.015 },
       { id: 'stormcaller_bow', chance: 0.035 },
       { id: 'storm_quill', chance: 0.16 },
       { id: 'mystery_scroll', chance: 0.03 },
@@ -390,6 +405,7 @@ export const MONSTERS = {
     attackDelay: 2.3,
     sprite: { kind: 'blob', shape: 'spiky', color: '#9a8c74', dark: '#5c5342', scale: 1.25 },
     drops: [
+      { id: 'frost_darts', chance: 0.018 },
       { id: 'card_grub', chance: 0.004 },
       { id: 'metal_helm', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.03 },
@@ -405,6 +421,7 @@ export const MONSTERS = {
     aggroRange: 250, attackRange: 140, attackDelay: 1.8, respawn: 40,
     sprite: { kind: 'blob', shape: 'shard', color: '#a8dcff', dark: '#5b93c4', float: true, glow: true, scale: 1.05 },
     drops: [
+      { id: 'stormbreaker', chance: 0.014 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'frost_tear', chance: 0.20 },
       { id: 'runed_whetstone', chance: 0.05 },
@@ -418,6 +435,7 @@ export const MONSTERS = {
     aggroRange: 240, attackDelay: 2.0, respawn: 56,
     sprite: { kind: 'blob', shape: 'spiky', color: '#7fb8d8', dark: '#35607c', scale: 1.35 },
     drops: [
+      { id: 'tideglass_wand', chance: 0.015 },
       { id: 'vault_longbow', chance: 0.012 },
       { id: 'plate_cuirass', chance: 0.035 },
       { id: 'bulwark_shield', chance: 0.035 },
@@ -470,6 +488,7 @@ export const MONSTERS = {
     sprite: { kind: 'blob', shape: 'wisp', color: '#ff7a3d', glow: true, float: true, scale: 1.2 },
     skills: ['ember_bolt'],
     drops: [
+      { id: 'stormfist', chance: 0.012 },
       { id: 'emberfall_scepter', chance: 0.025 },
       { id: 'golden_gauntlets', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.045 },
@@ -494,6 +513,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#c8b9d8', scale: 1.15,
       layers: { head: 'chainhat', torso: 'chain', weapon: 'spear' } },
     drops: [
+      { id: 'riftsplitter', chance: 0.012 },
       { id: 'dawnplate_sabatons', chance: 0.02 },
       { id: 'vhaal_warpike', chance: 0.012 },
       { id: 'mystery_scroll', chance: 0.045 },
@@ -525,6 +545,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#9a86b8', scale: 1.3,
       layers: { head: 'golden_helm', torso: 'plate' } },
     drops: [
+      { id: 'dawnfang', chance: 0.012 },
       { id: 'card_thrall', chance: 0.004 },
       { id: 'dawnplate_greaves', chance: 0.018 },
       { id: 'dawnforged_belt', chance: 0.02 },
@@ -570,6 +591,7 @@ export const MONSTERS = {
     aggroRange: 260, attackDelay: 1.7, respawn: 70,
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#e8dcc0', scale: 1.22, layers: { head: 'metal_helm', torso: 'plate', weapon: 'longspear' } },
     drops: [
+      { id: 'sunfire_javelins', chance: 0.012 },
       { id: 'reliquary_seal', chance: 0.22 },
       { id: 'runed_whetstone', chance: 0.16, qty: [1, 2] },
       { id: 'mystery_scroll', chance: 0.05 },
@@ -627,6 +649,7 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'red_orc', layers: { weapon: 'longspear' }, scale: 1.45 },
     skills: ['whirlwind', 'reckless_charge'],
     drops: [
+      { id: 'warlords_banner', chance: 0.06 },
       { id: 'card_warlord', chance: 0.05 },
       { id: 'boss_casket', chance: 1.0 },
       { id: 'skeleton_crown', chance: 0.30 },
@@ -651,6 +674,7 @@ export const MONSTERS = {
     // skill roll every other monster uses
     script: 'warden',
     drops: [
+      { id: 'dawnwood_staff', chance: 0.012 },
       { id: 'dawnward_aegis', chance: 0.1 },
       { id: 'dawnpiercer', chance: 0.08 },
       { id: 'reliquary_seal', chance: 1.0, qty: [4, 7] },
@@ -675,6 +699,7 @@ export const MONSTERS = {
     },
     skills: ['grim_harvest', 'meteor_rune'],
     drops: [
+      { id: 'emberfall_greatsword', chance: 0.05 },
       { id: 'card_king', chance: 0.05 },
       { id: 'vow_signet', chance: 0.12 },
       { id: 'boss_casket', chance: 1.0 },

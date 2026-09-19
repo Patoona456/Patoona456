@@ -62,6 +62,27 @@ sprite: { layer: 'weapon', key: 'ชื่อไฟล์', gendered: true, tint
 ```
 `tint` ย้อมสีทั้งชีตครั้งเดียวแล้วแคชไว้ — ใช้ทำของระดับสูงให้ดูต่างโดยไม่ต้องวาดใหม่
 
+### อาวุธแปดคลาสใหม่ยังยืมศิลป์เก่าอยู่
+
+ชนิดอาวุธขยายจาก 4 เป็น 12 ตามชีต แต่ศิลป์ของแปดคลาสใหม่ยังไม่มา ของใหม่
+ทุกชิ้นจึงชี้ไปที่ไฟล์ที่มีอยู่แล้ว **พร้อม `tint` ที่บอกว่ามันควรเป็นสีอะไร**
+เพื่อไม่ให้ใครถืออาวุธล่องหน ตารางนี้คือรายการที่ต้องแก้เมื่อชีตจริงมาถึง —
+แก้ `key` อย่างเดียว ชิ้นละบรรทัด
+
+| คลาส | ยืม `key` | ชื่อไฟล์ที่ควรจะเป็น |
+|---|---|---|
+| sword | `dagger` | `weapon/<เพศ>/sword.png` |
+| greatsword | `longspear` (either) | `weapon/either/greatsword.png` |
+| dagger | `dagger` | ตรงอยู่แล้ว |
+| axe | `dagger` | `weapon/<เพศ>/axe.png` |
+| knuckle | `dagger` | `weapon/<เพศ>/knuckle.png` |
+| throwing | `dagger` | `weapon/<เพศ>/throwing.png` |
+| staff | `wand` / `steelwand` | `weapon/<เพศ>/staff.png` |
+| wand | `wand` / `steelwand` | ตรงอยู่แล้ว |
+| special | `longspear` / `steelwand` | `weapon/<เพศ>/special.png` |
+
+โล่ (`shield`) ใช้ชั้น `offhand` อยู่แล้ว ไม่ต้องยืม
+
 มอนใน `shared/data/monsters.js`:
 ```js
 sprite: { kind: 'sheet', key: 'ชื่อไฟล์', tint: '#c8b9d8', scale: 1.15 }

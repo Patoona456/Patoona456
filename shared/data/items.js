@@ -61,6 +61,7 @@ export const ITEMS = {
       { id: 'wings_bat', qty: 1, weight: 10 },
       { id: 'wings_ember', qty: 1, weight: 8 },
       { id: 'wings_dawn', qty: 1, weight: 3 },
+      { id: 'heart_of_emberfall', qty: 1, weight: 2 },
       { id: 'ashguard_plate', qty: 1, weight: 3 },
     ],
   }),
@@ -108,29 +109,29 @@ export const ITEMS = {
 
   /* ================= WEAPONS ================= */
   training_blade: W({
-    id: 'training_blade', name: 'Training Blade', nameTh: 'มีดฝึกหัด', wclass: 'blade',
+    id: 'training_blade', name: 'Training Blade', nameTh: 'มีดฝึกหัด', wclass: 'dagger',
     atk: 12, delay: 0.85, range: 40, level: 1, weight: 40, value: 180, rarity: 'common',
     sprite: { layer: 'weapon', key: 'dagger', gendered: true }, desc: 'มีดสั้นสำหรับผู้เริ่มต้น',
   }),
   bronze_shortblade: W({
-    id: 'bronze_shortblade', name: 'Bronze Shortblade', nameTh: 'มีดสั้นสำริด', wclass: 'blade',
+    id: 'bronze_shortblade', name: 'Bronze Shortblade', nameTh: 'มีดสั้นสำริด', wclass: 'dagger',
     atk: 26, delay: 0.80, range: 40, level: 8, weight: 55, value: 1400, rarity: 'common',
     sprite: { layer: 'weapon', key: 'dagger', gendered: true },
   }),
   hunters_fang: W({
-    id: 'hunters_fang', name: "Hunter's Fang", nameTh: 'เขี้ยวนายพราน', wclass: 'blade',
+    id: 'hunters_fang', name: "Hunter's Fang", nameTh: 'เขี้ยวนายพราน', wclass: 'dagger',
     atk: 41, delay: 0.72, range: 40, level: 20, weight: 60, value: 6800, rarity: 'uncommon',
     stats: { agi: 2 }, crit: 4, sprite: { layer: 'weapon', key: 'dagger', gendered: true },
     desc: 'เบาและเร็ว เหมาะกับสายคริติคอล',
   }),
   emberfang: W({
-    id: 'emberfang', name: 'Emberfang', nameTh: 'เขี้ยวอังคาร', wclass: 'blade',
+    id: 'emberfang', name: 'Emberfang', nameTh: 'เขี้ยวอังคาร', wclass: 'dagger',
     atk: 63, delay: 0.72, range: 40, level: 40, weight: 70, value: 42000, rarity: 'rare',
     element: 'fire', stats: { str: 3, agi: 2 }, crit: 6,
     sprite: { layer: 'weapon', key: 'dagger', gendered: true }, desc: 'มีดที่ยังอุ่นอยู่เสมอ ธาตุไฟ',
   }),
   ashen_edge: W({
-    id: 'ashen_edge', name: 'Ashen Edge', nameTh: 'คมเถ้าธุลี', wclass: 'blade',
+    id: 'ashen_edge', name: 'Ashen Edge', nameTh: 'คมเถ้าธุลี', wclass: 'dagger',
     atk: 86, delay: 0.68, range: 40, level: 60, weight: 75, value: 168000, rarity: 'epic',
     element: 'dark', stats: { agi: 4, luk: 3 }, crit: 10, lifesteal: 3,
     sprite: { layer: 'weapon', key: 'dagger', gendered: true },
@@ -149,12 +150,12 @@ export const ITEMS = {
   hunting_bow: W({
     id: 'hunting_bow', name: 'Hunting Bow', nameTh: 'ธนูล่าสัตว์', wclass: 'bow',
     atk: 25, delay: 0.94, range: 220, level: 9, weight: 55, value: 1450, rarity: 'common',
-    sprite: { layer: 'weapon', key: 'bow', gendered: true },
+    twoHanded: true, sprite: { layer: 'weapon', key: 'bow', gendered: true },
   }),
   birch_rod: W({
-    id: 'birch_rod', name: 'Birchbark Rod', nameTh: 'ไม้เท้าเปลือกเบิร์ช', wclass: 'rod',
+    id: 'birch_rod', name: 'Birchbark Rod', nameTh: 'ไม้เท้าเปลือกเบิร์ช', wclass: 'staff',
     atk: 11, matk: 25, delay: 1.0, range: 60, level: 9, weight: 36, value: 1500, rarity: 'common',
-    stats: { int: 1 }, sprite: { layer: 'weapon', key: 'wand', gendered: true },
+    twoHanded: true, stats: { int: 1 }, sprite: { layer: 'weapon', key: 'wand', gendered: true },
   }),
   worn_spear: W({
     id: 'worn_spear', name: 'Worn Spear', nameTh: 'หอกเก่า', wclass: 'spear',
@@ -180,7 +181,7 @@ export const ITEMS = {
   marshwood_bow: W({
     id: 'marshwood_bow', name: 'Marshwood Bow', nameTh: 'ธนูไม้หนอง', wclass: 'bow',
     atk: 48, delay: 0.93, range: 228, level: 26, weight: 62, value: 19000, rarity: 'common',
-    stats: { dex: 2 }, sprite: { layer: 'weapon', key: 'bow', gendered: true, tint: '#7f6b4e' },
+    twoHanded: true, stats: { dex: 2 }, sprite: { layer: 'weapon', key: 'bow', gendered: true, tint: '#7f6b4e' },
   }),
   glacier_lance: W({
     id: 'glacier_lance', name: 'Glacier Lance', nameTh: 'ทวนธารน้ำแข็ง', wclass: 'spear',
@@ -220,13 +221,13 @@ export const ITEMS = {
   vault_longbow: W({
     id: 'vault_longbow', name: 'Vaultwatch Longbow', nameTh: 'ธนูยาวยามนิรภัย', wclass: 'bow',
     atk: 84, delay: 0.90, range: 236, level: 50, weight: 78, value: 108000, rarity: 'rare',
-    element: 'ice', stats: { dex: 3, agi: 2 },
+    twoHanded: true, element: 'ice', stats: { dex: 3, agi: 2 },
     sprite: { layer: 'weapon', key: 'bow', gendered: true },
   }),
   hoarfrost_rod: W({
-    id: 'hoarfrost_rod', name: 'Hoarfrost Rod', nameTh: 'คทาเหมันต์', wclass: 'rod',
+    id: 'hoarfrost_rod', name: 'Hoarfrost Rod', nameTh: 'ไม้เท้าเหมันต์', wclass: 'staff',
     atk: 22, matk: 74, delay: 0.97, range: 62, level: 46, weight: 42, value: 96000, rarity: 'rare',
-    element: 'ice', stats: { int: 4 },
+    element: 'ice', twoHanded: true, stats: { int: 4 },
     sprite: { layer: 'weapon', key: 'wand', gendered: true, fallback: 'wand' },
   }),
   // Bows reached the endgame with a radiant weapon and blades did not, so a
@@ -235,7 +236,7 @@ export const ITEMS = {
   // Nightblade's two-to-one gap against its own sibling branch came from: not
   // its skills, the element table.
   dawnbrand: W({
-    id: 'dawnbrand', name: 'Dawnbrand', nameTh: 'ดาบอรุณ', wclass: 'blade',
+    id: 'dawnbrand', name: 'Dawnbrand', nameTh: 'ดาบอรุณ', wclass: 'sword',
     atk: 92, delay: 0.70, range: 46, level: 62, weight: 120, value: 228000, rarity: 'epic',
     element: 'holy', stats: { str: 3, agi: 2 },
     sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#f6dc9c' },
@@ -248,40 +249,239 @@ export const ITEMS = {
   }),
 
   apprentice_rod: W({
-    id: 'apprentice_rod', name: 'Apprentice Rod', nameTh: 'ไม้เท้าฝึกหัด', wclass: 'rod',
+    id: 'apprentice_rod', name: 'Apprentice Rod', nameTh: 'คทาฝึกหัด', wclass: 'wand',
     atk: 8, matk: 16, delay: 1.0, range: 60, level: 1, weight: 35, value: 300, rarity: 'common',
     sprite: { layer: 'weapon', key: 'wand', gendered: true },
   }),
   oak_rod: W({
-    id: 'oak_rod', name: 'Oakheart Rod', nameTh: 'ไม้เท้าใจโอ๊ก', wclass: 'rod',
+    id: 'oak_rod', name: 'Oakheart Rod', nameTh: 'ไม้เท้าใจโอ๊ก', wclass: 'staff',
     atk: 14, matk: 34, delay: 1.0, range: 60, level: 14, weight: 40, value: 4800, rarity: 'common',
-    stats: { int: 2 }, sprite: { layer: 'weapon', key: 'wand', gendered: true },
+    twoHanded: true, stats: { int: 2 }, sprite: { layer: 'weapon', key: 'wand', gendered: true },
   }),
   runesteel_rod: W({
-    id: 'runesteel_rod', name: 'Runesteel Rod', nameTh: 'คทาเหล็กรูน', wclass: 'rod',
+    id: 'runesteel_rod', name: 'Runesteel Rod', nameTh: 'คทาเหล็กรูน', wclass: 'wand',
     atk: 20, matk: 58, delay: 0.98, range: 62, level: 32, weight: 45, value: 27000, rarity: 'rare',
     stats: { int: 4, dex: 2 }, sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
   }),
   emberfall_scepter: W({
-    id: 'emberfall_scepter', name: 'Emberfall Scepter', nameTh: 'คทาเอมเบอร์ฟอลล์', wclass: 'rod',
+    id: 'emberfall_scepter', name: 'Emberfall Scepter', nameTh: 'คทาเอมเบอร์ฟอลล์', wclass: 'wand',
     atk: 26, matk: 92, delay: 0.95, range: 66, level: 58, weight: 50, value: 176000, rarity: 'epic',
     element: 'fire', stats: { int: 7 }, cast: 5,
     sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
   }),
 
+
+  /* --- sword (ดาบ) -------------------------------------------------------
+     The board draws twelve weapon classes and the game had four, so eight of
+     them had nowhere to land. Each new class is a full ladder rather than a
+     single showpiece: a class you can only hold for ten levels is not a
+     class, it is a souvenir.
+
+     Sprite keys below point at the art we already have. They are placeholders
+     and docs/ART.md lists which key each class is borrowing, so swapping in a
+     real sheet is one edit per class rather than a search. */
+  iron_sword: W({
+    id: 'iron_sword', name: 'Iron Sword', nameTh: 'ดาบเหล็ก', wclass: 'sword',
+    atk: 17, delay: 0.88, range: 46, level: 1, weight: 65, value: 300, rarity: 'common',
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#c8ccd4' },
+    desc: 'ดาบมือเดียวธรรมดา หนักกว่ามีดแต่ก็ฟันได้เต็มแรงกว่า',
+  }),
+  guard_sword: W({
+    id: 'guard_sword', name: 'Guardsman Sword', nameTh: 'ดาบทหารยาม', wclass: 'sword',
+    atk: 40, delay: 0.84, range: 46, level: 14, weight: 78, value: 5000, rarity: 'common',
+    stats: { str: 2 }, sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#c8ccd4' },
+  }),
+  ember_saber: W({
+    id: 'ember_saber', name: 'Ember Saber', nameTh: 'ดาบเพลิงโค้ง', wclass: 'sword',
+    atk: 60, delay: 0.82, range: 48, level: 30, weight: 86, value: 24000, rarity: 'uncommon',
+    element: 'fire', stats: { str: 3, agi: 1 }, crit: 3,
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ff9a4c' },
+    desc: 'คมดาบอุ่นตลอดเวลา เหมือนเพิ่งออกจากเตา',
+  }),
+  tidebreaker: W({
+    id: 'tidebreaker', name: 'Tidebreaker', nameTh: 'ดาบทลายคลื่น', wclass: 'sword',
+    atk: 78, delay: 0.80, range: 48, level: 46, weight: 96, value: 98000, rarity: 'rare',
+    element: 'ice', stats: { str: 4, vit: 2 },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#8fd0ff' },
+  }),
+
+  // Daggers reached the endgame with nothing but a dark blade, which the
+  // endgame is made of - a flat 0.25x. Every other class got an answer out of
+  // the twelve-class split and this one would have been the exception.
+  dawnfang: W({
+    id: 'dawnfang', name: 'Dawnfang', nameTh: 'เขี้ยวอรุณ', wclass: 'dagger',
+    atk: 88, delay: 0.66, range: 42, level: 63, weight: 78, value: 232000, rarity: 'epic',
+    element: 'holy', stats: { agi: 5, luk: 3 }, crit: 12,
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ffd678' },
+    desc: 'สั้นที่สุดในบรรดาของที่ฆ่าอันเดดได้ และเร็วที่สุดด้วย',
+  }),
+
+  /* --- greatsword (ดาบใหญ่) — two-handed, slowest swing, biggest number - */
+  iron_greatsword: W({
+    id: 'iron_greatsword', name: 'Iron Greatsword', nameTh: 'ดาบใหญ่เหล็ก', wclass: 'greatsword',
+    atk: 58, delay: 1.30, range: 62, level: 12, weight: 180, value: 4200, rarity: 'common',
+    twoHanded: true, sprite: { layer: 'weapon', key: 'longspear', gendered: false },
+    desc: 'ต้องใช้สองมือ และต้องเหวี่ยงให้ถูกจังหวะ ไม่งั้นเสียท่า',
+  }),
+  ruin_cleaver: W({
+    id: 'ruin_cleaver', name: 'Ruin Cleaver', nameTh: 'ดาบผ่าซาก', wclass: 'greatsword',
+    atk: 92, delay: 1.28, range: 64, level: 28, weight: 200, value: 22000, rarity: 'uncommon',
+    twoHanded: true, stats: { str: 4 },
+    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#b0a292' },
+  }),
+  stormbreaker: W({
+    id: 'stormbreaker', name: 'Stormbreaker', nameTh: 'ดาบทลายพายุ', wclass: 'greatsword',
+    atk: 124, delay: 1.26, range: 66, level: 44, weight: 220, value: 92000, rarity: 'rare',
+    twoHanded: true, element: 'lightning', stats: { str: 5, vit: 2 },
+    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#ffe260' },
+  }),
+  emberfall_greatsword: W({
+    id: 'emberfall_greatsword', name: 'Emberfall Greatsword', nameTh: 'มหาดาบเพลิงร่วง', wclass: 'greatsword',
+    atk: 168, delay: 1.24, range: 68, level: 62, weight: 250, value: 240000, rarity: 'epic',
+    twoHanded: true, element: 'fire', stats: { str: 6, vit: 3 },
+    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#ff7a3c' },
+    desc: 'หนักจนคนธรรมดายกไม่ขึ้น และร้อนจนต้องพันด้ามด้วยหนังสามชั้น',
+  }),
+
+  /* --- axe (ขวาน) — between sword and greatsword, and it bites ---------- */
+  hand_axe: W({
+    id: 'hand_axe', name: 'Hand Axe', nameTh: 'ขวานมือ', wclass: 'axe',
+    atk: 26, delay: 1.05, range: 44, level: 6, weight: 95, value: 900, rarity: 'common',
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#9c8f7c' },
+  }),
+  bearded_axe: W({
+    id: 'bearded_axe', name: 'Bearded Axe', nameTh: 'ขวานเครา', wclass: 'axe',
+    atk: 56, delay: 1.08, range: 46, level: 24, weight: 120, value: 16000, rarity: 'uncommon',
+    stats: { str: 3 }, crit: 3,
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#9c8f7c' },
+  }),
+  quarry_maul: W({
+    id: 'quarry_maul', name: 'Quarry Maul', nameTh: 'ขวานเหมืองหิน', wclass: 'axe',
+    atk: 86, delay: 1.12, range: 48, level: 42, weight: 165, value: 88000, rarity: 'rare',
+    element: 'earth', stats: { str: 5, vit: 2 },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#b2844a' },
+    desc: 'ของช่างเหมือง ไม่ใช่ของทหาร — แต่มันทุบอะไรก็แตกเหมือนกัน',
+  }),
+  riftsplitter: W({
+    id: 'riftsplitter', name: 'Riftsplitter', nameTh: 'ขวานผ่าลม', wclass: 'axe',
+    atk: 118, delay: 1.10, range: 50, level: 60, weight: 185, value: 210000, rarity: 'epic',
+    element: 'wind', stats: { str: 6, agi: 2 }, crit: 6,
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#7ed696' },
+  }),
+
+  /* --- knuckle (สนับมือ) — the fastest hands and the shortest reach ----- */
+  cloth_wraps: W({
+    id: 'cloth_wraps', name: 'Cloth Wraps', nameTh: 'ผ้าพันมือ', wclass: 'knuckle',
+    atk: 12, delay: 0.62, range: 34, level: 3, weight: 20, value: 400, rarity: 'common',
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#e6dcc6' },
+    desc: 'ไม่ใช่อาวุธ เป็นแค่ผ้า — แต่ต่อยได้ถี่กว่าทุกอย่างในร้าน',
+  }),
+  iron_knuckles: W({
+    id: 'iron_knuckles', name: 'Iron Knuckles', nameTh: 'สนับมือเหล็ก', wclass: 'knuckle',
+    atk: 30, delay: 0.60, range: 34, level: 20, weight: 45, value: 12000, rarity: 'uncommon',
+    stats: { str: 2, agi: 2 }, sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#a8adb6' },
+  }),
+  monks_fists: W({
+    id: 'monks_fists', name: "Monk's Fists", nameTh: 'หมัดนักบวช', wclass: 'knuckle',
+    atk: 48, delay: 0.58, range: 36, level: 38, weight: 55, value: 62000, rarity: 'rare',
+    element: 'holy', stats: { str: 3, int: 3 },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ffd678' },
+  }),
+  stormfist: W({
+    id: 'stormfist', name: 'Stormfist', nameTh: 'หมัดอสนี', wclass: 'knuckle',
+    atk: 70, delay: 0.55, range: 36, level: 58, weight: 60, value: 190000, rarity: 'epic',
+    element: 'lightning', stats: { str: 5, agi: 4 }, crit: 8,
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ffe260' },
+  }),
+
+  /* --- throwing (อาวุธขว้าง) — a bow's reach is 220, this is 150 -------- */
+  throwing_knives: W({
+    id: 'throwing_knives', name: 'Throwing Knives', nameTh: 'มีดขว้าง', wclass: 'throwing',
+    atk: 18, delay: 0.82, range: 150, level: 5, weight: 40, value: 700, rarity: 'common',
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#b9c2cc' },
+    desc: 'ยิงไม่ไกลเท่าธนู แต่ไม่ต้องซื้อลูกธนู และมือที่ว่างยังถือโล่ได้',
+  }),
+  steel_chakram: W({
+    id: 'steel_chakram', name: 'Steel Chakram', nameTh: 'จักรเหล็ก', wclass: 'throwing',
+    atk: 44, delay: 0.80, range: 158, level: 22, weight: 55, value: 14000, rarity: 'uncommon',
+    stats: { dex: 3 }, sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#b9c2cc' },
+  }),
+  frost_darts: W({
+    id: 'frost_darts', name: 'Frost Darts', nameTh: 'เข็มเหมันต์', wclass: 'throwing',
+    atk: 66, delay: 0.78, range: 164, level: 40, weight: 58, value: 74000, rarity: 'rare',
+    element: 'ice', stats: { dex: 4, agi: 2 },
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#8fd0ff' },
+  }),
+  sunfire_javelins: W({
+    id: 'sunfire_javelins', name: 'Sunfire Javelins', nameTh: 'หอกซัดตะวัน', wclass: 'throwing',
+    atk: 96, delay: 0.76, range: 170, level: 60, weight: 70, value: 205000, rarity: 'epic',
+    element: 'holy', stats: { dex: 6, str: 2 }, crit: 5,
+    sprite: { layer: 'weapon', key: 'dagger', gendered: true, tint: '#ffd678' },
+  }),
+
+  /* --- staff and wand ---------------------------------------------------
+     The old `rod` was one class doing two jobs. A staff is two-handed and
+     buys raw magic; a wand is one-handed and buys the offhand slot back, so
+     it trades about a tenth of its MATK for a shield. The existing rods were
+     sorted into whichever of the two they already were. */
+  grovewarden_staff: W({
+    id: 'grovewarden_staff', name: 'Grovewarden Staff', nameTh: 'ไม้เท้าผู้เฝ้าป่า', wclass: 'staff',
+    atk: 18, matk: 62, delay: 1.05, range: 64, level: 30, weight: 55, value: 26000, rarity: 'uncommon',
+    element: 'earth', twoHanded: true, stats: { int: 4, vit: 2 },
+    sprite: { layer: 'weapon', key: 'wand', gendered: true },
+  }),
+  dawnwood_staff: W({
+    id: 'dawnwood_staff', name: 'Dawnwood Staff', nameTh: 'ไม้เท้าไม้อรุณ', wclass: 'staff',
+    atk: 30, matk: 108, delay: 1.02, range: 68, level: 62, weight: 62, value: 250000, rarity: 'epic',
+    element: 'holy', twoHanded: true, stats: { int: 8, dex: 2 }, cast: 6,
+    sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
+    desc: 'ไม้ที่ตัดตอนแสงแรกแตะยอดเท่านั้น ตัดช้ากว่านั้นก็เป็นแค่ไม้',
+  }),
+  bone_wand: W({
+    id: 'bone_wand', name: 'Bone Wand', nameTh: 'คทากระดูก', wclass: 'wand',
+    atk: 13, matk: 33, delay: 0.94, range: 58, level: 16, weight: 32, value: 6000, rarity: 'common',
+    stats: { int: 2 }, sprite: { layer: 'weapon', key: 'wand', gendered: true, tint: '#e4ddc8' },
+  }),
+  tideglass_wand: W({
+    id: 'tideglass_wand', name: 'Tideglass Wand', nameTh: 'คทาแก้วคลื่น', wclass: 'wand',
+    atk: 20, matk: 64, delay: 0.92, range: 60, level: 48, weight: 40, value: 102000, rarity: 'rare',
+    element: 'ice', stats: { int: 5, dex: 2 },
+    sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
+  }),
+
+  /* --- special (พิเศษ) --------------------------------------------------
+     No class, no ladder, and no job restriction. These exist because the
+     board has a Special sheet and because a world should have two or three
+     weapons that are not part of anyone's progression - things a Hierophant
+     and a Ravager can both end up holding, for completely different reasons. */
+  warlords_banner: W({
+    id: 'warlords_banner', name: "Warlord's Banner", nameTh: 'ธงจอมทัพ', wclass: 'special',
+    atk: 62, matk: 62, delay: 1.00, range: 80, level: 50, weight: 140, value: 180000, rarity: 'epic',
+    twoHanded: true, element: 'holy', stats: { str: 2, agi: 2, vit: 2, int: 2, dex: 2, luk: 2 },
+    sprite: { layer: 'weapon', key: 'longspear', gendered: false, tint: '#e8d29a' },
+    desc: 'ธงที่กรูมปักไว้กลางสนาม ใครถอนขึ้นก็ถือได้ ไม่ว่าจะเป็นอาชีพอะไร',
+  }),
+  heart_of_emberfall: W({
+    id: 'heart_of_emberfall', name: 'Heart of Emberfall', nameTh: 'หัวใจเอมเบอร์ฟอลล์', wclass: 'special',
+    atk: 105, matk: 105, delay: 0.95, range: 70, level: 65, weight: 90, value: 620000, rarity: 'legendary',
+    element: 'holy', stats: { str: 3, agi: 3, vit: 3, int: 3, dex: 3, luk: 3 }, crit: 5, cast: 4,
+    sprite: { layer: 'weapon', key: 'steelwand', gendered: true, fallback: 'wand' },
+    desc: 'ถ่านก้อนสุดท้ายที่ยังไม่ดับ ของโลกที่เหลือแต่เถ้า',
+  }),
+
   /* ================= OFFHAND ================= */
   wooden_shield: A({
-    id: 'wooden_shield', name: 'Wooden Shield', nameTh: 'โล่ไม้', slot: 'offhand',
+    id: 'wooden_shield', name: 'Wooden Shield', nameTh: 'โล่ไม้', slot: 'offhand', wclass: 'shield',
     def: 8, level: 1, weight: 60, value: 400, rarity: 'common',
     sprite: { layer: 'offhand', key: 'shield', gendered: true },
   }),
   iron_shield: A({
-    id: 'iron_shield', name: 'Iron Shield', nameTh: 'โล่เหล็ก', slot: 'offhand',
+    id: 'iron_shield', name: 'Iron Shield', nameTh: 'โล่เหล็ก', slot: 'offhand', wclass: 'shield',
     def: 22, level: 14, weight: 130, value: 4200, rarity: 'common', stats: { vit: 1 },
     sprite: { layer: 'offhand', key: 'shield', gendered: true },
   }),
   bulwark_shield: A({
-    id: 'bulwark_shield', name: 'Bulwark of Vows', nameTh: 'โล่คำสาบาน', slot: 'offhand',
+    id: 'bulwark_shield', name: 'Bulwark of Vows', nameTh: 'โล่คำสาบาน', slot: 'offhand', wclass: 'shield',
     def: 48, mdef: 18, level: 45, weight: 180, value: 88000, rarity: 'rare', stats: { vit: 4 },
     sprite: { layer: 'offhand', key: 'shield', gendered: true },
   }),
@@ -328,8 +528,8 @@ export const ITEMS = {
   rimebound_sash: A({ id: 'rimebound_sash', name: 'Rimebound Sash', nameTh: 'ผ้าคาดเหมันต์', slot: 'belt', def: 16, mdef: 10, level: 50, weight: 30, value: 74000, rarity: 'rare', weightCapBonus: 700, stats: { vit: 2, int: 2 }, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#6ea8c8' } }),
   dawnforged_belt: A({ id: 'dawnforged_belt', name: 'Dawnforged Belt', nameTh: 'เข็มขัดตีอรุณ', slot: 'belt', def: 22, mdef: 14, level: 62, weight: 36, value: 175000, rarity: 'epic', weightCapBonus: 900, stats: { str: 3, vit: 3 }, hp: 120, element: 'holy', sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#e8c877' } }),
 
-  banded_shield: A({ id: 'banded_shield', name: 'Banded Shield', nameTh: 'โล่รัดเหล็ก', slot: 'offhand', def: 33, level: 30, weight: 150, value: 17000, rarity: 'common', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#8d9199' } }),
-  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'holy', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
+  banded_shield: A({ id: 'banded_shield', name: 'Banded Shield', nameTh: 'โล่รัดเหล็ก', slot: 'offhand', wclass: 'shield', def: 33, level: 30, weight: 150, value: 17000, rarity: 'common', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#8d9199' } }),
+  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', wclass: 'shield', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'holy', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
 
   vow_signet: A({ id: 'vow_signet', name: 'Signet of Vows', nameTh: 'แหวนคำสาบาน', slot: 'accessory', level: 34, weight: 5, value: 32000, rarity: 'rare', refinable: false, stats: { vit: 2, dex: 2 }, hp: 60, sp: 30 }),
   choirbone_torc: A({ id: 'choirbone_torc', name: 'Choirbone Torc', nameTh: 'สร้อยคอกระดูกขับร้อง', slot: 'accessory', level: 64, weight: 7, value: 195000, rarity: 'epic', refinable: false, stats: { int: 4, dex: 3, luk: 2 }, hp: 180, sp: 120, mdef: 18 }),

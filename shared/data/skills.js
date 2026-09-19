@@ -30,12 +30,12 @@ export const SKILLS = {
   cleave: S({
     id: 'cleave', name: 'Cleave', nameTh: 'ฟันกวาด', kind: 'aoe', look: 'neutral', target: 'self',
     sp: [10, 3], ratio: [1.3, 0.35], radius: [60, 6], cooldown: [5, -0.3], anim: 'slash',
-    weapon: ['blade', 'spear', 'rod'], desc: 'ฟันกวาดรอบตัว โดนทุกตัวในระยะ',
+    weapon: ['sword', 'greatsword', 'axe', 'spear'], desc: 'ฟันกวาดรอบตัว โดนทุกตัวในระยะ',
   }),
   skewer: S({
     id: 'skewer', name: 'Skewer', nameTh: 'แทงทะลวง', kind: 'damage', look: 'neutral', target: 'enemy',
     sp: [12, 3], ratio: [1.8, 0.55], range: 72, cooldown: [7, -0.4], anim: 'thrust',
-    weapon: ['spear', 'blade'], pierce: 0.3, desc: 'แทงแรง เจาะเกราะ 30%',
+    weapon: ['spear', 'sword'], pierce: 0.3, desc: 'แทงแรง เจาะเกราะ 30%',
   }),
   taunt: S({
     id: 'taunt', name: 'Taunt', nameTh: 'ยั่วยุ', kind: 'debuff', look: 'fire', target: 'enemy',
@@ -56,7 +56,7 @@ export const SKILLS = {
   backstab: S({
     id: 'backstab', name: 'Backstab', nameTh: 'ลอบแทงหลัง', kind: 'damage', look: 'dark', target: 'enemy',
     sp: [10, 3], ratio: [1.5, 0.5], behindBonus: [0.8, 0.3], range: 40, cooldown: [6, -0.4],
-    anim: 'thrust', weapon: ['blade'], desc: 'แรงขึ้นมากเมื่อโจมตีจากด้านหลัง',
+    anim: 'thrust', weapon: ['dagger'], desc: 'แรงขึ้นมากเมื่อโจมตีจากด้านหลัง',
   }),
   shadow_step: S({
     id: 'shadow_step', name: 'Shadow Step', nameTh: 'ก้าวเงา', kind: 'dash', look: 'dark', target: 'point',
@@ -225,7 +225,7 @@ export const SKILLS = {
     // twice as slowly as its own sibling branch. Still the longest cooldown
     // of any attack in the game, and still the hardest single hit.
     sp: [30, 6], ratio: [2.8, 0.95], range: 40, cooldown: [11, -0.7], anim: 'thrust',
-    weapon: ['blade'], fromStealth: [1.5, 0.2], desc: 'ดาเมจสูงมากเมื่อออกจากการล่องหน',
+    weapon: ['dagger', 'sword'], fromStealth: [1.5, 0.2], desc: 'ดาเมจสูงมากเมื่อออกจากการล่องหน',
   }),
   grim_harvest: S({
     id: 'grim_harvest', name: 'Grim Harvest', nameTh: 'เก็บเกี่ยวมรณะ', kind: 'aoe', target: 'self',
@@ -239,14 +239,14 @@ export const SKILLS = {
   shield_crush: S({
     id: 'shield_crush', name: 'Shield Crush', nameTh: 'ทุบด้วยโล่', kind: 'damage', look: 'holy', target: 'enemy',
     sp: [22, 5], ratio: [1.9, 0.55], range: 46, cooldown: [7, -0.4], anim: 'slash',
-    weapon: ['blade', 'spear', 'rod'], aggro: [400, 200],
+    weapon: ['sword', 'spear', 'axe'], aggro: [400, 200],
     desc: 'ทุบด้วยโล่ ดึงความสนใจไปพร้อมกัน — แรงขึ้นตามค่า DEF',
     scaleWith: 'def',
   }),
   cutpurse_strike: S({
     id: 'cutpurse_strike', name: 'Cutpurse Strike', nameTh: 'ฟันชิงทรัพย์', kind: 'damage', look: 'dark', target: 'enemy',
     sp: [18, 4], ratio: [2.2, 0.6], range: 44, cooldown: [6, -0.35], anim: 'thrust',
-    weapon: ['blade', 'bow'], lifesteal: [8, 2],
+    weapon: ['dagger', 'throwing', 'bow'], lifesteal: [8, 2],
     desc: 'ฟันแล้วฉกติดมือ ดูดเลือดเล็กน้อย',
   }),
   smoke_bomb: S({

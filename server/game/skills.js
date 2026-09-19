@@ -5,6 +5,7 @@ import { applyDamage, healEntity, addStatus, clearStatuses } from './combat.js';
 import { dist, dirTo } from './monster.js';
 import { vecOf } from '../../shared/facing.js';
 import { ITEMS } from '../../shared/data/items.js';
+import { weaponAllows } from '../../shared/weapons.js';
 
 const now = () => Date.now();
 
@@ -27,7 +28,7 @@ export function begin(zone, caster, skillId, opts = {}) {
   const spCost = Math.round(skillCost(sk, lvl) * (1 + (caster.mods?.spCostPct ?? 0) / 100));
   if (caster.kind === 'player') {
     if (caster.sp < spCost) return { error: 'SP ไม่พอ' };
-    if (sk.weapon && !sk.weapon.includes(caster.weaponClass)) return { error: 'อาวุธไม่ถูกประเภท' };
+    if (!weaponAllows(sk.weapon, caster.weaponClass)) return { error: 'อาวุธไม่ถูกประเภท' };
     if (sk.ammo && caster.weaponClass === 'bow' && (caster.findAmmo()?.qty ?? 0) < sk.ammo) {
       return { error: 'ลูกธนูไม่พอ' };
     }

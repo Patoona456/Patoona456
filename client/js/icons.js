@@ -392,7 +392,7 @@ export function itemIconKind(id) {
   const it = ITEMS[id];
   if (!it) return 'crate';
   if (ITEM_OVERRIDE[id]) return ITEM_OVERRIDE[id];
-  if (it.type === 'weapon') return it.wclass ?? 'blade';
+  if (it.type === 'weapon') return it.wclass ?? 'sword';
   if (it.type === 'ammo') return 'arrow';
   if (it.type === 'consumable') return 'potion';
   if (it.type === 'material') return 'ore';

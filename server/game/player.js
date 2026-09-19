@@ -6,6 +6,7 @@ import * as Siege from './siege.js';
 import { SKILLS, val } from '../../shared/data/skills.js';
 import { MAX_BASE_LEVEL, MAX_JOB_LEVEL, SLOTS, STAT_CAP, TILE } from '../../shared/constants.js';
 import { markDirty } from '../persistence.js';
+import { jobCanHold } from '../../shared/weapons.js';
 
 let seq = 0;
 
@@ -296,7 +297,7 @@ export class Player {
     if ((def.level ?? 1) > this.record.level) return { error: `ต้องเลเวล ${def.level}` };
     if (st.dur !== undefined && st.dur <= 0) return { error: 'อุปกรณ์พัง ต้องซ่อมก่อน' };
     const job = jobOf(this.record.job);
-    if (def.type === 'weapon' && def.wclass && !job.weapons.includes(def.wclass)) {
+    if (def.type === 'weapon' && !jobCanHold(job, def.wclass)) {
       return { error: `อาชีพ ${job.nameTh} ใช้อาวุธประเภทนี้ไม่ได้` };
     }
     const slot = def.slot;
