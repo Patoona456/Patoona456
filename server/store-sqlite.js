@@ -14,6 +14,8 @@ const TABLES = [
   ['accounts', 'key', 'accounts', (row) => row.key],
   ['characters', 'id', 'characters', (row) => row.id],
   ['storage', 'account', 'storage', null],      // keyed by its map key
+  ['guilds', 'id', 'guilds', (row) => row.id],
+  ['parties', 'id', 'parties', (row) => row.id],
 ];
 
 export function openStore(dir) {
@@ -28,19 +30,21 @@ export function openStore(dir) {
     CREATE TABLE IF NOT EXISTS accounts   (key TEXT PRIMARY KEY, json TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS characters (id  TEXT PRIMARY KEY, json TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS storage    (account TEXT PRIMARY KEY, json TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS guilds     (id      TEXT PRIMARY KEY, json TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS parties    (id      TEXT PRIMARY KEY, json TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS market     (uid TEXT PRIMARY KEY, json TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS meta       (key TEXT PRIMARY KEY, json TEXT NOT NULL);
   `);
 
-  const put = Object.fromEntries(['accounts', 'characters', 'storage'].map((t) => [t,
+  const put = Object.fromEntries(['accounts', 'characters', 'storage', 'guilds', 'parties'].map((t) => [t,
     sql.prepare(`INSERT INTO ${t} VALUES (?, ?) ON CONFLICT DO UPDATE SET json = excluded.json`)]));
-  const del = Object.fromEntries(['accounts', 'characters', 'storage'].map((t) => [t,
+  const del = Object.fromEntries(['accounts', 'characters', 'storage', 'guilds', 'parties'].map((t) => [t,
     sql.prepare(`DELETE FROM ${t} WHERE ${TABLES.find((x) => x[0] === t)[1]} = ?`)]));
   const putMarket = sql.prepare('INSERT INTO market VALUES (?, ?) ON CONFLICT DO UPDATE SET json = excluded.json');
   const putMeta = sql.prepare('INSERT INTO meta VALUES (?, ?) ON CONFLICT DO UPDATE SET json = excluded.json');
 
   // last written text per row, so a save only touches what actually changed
-  const seen = { accounts: new Map(), characters: new Map(), storage: new Map(), market: new Map() };
+  const seen = { accounts: new Map(), characters: new Map(), storage: new Map(), guilds: new Map(), parties: new Map(), market: new Map() };
 
   function read(db) {
     for (const [table, , prop] of TABLES) {
@@ -90,7 +94,7 @@ export function openStore(dir) {
         if (!listings.has(uid)) { sql.prepare('DELETE FROM market WHERE uid = ?').run(uid); seen.market.delete(uid); }
       }
 
-      for (const key of ['version', 'stats', 'nextCharId']) {
+      for (const key of ['version', 'stats', 'nextCharId', 'nextGuildId', 'nextPartyId']) {
         putMeta.run(key, JSON.stringify(db[key]));
       }
       sql.exec('COMMIT');

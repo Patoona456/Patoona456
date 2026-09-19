@@ -8,6 +8,7 @@ import { load, save, startAutosave } from './persistence.js';
 import { World } from './game/world.js';
 import { Conn } from './net.js';
 import { GAME_NAME } from '../shared/constants.js';
+import * as Admin from './admin.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT ?? 8080);
@@ -27,6 +28,8 @@ const SERVE_DIRS = ['client', 'shared', 'assets'];
 async function serveStatic(req, res) {
   let urlPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
   if (urlPath === '/' || urlPath === '') urlPath = '/client/index.html';
+  // the operator's economy dashboard, off unless a token is configured
+  if (Admin.handle(req, res, world)) return;
   if (urlPath === '/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, game: GAME_NAME, players: world.players.size }));

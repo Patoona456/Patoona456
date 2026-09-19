@@ -65,7 +65,7 @@ export class UI {
     }
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
-      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', F1: 'settings', KeyT: 'trade' };
+      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade' };
       if (map[e.code]) { e.preventDefault(); this.toggle(map[e.code]); }
       if (e.code === 'Enter') { e.preventDefault(); $('#chat-input').focus(); }
       if (e.code === 'KeyM') {
@@ -399,6 +399,9 @@ export class UI {
       case 'party':
         this.game.net.send({ t: 'party', cmd: 'state' });
         return this.openParty(this.lastParty);
+      case 'guild':
+        this.game.net.send({ t: 'guild', cmd: 'state' });
+        return this.openGuild(this.lastGuild);
       case 'settings': return this.openSettings();
       case 'jobchange': return this.openJobChange();
       case 'trade': return this.lastTrade ? this.openTrade(data ?? this.lastTrade) : this.openTradePicker();
@@ -784,6 +787,215 @@ export class UI {
     trade.addEventListener('click', () => this.openTradePicker());
     wrap.append(trade);
     return this.panel('party', 'ปาร์ตี้', wrap);
+  }
+
+  /* ---------------- guild ---------------- */
+
+  /**
+   * The guild window. A party window is a list of six names; a guild window
+   * has to carry the things that make a guild last - who is on, who can be
+   * trusted with the vault, what the dues are, and what has been happening
+   * while you were away.
+   */
+  openGuild(state) {
+    this.lastGuild = state ?? this.lastGuild;
+    const st = this.lastGuild;
+    const wrap = el('div', 'grid');
+    const send = (cmd, extra = {}) => this.game.net.send({ t: 'guild', cmd, ...extra });
+
+    if (st?.invite) {
+      const row = el('div', 'row');
+      row.innerHTML = `<span>${esc(st.invite.from)} ชวนคุณเข้ากิลด์</span>`;
+      const b = el('button', 'btn primary', 'ตอบรับ');
+      b.addEventListener('click', () => send('accept'));
+      row.append(b);
+      wrap.append(row);
+    }
+
+    const g = st?.guild;
+    if (!g) {
+      wrap.append(el('div', 'muted',
+        `ยังไม่ได้อยู่กิลด์ · กิลด์อยู่ข้ามวันข้ามสัปดาห์ ไม่เหมือนปาร์ตี้ที่อยู่แค่รอบเดียว<br>
+         ค่าก่อตั้ง <b>${(st?.cost ?? 0).toLocaleString()}</b> ออรัม และมีค่าบำรุงรายสัปดาห์`));
+      const form = el('div', 'row');
+      const input = el('input');
+      input.type = 'text';
+      input.placeholder = 'ชื่อกิลด์ที่จะก่อตั้ง';
+      input.maxLength = 24;
+      this.textInput(input);
+      const b = el('button', 'btn primary', 'ก่อตั้งกิลด์');
+      b.addEventListener('click', () => {
+        if (input.value.trim()) send('create', { name: input.value.trim() });
+      });
+      form.append(input, b);
+      wrap.append(form);
+      return this.panel('guild', 'กิลด์', wrap);
+    }
+
+    const myRank = st.ranks?.find((r) => r.id === g.myRank);
+    const canInvite = ['veteran', 'officer', 'leader'].includes(g.myRank);
+    const canKick = ['officer', 'leader'].includes(g.myRank);
+    const isLeader = g.myRank === 'leader';
+
+    /* --- the header: name, purse, dues --- */
+    const head = el('div', 'grid');
+    head.append(el('div', 'row',
+      `<b>${esc(g.name)}</b><span class="muted">${g.members.length} คน · ยศของคุณ: ${esc(myRank?.nameTh ?? g.myRank)}</span>`));
+    const days = Math.max(0, Math.ceil((g.upkeepDue - Date.now()) / 86400000));
+    head.append(el('div', 'row',
+      `<span class="muted">คลังกลาง</span><span class="num"><b>${(g.aurum ?? 0).toLocaleString()}</b> ออรัม</span>`));
+    head.append(el('div', 'row',
+      `<span class="muted">ค่าบำรุงรายสัปดาห์</span><span class="${g.inDebt ? 'rarity-legendary' : 'num'}">${
+        g.inDebt ? 'ค้างจ่าย — คลังถูกล็อก' : `${g.upkeep.toLocaleString()} ออรัม · อีก ${days} วัน`}</span>`));
+    wrap.append(head);
+
+    if (g.notice) wrap.append(el('div', 'job-trial', esc(g.notice)));
+
+    /* --- donating: the only way aurum gets into the purse --- */
+    const give = el('div', 'row');
+    const amount = el('input');
+    amount.type = 'number';
+    amount.min = '1';
+    amount.placeholder = 'จำนวนออรัม';
+    this.textInput(amount);
+    const giveBtn = el('button', 'btn', 'บริจาคเข้าคลัง');
+    giveBtn.addEventListener('click', () => {
+      const n = Math.floor(Number(amount.value));
+      if (n > 0) send('donate', { amount: n });
+      amount.value = '';
+    });
+    give.append(amount, giveBtn);
+    wrap.append(give);
+
+    /* --- members --- */
+    const roster = el('div', 'grid');
+    roster.append(el('div', 'muted', 'สมาชิก'));
+    for (const m of g.members) {
+      const row = el('div', 'row');
+      const rank = st.ranks?.find((r) => r.id === m.rank);
+      row.innerHTML = `<span>${m.online ? '🟢' : '⚫'} ${esc(m.name)}
+        <span class="muted">Lv.${m.level} ${esc(JOBS[m.job]?.nameTh ?? '')}</span></span>
+        <span class="muted">${esc(rank?.nameTh ?? m.rank)}${m.online && m.map ? ` · ${esc(MAPS[m.map]?.nameTh ?? m.map)}` : ''}</span>`;
+      const tools = el('div', 'opts');
+      if (isLeader && m.rank !== 'leader') {
+        const sel = el('select');
+        for (const r of st.ranks) {
+          if (r.id === 'leader') continue;
+          const o = document.createElement('option');
+          o.value = r.id; o.textContent = r.nameTh;
+          if (r.id === m.rank) o.selected = true;
+          sel.append(o);
+        }
+        sel.addEventListener('change', () => send('rank', { charId: m.charId, rank: sel.value }));
+        tools.append(sel);
+        const hand = el('button', 'btn ghost', 'โอนหัวหน้า');
+        hand.addEventListener('click', () => send('rank', { charId: m.charId, rank: 'leader' }));
+        tools.append(hand);
+      }
+      if (canKick && m.rank !== 'leader' && m.charId !== g.myCharId) {
+        const k = el('button', 'btn danger', 'เชิญออก');
+        k.addEventListener('click', () => send('kick', { charId: m.charId }));
+        tools.append(k);
+      }
+      if (tools.childNodes.length) row.append(tools);
+      roster.append(row);
+    }
+    wrap.append(roster);
+
+    /* --- the vault, and what your rank may take from it --- */
+    const vault = el('div', 'grid');
+    const allowance = g.myAllowance < 0 ? 'ไม่จำกัด' : `${g.myTaken}/${g.myAllowance} ชิ้นในสัปดาห์นี้`;
+    vault.append(el('div', 'row', `<span class="muted">คลังกิลด์</span><span class="muted">เบิกได้ ${allowance}</span>`));
+    const grid = el('div', 'slot-grid');
+    for (const it of g.vault) {
+      const node = el('button', 'slot');
+      node.append(itemIcon(it.id, { size: 30 }));
+      if (it.qty > 1) node.append(el('span', 'qty', String(it.qty)));
+      if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
+      node.title = `${ITEMS[it.id]?.nameTh ?? it.id} x${it.qty}`;
+      node.addEventListener('click', () => send('vault', { dir: 'out', index: it.i, qty: 1 }));
+      grid.append(node);
+    }
+    if (!g.vault.length) grid.append(el('div', 'muted', 'คลังว่าง'));
+    vault.append(grid);
+    const dep = el('button', 'btn', 'ฝากของจากกระเป๋า');
+    dep.addEventListener('click', () => this.openGuildDeposit());
+    vault.append(dep);
+    wrap.append(vault);
+
+    /* --- what happened while you were away --- */
+    if (g.history?.length) {
+      const log = el('div', 'grid');
+      log.append(el('div', 'muted', 'ความเคลื่อนไหวล่าสุด'));
+      for (const h of g.history.slice(0, 8)) {
+        log.append(el('div', 'qprog', esc(h.text)));
+      }
+      wrap.append(log);
+    }
+
+    /* --- footer --- */
+    const foot = el('div', 'row');
+    if (canInvite) {
+      const input = el('input');
+      input.type = 'text';
+      input.placeholder = 'ชื่อผู้เล่นที่จะชวน';
+      this.textInput(input);
+      const b = el('button', 'btn primary', 'ชวน');
+      b.addEventListener('click', () => {
+        if (input.value.trim()) send('invite', { name: input.value.trim() });
+        input.value = '';
+      });
+      foot.append(input, b);
+    }
+    wrap.append(foot);
+
+    if (isLeader) {
+      const nrow = el('div', 'row');
+      const ni = el('input');
+      ni.type = 'text';
+      ni.placeholder = 'ประกาศของกิลด์';
+      ni.value = g.notice ?? '';
+      ni.maxLength = 200;
+      this.textInput(ni);
+      const nb = el('button', 'btn', 'บันทึกประกาศ');
+      nb.addEventListener('click', () => send('notice', { text: ni.value }));
+      nrow.append(ni, nb);
+      wrap.append(nrow);
+    }
+
+    const leave = el('button', 'btn danger', 'ออกจากกิลด์');
+    leave.addEventListener('click', () => send('leave'));
+    wrap.append(leave);
+
+    return this.panel('guild', 'กิลด์', wrap);
+  }
+
+  /** Pick something out of the bag to put in the vault. */
+  openGuildDeposit() {
+    const wrap = el('div', 'grid');
+    wrap.append(el('div', 'muted', 'เลือกของที่จะฝากเข้าคลังกิลด์'));
+    const grid = el('div', 'slot-grid');
+    for (const it of this.game.inventory.items ?? []) {
+      const node = el('button', 'slot');
+      node.append(itemIcon(it.id, { size: 30 }));
+      if ((it.qty ?? 1) > 1) node.append(el('span', 'qty', String(it.qty)));
+      node.title = `${ITEMS[it.id]?.nameTh ?? it.id} x${it.qty ?? 1}`;
+      node.addEventListener('click', () => {
+        this.game.net.send({ t: 'guild', cmd: 'vault', dir: 'in', index: it.i, qty: it.qty ?? 1 });
+        this.close('guildDeposit');
+      });
+      grid.append(node);
+    }
+    if (!grid.childNodes.length) grid.append(el('div', 'muted', 'กระเป๋าว่าง'));
+    wrap.append(grid);
+    return this.panel('guildDeposit', 'ฝากเข้าคลังกิลด์', wrap);
+  }
+
+  /** Wire an input so typing in it does not drive the character. */
+  textInput(node) {
+    node.addEventListener('focus', () => { this.game.input.textMode = true; });
+    node.addEventListener('blur', () => { this.game.input.textMode = false; });
+    return node;
   }
 
   /* ---------------- NPC ---------------- */

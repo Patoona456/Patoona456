@@ -10,13 +10,14 @@ import { MONSTERS } from '../shared/data/monsters.js';
 import { MAPS, buildGrid, BLOCKING, TILES } from '../shared/data/maps.js';
 import { findPath, lineClear } from '../shared/pathfind.js';
 import { TILE, LEVEL_AGGRO_GAP } from '../shared/constants.js';
+import * as Guild from '../server/game/guild.js';
 
 /** A player-shaped stub: enough for the AI and the reward code to run. */
 function stubPlayer(id, level, zone, x = 1000, y = 1000) {
   const p = {
     id, name: id, kind: 'player', alive: true, x, y, party: null, zone,
     hp: 9000, maxHp: 9000, sp: 100, maxSp: 100, statuses: [], mods: {}, cast: null,
-    record: { id: 'c' + id, level, exp: 0, jobExp: 0, quests: {}, lockouts: {} },
+    record: { id: 'c' + id, level, exp: 0, jobExp: 0, quests: {}, lockouts: {}, equipment: {}, aurum: 0, guild: null },
     derived: { level, maxHp: 9000 }, notices: [],
     conn: { send(m) { if (m.t === 'notice') p.notices.push(m.text); } },
     gainExp(e, j) { p.record.exp += e; p.record.jobExp += j; },
@@ -287,4 +288,116 @@ test('the dungeon is the only thing that asks for a party', () => {
     assert.equal(m.kind, 'dungeon', `${id} demands a party but is not a dungeon`);
     assert.ok(m.party >= 2, `${id} asks for a party of ${m.party}`);
   }
+});
+
+/* ------------------------------------------------------------------ guilds */
+
+test('a guild costs real money to found, and only once per name', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('emberhold');
+  const rich = stubPlayer('R', 60, zone);
+  rich.record.aurum = 1_000_000;
+  rich.inventory = [];
+  rich.addItem = () => true;
+  const poor = stubPlayer('P', 60, zone);
+  poor.record.aurum = 100;
+
+  assert.ok(Guild.create(w, poor, 'ถังแตก').error, 'a broke character founded a guild');
+  const before = rich.record.aurum;
+  assert.ok(Guild.create(w, rich, 'เหล็กและไฟ').ok);
+  assert.equal(rich.record.aurum, before - Guild.GUILD_COST, 'founding did not cost the advertised price');
+  assert.match(Guild.create(w, poor, 'เหล็กและไฟ').error ?? '', /ชื่อ/, 'a duplicate name was allowed');
+});
+
+test('rank decides who may take from the vault', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('emberhold');
+  const boss = stubPlayer('B', 60, zone);
+  boss.record.aurum = 1_000_000;
+  boss.inventory = [{ id: 'lesser_salve', qty: 10 }];
+  boss.removeItemAt = (i, q) => { boss.inventory[i].qty -= q; return true; };
+  boss.addItem = () => true;
+  assert.ok(Guild.create(w, boss, 'คลังทดสอบ').ok);
+  assert.ok(Guild.vaultMove(boss, 'in', 0, 5).ok, 'the leader could not deposit');
+
+  const g = Guild.of(boss);
+  g.members.push({ charId: 'rec', name: 'ผู้มาใหม่', rank: 'recruit', joined: Date.now() });
+  const recruit = stubPlayer('N', 60, zone);
+  recruit.record.id = 'rec';
+  recruit.record.guild = g.id;
+  recruit.addItem = () => true;
+
+  assert.match(Guild.vaultMove(recruit, 'out', 0, 1).error ?? '', /ยศ/, 'a recruit emptied the vault');
+  g.members.find((m) => m.charId === 'rec').rank = 'member';
+  assert.ok(Guild.vaultMove(recruit, 'out', 0, 1).ok, 'a member could not take anything');
+  assert.ok(Guild.vaultMove(recruit, 'out', 0, 99).error, 'a member took more than the weekly allowance');
+});
+
+test('the vault moves goods without creating any', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('emberhold');
+  const p = stubPlayer('V', 60, zone);
+  p.record.aurum = 1_000_000;
+  p.inventory = [{ id: 'lesser_salve', qty: 8 }];
+  let given = 0;
+  p.removeItemAt = (i, q) => { p.inventory[i].qty -= q; return true; };
+  p.addItem = (id, q) => { given += q; return true; };
+  assert.ok(Guild.create(w, p, 'ไม่เสก').ok);
+  Guild.vaultMove(p, 'in', 0, 6);
+  const g = Guild.of(p);
+  const inVault = g.vault.reduce((n, s) => n + (s.qty ?? 1), 0);
+  assert.equal(inVault, 6, 'the vault did not take what was deposited');
+  assert.equal(p.inventory[0].qty, 2, 'the bag was not debited');
+  Guild.vaultMove(p, 'out', 0, 6);
+  assert.equal(given, 6, 'withdrawing did not return exactly what went in');
+  assert.equal(g.vault.length, 0);
+});
+
+test('a guild that cannot pay its dues is locked, not deleted', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('emberhold');
+  const p = stubPlayer('U', 60, zone);
+  p.record.aurum = 1_000_000;
+  p.inventory = [];
+  p.addItem = () => true;
+  assert.ok(Guild.create(w, p, 'ค้างค่าเช่า').ok);
+  const g = Guild.of(p);
+
+  g.aurum = Guild.GUILD_UPKEEP * 2;
+  Guild.chargeUpkeep(w, g.upkeepDue + 1);
+  assert.equal(g.aurum, Guild.GUILD_UPKEEP, 'the dues were not taken');
+  assert.equal(g.inDebt, false);
+
+  Guild.chargeUpkeep(w, g.upkeepDue + 1);
+  assert.equal(g.aurum, 0);
+  Guild.chargeUpkeep(w, g.upkeepDue + 1);
+  assert.equal(g.inDebt, true, 'a guild that cannot pay was not marked in debt');
+  assert.ok(Guild.byId(g.id), 'a guild in debt was deleted instead of locked');
+  assert.match(Guild.vaultMove(p, 'in', 0, 1).error ?? '', /ค่าบำรุง/, 'the vault stayed open while in debt');
+
+  p.record.aurum = 1_000_000;
+  assert.ok(Guild.donate(p, Guild.GUILD_UPKEEP).ok);
+  assert.equal(g.inDebt, false, 'paying up did not unlock the vault');
+});
+
+test('the leader cannot simply walk out on a guild with members in it', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('emberhold');
+  const p = stubPlayer('L', 60, zone);
+  p.record.aurum = 1_000_000;
+  p.inventory = [];
+  p.addItem = () => true;
+  assert.ok(Guild.create(w, p, 'ทิ้งไม่ได้').ok);
+  const g = Guild.of(p);
+  g.members.push({ charId: 'other', name: 'คนอื่น', rank: 'member', joined: Date.now() });
+  assert.match(Guild.leave(w, p).error ?? '', /โอนตำแหน่ง/, 'the leader abandoned the guild');
+
+  g.members = g.members.filter((m) => m.charId !== 'other');
+  assert.ok(Guild.leave(w, p).ok, 'the last member could not leave');
+  assert.equal(Guild.byId(g.id), null, 'an empty guild was left behind');
 });

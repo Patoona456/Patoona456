@@ -6,6 +6,7 @@ import { Player } from './game/player.js';
 import * as Skills from './game/skills.js';
 import * as Econ from './game/economy.js';
 import * as Party from './game/party.js';
+import * as Guild from './game/guild.js';
 import * as Trade from './game/trade.js';
 import * as Quests from './game/quests.js';
 import { ITEMS, RECIPES } from '../shared/data/items.js';
@@ -78,7 +79,7 @@ export class Conn {
 
   /* ---------------- account ---------------- */
   doRegister(m) {
-    const r = register(m.name, m.password);
+    const r = register(m.name, m.password, this.ip);
     if (r.error) return this.error(r.error);
     this.account = r.account;
     this.notice('สมัครสำเร็จ ยินดีต้อนรับ!');
@@ -124,6 +125,7 @@ export class Conn {
     this.world.addPlayer(this.player);
     this.sendInventory();
     this.send(Party.state(this.world, this.player));
+    this.send(Guild.state(this.world, this.player));
     this.send({ t: 'questTrack', quests: Quests.tracked(this.player) });
   }
 
@@ -294,6 +296,7 @@ export class Conn {
         r.job = m.job ?? 'vanguard';
         for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) r[k] = m.stat ?? 60;
         r.aurum += 1000000;
+        Econ.mint(this.world, 1000000, 'dev');   // counted, so the dashboard still reconciles
         const kit = m.items ?? ['glacier_lance', 'warden_halberd', 'iron_pike', 'ashguard_plate',
           'plate_cuirass', 'leather_vest', 'golden_helm', 'metal_helm', 'golden_greaves',
           'metal_greaves', 'golden_boots', 'metal_boots', 'golden_gauntlets', 'metal_gauntlets',
@@ -326,6 +329,7 @@ export class Conn {
         return this.send({ t: OP.SELF, self: p.selfState() });
       }
       case OP.PARTY: return this.partyCmd(m);
+      case OP.GUILD: return this.guildCmd(m);
       case OP.TRADE: return this.tradeCmd(m);
       // the quest log is readable anywhere; only turn-ins need an NPC
 
@@ -401,10 +405,11 @@ export class Conn {
       return this.notice(r.moved ? 'ย้ายออกจากจุดที่ติดแล้ว' : 'ตรงนี้เดินได้ปกติอยู่แล้ว', r.moved ? 'good' : 'info');
     }
 
-    const ch = ['say', 'party', 'trade', 'world'].includes(m.ch) ? m.ch : 'say';
+    const ch = ['say', 'party', 'guild', 'trade', 'world'].includes(m.ch) ? m.ch : 'say';
     if (ch === 'party' && !p.party) return this.error('ยังไม่ได้อยู่ปาร์ตี้');
+    if (ch === 'guild' && !p.record.guild) return this.error('ยังไม่ได้อยู่กิลด์');
     this.world.broadcastChat({
-      ch, text, from: p.name, map: p.record.map, party: p.party,
+      ch, text, from: p.name, map: p.record.map, party: p.party, guild: p.record.guild,
     });
   }
 
@@ -499,6 +504,40 @@ export class Conn {
       }
       case 'quests': return this.send({ t: OP.QUEST_STATE, quests: Quests.available(p) });
       default: return this.error('ไม่รองรับคำสั่งนี้');
+    }
+  }
+
+  /**
+   * Guild commands. Everything that changes the roster refreshes the window
+   * for everyone online in that guild, so nobody is looking at a stale list
+   * of who is in the room with them.
+   */
+  guildCmd(m) {
+    const p = this.player;
+    let r;
+    switch (m.cmd) {
+      case 'create': r = Guild.create(this.world, p, m.name); break;
+      case 'invite': r = Guild.invite(this.world, p, m.name); break;
+      case 'accept': r = Guild.accept(this.world, p); break;
+      case 'leave': r = Guild.leave(this.world, p); break;
+      case 'kick': r = Guild.kick(this.world, p, m.charId); break;
+      case 'rank': r = Guild.setRank(this.world, p, m.charId, String(m.rank)); break;
+      case 'notice': r = Guild.setNotice(p, m.text); break;
+      case 'donate': r = Guild.donate(p, m.amount); break;
+      case 'vault': r = Guild.vaultMove(p, m.dir === 'in' ? 'in' : 'out', m.index | 0, m.qty); break;
+      case 'state': r = { ok: true }; break;
+      default: return this.error('คำสั่งกิลด์ไม่ถูกต้อง');
+    }
+    if (r.error) return this.error(r.error);
+    if (m.cmd === 'vault' || m.cmd === 'donate' || m.cmd === 'create' || m.cmd === 'leave') {
+      this.sendInventory();
+      this.send({ t: OP.SELF, self: p.selfState() });
+    }
+    this.send(Guild.state(this.world, p));
+    const gid = p.record.guild;
+    if (!gid) return;
+    for (const other of this.world.players.values()) {
+      if (other !== p && other.record.guild === gid) other.conn.send(Guild.state(this.world, other));
     }
   }
 

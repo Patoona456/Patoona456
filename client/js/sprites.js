@@ -187,14 +187,25 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
 }
 
 /** Procedural blob monster (slimes, wisps, wolves) - no art required. */
+/**
+ * Monsters with no LPC sheet, drawn in code.
+ *
+ * This used to draw exactly one thing - an ellipse with two eyes - so every
+ * creature that was not a skeleton or an orc was the same blob in a different
+ * colour. `sprite.shape` picks a body instead, which is what lets a zone hold
+ * six kinds of monster that actually look like six kinds of monster.
+ */
 export function drawBlob(ctx, sprite, { x, y, t, hurt = 0, scale = 1 }) {
   const r = 16 * (sprite.scale ?? 1) * scale;
+  const shape = sprite.shape ?? 'blob';
   const bob = sprite.float ? Math.sin(t / 380) * 5 : Math.abs(Math.sin(t / 260)) * 2;
   const squash = 1 + Math.sin(t / 240) * 0.08;
+  const body = hurt ? '#ffffff' : sprite.color;
+
   ctx.save();
   ctx.translate(x, y - r * 0.6 - bob);
 
-  // shadow
+  // shadow, tight under whatever the body turns out to be
   ctx.globalAlpha = 0.25;
   ctx.fillStyle = '#000';
   ctx.beginPath();
@@ -210,18 +221,118 @@ export function drawBlob(ctx, sprite, { x, y, t, hurt = 0, scale = 1 }) {
     ctx.beginPath(); ctx.arc(0, 0, r * 2, 0, Math.PI * 2); ctx.fill();
   }
 
-  ctx.fillStyle = hurt ? '#ffffff' : sprite.color;
-  ctx.beginPath();
-  ctx.ellipse(0, 0, r / squash, r * squash, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.beginPath();
-  ctx.ellipse(-r * 0.3, -r * 0.35, r * 0.25, r * 0.18, -0.4, 0, Math.PI * 2);
-  ctx.fill();
-  // eyes
-  ctx.fillStyle = '#12141a';
-  ctx.beginPath(); ctx.arc(-r * 0.3, 0, r * 0.12, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(r * 0.3, 0, r * 0.12, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = body;
+  const dark = sprite.dark ?? 'rgba(0,0,0,0.30)';
+
+  if (shape === 'spiky') {
+    // a ball of thorns: spikes first so the body caps their roots
+    ctx.fillStyle = sprite.dark ?? body;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + Math.sin(t / 700) * 0.1;
+      const len = r * (1.35 + (i % 2) * 0.25);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a - 0.16) * r * 0.8, Math.sin(a - 0.16) * r * 0.8);
+      ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+      ctx.lineTo(Math.cos(a + 0.16) * r * 0.8, Math.sin(a + 0.16) * r * 0.8);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.86, 0, Math.PI * 2); ctx.fill();
+  } else if (shape === 'wisp') {
+    // a flame: a teardrop that licks upward and never sits still
+    const lick = Math.sin(t / 180) * r * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.5 + lick);
+    ctx.quadraticCurveTo(r * 0.95, -r * 0.2, r * 0.42, r * 0.7);
+    ctx.quadraticCurveTo(0, r * 1.05, -r * 0.42, r * 0.7);
+    ctx.quadraticCurveTo(-r * 0.95, -r * 0.2, 0, -r * 1.5 + lick);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(0, r * 0.25, r * 0.28, r * 0.45, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (shape === 'crawler') {
+    // low and many-legged: the legs scuttle out of phase with each other
+    ctx.strokeStyle = sprite.dark ?? dark;
+    ctx.lineWidth = Math.max(1.5, r * 0.13);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 6; i++) {
+      const side = i < 3 ? -1 : 1;
+      const k = i % 3;
+      const step = Math.sin(t / 150 + i * 1.9) * r * 0.3;
+      ctx.beginPath();
+      ctx.moveTo(side * r * 0.35, (k - 1) * r * 0.3);
+      ctx.lineTo(side * r * 1.25, (k - 1) * r * 0.3 + step);
+      ctx.stroke();
+    }
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 0.95, r * 0.62, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.ellipse(0, -r * 0.1, r * 0.55, r * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (shape === 'floater') {
+    // a bell with tendrils trailing under it
+    ctx.strokeStyle = body;
+    ctx.globalAlpha = 0.7;
+    ctx.lineWidth = Math.max(1.2, r * 0.1);
+    for (let i = 0; i < 5; i++) {
+      const ox = (i - 2) * r * 0.28;
+      ctx.beginPath();
+      ctx.moveTo(ox, r * 0.35);
+      ctx.quadraticCurveTo(ox + Math.sin(t / 300 + i) * r * 0.3, r * 1.0, ox, r * 1.55);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 0.95, r * 0.75, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.25, -r * 0.3, r * 0.3, r * 0.16, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (shape === 'shard') {
+    // a floating cluster of crystal, turning slowly
+    ctx.rotate(Math.sin(t / 900) * 0.25);
+    for (const [sx, sy, sc] of [[0, 0, 1], [-0.6, 0.35, 0.55], [0.62, 0.3, 0.6]]) {
+      ctx.fillStyle = sc === 1 ? body : (sprite.dark ?? body);
+      ctx.beginPath();
+      ctx.moveTo(sx * r, sy * r - r * 1.15 * sc);
+      ctx.lineTo(sx * r + r * 0.5 * sc, sy * r);
+      ctx.lineTo(sx * r, sy * r + r * 0.85 * sc);
+      ctx.lineTo(sx * r - r * 0.5 * sc, sy * r);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath();
+    ctx.moveTo(0, -r * 1.1); ctx.lineTo(r * 0.16, 0); ctx.lineTo(0, r * 0.8); ctx.closePath();
+    ctx.fill();
+  } else {
+    // the original: a soft body that breathes
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r / squash, r * squash, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.3, -r * 0.35, r * 0.25, r * 0.18, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // eyes, placed to suit the body they sit in
+  if (shape !== 'shard') {
+    const eye = shape === 'wisp' ? { y: r * 0.15, dx: 0.26, r: 0.1 }
+      : shape === 'crawler' ? { y: -r * 0.1, dx: 0.28, r: 0.1 }
+        : shape === 'floater' ? { y: -r * 0.2, dx: 0.3, r: 0.1 }
+          : { y: 0, dx: 0.3, r: 0.12 };
+    ctx.fillStyle = shape === 'wisp' ? '#2a1206' : '#12141a';
+    ctx.beginPath(); ctx.arc(-r * eye.dx, eye.y, r * eye.r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r * eye.dx, eye.y, r * eye.r, 0, Math.PI * 2); ctx.fill();
+  }
   ctx.restore();
 }
 

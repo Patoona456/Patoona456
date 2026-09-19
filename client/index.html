@@ -73,6 +73,9 @@
     <button class="btn" data-panel="party" title="ปาร์ตี้ (P)">
       <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-3.4 3.4-5 6-5s5 1.6 6 5"/><path d="M15.5 20c.6-2.2 2-3.4 3.6-3.4 1.2 0 2.3.6 2.9 1.8"/></svg><span>ปาร์ตี้</span>
     </button>
+    <button class="btn" data-panel="guild" title="กิลด์ (G)">
+      <svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11z"/><path d="M9 20v-6h6v6"/><path d="M12 4V2"/></svg><span>กิลด์</span>
+    </button>
     <button class="btn" data-panel="settings" title="ตั้งค่า (F1)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.3M17.6 15.2l2.2 1.3M19.8 7.5l-2.2 1.3M6.4 15.2l-2.2 1.3"/></svg><span>ตั้งค่า</span>
     </button>
@@ -150,6 +153,7 @@
     <button class="tab on" data-ch="all">ทั้งหมด</button>
     <button class="tab" data-ch="world">โลก</button>
     <button class="tab" data-ch="party">ปาร์ตี้</button>
+    <button class="tab" data-ch="guild">กิลด์</button>
     <button class="tab" data-ch="trade">ซื้อขาย</button>
     <button class="tab" data-ch="system">ระบบ</button>
   </div>
@@ -158,6 +162,7 @@
     <select id="chat-ch" aria-label="ช่องแชท">
       <option value="say">รอบตัว</option>
       <option value="party">ปาร์ตี้</option>
+      <option value="guild">กิลด์</option>
       <option value="trade">ซื้อขาย</option>
       <option value="world">โลก</option>
     </select>

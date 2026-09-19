@@ -29,7 +29,13 @@ export class Player {
     this.cast = null;             // { skill, level, until, targetId, point }
     this.lastCombat = 0;
     this.regenAt = 0;
-    this.party = null;
+    // Which party this character is in. Backed by the record rather than the
+    // instance, so a server restart does not dissolve everyone's group - the
+    // rest of the server keeps using `p.party` and never has to know.
+    Object.defineProperty(this, 'party', {
+      get: () => this.record.party ?? null,
+      set: (v) => { this.record.party = v ?? null; },
+    });
     this.trade = null;           // trade session id, see game/trade.js
     this.tradeInvite = null;
     this.mods = {};

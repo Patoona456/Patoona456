@@ -5,6 +5,7 @@ import { ITEMS } from '../../shared/data/items.js';
 import { TILE, AOI_RADIUS, ANIM, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
 import { Monster, dist, dist2, dirTo, LEASH } from './monster.js';
 import { applyDamage, healEntity, basicAttack, statusMods, addStatus } from './combat.js';
+import { mint } from './economy.js';
 import * as Skills from './skills.js';
 import { tickBoss, resetBoss } from './boss.js';
 import { findPath, lineClear } from '../../shared/pathfind.js';
@@ -368,7 +369,7 @@ export class Zone {
         uid: 'g' + Math.random().toString(36).slice(2, 9), id: '__aurum', qty: amount,
         x: m.x, y: m.y, owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS,
       });
-      this.world.stats.minted += amount;
+      mint(this.world, amount, 'monster-drop');
     }
   }
 

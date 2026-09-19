@@ -224,6 +224,11 @@ class Game {
       if (this.ui.openPanels.has('party')) this.ui.open('party', m);
       if (m.invite) this.ui.toast(`${m.invite.from} ชวนเข้าปาร์ตี้ — เปิดเมนูปาร์ตี้เพื่อตอบรับ`, 'warn');
     });
+    n.on('guildState', (m) => {
+      this.ui.lastGuild = m;
+      if (this.ui.openPanels.has('guild')) this.ui.open('guild', m);
+      if (m.invite) this.ui.toast(`${m.invite.from} ชวนคุณเข้ากิลด์ — เปิดเมนูกิลด์เพื่อตอบรับ`, 'warn');
+    });
     n.on('questState', (m) => {
       // only take over the screen when the player actually asked for the log
       this.ui.lastQuests = m.quests;

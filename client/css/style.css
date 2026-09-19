@@ -356,6 +356,7 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 #chat-log div { text-shadow: 0 1px 2px #000; }
 #chat-log .say { color: var(--text); }
 #chat-log .party { color: #9fe0b0; }
+#chat-log .guild { color: #c9b6ff; }
 #chat-log .trade { color: #ffd08a; }
 #chat-log .world { color: #9fc6ff; }
 #chat-log .system { color: var(--muted); font-style: italic; }
@@ -570,7 +571,9 @@ body.landscape-ui #quest-track { display: none; }
 /* the rail hangs under the map card instead of fighting it for the corner */
 body.landscape-ui #menu-buttons {
   top: 160px; bottom: auto; left: auto; transform: none; right: 6px; gap: 4px;
-  grid-template-columns: repeat(3, auto);   /* two short rows, under the map, clear of the thumbs */
+  /* short rows under the map, clear of the thumbs. Four across keeps seven
+     buttons to two rows - at three across the rail grew into the action bar. */
+  grid-template-columns: repeat(4, auto);
 }
 body.landscape-ui #menu-buttons .btn { padding: 6px; min-width: 0; grid-template-columns: 20px; }
 body.landscape-ui #menu-buttons .btn span { display: none; }   /* icons only: the labels do not fit */

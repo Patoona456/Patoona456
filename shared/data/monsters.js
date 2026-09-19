@@ -262,6 +262,173 @@ export const MONSTERS = {
     aurum: { chance: 0.30, min: 20, max: 52 },
   }),
 
+  /* ---------------- filling out the bands ----------------
+     Every zone used to hold three or four kinds of monster, so a player saw
+     every face a zone had inside three minutes. These are the ones in
+     between: each uses a body `drawBlob` can draw or an LPC sheet dressed
+     differently, so none of them needed a new art file. */
+
+  bog_crawler: M({
+    id: 'bog_crawler', name: 'Bog Crawler', nameTh: 'ตะขาบหนอง', level: 12,
+    hp: 480, atk: 52, def: 12, mdef: 6, hit: 118, flee: 96, exp: 132, jobExp: 82,
+    element: 'verdant', race: 'beast', size: 'small', speed: 104, aggressive: true,
+    aggroRange: 190, attackDelay: 1.1, respawn: 20,
+    sprite: { kind: 'blob', shape: 'crawler', color: '#6d7a3a', dark: '#39421c', scale: 0.85 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.018 },
+      { id: 'herb_bundle', chance: 0.30, qty: [1, 3] },
+      { id: 'rat_pelt', chance: 0.22 },
+    ],
+    aurum: { chance: 0.16, min: 6, max: 18 },
+  }),
+  fen_spore: M({
+    id: 'fen_spore', name: 'Fen Spore', nameTh: 'สปอร์หนองน้ำ', level: 16,
+    hp: 640, atk: 44, matk: 78, def: 10, mdef: 26, hit: 124, flee: 78, exp: 178, jobExp: 110,
+    element: 'verdant', race: 'plant', size: 'small', speed: 44, respawn: 22,
+    attackRange: 120, attackDelay: 2.1,
+    sprite: { kind: 'blob', shape: 'floater', color: '#9ad06a', float: true, scale: 0.9 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.02 },
+      { id: 'herb_bundle', chance: 0.38, qty: [2, 4] },
+    ],
+    aurum: { chance: 0.14, min: 8, max: 22 },
+  }),
+  grave_moth: M({
+    id: 'grave_moth', name: 'Grave Moth', nameTh: 'ผีเสื้อสุสาน', level: 22,
+    hp: 900, atk: 96, def: 16, mdef: 34, hit: 148, flee: 152, exp: 240, jobExp: 148,
+    element: 'shade', race: 'beast', size: 'small', speed: 128, aggressive: true,
+    aggroRange: 210, attackDelay: 1.2, respawn: 26,
+    sprite: { kind: 'blob', shape: 'floater', color: '#7a6a9c', float: true, scale: 0.85 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.02 },
+      { id: 'bone_chip', chance: 0.28, qty: [1, 2] },
+    ],
+    aurum: { chance: 0.20, min: 12, max: 30 },
+  }),
+  tomb_robber: M({
+    id: 'tomb_robber', name: 'Tomb Robber', nameTh: 'โจรปล้นสุสาน', level: 26,
+    hp: 1450, atk: 138, def: 26, mdef: 18, hit: 162, flee: 140, exp: 320, jobExp: 200,
+    element: 'neutral', race: 'human', speed: 100, aggressive: true,
+    aggroRange: 230, attackDelay: 1.3, respawn: 34,
+    sprite: { kind: 'compose', body: 'male/tanned', scale: 1,
+      layers: { torso: 'leather', legs: 'pants_red', feet: 'shoes_brown', head: 'cloth_hood', weapon: 'dagger' } },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.025 },
+      { id: 'iron_ore', chance: 0.24, qty: [1, 3] },
+      { id: 'bronze_shortblade', chance: 0.03 },
+    ],
+    aurum: { chance: 0.45, min: 26, max: 70 },
+  }),
+  cairn_wisp: M({
+    id: 'cairn_wisp', name: 'Cairn Wisp', nameTh: 'ดวงไฟกองหิน', level: 30,
+    hp: 1300, atk: 92, matk: 186, def: 14, mdef: 60, hit: 172, flee: 168, exp: 380, jobExp: 236,
+    element: 'shade', race: 'undead', size: 'small', speed: 92, aggressive: true,
+    aggroRange: 250, attackRange: 150, attackDelay: 1.9, respawn: 30,
+    sprite: { kind: 'blob', shape: 'wisp', color: '#8f6ad0', glow: true, float: true, scale: 0.9 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.025 },
+      { id: 'bone_chip', chance: 0.30, qty: [1, 3] },
+      { id: 'mana_draught', chance: 0.10 },
+    ],
+    aurum: { chance: 0.24, min: 18, max: 46 },
+  }),
+  ridge_hound: M({
+    id: 'ridge_hound', name: 'Ridge Hound', nameTh: 'หมาป่าสันเขา', level: 36,
+    hp: 2100, atk: 192, def: 34, mdef: 22, hit: 186, flee: 176, exp: 560, jobExp: 350,
+    element: 'neutral', race: 'beast', speed: 138, aggressive: true,
+    aggroRange: 280, attackDelay: 1.0, respawn: 34,
+    sprite: { kind: 'blob', shape: 'crawler', color: '#8a6a4a', dark: '#4a3424', scale: 1.05 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.03 },
+      { id: 'wolf_fang', chance: 0.34, qty: [1, 2] },
+    ],
+    aurum: { chance: 0.30, min: 30, max: 76 },
+  }),
+  stone_grub: M({
+    id: 'stone_grub', name: 'Stone Grub', nameTh: 'หนอนหิน', level: 39,
+    hp: 4200, atk: 168, def: 86, mdef: 40, hit: 170, flee: 70, exp: 620, jobExp: 388,
+    element: 'neutral', race: 'beast', size: 'large', speed: 42, respawn: 46,
+    attackDelay: 2.3,
+    sprite: { kind: 'blob', shape: 'spiky', color: '#9a8c74', dark: '#5c5342', scale: 1.25 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.03 },
+      { id: 'iron_ore', chance: 0.40, qty: [2, 5] },
+      { id: 'steel_ingot', chance: 0.12 },
+    ],
+    aurum: { chance: 0.26, min: 28, max: 72 },
+  }),
+  rime_shard: M({
+    id: 'rime_shard', name: 'Rime Shard', nameTh: 'สะเก็ดเหมันต์', level: 43,
+    hp: 2600, atk: 176, matk: 230, def: 40, mdef: 78, hit: 190, flee: 158, exp: 900, jobExp: 560,
+    element: 'frost', race: 'formless', speed: 86, aggressive: true,
+    aggroRange: 250, attackRange: 140, attackDelay: 1.8, respawn: 40,
+    sprite: { kind: 'blob', shape: 'shard', color: '#a8dcff', dark: '#5b93c4', float: true, glow: true, scale: 1.05 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.03 },
+      { id: 'frost_tear', chance: 0.20 },
+      { id: 'runed_whetstone', chance: 0.05 },
+    ],
+    aurum: { chance: 0.30, min: 40, max: 96 },
+  }),
+  glacier_maw: M({
+    id: 'glacier_maw', name: 'Glacier Maw', nameTh: 'เขี้ยวธารน้ำแข็ง', level: 48,
+    hp: 6400, atk: 262, def: 92, mdef: 66, hit: 200, flee: 112, exp: 1320, jobExp: 820,
+    element: 'frost', race: 'beast', size: 'large', speed: 74, aggressive: true,
+    aggroRange: 240, attackDelay: 2.0, respawn: 56,
+    sprite: { kind: 'blob', shape: 'spiky', color: '#7fb8d8', dark: '#35607c', scale: 1.35 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.035 },
+      { id: 'frost_tear', chance: 0.26, qty: [1, 2] },
+      { id: 'steel_ingot', chance: 0.20, qty: [1, 3] },
+    ],
+    aurum: { chance: 0.36, min: 55, max: 130 },
+  }),
+  hoar_stalker: M({
+    id: 'hoar_stalker', name: 'Hoar Stalker', nameTh: 'นักล่าเกล็ดน้ำแข็ง', level: 52,
+    hp: 4800, atk: 318, def: 58, mdef: 52, hit: 216, flee: 214, exp: 1520, jobExp: 940,
+    element: 'frost', race: 'human', speed: 132, aggressive: true,
+    aggroRange: 300, attackDelay: 1.05, respawn: 52,
+    sprite: { kind: 'compose', body: 'female/darkelf', scale: 1.05,
+      layers: { torso: 'leather', legs: 'pants_white', feet: 'shoes_black', head: 'leather_cap', weapon: 'dagger' } },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.04 },
+      { id: 'frost_tear', chance: 0.22 },
+      { id: 'runed_whetstone', chance: 0.08 },
+      { id: 'shard_dawn', chance: 0.006 },
+    ],
+    aurum: { chance: 0.42, min: 70, max: 165 },
+  }),
+  vault_sentry: M({
+    id: 'vault_sentry', name: 'Vault Sentry', nameTh: 'ยามห้องนิรภัย', level: 56,
+    hp: 9200, atk: 348, def: 118, mdef: 88, hit: 224, flee: 120, exp: 2100, jobExp: 1300,
+    element: 'neutral', race: 'undead', size: 'large', speed: 68, aggressive: true,
+    aggroRange: 250, attackDelay: 2.1, respawn: 70,
+    sprite: { kind: 'sheet', key: 'skeleton', tint: '#b8c4d0', scale: 1.3,
+      layers: { head: 'metal_helm', torso: 'plate', weapon: 'spear' } },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.04 },
+      { id: 'steel_ingot', chance: 0.32, qty: [2, 4] },
+      { id: 'runed_whetstone', chance: 0.12 },
+      { id: 'shard_dawn', chance: 0.008 },
+    ],
+    aurum: { chance: 0.48, min: 90, max: 210 },
+  }),
+  ember_revenant: M({
+    id: 'ember_revenant', name: 'Ember Revenant', nameTh: 'ผีคืนชีพเพลิง', level: 58,
+    hp: 7400, atk: 300, matk: 372, def: 70, mdef: 96, hit: 232, flee: 178, exp: 2400, jobExp: 1500,
+    element: 'ember', race: 'undead', speed: 96, aggressive: true,
+    aggroRange: 290, attackRange: 160, attackDelay: 1.7, respawn: 74,
+    sprite: { kind: 'blob', shape: 'wisp', color: '#ff7a3d', glow: true, float: true, scale: 1.2 },
+    skills: ['ember_bolt'],
+    drops: [
+      { id: 'mystery_scroll', chance: 0.045 },
+      { id: 'ember_cinder', chance: 0.26, qty: [1, 2] },
+      { id: 'blessing_oil', chance: 0.02 },
+      { id: 'shard_dawn', chance: 0.01 },
+    ],
+    aurum: { chance: 0.46, min: 95, max: 225 },
+  }),
+
   /* ---------------- Sunken Reliquary (party dungeon, 60+) ----------------
      Each of these answers a different solo habit. The sentinel punishes
      standing still, the choirmaster punishes ignoring a caster, the anchor

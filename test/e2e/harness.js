@@ -34,7 +34,12 @@ export async function startServer() {
   const data = await mkdtemp(path.join(tmpdir(), 'emberfall-test-'));
   const proc = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(PORT), EMBERFALL_DATA: data, EMBERFALL_DEV: '1' },
+    env: {
+      ...process.env, PORT: String(PORT), EMBERFALL_DATA: data, EMBERFALL_DEV: '1',
+      // the tests all register from 127.0.0.1; the per-address cap is proved
+      // on purpose in security.test.js, not tripped over by everything else
+      EMBERFALL_MAX_ACCOUNTS_PER_IP: '0',
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const log = [];

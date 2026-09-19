@@ -33,12 +33,23 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
       await page.waitForSelector('.win.window', { timeout: 5000 });
       const titles = await page.locator('.win.window > header h2').allTextContents();
       assert.ok(titles.some((t) => t.trim()), `the ${panel} panel opened with no title`);
-      // windows stack, so close whatever ended up on top, then clear the rest
-      while (await page.locator('.win.window').count()) {
-        await page.locator('.win.window .close').last().click();
-        await page.waitForTimeout(120);
-      }
+      // Close through the UI's own API rather than the button: some panels
+      // redraw themselves when fresh state arrives from the server, which
+      // detaches the button mid-click. The close button itself is covered
+      // separately below.
+      await page.evaluate(() => {
+        const ui = window.__game.ui;
+        for (const name of [...ui.openPanels.keys()]) ui.close(name);
+      });
+      await page.waitForTimeout(120);
     }
+    // and the close button works, on a panel that does not redraw itself
+    await page.click('#menu-buttons .btn[data-panel="inventory"]');
+    await page.waitForSelector('.win.window');
+    await page.locator('.win.window .close').last().click();
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator('.win.window').count(), 0, 'the close button did not close the window');
+
     assert.deepEqual(errors, [], 'opening the panels logged errors');
     await ctx.close();
   });

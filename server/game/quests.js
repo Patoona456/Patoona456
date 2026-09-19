@@ -3,6 +3,7 @@ import { QUESTS } from '../../shared/data/quests.js';
 import { ITEMS } from '../../shared/data/items.js';
 import { JOBS } from '../../shared/data/jobs.js';
 import { markDirty } from '../persistence.js';
+import { mint } from './economy.js';
 
 /** How long a repeatable quest stays on cooldown after it is handed in. */
 const REPEAT_MS = { daily: 20 * 3600000, weekly: 7 * 86400000 };
@@ -103,7 +104,7 @@ export function complete(world, p, id) {
   const r = q.rewards ?? {};
   p.gainExp(r.exp ?? 0, r.jobExp ?? 0, p.zone);
   if (r.skillPoints) p.record.skillPoints += r.skillPoints;
-  if (r.aurum) { p.record.aurum += r.aurum; world.stats.minted += r.aurum; }
+  if (r.aurum) { p.record.aurum += r.aurum; mint(world, r.aurum, 'quest'); }
   for (const it of r.items ?? []) p.addItem(it.id, it.qty);
   st.done = true;
   st.counts = {};

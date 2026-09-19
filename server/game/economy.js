@@ -7,7 +7,26 @@ import { db, markDirty } from '../persistence.js';
 
 const today = () => Math.floor(Date.now() / 86400000);
 
-export function burn(world, amount) { world.stats.burned += amount; }
+/**
+ * Aurum leaving the world for good.
+ *
+ * `source` is what makes the dashboard worth having: a single "burned"
+ * counter tells you money is leaving, but not whether the sinks you
+ * *designed* are the ones doing the work. If refining is 90% of the burn and
+ * the travel fee is 0.1%, the travel fee is decoration.
+ */
+export function burn(world, amount, source = 'other') {
+  world.stats.burned += amount;
+  world.stats.burnBy = world.stats.burnBy ?? {};
+  world.stats.burnBy[source] = (world.stats.burnBy[source] ?? 0) + amount;
+}
+
+/** Aurum coming into the world from nothing. Same reasoning as `burn`. */
+export function mint(world, amount, source = 'other') {
+  world.stats.minted += amount;
+  world.stats.mintBy = world.stats.mintBy ?? {};
+  world.stats.mintBy[source] = (world.stats.mintBy[source] ?? 0) + amount;
+}
 
 /* ---------------- shops ---------------- */
 export function shopPayload(shopId) {
@@ -50,7 +69,7 @@ export function buy(world, p, shopId, itemId, qty) {
   if (p.record.aurum < total) return { error: 'ออรัมไม่พอ' };
   if (!p.addItem(itemId, qty)) return { error: 'กระเป๋าเต็ม' };
   p.record.aurum -= total;
-  burn(world, total);
+  burn(world, total, 'shop');
   markDirty();
   return { ok: true, spent: total };
 }
@@ -74,7 +93,7 @@ export function sell(world, p, index, qty) {
   p.record.npcSales[st.id] = soldToday + qty;
   p.removeItemAt(index, qty);
   p.record.aurum += gained;
-  world.stats.minted += gained;
+  mint(world, gained, 'npc-sell');
   markDirty();
   return { ok: true, gained, dampened: soldToday > 5 };
 }
@@ -189,7 +208,7 @@ export function refine(world, p, index, useOil) {
   if (useOil && p.countItem('blessing_oil') < 1) return { error: 'ไม่มีน้ำมันศักดิ์สิทธิ์' };
 
   p.record.aurum -= cost;
-  burn(world, cost);
+  burn(world, cost, 'refine');
   if (needStone) p.removeItemById('runed_whetstone', 1);
   if (useOil) p.removeItemById('blessing_oil', 1);
 
@@ -223,7 +242,7 @@ export function repair(world, p, index) {
   const cost = Math.max(20, Math.floor(def.value * 0.004 * missing) + missing * 2);
   if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost} ออรัม` };
   p.record.aurum -= cost;
-  burn(world, cost);
+  burn(world, cost, 'repair');
   st.dur = max;
   p.recompute();
   markDirty();
@@ -243,7 +262,7 @@ export function craft(world, p, recipeId, times = 1) {
   if (p.record.aurum < fee) return { error: `ค่าธรรมเนียม ${fee} ออรัม` };
   for (const need of r.in) p.removeItemById(need.id, need.qty * times);
   p.record.aurum -= fee;
-  burn(world, fee);
+  burn(world, fee, 'craft');
   p.addItem(r.out.id, r.out.qty * times);
   markDirty();
   return { ok: true, made: r.out.qty * times, item: r.out.id };
@@ -258,7 +277,7 @@ export function storageOf(p) {
 export function openStorage(world, p) {
   if (p.record.aurum < STORAGE_FEE) return { error: `ค่าเปิดคลัง ${STORAGE_FEE} ออรัม` };
   p.record.aurum -= STORAGE_FEE;
-  burn(world, STORAGE_FEE);
+  burn(world, STORAGE_FEE, 'storage');
   markDirty();
   return { ok: true, storage: storageOf(p) };
 }
@@ -320,7 +339,7 @@ export function marketPost(world, p, index, qty, price) {
   const fee = marketTax(price);
   if (p.record.aurum < fee) return { error: `ค่าธรรมเนียมลงขาย ${fee} ออรัม` };
   p.record.aurum -= fee;
-  burn(world, fee);
+  burn(world, fee, 'market-list');
 
   const stack = { ...st, qty };
   p.removeItemAt(index, qty);
@@ -342,7 +361,7 @@ export function marketBuy(world, p, uid) {
 
   p.record.aurum -= l.price;
   const tax = marketTax(l.price);
-  burn(world, tax);
+  burn(world, tax, 'market-tax');
   l.sold = true;
   l.soldAt = Date.now();
 
@@ -384,7 +403,7 @@ export function healService(world, p) {
   const price = p.record.level * HEAL_PRICE_PER_LEVEL;
   if (p.record.aurum < price) return { error: `ค่ารักษา ${price} ออรัม` };
   p.record.aurum -= price;
-  burn(world, price);
+  burn(world, price, 'heal');
   p.hp = p.maxHp; p.sp = p.maxSp;
   markDirty();
   return { ok: true, price };
@@ -395,7 +414,7 @@ export function warpService(world, p, to) {
   if (!route) return { error: 'ไม่มีปลายทางนี้' };
   if (p.record.aurum < route.price) return { error: `ค่าเดินทาง ${route.price} ออรัม` };
   p.record.aurum -= route.price;
-  burn(world, route.price);
+  burn(world, route.price, 'travel');
   markDirty();
   return { ok: true, route };
 }
@@ -403,7 +422,7 @@ export function warpService(world, p, to) {
 export function resetStats(world, p) {
   if (p.record.aurum < RESET_STAT_PRICE) return { error: `ต้องใช้ ${RESET_STAT_PRICE} ออรัม` };
   p.record.aurum -= RESET_STAT_PRICE;
-  burn(world, RESET_STAT_PRICE);
+  burn(world, RESET_STAT_PRICE, 'reset-stats');
   let refund = 0;
   for (const k of Object.keys(STARTING_STATS)) {
     for (let v = p.record[k]; v > STARTING_STATS[k]; v--) refund += Math.floor((v - 2) / 10) + 2;
@@ -418,7 +437,7 @@ export function resetStats(world, p) {
 export function resetSkills(world, p) {
   if (p.record.aurum < RESET_SKILL_PRICE) return { error: `ต้องใช้ ${RESET_SKILL_PRICE} ออรัม` };
   p.record.aurum -= RESET_SKILL_PRICE;
-  burn(world, RESET_SKILL_PRICE);
+  burn(world, RESET_SKILL_PRICE, 'reset-skills');
   let pts = 0;
   for (const lvl of Object.values(p.record.skills)) pts += lvl;
   p.record.skills = {};

@@ -10,14 +10,35 @@ function hashPassword(password, salt = randomBytes(16).toString('hex')) {
   return { salt, hash: scryptSync(password, salt, 64).toString('hex') };
 }
 
-export function register(name, password) {
+/**
+ * How many accounts one address may open, and over what window.
+ *
+ * The point is not to stop a determined person - an address is cheap - but to
+ * stop the *easy* version: a loop that opens a hundred characters to farm
+ * starting Aurum, or to sit on names. Set EMBERFALL_MAX_ACCOUNTS_PER_IP=0 to
+ * turn it off for a LAN game, where every player shares one address.
+ */
+const MAX_PER_IP = Number(process.env.EMBERFALL_MAX_ACCOUNTS_PER_IP ?? 5);
+const IP_WINDOW_MS = 24 * 3600000;
+
+export function register(name, password, ip = null) {
   name = String(name ?? '').trim();
   if (!NAME_RE.test(name)) return { error: 'ชื่อบัญชีต้องยาว 3-16 ตัว (อังกฤษ/ไทย/ตัวเลข/_)' };
   if (String(password ?? '').length < 4) return { error: 'รหัสผ่านสั้นเกินไป (อย่างน้อย 4 ตัว)' };
   const key = name.toLowerCase();
   if (db.accounts[key]) return { error: 'มีบัญชีนี้อยู่แล้ว' };
+
+  if (MAX_PER_IP > 0 && ip) {
+    const since = Date.now() - IP_WINDOW_MS;
+    const recent = Object.values(db.accounts)
+      .filter((a) => a.ip === ip && (a.created ?? 0) > since).length;
+    if (recent >= MAX_PER_IP) {
+      return { error: `สมัครจากที่อยู่นี้ครบ ${MAX_PER_IP} บัญชีแล้ว ลองใหม่พรุ่งนี้` };
+    }
+  }
+
   const { salt, hash } = hashPassword(password);
-  db.accounts[key] = { name, key, salt, hash, created: Date.now(), chars: [] };
+  db.accounts[key] = { name, key, salt, hash, created: Date.now(), chars: [], ip: ip ?? null };
   db.storage[key] = { items: [], aurum: 0 };
   markDirty();
   return { account: db.accounts[key] };
@@ -110,6 +131,7 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     npcSales: {},                 // itemId -> count sold today (price dampener)
     salesDay: 0,
     lockouts: {},                 // bossId -> the week its hoard was claimed
+    guild: null,                  // guild id, or null
   };
   db.characters[id] = c;
   acc.chars.push(id);

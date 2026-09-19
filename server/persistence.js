@@ -23,6 +23,8 @@ const empty = () => ({
   characters: {},        // id -> character record
   market: [],            // consignment listings
   storage: {},           // accountName -> { items: [], aurum }
+  guilds: {},            // id -> { id, name, leader, members, vault, aurum, upkeep }
+  parties: {},           // id -> { id, name, leader, members, seen }
   stats: { created: Date.now(), aurumMinted: 0, aurumBurned: 0 },
   nextCharId: 1,
 });

@@ -41,15 +41,30 @@ npm run test:all  # ทั้งสองชุด
 ความเชื่อมต่อของทุกแผนที่, pathfinding, ประตูปาร์ตี้, ล็อกรางวัลรายสัปดาห์,
 สคริปต์บอสทุกเฟส, aggro ตามช่องว่างเลเวล, เศรษฐกิจ และสมดุลเควสต์
 
-`npm run test:e2e` เปิดเซิร์ฟเวอร์จริงบนฐานข้อมูลชั่วคราวแล้วเล่นผ่าน Chromium:
-สมัคร สร้างตัวละคร เข้าโลก เปิดทุกหน้าต่าง สู้จริง และตรวจว่าเลย์เอาต์มือถือ
-ไม่มี HUD ทับกัน — ถ้ายังไม่ได้ติดตั้ง Playwright มันจะ *ข้าม* ไม่ใช่ล้มเหลว
+`npm run test:e2e` เปิดเซิร์ฟเวอร์จริงบนฐานข้อมูลชั่วคราว แล้ว:
+
+* **เล่นผ่าน Chromium** — สมัคร สร้างตัวละคร เข้าโลก เปิดทุกหน้าต่าง สู้จริง
+  และตรวจว่าเลย์เอาต์มือถือไม่มี HUD ทับกัน (ข้ามถ้าไม่มี Playwright)
+* **ฆ่าเซิร์ฟเวอร์แล้วเปิดใหม่** เพื่อพิสูจน์ว่ากิลด์กับปาร์ตี้รอด
+* **ยิงช่องโหว่ใส่เซิร์ฟเวอร์ด้วย raw socket** — จำนวนติดลบ index นอกขอบ
+  คำสั่ง dev ตอนปิด dev speed hack เทรดกับตัวเอง ลงตลาดราคาติดลบ
+  และตรวจว่าไม่มีอันไหนทำให้ออรัมเพิ่มขึ้นแม้แต่บาทเดียว
 
 ## เอาขึ้นเซิร์ฟเวอร์จริง
 
 ```
 docker compose up -d --build     # เปิด http://localhost:8080
 ```
+
+ตัวแปรที่ตั้งได้:
+
+| ตัวแปร | ค่าเริ่มต้น | ทำอะไร |
+|---|---|---|
+| `EMBERFALL_ADMIN_TOKEN` | *(ปิด)* | เปิดแดชบอร์ดเศรษฐกิจที่ `/admin?token=...` |
+| `EMBERFALL_MAX_ACCOUNTS_PER_IP` | `5` | จำกัดการสมัครต่อ IP ต่อวัน · `0` = ไม่จำกัด (เกม LAN) |
+| `EMBERFALL_STORE` | `sqlite` | `sqlite` หรือ `json` |
+| `EMBERFALL_DATA` | `./data` | ที่เก็บฐานข้อมูล |
+| `EMBERFALL_DEV` | *(ปิด)* | เปิดคำสั่ง `devWarp` / `devBoost` / `devRefine` |
 
 process เดียวจบ: เสิร์ฟไฟล์ไคลเอนต์และรับ WebSocket บนพอร์ตเดียวกัน ไม่มีขั้นตอน
 build ข้อมูลโลกอยู่ใน SQLite ไฟล์เดียวที่ `/data` (ผูก volume ไว้แล้ว)
@@ -116,7 +131,9 @@ server/
   accounts.js    สมัคร/ล็อกอิน/สร้างตัวละคร (scrypt)
   persistence.js เก็บสถานะลง SQLite (หรือ JSON) สลับได้ด้วย EMBERFALL_STORE
   store-sqlite.js แบ็กเอนด์ SQLite ที่ใช้ node:sqlite ในตัว Node
-  game/          world, zone, player, monster, combat, skills, economy, party, quests, boss
+  admin.js       แดชบอร์ดเศรษฐกิจที่ /admin (ปิดไว้จนกว่าจะตั้ง token)
+  game/          world, zone, player, monster, combat, skills, economy,
+                 party, guild, quests, boss, trade
 client/
   index.html     โครง HUD ทั้งหมด
   js/            main, net, input (จอย/ทัช/คีย์), renderer, sprites, ui

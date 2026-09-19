@@ -7,6 +7,7 @@ import { sweepMarket } from './economy.js';
 import * as Quests from './quests.js';
 import * as Party from './party.js';
 import * as Trade from './trade.js';
+import * as Guild from './guild.js';
 
 export class World {
   constructor() {
@@ -22,7 +23,8 @@ export class World {
 
   start() {
     this.tickHandle = setInterval(() => this.tick(), TICK_MS);
-    this.sweeper = setInterval(() => sweepMarket(), 60000);
+    this.sweeper = setInterval(() => { sweepMarket(); Guild.chargeUpkeep(this); Party.sweep(); }, 60000);
+    Party.sweep();      // clear out whatever a previous run left behind
     // a trade dies when either side walks off, dies or disconnects
     this.tradeSweeper = setInterval(() => Trade.sweep(this), 500);
     this.tradeSweeper.unref?.();
@@ -64,7 +66,8 @@ export class World {
   removePlayer(p) {
     p.persist();
     Trade.cancel(this, p, 'อีกฝ่ายออกจากเกม');
-    Party.leave(this, p);
+    // the party is written down now, so logging off is not leaving it - a
+    // group survives one member's connection dropping mid-dungeon
     p.zone?.removePlayer(p);
     this.players.delete(p.id);
     this.byCharId.delete(p.record.id);
@@ -143,6 +146,7 @@ export class World {
     for (const p of this.players.values()) {
       if (msg.ch === 'say' && p.record.map !== msg.map) continue;
       if (msg.ch === 'party' && p.party !== msg.party) continue;
+      if (msg.ch === 'guild' && p.record.guild !== msg.guild) continue;
       p.conn.send(packet);
     }
   }
