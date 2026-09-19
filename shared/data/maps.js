@@ -120,6 +120,7 @@ export const MAPS = {
       { mob: 'mire_slime', count: 24 },
       { mob: 'ember_wisp', count: 7, area: [4, 26, 72, 34] },
       { mob: 'dusk_bat', count: 10, area: [4, 30, 72, 30] },
+      { mob: 'bristle_boar', count: 9, area: [4, 26, 72, 34] },
       { mob: 'thistle_sprite', count: 8, area: [4, 34, 72, 26] },
     ],
   },

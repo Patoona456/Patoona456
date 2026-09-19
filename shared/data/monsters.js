@@ -43,6 +43,19 @@ export const MONSTERS = {
     ],
     aurum: { chance: 0.15, min: 2, max: 6 },
   }),
+  bristle_boar: M({
+    id: 'bristle_boar', name: 'Bristle Boar', nameTh: 'หมูป่าขนแข็ง', level: 7,
+    hp: 110, atk: 30, def: 7, mdef: 4, hit: 61, flee: 75, exp: 38, jobExp: 24,
+    element: 'verdant', race: 'beast', speed: 66, aggressive: true,
+    aggroRange: 160, attackDelay: 1.8, respawn: 20,
+    sprite: { kind: 'blob', shape: 'spiky', color: '#8a6a4a', scale: 0.95 },
+    drops: [
+      { id: 'mystery_scroll', chance: 0.02 },
+      { id: 'boar_tusk', chance: 0.40, qty: [1, 2] },
+      { id: 'herb_bundle', chance: 0.20 },
+    ],
+    aurum: { chance: 0.30, min: 5, max: 14 },
+  }),
   husk: M({
     id: 'husk', name: 'Ashen Husk', nameTh: 'ซากเถ้า', level: 10,
     hp: 170, atk: 38, def: 9, mdef: 6, hit: 62, flee: 77, exp: 84, jobExp: 52,
@@ -54,7 +67,7 @@ export const MONSTERS = {
       { id: 'rat_pelt', chance: 0.30 },
       { id: 'lesser_salve', chance: 0.05 },
     ],
-    aurum: { chance: 0.12, min: 3, max: 9 },
+    aurum: { chance: 0.30, min: 8, max: 22 },
   }),
   bandit_scout: M({
     id: 'bandit_scout', name: 'Bandit Scout', nameTh: 'โจรสอดแนม', level: 14,
@@ -161,7 +174,7 @@ export const MONSTERS = {
       { id: 'rat_pelt', chance: 0.35 },
       { id: 'herb_bundle', chance: 0.20 },
     ],
-    aurum: { chance: 0.18, min: 1, max: 4 },
+    aurum: { chance: 0.30, min: 3, max: 9 },
   }),
   thistle_sprite: M({
     id: 'thistle_sprite', name: 'Thistle Sprite', nameTh: 'ภูตหนาม', level: 9,
@@ -279,7 +292,7 @@ export const MONSTERS = {
       { id: 'herb_bundle', chance: 0.30, qty: [1, 3] },
       { id: 'rat_pelt', chance: 0.22 },
     ],
-    aurum: { chance: 0.16, min: 6, max: 18 },
+    aurum: { chance: 0.30, min: 14, max: 34 },
   }),
   fen_spore: M({
     id: 'fen_spore', name: 'Fen Spore', nameTh: 'สปอร์หนองน้ำ', level: 16,
@@ -291,7 +304,7 @@ export const MONSTERS = {
       { id: 'mystery_scroll', chance: 0.02 },
       { id: 'herb_bundle', chance: 0.38, qty: [2, 4] },
     ],
-    aurum: { chance: 0.14, min: 8, max: 22 },
+    aurum: { chance: 0.30, min: 20, max: 44 },
   }),
   grave_moth: M({
     id: 'grave_moth', name: 'Grave Moth', nameTh: 'ผีเสื้อสุสาน', level: 22,
@@ -303,7 +316,7 @@ export const MONSTERS = {
       { id: 'mystery_scroll', chance: 0.02 },
       { id: 'bone_chip', chance: 0.28, qty: [1, 2] },
     ],
-    aurum: { chance: 0.20, min: 12, max: 30 },
+    aurum: { chance: 0.32, min: 26, max: 58 },
   }),
   tomb_robber: M({
     id: 'tomb_robber', name: 'Tomb Robber', nameTh: 'โจรปล้นสุสาน', level: 26,
@@ -335,10 +348,11 @@ export const MONSTERS = {
   ridge_hound: M({
     id: 'ridge_hound', name: 'Ridge Hound', nameTh: 'หมาป่าสันเขา', level: 36,
     hp: 540, atk: 77, def: 34, mdef: 22, hit: 94, flee: 114, exp: 628, jobExp: 389,
-    element: 'neutral', race: 'beast', speed: 138, aggressive: true,
+    element: 'storm', race: 'beast', speed: 138, aggressive: true,
     aggroRange: 280, attackDelay: 1.0, respawn: 34,
     sprite: { kind: 'blob', shape: 'crawler', color: '#8a6a4a', dark: '#4a3424', scale: 1.05 },
     drops: [
+      { id: 'storm_quill', chance: 0.16 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'wolf_fang', chance: 0.34, qty: [1, 2] },
     ],

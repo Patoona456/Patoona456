@@ -265,12 +265,22 @@ export const ITEMS = {
   wooden_arrow: { id: 'wooden_arrow', name: 'Wooden Arrow', nameTh: 'ลูกธนูไม้', type: 'ammo', ammoFor: 'bow', atk: 3, stack: 2000, weight: 0.2, value: 2, rarity: 'common', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
   iron_arrow: { id: 'iron_arrow', name: 'Iron Arrow', nameTh: 'ลูกธนูเหล็ก', type: 'ammo', ammoFor: 'bow', atk: 9, stack: 2000, weight: 0.3, value: 7, rarity: 'common', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
   ember_arrow_item: { id: 'ember_arrow_item', name: 'Ember Arrow', nameTh: 'ลูกธนูไฟ', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'ember', stack: 2000, weight: 0.3, value: 22, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
+  frost_arrow_item: { id: 'frost_arrow_item', name: 'Frost Arrow', nameTh: 'ลูกธนูน้ำแข็ง', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'frost', stack: 2000, weight: 0.3, value: 22, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
+  storm_arrow_item: { id: 'storm_arrow_item', name: 'Storm Arrow', nameTh: 'ลูกธนูพายุ', type: 'ammo', ammoFor: 'bow', atk: 14, element: 'storm', stack: 2000, weight: 0.3, value: 24, rarity: 'uncommon', sprite: { layer: 'weapon', key: 'arrow', gendered: false } },
 
   /* ================= CONSUMABLES ================= */
   lesser_salve: C({ id: 'lesser_salve', name: 'Lesser Salve', nameTh: 'ยาสมานเล็ก', heal: 90, cooldown: 4, level: 1, value: 120, rarity: 'common', desc: 'ฟื้น 90 HP - แพงเมื่อเทียบกับรายได้ ใช้ให้คุ้ม' }),
   greater_salve: C({ id: 'greater_salve', name: 'Greater Salve', nameTh: 'ยาสมานใหญ่', heal: 320, cooldown: 6, level: 25, value: 700, rarity: 'common' }),
   mana_draught: C({ id: 'mana_draught', name: 'Mana Draught', nameTh: 'น้ำมานา', healSp: 80, cooldown: 8, level: 10, value: 400, rarity: 'common' }),
-  roast_boar: C({ id: 'roast_boar', name: 'Roast Boar Ribs', nameTh: 'ซี่โครงหมูป่าย่าง', heal: 220, regen: { hp: 8, duration: 60 }, cooldown: 30, level: 8, value: 260, rarity: 'common', craftable: true, desc: 'อาหารทำเอง คุ้มกว่าซื้อยา' }),
+  roast_boar: C({ id: 'roast_boar', name: 'Roast Boar Ribs', nameTh: 'ซี่โครงหมูป่าย่าง', heal: 220, regen: { hp: 8, duration: 60 }, cooldown: 30, level: 8, value: 190, rarity: 'common', craftable: true, desc: 'อาหารทำเอง คุ้มกว่าซื้อยา' }),
+  // Healing has to keep pace with the health curve, or the last forty levels
+  // are played without any usable recovery at all: the greater salve was the
+  // best thing in the game from level 25 to 70, by which point it refilled
+  // under a fifth of the bar. These are craftable rather than stocked, so
+  // late-game recovery stays a sink for drops instead of a coin faucet.
+  marrow_tonic: C({ id: 'marrow_tonic', name: 'Marrow Tonic', nameTh: 'ยาไขกระดูก', heal: 340, cooldown: 7, level: 34, value: 720, rarity: 'common', craftable: true }),
+  rimewater_flask: C({ id: 'rimewater_flask', name: 'Rimewater Flask', nameTh: 'ขวดน้ำเหมันต์', heal: 520, healSp: 80, cooldown: 8, level: 48, value: 1750, rarity: 'uncommon', craftable: true }),
+  dawnblood_draught: C({ id: 'dawnblood_draught', name: 'Dawnblood Draught', nameTh: 'ยาโลหิตอรุณ', heal: 700, healSp: 140, cooldown: 9, level: 62, value: 2700, rarity: 'uncommon', craftable: true }),
   herbal_stew: C({ id: 'herbal_stew', name: 'Herbal Stew', nameTh: 'สตูว์สมุนไพร', heal: 140, healSp: 60, regen: { hp: 6, sp: 4, duration: 90 }, cooldown: 30, level: 12, value: 320, rarity: 'common', craftable: true }),
   antidote: C({ id: 'antidote', name: 'Antidote', nameTh: 'ยาถอนพิษ', cleanse: ['poison'], cooldown: 5, level: 1, value: 150, rarity: 'common' }),
   warp_scroll: C({ id: 'warp_scroll', name: 'Warp Scroll', nameTh: 'ม้วนวาร์ป', warp: 'lastTown', cast: 3, cooldown: 60, level: 1, value: 900, rarity: 'common', desc: 'กลับเมืองล่าสุด - ค่าเดินทางคือหนึ่งในบ่อดูดเงินหลัก' }),
@@ -287,7 +297,7 @@ export const ITEMS = {
   wolf_fang: M({ id: 'wolf_fang', name: 'Wolf Fang', nameTh: 'เขี้ยวหมาป่า', value: 130, rarity: 'common' }),
   bandit_rope: M({ id: 'bandit_rope', name: 'Frayed Rope', nameTh: 'เชือกขาดรุ่ย', value: 90, rarity: 'common' }),
   bone_chip: M({ id: 'bone_chip', name: 'Bone Chip', nameTh: 'เศษกระดูก', value: 110, rarity: 'common' }),
-  orc_tooth: M({ id: 'orc_tooth', name: 'Orc Tooth', nameTh: 'ฟันออร์ค', value: 260, rarity: 'common' }),
+  orc_tooth: M({ id: 'orc_tooth', name: 'Orc Tooth', nameTh: 'ฟันออร์ค', value: 70, rarity: 'common', desc: 'ของขายทิ้ง - ไม่มีสูตรไหนใช้ จึงตั้งราคาไว้อย่างของขายทิ้งจริงๆ' }),
   ghoul_sinew: M({ id: 'ghoul_sinew', name: 'Ghoul Sinew', nameTh: 'เอ็นผีดิบ', value: 420, rarity: 'uncommon' }),
   ember_cinder: M({ id: 'ember_cinder', name: 'Ember Cinder', nameTh: 'ถ่านอังคาร', value: 900, rarity: 'uncommon', element: 'ember' }),
   frost_tear: M({ id: 'frost_tear', name: 'Frost Tear', nameTh: 'หยาดน้ำแข็ง', value: 900, rarity: 'uncommon', element: 'frost' }),
@@ -318,11 +328,28 @@ export const RECIPES = {
   steel_ingot: { out: { id: 'steel_ingot', qty: 1 }, in: [{ id: 'iron_ore', qty: 3 }], fee: 60, station: 'forge' },
   roast_boar: { out: { id: 'roast_boar', qty: 3 }, in: [{ id: 'boar_tusk', qty: 1 }, { id: 'herb_bundle', qty: 2 }], fee: 40, station: 'campfire' },
   herbal_stew: { out: { id: 'herbal_stew', qty: 3 }, in: [{ id: 'herb_bundle', qty: 4 }, { id: 'rat_pelt', qty: 1 }], fee: 40, station: 'campfire' },
+  marrow_tonic: { out: { id: 'marrow_tonic', qty: 3 }, in: [{ id: 'bone_chip', qty: 5 }, { id: 'herb_bundle', qty: 6 }, { id: 'ghoul_sinew', qty: 1 }], fee: 300, station: 'campfire' },
+  rimewater_flask: { out: { id: 'rimewater_flask', qty: 3 }, in: [{ id: 'frost_tear', qty: 1 }, { id: 'herb_bundle', qty: 10 }, { id: 'ghoul_sinew', qty: 2 }], fee: 900, station: 'campfire' },
+  dawnblood_draught: { out: { id: 'dawnblood_draught', qty: 3 }, in: [{ id: 'shard_dawn', qty: 1 }, { id: 'herb_bundle', qty: 14 }, { id: 'ember_cinder', qty: 2 }], fee: 2200, station: 'campfire' },
   iron_arrow: { out: { id: 'iron_arrow', qty: 60 }, in: [{ id: 'iron_ore', qty: 2 }], fee: 30, station: 'forge' },
   ember_arrow_item: { out: { id: 'ember_arrow_item', qty: 30 }, in: [{ id: 'iron_arrow', qty: 30 }, { id: 'ember_cinder', qty: 1 }], fee: 120, station: 'forge' },
+  frost_arrow_item: { out: { id: 'frost_arrow_item', qty: 30 }, in: [{ id: 'iron_arrow', qty: 30 }, { id: 'frost_tear', qty: 1 }], fee: 120, station: 'forge' },
+  storm_arrow_item: { out: { id: 'storm_arrow_item', qty: 30 }, in: [{ id: 'iron_arrow', qty: 30 }, { id: 'storm_quill', qty: 1 }], fee: 120, station: 'forge' },
   runed_whetstone: { out: { id: 'runed_whetstone', qty: 1 }, in: [{ id: 'steel_ingot', qty: 2 }, { id: 'bone_chip', qty: 4 }], fee: 400, station: 'forge' },
   blessing_oil: { out: { id: 'blessing_oil', qty: 1 }, in: [{ id: 'shard_dawn', qty: 1 }, { id: 'runed_whetstone', qty: 2 }], fee: 2500, station: 'forge' },
   blessing_oil_seal: { out: { id: 'blessing_oil', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 6 }], fee: 2000, station: 'forge' },
   hunters_fang: { out: { id: 'hunters_fang', qty: 1 }, in: [{ id: 'steel_ingot', qty: 4 }, { id: 'wolf_fang', qty: 6 }], fee: 1800, station: 'forge' },
   emberfang: { out: { id: 'emberfang', qty: 1 }, in: [{ id: 'hunters_fang', qty: 1 }, { id: 'ember_cinder', qty: 8 }, { id: 'steel_ingot', qty: 6 }], fee: 12000, station: 'forge' },
 };
+
+/**
+ * Everything that is an ingredient in some recipe.
+ *
+ * These are the goods the crafting economy runs on, so the NPC vendor must
+ * not be a better customer for them than another player is. Deriving the set
+ * from RECIPES rather than tagging items by hand means a new recipe takes its
+ * inputs out of the coin faucet automatically, and nobody has to remember to.
+ */
+export const CRAFTING_INPUTS = new Set(
+  Object.values(RECIPES).flatMap((r) => r.in.map((i) => i.id))
+);

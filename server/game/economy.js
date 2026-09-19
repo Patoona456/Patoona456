@@ -1,5 +1,5 @@
 // Everything that moves Aurum. The design goal: many small sinks, few faucets.
-import { ITEMS, RECIPES, isEquip } from '../../shared/data/items.js';
+import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip } from '../../shared/data/items.js';
 import { SHOPS, HEAL_PRICE_PER_LEVEL, STORAGE_FEE, WARP_ROUTES, RESET_STAT_PRICE, RESET_SKILL_PRICE } from '../../shared/data/npcs.js';
 import { npcSellPrice, marketTax, refineChance, refineCost } from '../../shared/formulas.js';
 import { STARTING_STATS } from '../../shared/data/jobs.js';
@@ -86,7 +86,8 @@ export function sell(world, p, index, qty) {
   const soldToday = p.record.npcSales[st.id] ?? 0;
 
   let gained = 0;
-  for (let i = 0; i < qty; i++) gained += npcSellPrice(def.value, soldToday + i);
+  const craftInput = CRAFTING_INPUTS.has(def.id);
+  for (let i = 0; i < qty; i++) gained += npcSellPrice(def.value, soldToday + i, def.rarity, craftInput);
   // broken / worn gear is worth less
   if (isEquip(def) && st.dur !== undefined) gained = Math.floor(gained * (0.4 + 0.6 * (st.dur / (def.durability ?? 100))));
 

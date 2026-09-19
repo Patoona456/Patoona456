@@ -16,10 +16,10 @@
 // fails on, so a number that looks wrong here is a number that breaks a test.
 import { MONSTERS } from '../shared/data/monsters.js';
 import { MAPS } from '../shared/data/maps.js';
-import { ITEMS } from '../shared/data/items.js';
+import { ITEMS, CRAFTING_INPUTS } from '../shared/data/items.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { QUESTS } from '../shared/data/quests.js';
-import { baseExpToNext, deriveStats, expGapPenalty, rollDamage, statCost } from '../shared/formulas.js';
+import { baseExpToNext, deriveStats, expGapPenalty, npcSellPrice, rollDamage, statCost } from '../shared/formulas.js';
 import { pathToFileURL } from 'node:url';
 
 export const LEVEL_CAP = 70;
@@ -85,6 +85,24 @@ export function character(level) {
   };
 }
 
+/**
+ * Damage rolls are random, so two runs of the same report disagreed about
+ * which monster was best wherever two were close - and the test built on this
+ * would have failed perhaps one run in ten, for no reason anybody could act
+ * on. Every sampled figure is therefore drawn from a fixed stream: the report
+ * is an average, and an average does not need to be a different average each
+ * time you ask.
+ */
+function sampled(fn) {
+  const real = Math.random;
+  let seed = 0x2f6e2b1;
+  Math.random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+  try { return fn(); } finally { Math.random = real; }
+}
+
 /** The defender record a monster presents to rollDamage. */
 export function defenderOf(mob) {
   return {
@@ -95,18 +113,20 @@ export function defenderOf(mob) {
 }
 
 /** Average seconds to kill one of these, with the best weapon on the belt. */
-export function killSeconds(c, mob, samples = 600) {
+export function killSeconds(c, mob, samples = 2000) {
   const d = defenderOf(mob);
-  let best = Infinity;
-  for (const w of c.weapons) {
-    let total = 0;
-    for (let i = 0; i < samples; i++) total += rollDamage(w.derived, d).damage;
-    const perSwing = total / samples;
-    if (perSwing <= 1) continue;
-    const secs = (mob.hp / perSwing) * w.delay * (w.derived.aspdFactor ?? 1);
-    if (secs < best) best = secs;
-  }
-  return best;
+  return sampled(() => {
+    let best = Infinity;
+    for (const w of c.weapons) {
+      let total = 0;
+      for (let i = 0; i < samples; i++) total += rollDamage(w.derived, d).damage;
+      const perSwing = total / samples;
+      if (perSwing <= 1) continue;
+      const secs = (mob.hp / perSwing) * w.delay * (w.derived.aspdFactor ?? 1);
+      if (secs < best) best = secs;
+    }
+    return best;
+  });
 }
 
 /**
@@ -123,9 +143,11 @@ export function monsterDps(mob, c) {
     element: mob.element ?? 'neutral', weaponElement: mob.element ?? 'neutral',
   };
   const magic = (mob.matk ?? 0) > (mob.atk ?? 0);
-  let total = 0;
-  for (let i = 0; i < 300; i++) total += rollDamage(a, c.derived, { magic }).damage;
-  return (total / 300) / (mob.attackDelay ?? 1.6);
+  return sampled(() => {
+    let total = 0;
+    for (let i = 0; i < 2000; i++) total += rollDamage(a, c.derived, { magic }).damage;
+    return (total / 2000) / (mob.attackDelay ?? 1.6);
+  });
 }
 
 /**
@@ -181,6 +203,52 @@ export function hoursToCap(overhead = 1.1) {
   return { hours: seconds / 3600, bands };
 }
 
+/** The best healing item a character of this level can actually use. */
+export function bestHeal(level) {
+  return Object.values(ITEMS)
+    .filter((it) => it.heal && (it.level ?? 1) <= level)
+    .sort((a, b) => b.heal - a.heal)[0] ?? null;
+}
+
+/**
+ * What an hour of hunting is worth, after the potions it takes to survive it.
+ *
+ * docs/ECONOMY.md promises a level 10-20 player a net income in the hundreds
+ * of Aurum per hour, and that a salve costs what ten to twenty kills pay. Kill
+ * times move every time the bestiary is touched, so those promises are only
+ * true until someone edits a health value.
+ */
+export function incomePerHour(level) {
+  const best = bestAt(level);
+  if (!best) return null;
+  const { mob, secs, c } = best;
+  const perKill = (mob.aurum ? mob.aurum.chance * ((mob.aurum.min + mob.aurum.max) / 2) : 0)
+    + (mob.drops ?? []).reduce((n, d) => {
+      const it = ITEMS[d.id];
+      if (!it) return n;
+      const qty = Array.isArray(d.qty) ? (d.qty[0] + d.qty[1]) / 2 : (d.qty ?? 1);
+      return n + d.chance * qty * npcSellPrice(it.value ?? 0, 0, it.rarity, CRAFTING_INPUTS.has(it.id));
+    }, 0);
+
+  // Two honest extremes, because real play sits between them: rest off every
+  // wound and pay nothing but time, or drink through it and pay in Aurum.
+  const potion = bestHeal(level);
+  const taken = monsterDps(mob, c) * secs;
+  const regenPerSecond = (c.derived.hpRegen ?? 1) * 2 / 5;     // doubled out of combat
+  const restSeconds = taken / Math.max(0.1, regenPerSecond);
+
+  const restingKills = 3600 / (secs + TRAVEL_SECONDS + restSeconds);
+  const drinkingKills = 3600 / (secs + TRAVEL_SECONDS);
+  const potionCost = potion ? (taken / potion.heal) * (potion.value ?? 0) : 0;
+
+  return {
+    mob, secs, potion, restSeconds,
+    resting: { kills: restingKills, net: perKill * restingKills },
+    drinking: { kills: drinkingKills, net: (perKill - potionCost) * drinkingKills },
+    killsPerPotion: potion ? (potion.value ?? 0) / Math.max(0.01, perKill) : Infinity,
+  };
+}
+
 /* ------------------------------------------------------------- reporting */
 
 const pad = (s, n) => String(s).padEnd(n);
@@ -221,8 +289,9 @@ function zones() {
     const rated = spawns.map((m) => ({
       m, rate: m.exp / (killSeconds(c, m) / hands),
       // Ambient low-level spawns are scenery on purpose: a level-4 bat in a
-      // level-12 swamp is not a monster anyone was meant to farm at 12.
-      ambient: Math.abs(m.level - mid) > 6,
+      // level-12 swamp is not a monster anyone was meant to farm at 12, and
+      // neither is the tutorial slime once you have left the first field.
+      ambient: Math.abs(m.level - mid) > 6 || m.level < mid * 0.55,
     })).sort((a, b) => b.rate - a.rate);
     const top = rated[0].rate;
     console.log(`${map.nameTh ?? id}  (ตัวละครเลเวล ${mid}${hands > 1 ? ' ×' + hands : ''})`);
@@ -273,9 +342,33 @@ function curve() {
 
 // Only print when run directly: the test suite and the tuning scripts import
 // the helpers above and must not get a report dumped into their output.
+function money() {
+  console.log('\n=== เงินต่อชั่วโมง ===');
+  console.log('docs/ECONOMY.md สัญญาว่าเลเวล 10-20 ได้สุทธิหลักร้อย AU/ชม.');
+  console.log('"พัก" = นั่งฟื้นเอง ฟรีแต่กินเวลา  ยาคือเงินที่จ่ายเพื่อไม่ต้องนั่งรอ');
+  console.log('ยาตั้งใจให้ขาดทุน (หลบเก่งย่อมคุ้มกว่าอัดยา) เป้าคือ 6-30 ตัวต่อขวด\n');
+  console.log('เลเวล  พัก:ตัว/ชม  พัก:AU/ชม  ตัว/ขวดยา  พักต่อตัว  ยาที่ใช้');
+  for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
+    const m = incomePerHour(lv);
+    if (!m) { console.log(`${num(lv, 5)}   — ไม่มีที่ล่า —`); continue; }
+    const heal = m.potion ? `${m.potion.nameTh} (${m.potion.heal})` : '(ไม่มียา)';
+    const flags = [];
+    const bar = character(lv).derived.maxHp || 1;
+    if (!m.potion) flags.push('ไม่มียาที่ใช้ได้');
+    else if (m.potion.heal < 0.25 * bar) flags.push(`ยาฟื้นแค่ ${Math.round(100 * m.potion.heal / bar)}% ของบาร์`);
+    // Drinking is *meant* to lose money - ECONOMY.md wants dodging to beat
+    // chugging. What matters is the ratio the doc actually promises.
+    if (m.killsPerPotion < 6) flags.push(`ยาถูกไป (${Math.round(m.killsPerPotion)} ตัว/ขวด)`);
+    if (m.killsPerPotion > 30) flags.push(`ยาแพงไป (${Math.round(m.killsPerPotion)} ตัว/ขวด)`);
+    if (m.restSeconds > 6 * m.secs) flags.push('พักนานกว่าสู้ 6 เท่า');
+    console.log(`${num(lv, 5)} ${num(Math.round(m.resting.kills), 10)} ${num(Math.round(m.resting.net), 11)} ${num(Math.round(m.killsPerPotion), 9)} ${num(m.restSeconds.toFixed(0) + 's', 9)}  ${pad(heal, 24)}${flags.length ? '  << ' + flags.join(', ') : ''}`);
+  }
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const what = process.argv[2];
   if (!what || what === 'kills') kills();
   if (!what || what === 'zones') zones();
   if (!what || what === 'curve') curve();
+  if (!what || what === 'money') money();
 }

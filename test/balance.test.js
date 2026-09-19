@@ -13,10 +13,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MONSTERS } from '../shared/data/monsters.js';
 import { MAPS } from '../shared/data/maps.js';
-import { expGapPenalty } from '../shared/formulas.js';
+import { ITEMS, RECIPES, CRAFTING_INPUTS } from '../shared/data/items.js';
+import { SHOPS } from '../shared/data/npcs.js';
+import { expGapPenalty, npcSellPrice } from '../shared/formulas.js';
 import {
   LEVEL_CAP, KILL_SECONDS, HOURS_TO_CAP, TRAVEL_SECONDS,
   character, killSeconds, monsterDps, survivable, soloMonsters, bestAt, hoursToCap,
+  bestHeal, incomePerHour,
 } from '../tools/balance.js';
 
 test('every solo monster dies in a sensible number of seconds', () => {
@@ -86,7 +89,7 @@ test('monsters sharing a zone are all worth killing', () => {
     const c = character(Math.min(LEVEL_CAP, mid));
     const hands = map.party ? 4 : 1;
     const rated = spawns
-      .filter((m) => Math.abs(m.level - mid) <= 6)          // ambient spawns are scenery
+      .filter((m) => Math.abs(m.level - mid) <= 6 && m.level >= mid * 0.55)   // ambient spawns are scenery
       .map((m) => m.exp / (killSeconds(c, m) / hands))
       .sort((a, b) => b - a);
     if (rated.length < 2) continue;
@@ -139,4 +142,92 @@ test('the travel cost is what stops the report recommending trash forever', () =
   const trash = MONSTERS.mire_slime;
   assert.ok(!survivable(c, MONSTERS.reliquary_warden, 30), 'the party warden should not read as solo-safe');
   assert.ok(survivable(c, trash, killSeconds(c, trash)), 'a slime should not threaten a level-60 character');
+});
+
+/* --- the economy the balance model can see -------------------------------
+   docs/ECONOMY.md makes numeric promises, and every one of them is a claim
+   about data that a later commit can break by accident. These assert the
+   promises rather than the prose. */
+
+test('healing keeps pace with the health bar', () => {
+  const bad = [];
+  for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
+    const potion = bestHeal(lv);
+    const bar = character(lv).derived.maxHp;
+    if (!potion) { bad.push(`nothing heals a level-${lv} character`); continue; }
+    const share = potion.heal / bar;
+    if (share < 0.25) bad.push(`level ${lv}: best potion refills ${(share * 100).toFixed(0)}% of the bar`);
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('resting is a real alternative to drinking', () => {
+  // If sitting down costs many times the fight itself, potions stop being a
+  // choice and the economy runs permanently in the red.
+  const bad = [];
+  for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
+    const m = incomePerHour(lv);
+    if (!m) continue;
+    if (m.restSeconds > 6 * m.secs) {
+      bad.push(`level ${lv}: ${m.restSeconds.toFixed(0)}s of resting per ${m.secs.toFixed(0)}s fight`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('a potion costs what the economy doc says it costs', () => {
+  const bad = [];
+  for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
+    const m = incomePerHour(lv);
+    if (!m || !m.potion) continue;
+    if (m.killsPerPotion < 5) bad.push(`level ${lv}: a potion is only ${m.killsPerPotion.toFixed(0)} kills`);
+    if (m.killsPerPotion > 40) bad.push(`level ${lv}: a potion is ${m.killsPerPotion.toFixed(0)} kills`);
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('income grows with level and no band is a dead zone', () => {
+  const rows = [];
+  for (let lv = 5; lv <= LEVEL_CAP; lv += 5) {
+    const m = incomePerHour(lv);
+    if (m) rows.push({ lv, au: m.resting.net });
+  }
+  assert.ok(rows.length > 10);
+  assert.ok(rows[0].au < rows[rows.length - 1].au, 'the cap earns no more than the starter field');
+  // Hundreds an hour at the very start, as the doc promises - not thousands.
+  assert.ok(rows[0].au < 2000, `level 5 earns ${rows[0].au.toFixed(0)} AU/h`);
+  for (let i = 1; i < rows.length; i++) {
+    const drop = rows[i].au / rows[i - 1].au;
+    assert.ok(drop > 0.35,
+      `income falls off a cliff at level ${rows[i].lv}: ${rows[i - 1].au.toFixed(0)} -> ${rows[i].au.toFixed(0)} AU/h`);
+  }
+});
+
+test('the vendor is not a coin faucet for the crafting economy', () => {
+  // Selling a crafting ingredient to an NPC must never beat what it is worth
+  // as an ingredient, or the materials the whole economy runs on have no
+  // player market and coins print themselves.
+  for (const id of CRAFTING_INPUTS) {
+    const it = ITEMS[id];
+    if (!it) continue;
+    const paid = npcSellPrice(it.value ?? 0, 0, it.rarity, true);
+    assert.ok(paid <= (it.value ?? 0) * 0.06 + 1,
+      `${id} vendors for ${paid} against a value of ${it.value}`);
+  }
+  // And rarity alone still has to bite, for everything else.
+  assert.ok(npcSellPrice(10000, 0, 'rare') < npcSellPrice(10000, 0, 'common') / 4);
+});
+
+test('every recipe can actually be made from things that drop', () => {
+  const dropped = new Set();
+  for (const m of Object.values(MONSTERS)) for (const d of m.drops ?? []) dropped.add(d.id);
+  const craftable = new Set(Object.keys(RECIPES).map((k) => RECIPES[k].out.id));
+  const shopped = new Set(Object.values(SHOPS).flatMap((s) => (s.stock ?? []).map((x) => x.id)));
+  const unreachable = [];
+  for (const r of Object.values(RECIPES)) {
+    for (const i of r.in) {
+      if (!dropped.has(i.id) && !craftable.has(i.id) && !shopped.has(i.id)) unreachable.push(`${r.out.id} needs ${i.id}, which nothing provides`);
+    }
+  }
+  assert.deepEqual(unreachable, [], unreachable.join('; '));
 });

@@ -94,7 +94,12 @@ export function deriveStats(c, job, gear = {}) {
   );
 
   // Regen per 5s tick, out of combat is doubled by the caller.
-  const hpRegen = Math.max(1, Math.floor(maxHp / 100 + s.vit / 5));
+  //
+  // At one percent of the bar a tick, refilling took over three minutes at
+  // every level, which made potions the only real way to recover and put the
+  // economy permanently in the red. Resting is meant to be the free option
+  // that costs time; potions are what you buy to skip the sitting down.
+  const hpRegen = Math.max(1, Math.floor(maxHp / 35 + s.vit / 5));
   const spRegen = Math.max(1, Math.floor(maxSp / 90 + s.int / 6));
 
   return {
@@ -162,9 +167,31 @@ export function rollDamage(a, d, o = {}) {
 /** Item value / economy helpers ------------------------------------------ */
 // NPCs pay a fraction of an item's reference value, and the fraction drops as
 // the same NPC keeps buying the same thing today (anti-farm dampener).
-export function npcSellPrice(refValue, soldToday = 0, softCap = 25) {
-  const base = refValue * 0.28;
-  const decay = Math.pow(0.94, Math.max(0, soldToday - softCap / 5));
+//
+// The fraction also falls away sharply with rarity, and that is the single
+// most important number in the economy. At a flat 28% the vendor was an
+// unlimited coin faucet: a blessing oil is worth 12,000, so dropping one
+// printed 3,360 Aurum out of nothing, and an hour of level-60 hunting paid
+// forty thousand - more than a whole week of boss quests, in a game whose
+// premise is that money is hard to come by. Worse, it set a price floor that
+// no player would ever bid above, so the crafting materials the whole economy
+// is supposed to revolve around had no player market at all.
+//
+// Common junk still liquidates at a fair rate, because carrying ten kinds of
+// ore around is not interesting. Anything a crafter actually wants has to be
+// sold to a crafter.
+export const NPC_BUY_RATE = {
+  common: 0.28, uncommon: 0.09, rare: 0.04, epic: 0.02, legendary: 0.01,
+};
+// A recipe ingredient is worth what a crafter will pay, never what a vendor
+// will. Rarity alone was not enough: a steel ingot is tagged common and worth
+// 750, so at the junk rate it alone paid 235 Aurum a kill at level 70.
+export const CRAFT_INPUT_BUY_RATE = 0.05;
+export function npcSellPrice(refValue, soldToday = 0, rarity = 'common', craftInput = false) {
+  let rate = NPC_BUY_RATE[rarity] ?? NPC_BUY_RATE.common;
+  if (craftInput) rate = Math.min(rate, CRAFT_INPUT_BUY_RATE);
+  const base = refValue * rate;
+  const decay = Math.pow(0.94, Math.max(0, soldToday - 5));
   return Math.max(1, Math.floor(base * Math.min(1, decay)));
 }
 
