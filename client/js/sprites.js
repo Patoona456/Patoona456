@@ -18,7 +18,43 @@ export function sheet(url) {
   return entry;
 }
 
-export function preload(urls) { for (const u of urls) sheet(u); }
+export function preload(urls) { for (const u of urls) sheet(urlOf(u)); }
+
+/** A layer entry is either a plain url or `{ url, tint }`. */
+export function urlOf(v) { return typeof v === 'string' ? v : v?.url ?? null; }
+
+/**
+ * A recoloured copy of a whole sheet, built once and kept.
+ *
+ * The art set tops out at one golden tier, so every endgame piece would look
+ * like every other endgame piece. Tinting the sheet rather than the frame
+ * costs one canvas per colour instead of one composite per character per
+ * frame, which is what lets a whole late-game armour set exist without a
+ * single new image file.
+ */
+export function tintedSheet(url, tint, strength = 0.42) {
+  const key = `${url}|${tint}|${strength}`;
+  const hit = tinted.get(key);
+  if (hit) return hit;
+  const src = sheet(url);
+  const entry = { ready: false, img: null };
+  tinted.set(key, entry);
+  const build = () => {
+    if (!src.img.width) return;
+    const c = document.createElement('canvas');
+    c.width = src.img.width; c.height = src.img.height;
+    const g = c.getContext('2d');
+    g.drawImage(src.img, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.globalAlpha = strength;
+    g.fillStyle = tint;
+    g.fillRect(0, 0, c.width, c.height);
+    entry.img = c; entry.ready = true;
+  };
+  if (src.ready) build();
+  else src.img.addEventListener('load', build, { once: true });
+  return entry;
+}
 
 export function loadedRatio() {
   let done = 0;
@@ -62,7 +98,7 @@ export function playerLayers(look, equipment = {}) {
     let key = def.sprite.key;
     if (g === 'male' && MALE_MISSING.has(key) && def.sprite.fallback) key = def.sprite.fallback;
     const url = layerUrl(def.sprite.layer, key, def.sprite.gendered ? g : g);
-    layers[def.sprite.layer] = url;
+    layers[def.sprite.layer] = def.sprite.tint ? { url, tint: def.sprite.tint } : url;
   }
   // a hat hides hair
   if (layers.head) delete layers.hair;
@@ -129,7 +165,7 @@ function scratchCtx() {
  */
 export function drawRefineGlow(ctx, layers, { x, y, anim = 'idle', dir = 2, elapsed = 0,
   scale = 1, color = '#ffffff', alpha = 0.5, blur = 0 } = {}) {
-  const url = layers?.weapon;
+  const url = urlOf(layers?.weapon);
   if (!url) return false;
   const s = sheet(url);
   if (!s.ready) return false;
@@ -170,11 +206,16 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
   ctx.save();
   if (alpha < 1) ctx.globalAlpha = alpha;
   for (const layer of ORDER) {
-    const url = layers[layer];
-    if (!url) continue;
-    const s = sheet(url);
-    if (!s.ready) continue;
-    ctx.drawImage(s.img, sx, sy, SPRITE, SPRITE, dx, dy, size, size);
+    const entry = layers[layer];
+    if (!entry) continue;
+    const url = urlOf(entry);
+    const plain = sheet(url);
+    if (!plain.ready) continue;
+    // A tinted piece falls back to its untinted sheet until the recolour is
+    // built, so gear never blinks out of existence for a frame.
+    const t = entry.tint ? tintedSheet(url, entry.tint) : null;
+    const img = t?.ready ? t.img : plain.img;
+    ctx.drawImage(img, sx, sy, SPRITE, SPRITE, dx, dy, size, size);
   }
   if (tint || flash) {
     ctx.globalCompositeOperation = 'source-atop';

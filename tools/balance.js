@@ -16,7 +16,7 @@
 // fails on, so a number that looks wrong here is a number that breaks a test.
 import { MONSTERS } from '../shared/data/monsters.js';
 import { MAPS } from '../shared/data/maps.js';
-import { ITEMS, CRAFTING_INPUTS } from '../shared/data/items.js';
+import { ITEMS, CRAFTING_INPUTS, isEquip } from '../shared/data/items.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { SKILLS, val, skillCost } from '../shared/data/skills.js';
 import { QUESTS } from '../shared/data/quests.js';
@@ -411,7 +411,7 @@ export function incomePerHour(level) {
       const it = ITEMS[d.id];
       if (!it) return n;
       const qty = Array.isArray(d.qty) ? (d.qty[0] + d.qty[1]) / 2 : (d.qty ?? 1);
-      return n + d.chance * qty * npcSellPrice(it.value ?? 0, 0, it.rarity, CRAFTING_INPUTS.has(it.id));
+      return n + d.chance * qty * npcSellPrice(it.value ?? 0, 0, it.rarity, isEquip(it) ? 'equip' : CRAFTING_INPUTS.has(it.id));
     }, 0);
 
   // Two honest extremes, because real play sits between them: rest off every
@@ -560,7 +560,9 @@ function money() {
     if (!m) { console.log(`${num(lv, 5)}   — ไม่มีที่ล่า —`); continue; }
     const heal = m.potion ? `${m.potion.nameTh} (${m.potion.heal})` : '(ไม่มียา)';
     const flags = [];
-    const bar = character(lv).derived.maxHp || 1;
+    // The job with the smallest bar is the one a potion has to be worth
+    // something to; a tank's bar is large on purpose and would hide the gap.
+    const bar = Math.min(...charsAt(lv).map((c) => c.derived.maxHp)) || 1;
     if (!m.potion) flags.push('ไม่มียาที่ใช้ได้');
     else if (m.potion.heal < 0.25 * bar) flags.push(`ยาฟื้นแค่ ${Math.round(100 * m.potion.heal / bar)}% ของบาร์`);
     // Drinking is *meant* to lose money - ECONOMY.md wants dodging to beat

@@ -46,8 +46,11 @@ export const MONSTERS = {
   bristle_boar: M({
     id: 'bristle_boar', name: 'Bristle Boar', nameTh: 'หมูป่าขนแข็ง', level: 7,
     hp: 130, atk: 30, def: 7, mdef: 4, hit: 61, flee: 75, exp: 46, jobExp: 29,
-    element: 'verdant', race: 'beast', speed: 66, aggressive: true,
-    aggroRange: 160, attackDelay: 1.8, respawn: 20,
+    // Passive, like everything else with teeth in the starter field: a fresh
+    // character has sixty-three health and this takes eleven seconds to kill
+    // while dealing enough to end them in five. New players pick their fights.
+    element: 'verdant', race: 'beast', speed: 66, aggressive: false,
+    aggroRange: 150, attackDelay: 1.8, respawn: 20,
     sprite: { kind: 'blob', shape: 'spiky', color: '#8a6a4a', scale: 0.95 },
     drops: [
       { id: 'mystery_scroll', chance: 0.02 },
@@ -93,6 +96,8 @@ export const MONSTERS = {
     element: 'shade', race: 'undead', speed: 66, aggressive: true, aggroRange: 200, respawn: 28,
     sprite: { kind: 'sheet', key: 'skeleton' },
     drops: [
+      { id: 'crimson_pants', chance: 0.06 },
+      { id: 'studded_belt', chance: 0.07 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'bone_chip', chance: 0.45, qty: [1, 3] },
       { id: 'iron_ore', chance: 0.22 },
@@ -108,6 +113,8 @@ export const MONSTERS = {
     attackDelay: 1.7, respawn: 30,
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'spear' } },
     drops: [
+      { id: 'chainmail', chance: 0.05 },
+      { id: 'banded_shield', chance: 0.06 },
       { id: 'mystery_scroll', chance: 0.035 },
       { id: 'orc_tooth', chance: 0.40 },
       { id: 'iron_ore', chance: 0.30, qty: [1, 2] },
@@ -125,6 +132,8 @@ export const MONSTERS = {
       layers: { torso: 'chain', legs: 'pants_teal', feet: 'shoes_black', head: 'chainhat', weapon: 'dagger' },
     },
     drops: [
+      { id: 'metal_greaves', chance: 0.05 },
+      { id: 'warband_girdle', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.04 },
       { id: 'ghoul_sinew', chance: 0.28 },
       { id: 'steel_ingot', chance: 0.12 },
@@ -165,9 +174,12 @@ export const MONSTERS = {
 
   dusk_bat: M({
     id: 'dusk_bat', name: 'Dusk Flitter', nameTh: 'ค้างคาวสนธยา', level: 4,
-    hp: 50, atk: 16, def: 2, mdef: 6, hit: 67, flee: 90, exp: 14, jobExp: 9,
+    hp: 50, atk: 9, def: 2, mdef: 6, hit: 67, flee: 90, exp: 14, jobExp: 9,
     element: 'shade', race: 'beast', size: 'small', speed: 128, respawn: 14,
-    aggressive: true, aggroRange: 140, attackDelay: 1.2,
+    // The first thing in the game that picks a fight with you, and the only
+    // aggressive spawn in the starter field. It has to be losable to, not a
+    // coin flip: a brand-new character has sixty-three health.
+    aggressive: true, aggroRange: 140, attackDelay: 1.9,
     sprite: { kind: 'blob', color: '#6b5a8c', scale: 0.62, float: true },
     drops: [
       { id: 'mystery_scroll', chance: 0.015 },
@@ -178,7 +190,7 @@ export const MONSTERS = {
   }),
   thistle_sprite: M({
     id: 'thistle_sprite', name: 'Thistle Sprite', nameTh: 'ภูตหนาม', level: 9,
-    hp: 100, atk: 30, matk: 44, def: 6, mdef: 22, hit: 63, flee: 82, exp: 50, jobExp: 31,
+    hp: 115, atk: 30, matk: 44, def: 6, mdef: 22, hit: 63, flee: 82, exp: 50, jobExp: 31,
     element: 'verdant', race: 'plant', size: 'small', speed: 72, attackRange: 140,
     attackDelay: 2.2, respawn: 24,
     sprite: { kind: 'blob', color: '#8ad06a', glow: true, scale: 0.78, float: true },
@@ -215,6 +227,7 @@ export const MONSTERS = {
     attackRange: 170, attackDelay: 2.0, respawn: 30,
     sprite: { kind: 'sheet', key: 'skeleton', layers: { weapon: 'bow' } },
     drops: [
+      { id: 'band_of_vigor', chance: 0.04 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'bone_chip', chance: 0.40, qty: [1, 2] },
       { id: 'wooden_arrow', chance: 0.50, qty: [20, 60] },
@@ -233,6 +246,8 @@ export const MONSTERS = {
     },
     skills: ['cleave'],
     drops: [
+      { id: 'metal_boots', chance: 0.05 },
+      { id: 'metal_gauntlets', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.04 },
       { id: 'bone_chip', chance: 0.60, qty: [2, 4] },
       { id: 'steel_ingot', chance: 0.14 },
@@ -250,6 +265,8 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'orc', layers: { weapon: 'wand', head: 'cloth_hood' } },
     skills: ['ember_bolt', 'storm_sigil'],
     drops: [
+      { id: 'runesteel_rod', chance: 0.035 },
+      { id: 'ring_of_focus', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.04 },
       { id: 'orc_tooth', chance: 0.45 },
       { id: 'ember_cinder', chance: 0.12 },
@@ -352,6 +369,7 @@ export const MONSTERS = {
     aggroRange: 280, attackDelay: 1.0, respawn: 34,
     sprite: { kind: 'blob', shape: 'crawler', color: '#8a6a4a', dark: '#4a3424', scale: 1.05 },
     drops: [
+      { id: 'stormcaller_bow', chance: 0.035 },
       { id: 'storm_quill', chance: 0.16 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'wolf_fang', chance: 0.34, qty: [1, 2] },
@@ -365,6 +383,7 @@ export const MONSTERS = {
     attackDelay: 2.3,
     sprite: { kind: 'blob', shape: 'spiky', color: '#9a8c74', dark: '#5c5342', scale: 1.25 },
     drops: [
+      { id: 'metal_helm', chance: 0.05 },
       { id: 'mystery_scroll', chance: 0.03 },
       { id: 'iron_ore', chance: 0.40, qty: [2, 5] },
       { id: 'steel_ingot', chance: 0.12 },
@@ -391,6 +410,8 @@ export const MONSTERS = {
     aggroRange: 240, attackDelay: 2.0, respawn: 56,
     sprite: { kind: 'blob', shape: 'spiky', color: '#7fb8d8', dark: '#35607c', scale: 1.35 },
     drops: [
+      { id: 'plate_cuirass', chance: 0.035 },
+      { id: 'bulwark_shield', chance: 0.035 },
       { id: 'mystery_scroll', chance: 0.035 },
       { id: 'frost_tear', chance: 0.26, qty: [1, 2] },
       { id: 'steel_ingot', chance: 0.20, qty: [1, 3] },
@@ -405,6 +426,8 @@ export const MONSTERS = {
     sprite: { kind: 'compose', body: 'female/darkelf', scale: 1.05,
       layers: { torso: 'leather', legs: 'pants_white', feet: 'shoes_black', head: 'leather_cap', weapon: 'dagger' } },
     drops: [
+      { id: 'rimebound_sash', chance: 0.04 },
+      { id: 'golden_boots', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.04 },
       { id: 'frost_tear', chance: 0.22 },
       { id: 'runed_whetstone', chance: 0.08 },
@@ -420,6 +443,8 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#b8c4d0', scale: 1.3,
       layers: { head: 'metal_helm', torso: 'plate', weapon: 'spear' } },
     drops: [
+      { id: 'golden_greaves', chance: 0.03 },
+      { id: 'golden_helm', chance: 0.025 },
       { id: 'mystery_scroll', chance: 0.04 },
       { id: 'steel_ingot', chance: 0.32, qty: [2, 4] },
       { id: 'runed_whetstone', chance: 0.12 },
@@ -435,6 +460,8 @@ export const MONSTERS = {
     sprite: { kind: 'blob', shape: 'wisp', color: '#ff7a3d', glow: true, float: true, scale: 1.2 },
     skills: ['ember_bolt'],
     drops: [
+      { id: 'emberfall_scepter', chance: 0.025 },
+      { id: 'golden_gauntlets', chance: 0.03 },
       { id: 'mystery_scroll', chance: 0.045 },
       { id: 'ember_cinder', chance: 0.26, qty: [1, 2] },
       { id: 'blessing_oil', chance: 0.02 },
@@ -457,6 +484,8 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'skeleton', tint: '#c8b9d8', scale: 1.15,
       layers: { head: 'chainhat', torso: 'chain', weapon: 'spear' } },
     drops: [
+      { id: 'dawnplate_sabatons', chance: 0.02 },
+      { id: 'vhaal_warpike', chance: 0.012 },
       { id: 'mystery_scroll', chance: 0.045 },
       { id: 'bone_chip', chance: 0.34, qty: [2, 4] },
       { id: 'runed_whetstone', chance: 0.10 },
@@ -471,6 +500,7 @@ export const MONSTERS = {
     aggroRange: 300, attackRange: 150, attackDelay: 1.4, respawn: 48,
     sprite: { kind: 'blob', shape: 'wisp', color: '#ffb05a', glow: true, float: true, scale: 1 },
     drops: [
+      { id: 'dawnplate_gauntlets', chance: 0.02 },
       { id: 'mystery_scroll', chance: 0.045 },
       { id: 'ember_cinder', chance: 0.28, qty: [1, 3] },
       { id: 'mana_draught', chance: 0.18, qty: [1, 2] },
@@ -485,6 +515,8 @@ export const MONSTERS = {
     sprite: { kind: 'sheet', key: 'ghoul', tint: '#9a86b8', scale: 1.3,
       layers: { head: 'golden_helm', torso: 'plate' } },
     drops: [
+      { id: 'dawnplate_greaves', chance: 0.018 },
+      { id: 'dawnforged_belt', chance: 0.02 },
       { id: 'mystery_scroll', chance: 0.05 },
       { id: 'steel_ingot', chance: 0.32, qty: [2, 5] },
       { id: 'blessing_oil', chance: 0.035 },
@@ -501,6 +533,8 @@ export const MONSTERS = {
       layers: { head: 'cloth_hood', weapon: 'wand' } },
     skills: ['grim_harvest'],
     drops: [
+      { id: 'choirbone_torc', chance: 0.016 },
+      { id: 'dawnplate_helm', chance: 0.016 },
       { id: 'mystery_scroll', chance: 0.05 },
       { id: 'bone_chip', chance: 0.36, qty: [3, 6] },
       { id: 'runed_whetstone', chance: 0.16 },
@@ -602,6 +636,8 @@ export const MONSTERS = {
     // skill roll every other monster uses
     script: 'warden',
     drops: [
+      { id: 'dawnward_aegis', chance: 0.1 },
+      { id: 'dawnpiercer', chance: 0.08 },
       { id: 'reliquary_seal', chance: 1.0, qty: [4, 7] },
       { id: 'boss_casket', chance: 1.0 },
       { id: 'dawn_casket', chance: 0.5 },
@@ -623,6 +659,7 @@ export const MONSTERS = {
     },
     skills: ['grim_harvest', 'meteor_rune'],
     drops: [
+      { id: 'vow_signet', chance: 0.12 },
       { id: 'boss_casket', chance: 1.0 },
       { id: 'dawn_casket', chance: 0.35 },
       { id: 'skeleton_crown', chance: 0.55 },

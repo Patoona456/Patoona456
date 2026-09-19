@@ -13,8 +13,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MONSTERS } from '../shared/data/monsters.js';
 import { MAPS } from '../shared/data/maps.js';
-import { ITEMS, RECIPES, CRAFTING_INPUTS } from '../shared/data/items.js';
+import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip } from '../shared/data/items.js';
 import { SHOPS } from '../shared/data/npcs.js';
+import { QUESTS } from '../shared/data/quests.js';
+import { JOBS } from '../shared/data/jobs.js';
+import { GACHA } from '../server/game/economy.js';
 import { expGapPenalty, npcSellPrice } from '../shared/formulas.js';
 import { val, skillCost } from '../shared/data/skills.js';
 import {
@@ -314,6 +317,87 @@ test('every weapon class has a rung to climb at a similar pace', () => {
     }
     for (let i = 1; i < levels.length; i++) {
       if (levels[i] - levels[i - 1] > 26) bad.push(`${wclass} has nothing between level ${levels[i - 1]} and ${levels[i]}`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+/* --- the gear ladder ----------------------------------------------------- */
+
+test('every piece of equipment has some way to obtain it', () => {
+  // Thirty-one pieces - most of the mid and late armour ladder, and four of
+  // the best weapons in the game - existed only in the item table. They were
+  // not rare, they were unreachable, and nothing in the codebase said so.
+  const reachable = new Set();
+  for (const m of Object.values(MONSTERS)) for (const d of m.drops ?? []) reachable.add(d.id);
+  for (const r of Object.values(RECIPES)) reachable.add(r.out.id);
+  for (const shop of Object.values(SHOPS)) for (const x of shop.stock ?? []) reachable.add(x.id);
+  for (const q of Object.values(QUESTS)) for (const it of q.rewards?.items ?? []) reachable.add(it.id);
+  for (const it of Object.values(ITEMS)) for (const o of it.opens ?? []) reachable.add(o.id);
+  for (const j of Object.values(JOBS)) for (const k of j.starterKit ?? []) reachable.add(k.id);
+  for (const g of GACHA.pool) reachable.add(g.id);
+
+  const orphans = Object.values(ITEMS)
+    .filter((it) => it.slot && !reachable.has(it.id))
+    .map((it) => `${it.id} (Lv${it.level ?? 1} ${it.slot})`);
+  assert.deepEqual(orphans, [], `no way to get: ${orphans.join(', ')}`);
+});
+
+test('no equipment slot runs out of upgrades before the cap', () => {
+  const ladders = {};
+  for (const it of Object.values(ITEMS)) {
+    if (!it.slot || it.type === 'ammo') continue;
+    (ladders[it.slot] ??= []).push(it.level ?? 1);
+  }
+  const bad = [];
+  for (const [slot, levels] of Object.entries(ladders)) {
+    levels.sort((a, b) => a - b);
+    if (levels[levels.length - 1] < LEVEL_CAP - 12) {
+      bad.push(`${slot} stops at level ${levels[levels.length - 1]}`);
+    }
+    for (let i = 1; i < levels.length; i++) {
+      if (levels[i] - levels[i - 1] > 26) bad.push(`${slot} has nothing between level ${levels[i - 1]} and ${levels[i]}`);
+    }
+  }
+  assert.deepEqual(bad, [], bad.join('; '));
+});
+
+test('a better potion is always a higher-level potion', () => {
+  // `bestHeal` picks by how much a thing restores, so a level-8 dish that
+  // out-heals a level-25 potion quietly becomes the answer for twenty levels.
+  const heals = Object.values(ITEMS).filter((it) => it.heal).sort((a, b) => (a.level ?? 1) - (b.level ?? 1));
+  for (let i = 1; i < heals.length; i++) {
+    assert.ok(heals[i].heal >= heals[i - 1].heal,
+      `${heals[i].id} (Lv${heals[i].level}) heals ${heals[i].heal}, less than ${heals[i - 1].id} (Lv${heals[i - 1].level}) at ${heals[i - 1].heal}`);
+  }
+});
+
+test('the vendor is not a way to cash out gear', () => {
+  // Gear drops are worth a fortune on paper. If an NPC pays a real fraction
+  // of that, farming a drop table prints money and no player market forms.
+  for (const it of Object.values(ITEMS)) {
+    if (!isEquip(it)) continue;
+    const paid = npcSellPrice(it.value ?? 0, 0, it.rarity, 'equip');
+    assert.ok(paid <= (it.value ?? 0) * 0.02 + 1,
+      `${it.id} vendors for ${paid} against a value of ${it.value}`);
+  }
+});
+
+test('the starter field never picks a fight a new character loses', () => {
+  // A level-1 character has whatever health the curve gives them and a
+  // training blade. Anything in the first zone that comes to them has to be
+  // beatable by them; everything else in there has to wait to be attacked.
+  const c = character(1);
+  const first = MAPS.greenmire;
+  const bad = [];
+  for (const sp of first.spawns ?? []) {
+    const m = MONSTERS[sp.mob];
+    if (!m || !m.aggressive) continue;               // passive spawns are the player's choice
+    const secs = killSeconds(c, m);
+    const dps = monsterDps(m, c);
+    const survive = dps > 0 ? c.derived.maxHp / dps : Infinity;
+    if (!(survive > secs * 2)) {
+      bad.push(`${m.id} kills a fresh character in ${survive.toFixed(0)}s and takes ${secs.toFixed(0)}s to kill`);
     }
   }
   assert.deepEqual(bad, [], bad.join('; '));

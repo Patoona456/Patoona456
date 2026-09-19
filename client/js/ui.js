@@ -1,5 +1,5 @@
 // All DOM: HUD, chat, panels. The game loop only calls into this module.
-import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS } from '../../shared/data/items.js';
+import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS, isEquip } from '../../shared/data/items.js';
 import { SKILLS, val, skillCost } from '../../shared/data/skills.js';
 import { JOBS } from '../../shared/data/jobs.js';
 import { QUESTS } from '../../shared/data/quests.js';
@@ -1285,7 +1285,7 @@ export class UI {
       empty: 'ไม่มีของให้ขาย',
       onSelect: (entry) => {
         const it = entry.item;
-        const unit = npcSellPrice(it.value ?? 0, 0, it.rarity, CRAFTING_INPUTS.has(it.id));
+        const unit = npcSellPrice(it.value ?? 0, 0, it.rarity, isEquip(it) ? 'equip' : CRAFTING_INPUTS.has(it.id));
         const qty = el('input');
         qty.type = 'number'; qty.min = 1; qty.max = it.qty; qty.value = it.qty;
         qty.style.width = '80px';

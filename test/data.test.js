@@ -20,7 +20,7 @@ import { MAPS } from '../shared/data/maps.js';
 import { SHOPS, NPC_DIALOG } from '../shared/data/npcs.js';
 import { ELEMENTS } from '../shared/constants.js';
 import { ELEMENT_LOOK } from '../shared/elements.js';
-import { playerLayers, npcLayers, monsterLayers } from '../client/js/sprites.js';
+import { playerLayers, npcLayers, monsterLayers, urlOf } from '../client/js/sprites.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /** `/assets/lpc/...` as the browser asks for it -> a path on disk. */
@@ -164,7 +164,11 @@ test('every NPC has somewhere to shop and something to say', () => {
 
 test('every sprite the game asks for is a file that exists', () => {
   const missing = new Set();
-  const check = (url, who) => { if (url && !existsSync(onDisk(url))) missing.add(`${url}  (${who})`); };
+  // A layer entry is a url, or `{ url, tint }` once a piece is recoloured.
+  const check = (entry, who) => {
+    const url = urlOf(entry);
+    if (url && !existsSync(onDisk(url))) missing.add(`${url}  (${who})`);
+  };
 
   for (const [id, m] of Object.entries(MAPS)) {
     for (const npc of m.npcs ?? []) {

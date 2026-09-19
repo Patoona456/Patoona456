@@ -80,7 +80,10 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
       if (!start) return { error: 'no monster in range' };
       const startHp = start.hp;
       g.net.send({ t: 'target', id: start.id });
-      for (let i = 0; i < 120; i++) {
+      // Spawn points are random, so the walk to the nearest monster can be
+      // most of the field. A budget tight enough to fail on an unlucky spawn
+      // is a test that reports the weather, not the code.
+      for (let i = 0; i < 300; i++) {
         const m = mob();
         if (!m) break;
         const dx = m.x - g.predicted.x, dy = m.y - g.predicted.y;
@@ -91,7 +94,8 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
         const now = (g.state.ents ?? []).find((e) => e.id === start.id);
         if (!now || now.hp < startHp) return { damaged: true, from: startHp, to: now?.hp ?? 0 };
       }
-      return { damaged: false };
+      const m = mob();
+      return { damaged: false, stillAway: m ? Math.round(Math.hypot(m.x - g.predicted.x, m.y - g.predicted.y)) : null };
     });
     assert.ok(hit.damaged, `no damage was dealt: ${JSON.stringify(hit)}`);
     assert.deepEqual(errors, [], 'fighting logged errors');

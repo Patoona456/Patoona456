@@ -281,6 +281,28 @@ export const ITEMS = {
   metal_gauntlets: A({ id: 'metal_gauntlets', name: 'Metal Gauntlets', nameTh: 'ถุงมือเหล็ก', slot: 'hands', def: 15, level: 30, weight: 110, value: 12500, rarity: 'uncommon', stats: { str: 2 }, sprite: { layer: 'hands', key: 'metal_gloves', gendered: true } }),
   golden_gauntlets: A({ id: 'golden_gauntlets', name: 'Gilded Gauntlets', nameTh: 'ถุงมือทองคำ', slot: 'hands', def: 24, level: 54, weight: 120, value: 92000, rarity: 'rare', stats: { str: 3, dex: 2 }, sprite: { layer: 'hands', key: 'golden_gloves', gendered: true } }),
 
+  // --- ปลายเกม: ของที่เคยไม่มีให้ไล่ล่า -----------------------------------
+  // Every slot but the torso stopped in the low fifties while the cap is 70,
+  // and the belt had exactly one item in the whole game, at level 4. From 62
+  // onward there were three pieces of gear left to want, so refining was the
+  // only progression an capped character had. None of this needs new art: the
+  // sheets top out at one gilded tier, and `sprite.tint` recolours it.
+  studded_belt: A({ id: 'studded_belt', name: 'Studded Belt', nameTh: 'เข็มขัดหมุด', slot: 'belt', def: 6, level: 18, weight: 26, value: 4200, rarity: 'common', weightCapBonus: 340, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#7d6a55' } }),
+  warband_girdle: A({ id: 'warband_girdle', name: 'Warband Girdle', nameTh: 'เข็มขัดหมู่รบ', slot: 'belt', def: 11, level: 34, weight: 32, value: 21000, rarity: 'uncommon', weightCapBonus: 520, stats: { str: 2 }, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#8c3f34' } }),
+  rimebound_sash: A({ id: 'rimebound_sash', name: 'Rimebound Sash', nameTh: 'ผ้าคาดเหมันต์', slot: 'belt', def: 16, mdef: 10, level: 50, weight: 30, value: 74000, rarity: 'rare', weightCapBonus: 700, stats: { vit: 2, int: 2 }, sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#6ea8c8' } }),
+  dawnforged_belt: A({ id: 'dawnforged_belt', name: 'Dawnforged Belt', nameTh: 'เข็มขัดตีอรุณ', slot: 'belt', def: 22, mdef: 14, level: 62, weight: 36, value: 175000, rarity: 'epic', weightCapBonus: 900, stats: { str: 3, vit: 3 }, hp: 120, element: 'radiant', sprite: { layer: 'belt', key: 'leather', gendered: true, tint: '#e8c877' } }),
+
+  banded_shield: A({ id: 'banded_shield', name: 'Banded Shield', nameTh: 'โล่รัดเหล็ก', slot: 'offhand', def: 33, level: 30, weight: 150, value: 17000, rarity: 'common', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#8d9199' } }),
+  dawnward_aegis: A({ id: 'dawnward_aegis', name: 'Dawnward Aegis', nameTh: 'โล่กำบังอรุณ', slot: 'offhand', def: 68, mdef: 26, level: 63, weight: 240, value: 210000, rarity: 'epic', stats: { vit: 5 }, hp: 200, element: 'radiant', sprite: { layer: 'offhand', key: 'shield', gendered: true, tint: '#f0d08a' } }),
+
+  vow_signet: A({ id: 'vow_signet', name: 'Signet of Vows', nameTh: 'แหวนคำสาบาน', slot: 'accessory', level: 34, weight: 5, value: 32000, rarity: 'rare', refinable: false, stats: { vit: 2, dex: 2 }, hp: 60, sp: 30 }),
+  choirbone_torc: A({ id: 'choirbone_torc', name: 'Choirbone Torc', nameTh: 'สร้อยคอกระดูกขับร้อง', slot: 'accessory', level: 64, weight: 7, value: 195000, rarity: 'epic', refinable: false, stats: { int: 4, dex: 3, luk: 2 }, hp: 180, sp: 120, mdef: 18 }),
+
+  dawnplate_helm: A({ id: 'dawnplate_helm', name: 'Dawnplate Helm', nameTh: 'หมวกเกราะอรุณ', slot: 'head', def: 44, mdef: 16, level: 64, weight: 130, value: 190000, rarity: 'epic', stats: { vit: 4, str: 2 }, hp: 140, element: 'radiant', sprite: { layer: 'head', key: 'golden_helm', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_greaves: A({ id: 'dawnplate_greaves', name: 'Dawnplate Greaves', nameTh: 'สนับขาอรุณ', slot: 'legs', def: 50, mdef: 16, level: 62, weight: 205, value: 178000, rarity: 'epic', stats: { vit: 4 }, hp: 130, element: 'radiant', sprite: { layer: 'legs', key: 'golden', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_sabatons: A({ id: 'dawnplate_sabatons', name: 'Dawnplate Sabatons', nameTh: 'รองเท้าเกราะอรุณ', slot: 'feet', def: 37, mdef: 14, level: 62, weight: 150, value: 152000, rarity: 'epic', stats: { agi: 3, vit: 2 }, hp: 110, element: 'radiant', sprite: { layer: 'feet', key: 'golden', gendered: true, tint: '#f2d79a' } }),
+  dawnplate_gauntlets: A({ id: 'dawnplate_gauntlets', name: 'Dawnplate Gauntlets', nameTh: 'ถุงมือเกราะอรุณ', slot: 'hands', def: 33, mdef: 13, level: 64, weight: 120, value: 160000, rarity: 'epic', stats: { str: 3, dex: 2 }, hp: 100, element: 'radiant', sprite: { layer: 'hands', key: 'golden_gloves', gendered: true, tint: '#f2d79a' } }),
+
   leather_belt: A({ id: 'leather_belt', name: 'Leather Belt', nameTh: 'เข็มขัดหนัง', slot: 'belt', def: 3, level: 4, weight: 20, value: 500, rarity: 'common', weightCapBonus: 200, sprite: { layer: 'belt', key: 'leather', gendered: true } }),
 
   /* accessories have no sprite layer - they are stat sticks */
@@ -298,18 +320,19 @@ export const ITEMS = {
 
   /* ================= CONSUMABLES ================= */
   lesser_salve: C({ id: 'lesser_salve', name: 'Lesser Salve', nameTh: 'ยาสมานเล็ก', heal: 90, cooldown: 4, level: 1, value: 120, rarity: 'common', desc: 'ฟื้น 90 HP - แพงเมื่อเทียบกับรายได้ ใช้ให้คุ้ม' }),
-  greater_salve: C({ id: 'greater_salve', name: 'Greater Salve', nameTh: 'ยาสมานใหญ่', heal: 320, cooldown: 6, level: 25, value: 700, rarity: 'common' }),
+  greater_salve: C({ id: 'greater_salve', name: 'Greater Salve', nameTh: 'ยาสมานใหญ่', heal: 260, cooldown: 6, level: 25, value: 470, rarity: 'common' }),
   mana_draught: C({ id: 'mana_draught', name: 'Mana Draught', nameTh: 'น้ำมานา', healSp: 80, cooldown: 8, level: 10, value: 400, rarity: 'common' }),
-  roast_boar: C({ id: 'roast_boar', name: 'Roast Boar Ribs', nameTh: 'ซี่โครงหมูป่าย่าง', heal: 220, regen: { hp: 8, duration: 60 }, cooldown: 30, level: 8, value: 190, rarity: 'common', craftable: true, desc: 'อาหารทำเอง คุ้มกว่าซื้อยา' }),
+  roast_boar: C({ id: 'roast_boar', name: 'Roast Boar Ribs', nameTh: 'ซี่โครงหมูป่าย่าง', heal: 170, regen: { hp: 8, duration: 60 }, cooldown: 30, level: 8, value: 190, rarity: 'common', craftable: true, desc: 'อาหารทำเอง คุ้มกว่าซื้อยา' }),
   // Healing has to keep pace with the health curve, or the last forty levels
   // are played without any usable recovery at all: the greater salve was the
   // best thing in the game from level 25 to 70, by which point it refilled
   // under a fifth of the bar. These are craftable rather than stocked, so
   // late-game recovery stays a sink for drops instead of a coin faucet.
-  marrow_tonic: C({ id: 'marrow_tonic', name: 'Marrow Tonic', nameTh: 'ยาไขกระดูก', heal: 340, cooldown: 7, level: 34, value: 720, rarity: 'common', craftable: true }),
-  rimewater_flask: C({ id: 'rimewater_flask', name: 'Rimewater Flask', nameTh: 'ขวดน้ำเหมันต์', heal: 520, healSp: 80, cooldown: 8, level: 48, value: 1750, rarity: 'uncommon', craftable: true }),
-  dawnblood_draught: C({ id: 'dawnblood_draught', name: 'Dawnblood Draught', nameTh: 'ยาโลหิตอรุณ', heal: 700, healSp: 140, cooldown: 9, level: 62, value: 2700, rarity: 'uncommon', craftable: true }),
-  herbal_stew: C({ id: 'herbal_stew', name: 'Herbal Stew', nameTh: 'สตูว์สมุนไพร', heal: 140, healSp: 60, regen: { hp: 6, sp: 4, duration: 90 }, cooldown: 30, level: 12, value: 320, rarity: 'common', craftable: true }),
+  marrow_tonic: C({ id: 'marrow_tonic', name: 'Marrow Tonic', nameTh: 'ยาไขกระดูก', heal: 300, cooldown: 7, level: 34, value: 950, rarity: 'common', craftable: true }),
+  rimewater_flask: C({ id: 'rimewater_flask', name: 'Rimewater Flask', nameTh: 'ขวดน้ำเหมันต์', heal: 450, healSp: 110, cooldown: 8, level: 48, value: 1450, rarity: 'uncommon', craftable: true }),
+  vaultlight_philtre: C({ id: 'vaultlight_philtre', name: 'Vaultlight Philtre', nameTh: 'ยาแสงนิรภัย', heal: 580, healSp: 140, cooldown: 8, level: 55, value: 2000, rarity: 'uncommon', craftable: true }),
+  dawnblood_draught: C({ id: 'dawnblood_draught', name: 'Dawnblood Draught', nameTh: 'ยาโลหิตอรุณ', heal: 740, healSp: 190, cooldown: 9, level: 62, value: 2900, rarity: 'uncommon', craftable: true }),
+  herbal_stew: C({ id: 'herbal_stew', name: 'Herbal Stew', nameTh: 'สตูว์สมุนไพร', heal: 200, healSp: 60, regen: { hp: 6, sp: 4, duration: 90 }, cooldown: 30, level: 12, value: 320, rarity: 'common', craftable: true }),
   antidote: C({ id: 'antidote', name: 'Antidote', nameTh: 'ยาถอนพิษ', cleanse: ['poison'], cooldown: 5, level: 1, value: 150, rarity: 'common' }),
   warp_scroll: C({ id: 'warp_scroll', name: 'Warp Scroll', nameTh: 'ม้วนวาร์ป', warp: 'lastTown', cast: 3, cooldown: 60, level: 1, value: 900, rarity: 'common', desc: 'กลับเมืองล่าสุด - ค่าเดินทางคือหนึ่งในบ่อดูดเงินหลัก' }),
   reliquary_seal: M({
@@ -358,6 +381,7 @@ export const RECIPES = {
   herbal_stew: { out: { id: 'herbal_stew', qty: 3 }, in: [{ id: 'herb_bundle', qty: 4 }, { id: 'rat_pelt', qty: 1 }], fee: 40, station: 'campfire' },
   marrow_tonic: { out: { id: 'marrow_tonic', qty: 3 }, in: [{ id: 'bone_chip', qty: 5 }, { id: 'herb_bundle', qty: 6 }, { id: 'ghoul_sinew', qty: 1 }], fee: 300, station: 'campfire' },
   rimewater_flask: { out: { id: 'rimewater_flask', qty: 3 }, in: [{ id: 'frost_tear', qty: 1 }, { id: 'herb_bundle', qty: 10 }, { id: 'ghoul_sinew', qty: 2 }], fee: 900, station: 'campfire' },
+  vaultlight_philtre: { out: { id: 'vaultlight_philtre', qty: 3 }, in: [{ id: 'frost_tear', qty: 2 }, { id: 'herb_bundle', qty: 12 }, { id: 'runed_whetstone', qty: 1 }], fee: 1600, station: 'campfire' },
   dawnblood_draught: { out: { id: 'dawnblood_draught', qty: 3 }, in: [{ id: 'shard_dawn', qty: 1 }, { id: 'herb_bundle', qty: 14 }, { id: 'ember_cinder', qty: 2 }], fee: 2200, station: 'campfire' },
   iron_arrow: { out: { id: 'iron_arrow', qty: 60 }, in: [{ id: 'iron_ore', qty: 2 }], fee: 30, station: 'forge' },
   ember_arrow_item: { out: { id: 'ember_arrow_item', qty: 30 }, in: [{ id: 'iron_arrow', qty: 30 }, { id: 'ember_cinder', qty: 1 }], fee: 120, station: 'forge' },
@@ -366,6 +390,17 @@ export const RECIPES = {
   runed_whetstone: { out: { id: 'runed_whetstone', qty: 1 }, in: [{ id: 'steel_ingot', qty: 2 }, { id: 'bone_chip', qty: 4 }], fee: 400, station: 'forge' },
   blessing_oil: { out: { id: 'blessing_oil', qty: 1 }, in: [{ id: 'shard_dawn', qty: 1 }, { id: 'runed_whetstone', qty: 2 }], fee: 2500, station: 'forge' },
   blessing_oil_seal: { out: { id: 'blessing_oil', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 6 }], fee: 2000, station: 'forge' },
+  // A gear ladder that is drops only is a ladder made of luck. These give the
+  // endgame pieces a deterministic path as well, priced in the materials the
+  // party dungeon and the weekly boss actually pay out.
+  vow_signet: { out: { id: 'vow_signet', qty: 1 }, in: [{ id: 'runed_whetstone', qty: 3 }, { id: 'steel_ingot', qty: 4 }], fee: 9000, station: 'forge' },
+  dawnforged_belt: { out: { id: 'dawnforged_belt', qty: 1 }, in: [{ id: 'shard_dawn', qty: 4 }, { id: 'steel_ingot', qty: 8 }, { id: 'runed_whetstone', qty: 3 }], fee: 36000, station: 'forge' },
+  dawnward_aegis: { out: { id: 'dawnward_aegis', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 8 }, { id: 'steel_ingot', qty: 12 }, { id: 'shard_dawn', qty: 3 }], fee: 48000, station: 'forge' },
+  dawnplate_helm: { out: { id: 'dawnplate_helm', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 6 }, { id: 'steel_ingot', qty: 10 }, { id: 'shard_dawn', qty: 4 }], fee: 42000, station: 'forge' },
+  dawnplate_greaves: { out: { id: 'dawnplate_greaves', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 6 }, { id: 'steel_ingot', qty: 10 }, { id: 'shard_dawn', qty: 3 }], fee: 40000, station: 'forge' },
+  dawnplate_sabatons: { out: { id: 'dawnplate_sabatons', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 5 }, { id: 'steel_ingot', qty: 8 }, { id: 'shard_dawn', qty: 3 }], fee: 34000, station: 'forge' },
+  dawnplate_gauntlets: { out: { id: 'dawnplate_gauntlets', qty: 1 }, in: [{ id: 'reliquary_seal', qty: 5 }, { id: 'steel_ingot', qty: 8 }, { id: 'shard_dawn', qty: 4 }], fee: 36000, station: 'forge' },
+  vhaal_warpike: { out: { id: 'vhaal_warpike', qty: 1 }, in: [{ id: 'skeleton_crown', qty: 1 }, { id: 'steel_ingot', qty: 14 }, { id: 'shard_dawn', qty: 6 }], fee: 60000, station: 'forge' },
   hunters_fang: { out: { id: 'hunters_fang', qty: 1 }, in: [{ id: 'steel_ingot', qty: 4 }, { id: 'wolf_fang', qty: 6 }], fee: 1800, station: 'forge' },
   emberfang: { out: { id: 'emberfang', qty: 1 }, in: [{ id: 'hunters_fang', qty: 1 }, { id: 'ember_cinder', qty: 8 }, { id: 'steel_ingot', qty: 6 }], fee: 12000, station: 'forge' },
 };

@@ -188,13 +188,22 @@ export function rollDamage(a, d, o = {}) {
 export const NPC_BUY_RATE = {
   common: 0.28, uncommon: 0.09, rare: 0.04, epic: 0.02, legendary: 0.01,
 };
-// A recipe ingredient is worth what a crafter will pay, never what a vendor
-// will. Rarity alone was not enough: a steel ingot is tagged common and worth
-// 750, so at the junk rate it alone paid 235 Aurum a kill at level 70.
+// A recipe ingredient - and a piece of gear - is worth what another player
+// will pay, never what a vendor will. Rarity alone was not enough: a steel
+// ingot is tagged common and worth 750, so at the junk rate it alone paid 235
+// Aurum a kill at level 70. Equipment is the same faucet wearing a helmet: a
+// plate cuirass liquidates for thousands, and the shops deliberately do not
+// sell gear above uncommon precisely so that players trade it instead.
 export const CRAFT_INPUT_BUY_RATE = 0.05;
-export function npcSellPrice(refValue, soldToday = 0, rarity = 'common', craftInput = false) {
+// Gear goes lower still. A drop worth two hundred thousand liquidates for a
+// few thousand, which is a fair consolation for a duplicate and nowhere near
+// a reason to farm one. What a piece of gear is worth is wearing it, or what
+// another player will pay - and the market only exists if the vendor refuses.
+export const EQUIP_BUY_RATE = 0.015;
+export function npcSellPrice(refValue, soldToday = 0, rarity = 'common', dampen = false) {
   let rate = NPC_BUY_RATE[rarity] ?? NPC_BUY_RATE.common;
-  if (craftInput) rate = Math.min(rate, CRAFT_INPUT_BUY_RATE);
+  if (dampen === 'equip') rate = Math.min(rate, EQUIP_BUY_RATE);
+  else if (dampen) rate = Math.min(rate, CRAFT_INPUT_BUY_RATE);
   const base = refValue * rate;
   const decay = Math.pow(0.94, Math.max(0, soldToday - 5));
   return Math.max(1, Math.floor(base * Math.min(1, decay)));

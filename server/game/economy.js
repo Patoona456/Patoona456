@@ -86,8 +86,8 @@ export function sell(world, p, index, qty) {
   const soldToday = p.record.npcSales[st.id] ?? 0;
 
   let gained = 0;
-  const craftInput = CRAFTING_INPUTS.has(def.id);
-  for (let i = 0; i < qty; i++) gained += npcSellPrice(def.value, soldToday + i, def.rarity, craftInput);
+  const dampen = isEquip(def) ? 'equip' : CRAFTING_INPUTS.has(def.id);
+  for (let i = 0; i < qty; i++) gained += npcSellPrice(def.value, soldToday + i, def.rarity, dampen);
   // broken / worn gear is worth less
   if (isEquip(def) && st.dur !== undefined) gained = Math.floor(gained * (0.4 + 0.6 * (st.dur / (def.durability ?? 100))));
 
