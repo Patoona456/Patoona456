@@ -28,6 +28,23 @@ npm run import-lpc -- ./Universal-LPC-spritesheet
 ![สันเขาออร์ควอช](docs/img/ridge.png)
 ![ร้านค้าในเมือง](docs/img/shop.png)
 
+## ทดสอบ
+
+```
+npm test          # ตรรกะทั้งหมด ~70 เคส จบใน 8 วินาที ไม่ต้องติดตั้งอะไรเพิ่ม
+npm run test:e2e  # เล่นจริงในเบราว์เซอร์ (ต้อง npm i ก่อน)
+npm run test:all  # ทั้งสองชุด
+```
+
+`npm test` ใช้ตัวรัน `node --test` ที่มากับ Node 22 จึงรันได้ทันทีบนเครื่องเปล่า
+ครอบคลุมสูตรคำนวณ, ความถูกต้องของข้อมูลทุกไฟล์ (ทุกการอ้างอิงและทุกไฟล์สไปรต์),
+ความเชื่อมต่อของทุกแผนที่, pathfinding, ประตูปาร์ตี้, ล็อกรางวัลรายสัปดาห์,
+สคริปต์บอสทุกเฟส, aggro ตามช่องว่างเลเวล, เศรษฐกิจ และสมดุลเควสต์
+
+`npm run test:e2e` เปิดเซิร์ฟเวอร์จริงบนฐานข้อมูลชั่วคราวแล้วเล่นผ่าน Chromium:
+สมัคร สร้างตัวละคร เข้าโลก เปิดทุกหน้าต่าง สู้จริง และตรวจว่าเลย์เอาต์มือถือ
+ไม่มี HUD ทับกัน — ถ้ายังไม่ได้ติดตั้ง Playwright มันจะ *ข้าม* ไม่ใช่ล้มเหลว
+
 ## เอาขึ้นเซิร์ฟเวอร์จริง
 
 ```
@@ -99,11 +116,13 @@ server/
   accounts.js    สมัคร/ล็อกอิน/สร้างตัวละคร (scrypt)
   persistence.js เก็บสถานะลง SQLite (หรือ JSON) สลับได้ด้วย EMBERFALL_STORE
   store-sqlite.js แบ็กเอนด์ SQLite ที่ใช้ node:sqlite ในตัว Node
-  game/          world, zone, player, monster, combat, skills, economy, party, quests
+  game/          world, zone, player, monster, combat, skills, economy, party, quests, boss
 client/
   index.html     โครง HUD ทั้งหมด
   js/            main, net, input (จอย/ทัช/คีย์), renderer, sprites, ui
 assets/lpc/      สไปรต์ LPC ที่คัดมา 118 แผ่น + ไฟล์สัญญาอนุญาต
+test/            ชุดทดสอบ (node:test, ไม่ต้องติดตั้งอะไรเพิ่ม)
+  e2e/           ทดสอบผ่านเบราว์เซอร์จริงด้วย Playwright (ข้ามอัตโนมัติถ้าไม่มี)
 tools/           สคริปต์ดึงงานศิลป์จากต้นทาง
 docs/            เอกสารออกแบบเกม เศรษฐกิจ ปุ่มควบคุม และแผนพัฒนา
 ```

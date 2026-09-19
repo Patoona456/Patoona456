@@ -302,4 +302,68 @@ export const QUESTS = {
     objectives: [{ type: 'kill', mob: 'skeleton_king', count: 1 }],
     rewards: { exp: 90000, jobExp: 60000, aurum: 60000, items: [{ id: 'shard_dawn', qty: 5 }] },
   },
+
+  /* ---------------- Lv60-70: the Sunken Reliquary line ----------------
+     The last band used to hold one quest, which meant the last ten levels of
+     a seventy level game had nothing to follow. This chain walks a player
+     through the dungeon a floor at a time, and it is deliberately paid at
+     roughly one to one and a half times the hunting it asks for: at this
+     level a single fight is worth thousands, so the old three-times rule
+     would hand over a level and a half per turn-in. The chain leads; the
+     grind is still what levels you. */
+
+  q_reliquary_rumour: {
+    id: 'q_reliquary_rumour', name: 'ข่าวลือจากใต้น้ำแข็ง', giver: 'board', minLevel: 60,
+    zone: 'reliquary1',
+    desc: 'ใต้ห้องนิรภัยมีประตูที่เปิดได้เฉพาะตอนมีเพื่อน — เข้าไปดูว่ามีอะไรอยู่ข้างใน ' +
+      'กวาดทหารยามหีบศพ 8 ตน และเงาระเบียง 10 ตน',
+    objectives: [
+      { type: 'kill', mob: 'reliquary_sentinel', count: 8 },
+      { type: 'kill', mob: 'reliquary_shade', count: 10 },
+    ],
+    rewards: { exp: 100000, jobExp: 62000, aurum: 34000, items: [{ id: 'greater_salve', qty: 10 }] },
+  },
+  q_reliquary_seals: {
+    id: 'q_reliquary_seals', name: 'ตราที่ยังไม่แตก', giver: 'smith', minLevel: 61,
+    zone: 'reliquary1',
+    desc: 'ช่างตีเหล็กบอร์กอยากได้ตราผนึกหีบศพ 8 อัน เขาบอกว่าหลอมเป็นน้ำมันศักดิ์สิทธิ์ได้',
+    objectives: [{ type: 'collect', item: 'reliquary_seal', count: 8 }],
+    rewards: { exp: 64000, jobExp: 40000, aurum: 30000, items: [{ id: 'blessing_oil', qty: 1 }] },
+  },
+  q_reliquary_choir: {
+    id: 'q_reliquary_choir', name: 'เสียงสวดที่ไม่มีคนสวด', giver: 'board', minLevel: 63,
+    zone: 'reliquary2',
+    desc: 'ชั้นสองมีเสียงร้องดังออกมาตลอดเวลา ทั้งที่ไม่มีใครอยู่ — ปิดปากคณะขับร้องเถ้า 12 ตน ' +
+      'และทุบสมอหลุมศพ 5 ตัวที่ตรึงพวกมันไว้',
+    objectives: [
+      { type: 'kill', mob: 'reliquary_choir', count: 12 },
+      { type: 'kill', mob: 'reliquary_anchor', count: 5 },
+    ],
+    rewards: { exp: 118000, jobExp: 74000, aurum: 42000, items: [{ id: 'runed_whetstone', qty: 3 }] },
+  },
+  q_reliquary_warden: {
+    id: 'q_reliquary_warden', name: 'ผู้ที่ยังเฝ้าอยู่', giver: 'board', minLevel: 65,
+    zone: 'reliquary3', repeatable: 'weekly',
+    desc: 'ปราบผู้เฝ้าหีบศพที่ชั้นล่างสุด — ไปคนเดียวไม่ได้ และสัปดาห์หนึ่งได้รางวัลครั้งเดียว',
+    objectives: [{ type: 'kill', mob: 'reliquary_warden', count: 1 }],
+    rewards: { exp: 110000, jobExp: 70000, aurum: 55000, items: [{ id: 'reliquary_seal', qty: 2 }] },
+  },
+  q_dawn_crown: {
+    id: 'q_dawn_crown', name: 'มงกุฎที่ยังไม่มีเจ้าของ', giver: 'oracle', minLevel: 67,
+    zone: 'reliquary3',
+    desc: 'ผู้ดูแลศาลบอกว่าหีบศพจมกับศาลรุ่งอรุณเคยเป็นที่เดียวกัน — เอาตราผนึก 12 อัน ' +
+      'กับเศษรุ่งอรุณ 6 ชิ้นมาให้ แล้วจะเล่าให้ฟัง',
+    objectives: [
+      { type: 'collect', item: 'reliquary_seal', count: 12 },
+      { type: 'collect', item: 'shard_dawn', count: 6 },
+    ],
+    rewards: { exp: 140000, jobExp: 88000, aurum: 70000, items: [{ id: 'blessing_oil', qty: 3 }] },
+  },
+  q_daily_reliquary: {
+    id: 'q_daily_reliquary', name: 'งานประจำวัน: หีบศพจม', giver: 'board', minLevel: 62,
+    zone: 'reliquary1', repeatable: 'daily',
+    desc: 'กวาดทางเดินชั้นหนึ่งให้โล่ง: อะไรก็ได้ในระเบียงคด 15 ตน',
+    objectives: [{ type: 'kill', mob: 'reliquary_shade', count: 15 }],
+    rewards: { exp: 34000, jobExp: 21000, aurum: 11000, items: [{ id: 'greater_salve', qty: 4 }] },
+  },
 };

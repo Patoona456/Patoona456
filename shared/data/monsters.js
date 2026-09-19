@@ -286,7 +286,7 @@ export const MONSTERS = {
     hp: 5600, atk: 210, matk: 428, def: 44, mdef: 104, hit: 236, flee: 186, exp: 5000, jobExp: 3100,
     element: 'shade', race: 'undead', speed: 88, aggressive: true, aggroRange: 300,
     attackRange: 190, attackDelay: 2.0, respawn: 70,
-    sprite: { kind: 'sheet', key: 'ghoul', tint: '#b79ad8', scale: 1.05, layers: { head: 'cloth_hood', weapon: 'steelwand' } },
+    sprite: { kind: 'sheet', key: 'ghoul', tint: '#b79ad8', scale: 1.05, layers: { head: 'cloth_hood', weapon: 'wand' } },
     skills: ['grim_harvest'],
     drops: [
       { id: 'reliquary_seal', chance: 0.20 },

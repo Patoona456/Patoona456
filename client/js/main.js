@@ -170,7 +170,11 @@ class Game {
     n.on('_open', () => this.ui.toast('เชื่อมต่อเซิร์ฟเวอร์แล้ว', 'good'));
     n.on('_close', () => { if (this.inWorld) this.ui.toast('หลุดการเชื่อมต่อ กำลังเชื่อมใหม่…', 'bad'); });
     n.on('error', (m) => { this.screenError(m.text); if (this.inWorld) this.ui.flash(m.text); else this.ui.toast(m.text, 'bad'); });
-    n.on('notice', (m) => this.ui.toast(m.text, m.kind === 'good' ? 'good' : m.kind === 'bad' ? 'bad' : m.kind === 'warn' ? 'warn' : 'info'));
+    n.on('notice', (m) => {
+      this.ui.toast(m.text, m.kind === 'good' ? 'good' : m.kind === 'bad' ? 'bad' : m.kind === 'warn' ? 'warn' : 'info');
+      // a door that needs a party is not something to keep walking into
+      if (m.gate && this.nav) this.stopNav('ประตูนี้ต้องมีปาร์ตี้ — หยุดเดินอัตโนมัติแล้ว');
+    });
     n.on('chars', (m) => { this.account = m.account; this.chars = m.chars; this.showCharSelect(); });
     n.on('zone', (m) => {
       this.audio.startBed(m.theme);
@@ -461,7 +465,7 @@ class Game {
     // finished: go and hand it in
     if (done || nav.phase === 'return') {
       const giverRole = { board: 'quests', trainer: 'trainer', smith: 'smith', healer: 'healer',
-        vendor: 'shop', banker: 'storage', broker: 'market' }[q.giver] ?? 'quests';
+        vendor: 'shop', banker: 'storage', broker: 'market', oracle: 'gacha' }[q.giver] ?? 'quests';
       return { map: q.giverMap ?? 'emberhold', role: giverRole, kind: 'turnin' };
     }
 

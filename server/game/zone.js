@@ -507,7 +507,7 @@ export class Zone {
           if (gate) {
             // held at the door rather than bounced back and forth across it
             p.warpSafeUntil = t + 2500;
-            p.conn?.send({ t: 'notice', text: gate, kind: 'warn' });
+            p.conn?.send({ t: 'notice', text: gate, kind: 'warn', gate: true });
             break;
           }
           this.world.warpPlayer(p, w.to, w.at[0] * TILE, w.at[1] * TILE);

@@ -40,7 +40,10 @@ export function layerUrl(layer, key, gender = 'male') {
   }
 }
 const WEAPON_EITHER = new Set(['bow', 'recurvebow', 'greatbow', 'longspear', 'arrow']);
-const FEMALE_MISSING = new Set(['steelwand']);   // no female-specific sheet in the set we import
+// Keys the imported asset set only ships for one gender. The sheet we have
+// for these is the female one, so a male character falls back to the item's
+// `fallback` key rather than asking for a file that is not there.
+const MALE_MISSING = new Set(['steelwand']);
 
 /** Draw order, back to front. */
 const ORDER = ['body', 'eyes', 'legs', 'feet', 'torso', 'belt', 'hands', 'head', 'hair', 'weapon', 'offhand'];
@@ -57,7 +60,7 @@ export function playerLayers(look, equipment = {}) {
     const def = ITEMS[itemId];
     if (!def?.sprite) continue;
     let key = def.sprite.key;
-    if (g === 'female' && FEMALE_MISSING.has(key) && def.sprite.fallback) key = def.sprite.fallback;
+    if (g === 'male' && MALE_MISSING.has(key) && def.sprite.fallback) key = def.sprite.fallback;
     const url = layerUrl(def.sprite.layer, key, def.sprite.gendered ? g : g);
     layers[def.sprite.layer] = url;
   }

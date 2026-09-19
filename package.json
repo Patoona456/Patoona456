@@ -12,7 +12,10 @@
     "build:demo": "node tools/build-demo.js",
     "docker:build": "docker build -t emberfall-online .",
     "docker:run": "docker run --rm -p 8080:8080 -v emberfall-data:/data emberfall-online",
-    "backup": "node tools/backup.js"
+    "backup": "node tools/backup.js",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node --test --test-concurrency=1 test/e2e/*.test.js",
+    "test:all": "npm test && npm run test:e2e"
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
@@ -20,5 +23,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
   }
 }
