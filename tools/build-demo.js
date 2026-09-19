@@ -10,14 +10,19 @@
  * store becomes localStorage, and node:crypto becomes a tiny digest. Serve the
  * folder with any static server - there is no backend.
  */
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.resolve(process.argv[2] ?? path.join(root, 'dist', 'demo'));
 
-const CLIENT = ['main', 'input', 'renderer', 'sprites', 'props', 'terrain', 'ui', 'icons', 'audio', 'particles', 'autowalk', 'wings', 'skillfx', 'weather'];
+// Every client module, read from the directory rather than listed here: a
+// hand-kept list silently ships a build missing whichever file was added
+// last, and the only symptom is a 404 for a module nothing else imports.
+const CLIENT = (await readdir(path.join(root, 'client', 'js')))
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => f.slice(0, -3));
 
 await mkdir(path.join(out, 'client', 'js'), { recursive: true });
 for (const f of CLIENT) {
