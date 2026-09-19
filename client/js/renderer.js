@@ -4,7 +4,7 @@ import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
-import { drawCharacter, drawBlob, drawRefineGlow, playerLayers, monsterLayers, npcLayers } from './sprites.js';
+import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers } from './sprites.js';
 import { glowTier } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { Particles } from './particles.js';
@@ -550,10 +550,20 @@ export class Renderer {
     const power = tier.aura * pulse * (swinging ? 1.45 : 1);
 
     const opts = { x: e.x, y: e.y, anim, dir: e.d ?? 2, elapsed, scale, color: colour };
+
+    // A tier with art plays it over the wielder. The code-drawn aura below
+    // still runs underneath at a lower weight, so a tier whose sheet has not
+    // been drawn yet does not simply go dark - art is added one tier at a
+    // time, and every level in between has to keep looking like something.
+    const art = tier.sheet
+      ? drawOverlaySheet(ctx, tier.sheet, { ...opts, alpha: Math.min(1, power * 1.1), loopMs: tier.loopMs ?? 0 })
+      : false;
+    const weight = art ? 0.35 : 1;
+
     // wide bloom, tight bloom, then the blade itself lit up
-    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.75, blur: 7 + tier.aura * 7 });
-    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.70, blur: 2.5 });
-    drawRefineGlow(ctx, layers, { ...opts, alpha: Math.min(0.95, power * 0.9), blur: 0 });
+    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.75 * weight, blur: 7 + tier.aura * 7 });
+    drawRefineGlow(ctx, layers, { ...opts, alpha: power * 0.70 * weight, blur: 2.5 });
+    drawRefineGlow(ctx, layers, { ...opts, alpha: Math.min(0.95, power * 0.9) * weight, blur: 0 });
 
     // light cast on the ground around the wielder, at the higher tiers
     if (tier.light) {

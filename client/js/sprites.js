@@ -1,6 +1,7 @@
 // LPC sheet loading + paper-doll composition.
 // Every sheet is 13x21 frames of 64x64; see assets/lpc/CREDITS.md.
 import { SPRITE, ANIM, SHEET_COLS } from '../../shared/constants.js';
+import { LPC, layoutOf, frameAt, rowAt, frameRect, fits } from '../../shared/sheets.js';
 import { ITEMS } from '../../shared/data/items.js';
 
 const BASE = '/assets/lpc';
@@ -133,16 +134,38 @@ export function monsterLayers(sprite) {
 }
 
 /** Which column of the animation strip to draw right now. */
-export function frameOf(animName, elapsedMs, looping = true) {
-  const a = ANIM[animName] ?? ANIM.idle;
-  const frame = Math.floor((elapsedMs / 1000) * a.fps);
-  if (a.frames <= 1) return 0;
-  return looping ? frame % a.frames : Math.min(frame, a.frames - 1);
+export function frameOf(animName, elapsedMs, looping = true, layout = LPC) {
+  return frameAt(layout, animName, elapsedMs, looping);
 }
 
-export function rowOf(animName, dir) {
-  const a = ANIM[animName] ?? ANIM.idle;
-  return a.single ? a.row : a.row + (dir & 3);
+export function rowOf(animName, dir, layout = LPC) {
+  return rowAt(layout, animName, dir);
+}
+
+/**
+ * Which layout a sheet follows.
+ *
+ * Declared per sheet rather than assumed for all of them, so art drawn to a
+ * different grid is a line of configuration instead of a renderer change.
+ * Anything unregistered is LPC, which is every asset that exists today.
+ */
+const sheetLayouts = new Map();
+export function declareLayout(url, layoutId) { sheetLayouts.set(url, layoutOf(layoutId)); }
+export function layoutFor(url) { return sheetLayouts.get(url) ?? LPC; }
+
+/**
+ * Warn once per sheet whose pixels do not match what it claims to be. A sheet
+ * one row short does not fail, it draws somebody else's feet during the hurt
+ * animation, and that is a miserable thing to debug from the symptom.
+ */
+const checked = new Set();
+function checkGeometry(url, img, layout) {
+  if (checked.has(url) || !img.width) return;
+  checked.add(url);
+  if (!fits(layout, img.width, img.height)) {
+    console.warn(`[sprites] ${url} is ${img.width}x${img.height}, but layout "${layout.id}" `
+      + `expects ${layout.frame.w * layout.cols}x${layout.frame.h * layout.rows}`);
+  }
 }
 
 /** These play once and hold their last frame; the server hands back to idle. */
@@ -150,11 +173,11 @@ const ONE_SHOT = new Set(['hurt', 'slash', 'thrust', 'shoot']);
 
 // A 64x64 scratch buffer for tinting a single layer (see drawRefineGlow).
 let scratch = null;
-function scratchCtx() {
-  if (!scratch) {
-    scratch = document.createElement('canvas');
-    scratch.width = SPRITE; scratch.height = SPRITE;
-  }
+function scratchCtx(w = SPRITE, h = SPRITE) {
+  if (!scratch) scratch = document.createElement('canvas');
+  // Resized rather than fixed at 64: a sheet on another grid has frames of
+  // its own size, and clipping them to 64 would quietly crop the art.
+  if (scratch.width !== w || scratch.height !== h) { scratch.width = w; scratch.height = h; }
   return scratch.getContext('2d');
 }
 
@@ -170,23 +193,54 @@ export function drawRefineGlow(ctx, layers, { x, y, anim = 'idle', dir = 2, elap
   const s = sheet(url);
   if (!s.ready) return false;
 
-  const col = frameOf(anim, elapsed, !ONE_SHOT.has(anim));
-  const row = rowOf(anim, dir);
-  const g = scratchCtx();
-  g.clearRect(0, 0, SPRITE, SPRITE);
-  g.drawImage(s.img, col * SPRITE, row * SPRITE, SPRITE, SPRITE, 0, 0, SPRITE, SPRITE);
+  const layout = layoutFor(url);
+  const { sx, sy, sw, sh } = frameRect(layout, anim, dir, elapsed, !ONE_SHOT.has(anim));
+  const g = scratchCtx(sw, sh);
+  g.clearRect(0, 0, sw, sh);
+  g.drawImage(s.img, sx, sy, sw, sh, 0, 0, sw, sh);
   g.globalCompositeOperation = 'source-atop';
   g.fillStyle = color;
-  g.fillRect(0, 0, SPRITE, SPRITE);
+  g.fillRect(0, 0, sw, sh);
   g.globalCompositeOperation = 'source-over';
 
-  const size = SPRITE * scale;
-  const dx = Math.round(x - size / 2), dy = Math.round(y - size + size * 0.18);
+  const size = sh * scale;
+  const dx = Math.round(x - (sw * scale) / 2);
+  const dy = Math.round(y - size + size * (1 - layout.anchor));
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha = alpha;
   if (blur) ctx.filter = `blur(${blur}px)`;
-  ctx.drawImage(scratch, dx, dy, size, size);
+  ctx.drawImage(scratch, 0, 0, sw, sh, dx, dy, sw * scale, sh * scale);
+  ctx.restore();
+  return true;
+}
+
+/**
+ * Play an effect sheet over a character, in step with whatever they are doing.
+ *
+ * This is how art-backed refine tiers land: a sheet drawn on the same grid as
+ * the body, composited additively on top, so a flame follows the swing frame
+ * by frame instead of floating beside it. A sheet with its own layout works
+ * too - declareLayout() it and the frames are read from there.
+ */
+export function drawOverlaySheet(ctx, url, { x, y, anim = 'idle', dir = 2, elapsed = 0,
+  scale = 1, alpha = 1, additive = true, loopMs = 0 } = {}) {
+  if (!url) return false;
+  const s = sheet(url);
+  if (!s.ready) return false;
+  const layout = layoutFor(url);
+  checkGeometry(url, s.img, layout);
+  // An effect may run on its own clock rather than the character's, which is
+  // what a flame wants: it keeps burning while its wielder stands still.
+  const t = loopMs > 0 ? (Date.now() % loopMs) : elapsed;
+  const { sx, sy, sw, sh } = frameRect(layout, anim, dir, t, true);
+  const size = sh * scale;
+  const dx = Math.round(x - (sw * scale) / 2);
+  const dy = Math.round(y - size + size * (1 - layout.anchor));
+  ctx.save();
+  if (additive) ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(s.img, sx, sy, sw, sh, dx, dy, sw * scale, sh * scale);
   ctx.restore();
   return true;
 }
@@ -197,11 +251,12 @@ export function drawRefineGlow(ctx, layers, { x, y, anim = 'idle', dir = 2, elap
  * @param layers map of layer -> url (from playerLayers/monsterLayers)
  */
 export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elapsed = 0, scale = 1, alpha = 1, tint = null, flash = 0 }) {
-  const col = frameOf(anim, elapsed, !ONE_SHOT.has(anim));
-  const row = rowOf(anim, dir);
-  const sx = col * SPRITE, sy = row * SPRITE;
-  const size = SPRITE * scale;
-  const dx = Math.round(x - size / 2), dy = Math.round(y - size + size * 0.18);
+  // Geometry comes from whichever layout the body sheet follows, so a
+  // character drawn on a different grid lines up with its own equipment.
+  const layout = layoutFor(urlOf(layers.body));
+  const size = layout.frame.h * scale;
+  const dx = Math.round(x - (layout.frame.w * scale) / 2);
+  const dy = Math.round(y - size + size * (1 - layout.anchor));
 
   ctx.save();
   if (alpha < 1) ctx.globalAlpha = alpha;
@@ -211,11 +266,14 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
     const url = urlOf(entry);
     const plain = sheet(url);
     if (!plain.ready) continue;
+    const own = layoutFor(url);
+    checkGeometry(url, plain.img, own);
+    const { sx, sy, sw, sh } = frameRect(own, anim, dir, elapsed, !ONE_SHOT.has(anim));
     // A tinted piece falls back to its untinted sheet until the recolour is
     // built, so gear never blinks out of existence for a frame.
     const t = entry.tint ? tintedSheet(url, entry.tint) : null;
     const img = t?.ready ? t.img : plain.img;
-    ctx.drawImage(img, sx, sy, SPRITE, SPRITE, dx, dy, size, size);
+    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, sw * scale, sh * scale);
   }
   if (tint || flash) {
     ctx.globalCompositeOperation = 'source-atop';
