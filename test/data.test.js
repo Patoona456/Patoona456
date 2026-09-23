@@ -276,3 +276,17 @@ test('every townsperson starts somewhere they can stand', () => {
     }
   }
 });
+
+test('a map drawn in sharp tiles ships every tile', () => {
+  for (const m of Object.values(MAPS)) {
+    const bt = m.backdropTiles;
+    if (!bt) continue;
+    assert.equal(bt.cols * bt.size, bt.width, `${m.id}: tiles do not cover the width`);
+    assert.equal(bt.rows * bt.size, bt.height, `${m.id}: tiles do not cover the height`);
+    for (let y = 0; y < bt.rows; y++) {
+      for (let x = 0; x < bt.cols; x++) {
+        assert.ok(existsSync(onDisk(`${bt.dir}/${x}_${y}.webp`)), `${m.id}: tile ${x},${y} is missing`);
+      }
+    }
+  }
+});

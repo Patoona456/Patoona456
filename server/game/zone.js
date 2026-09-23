@@ -838,6 +838,7 @@ export class Zone {
       structures: this.def.structures ?? [],
       laidOut: !!(this.def.paint || this.def.backdrop),   // hand-dressed: no scattered clutter
       backdrop: this.def.backdrop ?? null,
+      backdropTiles: this.def.backdropTiles ?? null,
       decor: this.def.decor ?? [],
       safe: !!this.def.safe, rle: this.rle,
       warps: (this.def.warps ?? []).map((w) => ({ x: w.x, y: w.y, w: w.w, h: w.h, label: w.label, to: w.to })),

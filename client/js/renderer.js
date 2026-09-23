@@ -126,6 +126,7 @@ export class Renderer {
 
   setZone(zonePayload) {
     this.zone = zonePayload;
+    this.tileCache = new Map();          // let the last map's sharp tiles go
     this.particles.setTheme(zonePayload.theme);
     this.steps.clear();
     this.grid = decodeGrid(zonePayload.rle, zonePayload.width * zonePayload.height);
@@ -301,6 +302,7 @@ export class Renderer {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(art, x0 * k, y0 * k, (x1 - x0) * k, (y1 - y0) * k, x0, y0, x1 - x0, y1 - y0);
+      this.drawBackdropTiles(ctx, x0, y0, x1, y1);
       ctx.restore();
     } else {
       ctx.drawImage(this.terrain, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
@@ -421,6 +423,38 @@ export class Renderer {
         const a = Math.random() * Math.PI * 2, rr = Math.random() * f.r;
         this.particles.spark(f.x + Math.cos(a) * rr, f.y + Math.sin(a) * rr * 0.62,
           { color: L.main.join(','), n: 1, power: 0.35 });
+      }
+    }
+  }
+
+  /**
+   * The sharp version of a painted map: tiles of the picture at 4x, each
+   * loaded the first time it comes into view (the whole thing decoded at once
+   * is ~100MB, too much for a phone). Until a tile arrives the low-res picture
+   * drawn underneath shows through, so nothing ever flashes empty.
+   */
+  drawBackdropTiles(ctx, x0, y0, x1, y1) {
+    const bt = this.zone?.backdropTiles;
+    if (!bt) return;
+    this.tileCache ??= new Map();
+    const k = bt.width / this.terrain.width;          // picture px per world px
+    const worldTile = bt.size / k;
+    const tx0 = Math.max(0, Math.floor(x0 / worldTile)), tx1 = Math.min(bt.cols - 1, Math.floor((x1 - 1) / worldTile));
+    const ty0 = Math.max(0, Math.floor(y0 / worldTile)), ty1 = Math.min(bt.rows - 1, Math.floor((y1 - 1) / worldTile));
+    for (let ty = ty0; ty <= ty1; ty++) {
+      for (let tx = tx0; tx <= tx1; tx++) {
+        const url = `${bt.dir}/${tx}_${ty}.webp`;
+        let img = this.tileCache.get(url);
+        if (!img) {
+          img = new Image();
+          img.src = url;
+          this.tileCache.set(url, img);
+        }
+        if (!img.complete || !img.naturalWidth) continue;
+        // the bleed is sampled by the filter at the edges but not drawn, so
+        // neighbouring tiles meet without a seam
+        ctx.drawImage(img, bt.bleed, bt.bleed, bt.size, bt.size,
+          tx * worldTile, ty * worldTile, worldTile, worldTile);
       }
     }
   }

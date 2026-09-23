@@ -51,6 +51,9 @@ export const MAPS = {
     // lots, stretched 1.25x; the buildings are separate pictures standing on
     // those lots, so people walk behind them. A tile is 25.6px of the painting.
     backdrop: 'assets/maps/emberhold.webp',
+    // the same picture at 4x, cut into 512px tiles (2px bleed each side) that
+    // are fetched only once the camera is near them
+    backdropTiles: { dir: 'assets/maps/emberhold/ground', size: 512, bleed: 2, cols: 12, rows: 8, width: 6144, height: 4096 },
     walk: [
       [4, 5, 52, 27],                                         // inside the walls
       [28, 0, 4, 5], [28, 32, 4, 8],                          // north gate road, south stairs
@@ -67,21 +70,21 @@ export const MAPS = {
     ],
     // two to a lot; the lower half of each is its walls (see walkGrid)
     structures: [
-      { kind: 'building', img: 'assets/maps/emberhold/smith.png', x: 6.54, y: 6.47, w: 6.45, h: 7.28 },
-      { kind: 'building', img: 'assets/maps/emberhold/potion.png', x: 12.9, y: 7.56, w: 6.61, h: 6.19 },
-      { kind: 'building', img: 'assets/maps/emberhold/healer.png', x: 40.94, y: 6.92, w: 6.0, h: 6.83 },
-      { kind: 'building', img: 'assets/maps/emberhold/storehouse.png', x: 47.58, y: 7.88, w: 5.63, h: 5.87 },
-      { kind: 'building', img: 'assets/maps/emberhold/market.png', x: 7.35, y: 26.27, w: 4.83, h: 4.12 },
-      { kind: 'building', img: 'assets/maps/emberhold/inn.png', x: 12.81, y: 24.48, w: 6.8, h: 5.91 },
-      { kind: 'building', img: 'assets/maps/emberhold/chapel.png', x: 40.74, y: 22.55, w: 6.4, h: 7.84 },
-      { kind: 'building', img: 'assets/maps/emberhold/guildhouse.png', x: 46.99, y: 23.94, w: 6.8, h: 6.45 },
+      { kind: 'building', img: 'assets/maps/emberhold/smith.webp', x: 6.54, y: 6.47, w: 6.45, h: 7.28 },
+      { kind: 'building', img: 'assets/maps/emberhold/potion.webp', x: 12.9, y: 7.56, w: 6.61, h: 6.19 },
+      { kind: 'building', img: 'assets/maps/emberhold/healer.webp', x: 40.94, y: 6.92, w: 6.0, h: 6.83 },
+      { kind: 'building', img: 'assets/maps/emberhold/storehouse.webp', x: 47.58, y: 7.88, w: 5.63, h: 5.87 },
+      { kind: 'building', img: 'assets/maps/emberhold/market.webp', x: 7.35, y: 26.27, w: 4.83, h: 4.12 },
+      { kind: 'building', img: 'assets/maps/emberhold/inn.webp', x: 12.81, y: 24.48, w: 6.8, h: 5.91 },
+      { kind: 'building', img: 'assets/maps/emberhold/chapel.webp', x: 40.74, y: 22.55, w: 6.4, h: 7.84 },
+      { kind: 'building', img: 'assets/maps/emberhold/guildhouse.webp', x: 46.99, y: 23.94, w: 6.8, h: 6.45 },
       // the side lots either side of the north road and the south stair
-      { kind: 'building', img: 'assets/maps/emberhold/tavern.png', x: 21.18, y: 6.82, w: 4.9, h: 4.32 },
-      { kind: 'building', img: 'assets/maps/emberhold/scribe.png', x: 21.69, y: 10.37, w: 3.89, h: 5.25 },
-      { kind: 'building', img: 'assets/maps/emberhold/grocer.png', x: 33.96, y: 6.25, w: 5.12, h: 4.88 },
-      { kind: 'building', img: 'assets/maps/emberhold/cottage.png', x: 34.22, y: 11.88, w: 4.61, h: 3.75 },
-      { kind: 'building', img: 'assets/maps/emberhold/wellhouse.png', x: 21.84, y: 24.62, w: 3.6, h: 4.2 },
-      { kind: 'building', img: 'assets/maps/emberhold/windmill.png', x: 34.57, y: 24.05, w: 3.9, h: 4.77 },
+      { kind: 'building', img: 'assets/maps/emberhold/tavern.webp', x: 21.18, y: 6.82, w: 4.9, h: 4.32 },
+      { kind: 'building', img: 'assets/maps/emberhold/scribe.webp', x: 21.69, y: 10.37, w: 3.89, h: 5.25 },
+      { kind: 'building', img: 'assets/maps/emberhold/grocer.webp', x: 33.96, y: 6.25, w: 5.12, h: 4.88 },
+      { kind: 'building', img: 'assets/maps/emberhold/cottage.webp', x: 34.22, y: 11.88, w: 4.61, h: 3.75 },
+      { kind: 'building', img: 'assets/maps/emberhold/wellhouse.webp', x: 21.84, y: 24.62, w: 3.6, h: 4.2 },
+      { kind: 'building', img: 'assets/maps/emberhold/windmill.webp', x: 34.57, y: 24.05, w: 3.9, h: 4.77 },
     ],
     npcs: [
       { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 11, y: 15, look: { pic: 'blacksmith' } },
