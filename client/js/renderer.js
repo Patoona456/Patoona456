@@ -584,7 +584,8 @@ export class Renderer {
           if (walking) e._faceLeft = d >= 1 && d <= 3 ? true : d >= 5 && d <= 7 ? false : e._faceLeft;
           drawPicture(ctx, layers.pic, {
             x: e.x, y: e.y, flash: hurt, flip: !!e._faceLeft,
-            bob: walking ? Math.abs(Math.sin(now / 130 + e.x * 0.01)) * 3 : 0,
+            // two steps a second, each townsperson on their own beat
+            step: walking ? now / 160 + (e.id.charCodeAt(e.id.length - 1) ?? 0) : null,
           });
         } else if (layers) {
           const scale = e.sprite?.scale ?? 1;

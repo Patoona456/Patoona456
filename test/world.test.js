@@ -432,3 +432,25 @@ test('townsfolk wander, but never into a tree, a wall or a building', (t) => {
     }
   }
 });
+
+test('every open tile in Emberhold can be walked to from the spawn', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const z = w.zone('emberhold');
+  const fits = (x, y) => z.walkable(x * 32 + 16, y * 32 + 16, 10);
+  const [sx, sy] = z.def.spawnPoint;
+  const seen = new Set([`${sx},${sy}`]);
+  const queue = [[sx, sy]];
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy, k = `${nx},${ny}`;
+      if (nx < 0 || ny < 0 || nx >= z.width || ny >= z.height || seen.has(k) || !fits(nx, ny)) continue;
+      seen.add(k);
+      queue.push([nx, ny]);
+    }
+  }
+  const stranded = [];
+  for (let y = 0; y < z.height; y++) for (let x = 0; x < z.width; x++) if (fits(x, y) && !seen.has(`${x},${y}`)) stranded.push(`${x},${y}`);
+  assert.deepEqual(stranded, [], 'open ground nobody can reach');
+});

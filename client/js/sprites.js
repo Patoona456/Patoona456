@@ -330,17 +330,48 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
 }
 
 /** A painted NPC: stood on its feet, facing the camera whichever way it 'faces'. */
-export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0, flip = false, bob = 0 }) {
+/** Where the legs start on a standing chibi picture, as a share of its height. */
+const LEGS_AT = 0.8;
+
+/**
+ * A painted NPC. Standing, it is the picture. Walking, it is cut in three -
+ * body, left leg, right leg - and stepped: the legs lift in turn, the body
+ * rides up on each stride and rolls a little toward the leg it is on, so a
+ * one-pose picture reads as somebody walking rather than sliding.
+ * `step` is the stride phase in radians, or null when standing still.
+ */
+export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0, flip = false, step = null }) {
   const s = sheet(url);
   if (!s.ready) return null;
-  const w = s.img.width * NPC_PIC_SCALE, h = s.img.height * NPC_PIC_SCALE;
-  const dx = Math.round(x - w / 2), dy = Math.round(y - h + 4 - bob);
+  const iw = s.img.width, ih = s.img.height;
+  const w = iw * NPC_PIC_SCALE, h = ih * NPC_PIC_SCALE;
+  const dx = x - w / 2, dy = y - h + 4;
   ctx.save();
   // the art only faces forward, so walking left is the same picture mirrored
   if (flip) { ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
   ctx.imageSmoothingEnabled = NPC_PIC_SCALE * ctx.getTransform().a < 1;
   if (alpha < 1) ctx.globalAlpha = alpha;
-  ctx.drawImage(s.img, dx, dy, w, h);
+  if (step === null) {
+    ctx.drawImage(s.img, Math.round(dx), Math.round(dy), w, h);
+  } else {
+    const p = Math.sin(step);
+    const lift = 3.2;                               // world px a foot comes up
+    // the leg pieces reach up under the body, so a gap never opens at the
+    // hip when the body rides up
+    const legY = ih * (LEGS_AT - 0.08), legH = ih - legY;
+    const half = iw / 2;
+    const liftL = Math.max(0, p) * lift, liftR = Math.max(0, -p) * lift;
+    // feet first, so the body overlaps the top of the legs
+    ctx.drawImage(s.img, 0, legY, half, legH, dx, dy + legY * NPC_PIC_SCALE - liftL, w / 2, legH * NPC_PIC_SCALE);
+    ctx.drawImage(s.img, half, legY, half, legH, dx + w / 2, dy + legY * NPC_PIC_SCALE - liftR, w / 2, legH * NPC_PIC_SCALE);
+    const bob = Math.abs(p) * 1.8;
+    ctx.save();
+    ctx.translate(x, y - h * 0.35);
+    ctx.rotate(p * 0.045);
+    const bodyH = ih * LEGS_AT;
+    ctx.drawImage(s.img, 0, 0, iw, bodyH, -w / 2, -h * 0.65 + 4 - bob, w, bodyH * NPC_PIC_SCALE);
+    ctx.restore();
+  }
   if (flash) {
     ctx.globalCompositeOperation = 'source-atop';
     ctx.globalAlpha = flash * 0.6;

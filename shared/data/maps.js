@@ -59,7 +59,7 @@ export const MAPS = {
       [28, 0, 4, 5], [28, 32, 4, 8],                          // north gate road, south stairs
       [0, 17, 4, 3], [56, 17, 4, 3],                          // the moat bridges
     ],
-    block: [[28, 16, 5, 5]],                                  // the fountain
+    block: [[28, 17, 4, 3]],                                  // the fountain bowl
     obstacles: EMBERHOLD_OBSTACLES,                           // painted trees and lamps
     spawnPoint: [30, 23],
     warps: [
@@ -68,7 +68,7 @@ export const MAPS = {
       { x: 0, y: 17, w: 1, h: 3, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
       { x: 59, y: 17, w: 1, h: 3, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
     ],
-    // two to a lot; the lower half of each is its walls (see walkGrid)
+    // two to a lot; their walls are traced into emberhold-obstacles.js
     structures: [
       { kind: 'building', img: 'assets/maps/emberhold/smith.webp', x: 6.54, y: 6.47, w: 6.45, h: 7.28 },
       { kind: 'building', img: 'assets/maps/emberhold/potion.webp', x: 12.9, y: 7.56, w: 6.61, h: 6.19 },
@@ -91,9 +91,9 @@ export const MAPS = {
       { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 45, y: 15, look: { pic: 'nun' } },
       { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 14, y: 15, shop: 'general', look: { pic: 'alchemist' } },
       { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 48, y: 15, look: { pic: 'dwarf' } },
-      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 45, y: 30, look: { pic: 'shrinemaiden' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 10, y: 30, look: { pic: 'peddler' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 48, y: 30, look: { pic: 'knight' } },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 39, y: 28, look: { pic: 'shrinemaiden' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 11, y: 30, look: { pic: 'peddler' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 54, y: 24, look: { pic: 'knight' } },
       { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 25, y: 18, look: { pic: 'postman' } },
       { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 36, y: 18, look: { pic: 'wizard' } },
     ],
@@ -568,14 +568,6 @@ function walkGrid(map) {
   (map.obstacles ?? []).forEach((row, y) => {
     for (let x = 0; x < row.length; x++) if (row[x] === '#' && y < h && x < w) g[y * w + x] = TILES.WALL;
   });
-  // a building picture is roof above and walls below: only the walls stop
-  // you, so you can walk behind the roof and be hidden by it
-  for (const st of map.structures ?? []) {
-    if (st.kind !== 'building') continue;
-    const x0 = Math.round(st.x + st.w * 0.1), x1 = Math.round(st.x + st.w * 0.9);
-    const y0 = Math.round(st.y + st.h * 0.5), y1 = Math.round(st.y + st.h - 0.3);
-    fill(TILES.WALL, [x0, y0, x1 - x0, y1 - y0]);
-  }
   return g;
 }
 
