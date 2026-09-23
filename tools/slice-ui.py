@@ -19,7 +19,7 @@ OUT = os.path.join(ROOT, 'assets/ui')
 sheet = cv2.imread(SRC)
 
 
-def grab(box, pad=6, iters=6, fill_holes=True, img=None):
+def grab(box, pad=6, iters=6, fill_holes=True, img=None, whole=False):
     img = sheet if img is None else img
     x0, y0, x1, y1 = box
     X0, Y0 = max(0, x0 - pad), max(0, y0 - pad)
@@ -33,7 +33,9 @@ def grab(box, pad=6, iters=6, fill_holes=True, img=None):
         raise SystemExit(f'GrabCut found nothing in {box}')
     n, lab, st, _ = cv2.connectedComponentsWithStats(m)
     if n > 1:
-        m = np.where(lab == 1 + np.argmax(st[1:, 4]), 255, 0).astype(np.uint8)
+        # one piece, unless it is meant to come apart (the dot under a "!")
+        keep = [1 + np.argmax(st[1:, 4])] if not whole else [i for i in range(1, n) if st[i, 4] > 20]
+        m = np.where(np.isin(lab, keep), 255, 0).astype(np.uint8)
     m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
     if fill_holes:
         ff = m.copy()
@@ -353,3 +355,61 @@ def lift(img, box, ring=36, thresh=38):
 
 
 save('lantern', lift(shop, (1272, 925, 1338, 1016)))
+
+
+# ============================================================================
+# Fourth sheet: quests and NPC dialogue (assets/ui/source/quest_sheet.png)
+# ============================================================================
+qs = cv2.imread(os.path.join(ROOT, 'assets/ui/source/quest_sheet.png'))
+
+# portraits for the dialogue window
+for k, x in {'priest': 25, 'elder': 131, 'merchant': 237, 'mage': 342, 'tinker': 447, 'girl': 554}.items():
+    art = cv2.cvtColor(qs[61:183, x + 6:x + 91], cv2.COLOR_BGR2RGB)
+    Image.fromarray(art).save(os.path.join(OUT, 'npc_face_' + k + '.webp'), 'WEBP', quality=92)
+
+# markers over quest givers' heads, and the interaction glyphs
+for k, b in {'mark_main': (1256, 338, 1280, 390), 'mark_sub': (1326, 338, 1350, 390),
+             'mark_daily': (1398, 338, 1422, 390), 'mark_event': (1473, 338, 1497, 390),
+             'mark_ready': (1246, 435, 1287, 490), 'mark_talk': (1309, 438, 1360, 487),
+             'mark_progress': (1384, 435, 1437, 490), 'mark_done': (1461, 435, 1512, 487),
+             'act_talk': (1244, 585, 1295, 637), 'act_hand': (1315, 583, 1362, 637),
+             'act_look': (1383, 583, 1437, 637), 'act_gear': (1455, 583, 1510, 637)}.items():
+    save(k, grab(b, pad=4, img=qs, whole=k.startswith('mark_'))[0])
+
+# the window close button
+save('close_x', grab((1489, 843, 1522, 876), pad=3, img=qs)[0])
+
+# quest complete banner
+save('quest_complete', grab((942, 352, 1219, 478), pad=5, img=qs)[0])
+
+# the empty speech box, its name tab top left
+save('dlg_box', grab((1017, 42, 1248, 162), pad=4, img=qs)[0])
+
+# dialogue choice bar: bubble cap, a clean middle, the right cap
+bar = qs[48:88, 1270:1518]
+choice = np.concatenate([bar[:, :56]] + [bar[:, 188:192]] * 20 + [bar[:, 224:]], axis=1)
+save('dlg_choice', rounded(np.ascontiguousarray(choice), (0, 0, choice.shape[1], choice.shape[0]), r=5))
+
+# quest kind glyphs for the log's rows
+for k, b in {'qk_main': (38, 366, 88, 420), 'qk_sub': (40, 430, 86, 487), 'qk_daily': (38, 498, 88, 552),
+             'qk_event': (38, 568, 88, 626)}.items():
+    save(k, grab(b, pad=3, img=qs)[0])
+
+# reward tiles
+REWARD = {'exp': (0, 0), 'coin': (1, 0), 'gem': (2, 0), 'chest': (3, 0), 'scroll': (0, 1), 'potion': (1, 1),
+          'armor': (2, 1), 'leaf': (3, 1), 'crystal': (0, 2), 'crest': (1, 2), 'book': (2, 2), 'gift': (3, 2)}
+RC, RR = [976, 1041, 1106, 1172], [842, 900, 956]
+for k, (c, r) in REWARD.items():
+    save('rw_' + k, rounded(qs, (RC[c], RR[r], RC[c] + 58, RR[r] + 54), r=5))
+
+# quest buttons whose words are ours
+QB = {'qb_accept': (0, 0), 'qb_turnin': (1, 0), 'qb_navigate': (2, 1), 'qb_stop': (3, 1), 'qb_close': (2, 2)}
+BC, BR = [25, 142, 258, 371], [845, 896, 949]
+for k, (c, r) in QB.items():
+    save(k, rounded(qs, (BC[c], BR[r], BC[c] + 108, BR[r] + 44), r=6))
+
+# the plate NPC names sit on in the world
+tag = qs[763:795, 1059:1195]
+plate = np.concatenate([tag[:, :22]] + [tag[:, 22:26]] * 12 + [tag[:, 112:]], axis=1)
+save('npc_plate', rounded(np.ascontiguousarray(plate), (0, 0, plate.shape[1], plate.shape[0]), r=4))
+print('quest sheet done')

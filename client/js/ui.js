@@ -3,6 +3,7 @@ import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS, isEquip, socketsOf, car
 import { SKILLS, val, skillCost } from '../../shared/data/skills.js';
 import { JOBS } from '../../shared/data/jobs.js';
 import { QUESTS } from '../../shared/data/quests.js';
+import { MONSTERS } from '../../shared/data/monsters.js';
 import { WARP_ROUTES } from '../../shared/data/npcs.js';
 import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
@@ -803,43 +804,123 @@ export class UI {
   }
 
   /* ---------------- quests ---------------- */
+  /**
+   * The quest log: tabs by kind, a list on the left, and the chosen quest on
+   * a parchment on the right with what it asks, what it pays and one button
+   * for whatever the next step is.
+   */
   openQuests(quests) {
     this.lastQuests = quests;
-    const wrap = el('div');
-    if (!quests?.length) wrap.append(el('div', 'muted', 'ยังไม่มีภารกิจที่รับได้'));
-    for (const q of quests ?? []) {
-      const row = el('div', 'row');
-      const done = q.progress.every((p) => p.have >= p.need);
-      const info = el('div');
-      info.innerHTML = `<b>${esc(q.name)}</b> <span class="muted">Lv.${q.minLevel ?? 1}+</span>
-        <div class="muted">${esc(q.desc)}</div>
-        <div class="muted">${q.progress.map((p) => `${p.have}/${p.need}`).join(' · ')}
-        · รางวัล: ${fmt(q.rewards.aurum ?? 0)} AU, EXP ${fmt(q.rewards.exp)}
-        ${q.repeatable ? `· <b>${q.repeatable === 'daily' ? 'ทำได้ทุกวัน' : 'ทุกสัปดาห์'}</b>` : ''}
-        ${q.zone ? `· ${esc(ZONE_NAMES[q.zone] ?? q.zone)}` : ''}</div>`;
-      const btns = el('div', 'opts');
-      if (!q.state || q.state.done) {
-        const b = el('button', 'btn primary', 'รับภารกิจ');
-        b.addEventListener('click', () => this.game.net.send({ t: 'quest', cmd: 'accept', id: q.id }));
-        btns.append(b);
-      } else {
-        const b = el('button', 'btn' + (done ? ' primary' : ''), done ? 'ส่งภารกิจ' : 'กำลังทำ');
-        b.disabled = !done;
-        b.addEventListener('click', () => this.game.net.send({ t: 'quest', cmd: 'complete', id: q.id }));
-        btns.append(b);
-        // walk me there (or to the giver, once it is finished)
-        const navving = this.game.nav?.questId === q.id;
-        const go = el('button', 'btn' + (navving ? ' primary' : ''), navving ? '■ หยุดเดิน' : '🧭 ไปเลย');
-        go.addEventListener('click', () => {
-          this.game.startQuestNav({ ...q, done });
-          this.close('quests');
-        });
-        btns.append(go);
-      }
-      row.append(info, btns);
-      wrap.append(row);
+    const tracked = new Map((this.trackedQuests ?? []).map((q) => [q.id, q]));
+    const all = (quests ?? []).map((q) => {
+      const active = q.state && !q.state.done;
+      const done = active && q.progress.every((p) => p.have >= p.need);
+      return { ...q, kind: questKind(q), active, done: done || !!tracked.get(q.id)?.done };
+    });
+    const tab = this.questTab ?? 'all';
+    const wrap = el('div', 'qlog');
+
+    const tabs = el('div', 'qlog-tabs');
+    for (const [key, label] of [['all', 'ทั้งหมด'], ['main', 'หลัก'], ['sub', 'รอง'], ['daily', 'รายวัน'], ['event', 'กิจกรรม']]) {
+      const n = key === 'all' ? all.length : all.filter((q) => q.kind === key).length;
+      const b = el('button', 'qlog-tab' + (tab === key ? ' on' : ''), `${label} <span class="num">${n}</span>`);
+      b.addEventListener('click', () => { this.questTab = key; this.openQuests(this.lastQuests); });
+      tabs.append(b);
     }
+    wrap.append(tabs);
+
+    const body = el('div', 'qlog-body');
+    const list = el('div', 'qlog-list');
+    // work in hand first, finished work at the very top
+    const shown = all.filter((q) => tab === 'all' || q.kind === tab)
+      .sort((a, b) => (b.done - a.done) || (b.active - a.active) || ((a.minLevel ?? 1) - (b.minLevel ?? 1)));
+    if (!shown.length) list.append(el('div', 'muted', 'ยังไม่มีภารกิจในหมวดนี้'));
+    const sel = shown.find((q) => q.id === this.questSel) ?? shown[0];
+    for (const q of shown) {
+      const row = el('div', 'qlog-row' + (q === sel ? ' sel' : ''));
+      const ico = el('img', 'qlog-ico');
+      ico.src = `${UI_BASE}/qk_${q.kind}.webp`;
+      ico.alt = '';
+      const text = el('div', 'qlog-text');
+      text.append(el('div', 'qlog-name q-' + q.kind, `[${KIND_TH[q.kind]}] ${esc(q.name)}`));
+      text.append(el('div', 'muted', `Lv. ${q.minLevel ?? 1} · ${q.active
+        ? q.progress.map((p) => `${fmt(Math.min(p.have, p.need))}/${fmt(p.need)}`).join(' · ') : 'ยังไม่รับ'}`));
+      const state = el('img', 'qlog-state');
+      state.src = `${UI_BASE}/mark_${q.done ? 'ready' : q.active ? 'progress' : q.kind}.webp`;
+      state.alt = q.done ? 'พร้อมส่ง' : q.active ? 'กำลังทำ' : 'ใหม่';
+      row.append(ico, text, state);
+      row.addEventListener('click', () => { this.questSel = q.id; this.openQuests(this.lastQuests); });
+      list.append(row);
+    }
+    body.append(list);
+    if (sel) body.append(this.questDetail(sel));
+    wrap.append(body);
     return this.panel('quests', 'ภารกิจ', wrap);
+  }
+
+  questDetail(q) {
+    const card = el('div', 'qlog-detail');
+    card.append(el('div', 'qd-title', `[${KIND_TH[q.kind]}] ${esc(q.name)}`));
+    const meta = [`Lv. ${q.minLevel ?? 1}+`, q.zone ? ZONE_NAMES[q.zone] ?? q.zone : '',
+      q.repeatable ? (q.repeatable === 'daily' ? 'ทำได้ทุกวัน' : 'ทำได้ทุกสัปดาห์') : ''].filter(Boolean).join(' · ');
+    card.append(el('div', 'qd-meta', esc(meta)));
+    card.append(el('p', 'qd-desc', esc(q.desc)));
+
+    card.append(el('div', 'qd-head', 'เป้าหมาย'));
+    q.objectives.forEach((o, i) => {
+      const pr = q.progress[i] ?? { have: 0, need: o.count };
+      const ok = q.active && pr.have >= pr.need;
+      const what = o.type === 'kill' ? `ล่า ${MONSTERS[o.mob]?.nameTh ?? MONSTERS[o.mob]?.name ?? o.mob}`
+        : o.type === 'collect' ? `เก็บ ${ITEMS[o.item]?.nameTh ?? o.item}`
+        : o.type === 'level' ? 'ไปให้ถึงเลเวล' : o.type === 'jobLevel' ? 'ไปให้ถึง Job Level'
+        : o.type === 'refine' ? 'ตีบวกอุปกรณ์ถึง +' : o.type;
+      const line = el('div', 'qd-obj' + (ok ? ' ok' : ''));
+      line.textContent = `${ok ? '✔' : '◆'} ${what} (${fmt(q.active ? Math.min(pr.have, pr.need) : 0)}/${fmt(pr.need)})`;
+      card.append(line);
+    });
+
+    card.append(el('div', 'qd-head', 'รางวัล'));
+    const rewards = el('div', 'qd-rewards');
+    const tile = (pic, label, node = null) => {
+      const t = el('div', 'qd-tile');
+      if (pic) { const i = el('img'); i.src = `${UI_BASE}/${pic}.webp`; i.alt = ''; t.append(i); }
+      if (node) t.append(node);
+      t.append(el('span', 'num', label));
+      rewards.append(t);
+    };
+    const r = q.rewards ?? {};
+    if (r.exp) tile('rw_exp', fmt(r.exp));
+    if (r.jobExp) tile('rw_book', `Job ${fmt(r.jobExp)}`);
+    if (r.aurum) tile('rw_coin', fmt(r.aurum));
+    if (r.skillPoints) tile('rw_crest', `+${r.skillPoints} สกิล`);
+    for (const it of r.items ?? []) {
+      const s = el('div', 'slot rarity-' + (ITEMS[it.id]?.rarity ?? 'common'));
+      s.append(itemIcon(it.id, { size: 28 }));
+      s.title = ITEMS[it.id]?.nameTh ?? it.id;
+      tile(null, `x${fmt(it.qty ?? 1)}`, s);
+    }
+    if (r.unlock) tile('rw_gift', 'ปลดล็อก');
+    card.append(rewards);
+
+    const acts = el('div', 'qd-actions');
+    const btn = (cls, label, fn) => {
+      const b = el('button', `btn qbtn2 ${cls}`, label);
+      b.setAttribute('aria-label', label);
+      b.addEventListener('click', fn);
+      acts.append(b);
+    };
+    if (!q.active) {
+      btn('qb-accept primary', 'รับเควส', () => this.game.net.send({ t: 'quest', cmd: 'accept', id: q.id }));
+    } else if (q.done) {
+      btn('qb-turnin primary', 'ส่งมอบ', () => this.game.net.send({ t: 'quest', cmd: 'complete', id: q.id }));
+      btn('qb-navigate', 'นำทาง', () => { this.game.startQuestNav({ ...q, done: true }); this.close('quests'); });
+    } else if (this.game.nav?.questId === q.id) {
+      btn('qb-stop danger', 'ยกเลิก', () => { this.game.startQuestNav(q); this.openQuests(this.lastQuests); });
+    } else {
+      btn('qb-navigate', 'นำทาง', () => { this.game.startQuestNav({ ...q, done: false }); this.close('quests'); });
+    }
+    card.append(acts);
+    return card;
   }
 
   /* ---------------- party ---------------- */
@@ -1111,19 +1192,58 @@ export class UI {
 
   /* ---------------- NPC ---------------- */
   openDialog(d) {
-    const wrap = el('div');
-    wrap.append(el('p', '', esc(d.greet)));
-    const opts = el('div', 'opts');
+    const wrap = el('div', 'dlg');
+    const top = el('div', 'dlg-top');
+    const face = NPC_FACES[d.npcId] ?? NPC_FACES[d.role];
+    if (face) {
+      const img = el('img', 'dlg-face');
+      img.src = `${UI_BASE}/${face}.webp`;
+      img.alt = d.name;
+      top.append(img);
+    }
+    const box = el('div', 'dlg-box');
+    box.append(el('div', 'dlg-name', esc(d.name)), el('div', 'dlg-text', esc(d.greet)));
+    top.append(box);
+    wrap.append(top);
+
+    const choices = el('div', 'dlg-choices');
+    const choice = (label, fn, mark = null) => {
+      const b = el('button', 'dlg-choice');
+      b.append(el('span', '', esc(label)));
+      if (mark) {
+        const m = el('img', 'dlg-mark');
+        m.src = `${UI_BASE}/mark_${mark}.webp`;
+        m.alt = '';
+        b.append(m);
+      }
+      b.addEventListener('click', fn);
+      choices.append(b);
+    };
+    // what this person has for you comes first: work to hand in, then new work
+    const theirs = (q) => (GIVER_ROLE[q.giver] ?? q.giver) === d.role;
+    for (const q of (this.trackedQuests ?? []).filter((q) => q.done && theirs(q))) {
+      choice(`ส่งภารกิจ: ${q.name}`, () => {
+        this.close('dialog');
+        this.game.net.send({ t: 'quest', cmd: 'complete', id: q.id });
+      }, 'ready');
+    }
+    for (const q of (this.lastQuests ?? []).filter((q) => (!q.state || q.state.done) && theirs(q)).slice(0, 3)) {
+      choice(`ภารกิจใหม่: ${q.name}`, () => {
+        this.close('dialog');
+        this.questSel = q.id;
+        this.open('quests');
+      }, questKind(q));
+    }
     for (const o of d.options ?? []) {
-      const b = el('button', 'btn primary', o.label);
-      b.addEventListener('click', () => {
+      choice(o.label, () => {
         this.close('dialog');
         if (o.action === 'jobChange') return this.openJobChange();
+        if (o.action === 'quests') this.wantQuests = true;   // the answer opens the log
         this.game.net.send({ t: 'npcAction', action: o.action, shop: o.shop });
       });
-      opts.append(b);
     }
-    wrap.append(opts);
+    choice('ไว้ก่อน ขอตัวก่อน', () => this.close('dialog'));
+    wrap.append(choices);
     return this.panel('dialog', d.name, wrap);
   }
 
@@ -2371,6 +2491,21 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** A quest's giver, as the role that NPC stands in the world with. */
+export const GIVER_ROLE = { board: 'quests', trainer: 'trainer', smith: 'smith', healer: 'healer',
+  vendor: 'shop', banker: 'storage', broker: 'market', oracle: 'gacha' };
+/** Main (the path the trainer sets), daily, event (weekly) or side. */
+export const questKind = (q) => (q.giver === 'trainer' ? 'main'
+  : q.repeatable === 'daily' ? 'daily' : q.repeatable ? 'event' : 'sub');
+const KIND_TH = { main: 'หลัก', sub: 'รอง', daily: 'รายวัน', event: 'กิจกรรม' };
+/** Faces for the dialogue window: by the NPC's own id first, then by role. */
+const NPC_FACES = {
+  healer: 'npc_face_priest', trainer: 'npc_face_elder', quests: 'npc_face_girl', board: 'npc_face_girl',
+  smith: 'shopkeeper_smith', vendor: 'shopkeeper_general', shop: 'shopkeeper_general',
+  apothecary: 'shopkeeper_maid', storage: 'npc_face_merchant', market: 'npc_face_tinker',
+  warp: 'npc_face_mage', gacha: 'shopkeeper_mystic', oracle: 'shopkeeper_mystic',
+};
+
 /** Who stands behind each counter, from the shop sheet's portraits. */
 const SHOPKEEPERS = {
   general: { face: 'general', sign: 'shop', name: 'พ่อค้า',

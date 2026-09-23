@@ -58,6 +58,11 @@ function drawBooth(ctx, e, art, part) {
   ctx.drawImage(img, 0, sy, img.naturalWidth, img.naturalHeight - sy, x, bottom - h * (1 - BOOTH_COUNTER), w, h * (1 - BOOTH_COUNTER));
 }
 
+// quest-giver marks and the plate NPC names sit on, from the quest sheet
+const MARKS = typeof Image !== 'undefined'
+  ? Object.fromEntries(['main', 'sub', 'daily', 'event', 'ready'].map((k) => [k, uiImage('mark_' + k)])) : {};
+const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
+
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
   for (const name of ['miss', 'critical', 'levelup']) uiImage(name);
@@ -972,9 +977,22 @@ export class Renderer {
     ctx.textAlign = 'center';
     ctx.lineWidth = 2;
     ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-    const label = e.k === 'm' ? `${hunts ? '\u203c ' : ''}${e.n} Lv${e.lv}` : e.k === 'n' ? `[${e.n}]` : `${e.n}`;
+    const plated = e.k === 'n' && NPC_PLATE?.naturalWidth;
+    const label = e.k === 'm' ? `${hunts ? '\u203c ' : ''}${e.n} Lv${e.lv}` : e.k === 'n' && !plated ? `[${e.n}]` : `${e.n}`;
+    if (plated) {
+      // townsfolk and shopkeepers wear the sheet's name plate
+      const w = ctx.measureText(label).width + 12;
+      ctx.drawImage(NPC_PLATE, e.x - w / 2, top - 12, w, 11);
+      // and whoever has work for you says so over their head
+      const mark = MARKS[state.questMarks?.[e.role]];
+      if (mark?.naturalWidth) {
+        const h = 22, mw = h * (mark.naturalWidth / mark.naturalHeight);
+        const bob = Math.sin(now / 260 + e.x * 0.01) * 2;
+        ctx.drawImage(mark, e.x - mw / 2, top - 37 + bob, mw, h);
+      }
+    }
     ctx.strokeText(label, e.x, top - 4);
-    ctx.fillStyle = e.k === 'n' ? '#9fe0b0'
+    ctx.fillStyle = plated ? '#f6ecd6' : e.k === 'n' ? '#9fe0b0'
       : e.k === 'm' ? (hunts ? '#ff8a8a' : e.boss ? '#ffb45e' : '#ffd9d9')
         : (isMe ? '#b9f6c7' : '#cfe4ff');
     ctx.fillText(label, e.x, top - 4);

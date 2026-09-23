@@ -3,7 +3,7 @@ import { Net } from './net.js';
 import { vecOf } from '../../shared/facing.js';
 import { Input, bindTouchControls } from './input.js';
 import { Renderer, ZOOM_STEPS } from './renderer.js';
-import { UI, loadTheme } from './ui.js';
+import { UI, loadTheme, GIVER_ROLE, questKind } from './ui.js';
 import { Audio } from './audio.js';
 import { findPath, zoneRoute, warpTo, sourceOf, huntingGround, homeOf } from './autowalk.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
@@ -247,13 +247,14 @@ class Game {
       }
       // the job window shows trial progress, so it wants the fresh log too
       if (this.ui.openPanels.has('jobchange')) this.ui.openJobChange();
+      this.updateQuestMarks();
     });
     n.on('tradeState', (m) => {
       if (m.invite) this.audio.play('warn');
       this.ui.tradeState(m);
     });
-    n.on('questTrack', (m) => this.ui.renderQuestTrack(m.quests));
-    n.on('questClear', () => this.ui.stamp('questclear'));
+    n.on('questTrack', (m) => { this.ui.renderQuestTrack(m.quests); this.updateQuestMarks(); });
+    n.on('questClear', () => this.ui.stamp('quest_complete'));
     n.on('buyback', (m) => this.ui.setBuyback(m.items));
     n.on('died', (m) => this.onDied(m));
   }
@@ -344,6 +345,7 @@ class Game {
         if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 44, { vx: 0, img: 'levelup' });
         if (ev.id === this.state.myId) {
           this.ui.toast(`เลเวลอัพ! Lv.${ev.level} / Job ${ev.jobLevel}`, 'good');
+          this.net.send({ t: 'quest', cmd: 'list' });   // new work may have opened up
           this.audio.play('levelup');
         }
         break;
@@ -394,7 +396,24 @@ class Game {
   }
 
   /* ---------------- world loop ---------------- */
+  /**
+   * Who has something for you: a gold "?" over anyone waiting on a finished
+   * quest, otherwise a "!" coloured by the best new quest they offer.
+   */
+  updateQuestMarks() {
+    const marks = {};
+    const rank = { ready: 5, main: 4, daily: 3, event: 2, sub: 1 };
+    const put = (giver, kind) => {
+      const role = GIVER_ROLE[giver] ?? giver;
+      if (rank[kind] > (rank[marks[role]] ?? 0)) marks[role] = kind;
+    };
+    for (const q of this.ui.trackedQuests ?? []) if (q.done) put(q.giver, 'ready');
+    for (const q of this.ui.lastQuests ?? []) if (!q.state || q.state.done) put(q.giver, questKind(q));
+    this.state.questMarks = marks;
+  }
+
   enterWorld() {
+    if (!this.inWorld) this.net.send({ t: 'quest', cmd: 'list' });   // for the marks over givers' heads
     this.inWorld = true;
     this.predicted = { x: this.self.x, y: this.self.y };
     $('#screen').classList.add('hidden');
@@ -482,8 +501,7 @@ class Game {
 
     // finished: go and hand it in
     if (done || nav.phase === 'return') {
-      const giverRole = { board: 'quests', trainer: 'trainer', smith: 'smith', healer: 'healer',
-        vendor: 'shop', banker: 'storage', broker: 'market', oracle: 'gacha' }[q.giver] ?? 'quests';
+      const giverRole = GIVER_ROLE[q.giver] ?? 'quests';
       return { map: q.giverMap ?? 'emberhold', role: giverRole, kind: 'turnin' };
     }
 

@@ -330,11 +330,11 @@ body[data-ui="ember"] .doll-slot.empty { opacity: 1; }
 body[data-ui="ember"] .doll-slot .ghost { width: 64%; height: 64%; object-fit: contain; opacity: .9; filter: brightness(1.35); }
 
 /* plain buttons wear the sheet's bevelled faces */
-body[data-ui="ember"] .btn:not(.primary):not(.act):not(.sbtn):not(.qbtn) {
+body[data-ui="ember"] .btn:not(.primary):not(.act):not(.sbtn):not(.qbtn):not(.qbtn2) {
   border: 6px solid transparent; border-image: url(../../assets/ui/btn_dark.webp) 9 fill / 6px stretch;
   background: none; box-shadow: none; padding: 2px 8px;
 }
-body[data-ui="ember"] .btn.danger:not(.act):not(.sbtn) { border-image-source: url(../../assets/ui/btn_red.webp); color: #fff; }
+body[data-ui="ember"] .btn.danger:not(.act):not(.sbtn):not(.qbtn2) { border-image-source: url(../../assets/ui/btn_red.webp); color: #fff; }
 body[data-ui="ember"] .btn.ghost { border-image: none; border: none; }
 /* use / wear / take off / drop: the painted square buttons */
 body[data-ui="ember"] .btn.act {
@@ -749,6 +749,121 @@ body[data-ui="ember"] .toast.good::before { background-image: url(../../assets/u
 body[data-ui="ember"] .toast.bad::before, body[data-ui="ember"] #flash::before { background-image: url(../../assets/ui/n_err.webp); }
 body[data-ui="ember"] .toast.warn::before { background-image: url(../../assets/ui/n_warn.webp); }
 body[data-ui="ember"] #flash { display: flex; align-items: center; gap: 7px; }
+
+/* ============================ NPC dialogue ============================ */
+.dlg { display: grid; gap: 10px; }
+.dlg-top { display: flex; gap: 12px; align-items: stretch; }
+.dlg-face {
+  width: 92px; height: 132px; object-fit: cover; flex: none; border-radius: 8px;
+  border: 2px solid var(--edge); box-shadow: 0 3px 8px rgba(0, 0, 0, .5);
+}
+.dlg-box {
+  position: relative; flex: 1; min-width: 0; min-height: 96px; padding: 30px 16px 14px;
+  background: #f3e6c8; color: #3b2a18; border-radius: 10px; border: 2px solid #9c7438;
+}
+.dlg-name {
+  position: absolute; left: 14px; top: 3px; min-width: 70px; max-width: 70%; padding: 1px 10px; text-align: center;
+  color: #fbe7b6; font-weight: 700; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dlg-text { font-size: 14px; line-height: 1.6; }
+.dlg-choices { display: grid; gap: 6px; }
+.dlg-choice {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 14px 9px 50px; text-align: left; font-size: 13px; color: var(--text);
+  background: #1d2026; border: 1px solid var(--edge); border-radius: 8px;
+}
+.dlg-choice::before {
+  content: ""; position: absolute; left: 12px; top: 50%; width: 24px; height: 22px; transform: translateY(-50%);
+  background: url(../../assets/ui/act_talk.webp) center / contain no-repeat;
+}
+.dlg-choice:hover { filter: brightness(1.2); }
+.dlg-mark { height: 20px; width: auto; flex: none; }
+body[data-ui="ember"] .dlg-box {
+  border: solid transparent; border-width: 30px 16px 16px 96px; border-radius: 0; background: none;
+  border-image: url(../../assets/ui/dlg_box.webp) 36 22 22 120 fill / 30px 16px 16px 96px stretch;
+  padding: 2px 4px 2px 0; margin-left: 0;
+}
+body[data-ui="ember"] .dlg-name { left: -78px; top: -27px; width: 78px; min-width: 0; padding: 0; }
+body[data-ui="ember"] .dlg-text { margin-left: -78px; }
+body[data-ui="ember"] .dlg-choice {
+  border: solid transparent; border-width: 0 12px 0 44px; border-radius: 0; background: none; padding: 10px 6px;
+  border-image: url(../../assets/ui/dlg_choice.webp) 0 24 0 54 fill / 0 12px 0 44px stretch;
+}
+body[data-ui="ember"] .dlg-choice::before { display: none; }
+
+/* ============================ quest log ============================ */
+.qlog { display: grid; gap: 8px; }
+.qlog-tabs { display: flex; gap: 3px; overflow-x: auto; scrollbar-width: none; }
+.qlog-tab {
+  flex: none; padding: 5px 14px; font-size: 12px; color: #d9cbb0; border-radius: 7px 7px 0 0;
+  background: linear-gradient(180deg, #33302c, #211e1b); border: 1px solid #5e4726; border-bottom: none;
+}
+.qlog-tab span { opacity: .7; font-size: 11px; }
+.qlog-tab.on { background: linear-gradient(180deg, #e8b872, #b8742e); color: #fff; border-color: #f2c35b; text-shadow: 0 1px 1px rgba(0, 0, 0, .5); }
+.qlog-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 10px; align-items: start; }
+.qlog-list { display: grid; gap: 5px; max-height: 58vh; overflow: auto; padding-right: 2px; }
+.qlog-row {
+  display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; cursor: pointer;
+  background: rgba(20, 22, 27, .85); border: 1px solid #3d3322; border-radius: 7px;
+}
+.qlog-row:hover { border-color: #a47c38; }
+.qlog-row.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.qlog-ico { width: 34px; height: 34px; object-fit: contain; }
+.qlog-state { height: 20px; width: auto; }
+.qlog-text { min-width: 0; }
+.qlog-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-main { color: #f5b942; } .q-sub { color: #5ec2ff; } .q-daily { color: #7ddc5c; } .q-event { color: #d57cff; }
+.qlog-detail {
+  display: grid; gap: 6px; padding: 14px 16px; color: #3b2a18;
+  background: linear-gradient(180deg, #f5e9cd, #ead7ad); border: 2px solid #9c7438; border-radius: 10px;
+  box-shadow: inset 0 0 0 2px rgba(255, 245, 220, .5), 0 3px 10px rgba(0, 0, 0, .45);
+}
+.qd-title { font-size: 15px; font-weight: 800; color: #5a3410; }
+.qd-meta { font-size: 11px; color: #7a5a30; }
+.qd-desc { margin: 2px 0 4px; font-size: 13px; line-height: 1.55; }
+.qd-head { font-weight: 800; font-size: 13px; color: #5a3410; border-top: 1px solid rgba(120, 80, 30, .3); padding-top: 6px; }
+.qd-obj { font-size: 12px; } .qd-obj.ok { color: #2f7a24; font-weight: 700; }
+.qd-rewards { display: flex; flex-wrap: wrap; gap: 6px; }
+.qd-tile {
+  display: grid; justify-items: center; gap: 2px; width: 58px; padding: 3px 2px 2px; font-size: 10px; font-weight: 700;
+  color: #fbe7b6; background: #2a2622; border: 1px solid #8a6a32; border-radius: 6px; text-align: center;
+}
+.qd-tile img { width: 40px; height: 38px; object-fit: contain; border-radius: 4px; }
+.qd-tile .slot { width: 40px; height: 40px; }
+.qd-actions { display: flex; justify-content: center; gap: 8px; margin-top: 4px; }
+.qd-actions .btn { min-width: 110px; }
+body[data-ui="ember"] .btn.qbtn2 {
+  height: 42px; width: 118px; padding: 0; border: none; border-image: none; box-shadow: none;
+  background: center / 100% 100% no-repeat; font-size: 0; color: transparent; text-shadow: none;
+}
+body[data-ui="ember"] .btn.qbtn2:hover { filter: brightness(1.15); }
+body[data-ui="ember"] .btn.qb-accept { background-image: url(../../assets/ui/qb_accept.webp); }
+body[data-ui="ember"] .btn.qb-turnin { background-image: url(../../assets/ui/qb_turnin.webp); }
+body[data-ui="ember"] .btn.qb-navigate { background-image: url(../../assets/ui/qb_navigate.webp); }
+body[data-ui="ember"] .btn.qb-stop { background-image: url(../../assets/ui/qb_stop.webp); }
+@media (max-width: 680px) {
+  .qlog-body { grid-template-columns: 1fr; }
+  .qlog-list { max-height: 30vh; }
+  .dlg-face { width: 66px; height: 94px; }
+}
+body.landscape-ui .qlog-list { max-height: 44vh; }
+body.landscape-ui .dlg-face { width: 64px; height: 92px; }
+body.landscape-ui .dlg-text { font-size: 12px; }
+body.landscape-ui .dlg-choice { padding-top: 6px; padding-bottom: 6px; font-size: 12px; }
+
+/* the red close button, and the hand on the touch "interact" button */
+body[data-ui="ember"] .win.window .close {
+  width: 28px; height: 28px; padding: 0; font-size: 0; color: transparent;
+  background: url(../../assets/ui/close_x.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] .win.window .close:hover { filter: brightness(1.15); }
+body[data-ui="ember"] .tbtn[data-action="interact"] {
+  font-size: 0; background: radial-gradient(circle at 50% 35%, rgba(58, 52, 46, .92), rgba(23, 20, 18, .92) 70%);
+}
+body[data-ui="ember"] .tbtn[data-action="interact"]::before {
+  content: ""; display: block; width: 62%; height: 62%; margin: auto;
+  background: url(../../assets/ui/act_hand.webp) center / contain no-repeat;
+}
 
 /* ============================ windows ============================ */
 #panels { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
