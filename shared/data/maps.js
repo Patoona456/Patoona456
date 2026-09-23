@@ -48,7 +48,7 @@ export const MAPS = {
     // The ground is one painting (1536x1024) of the walled square with empty
     // lots, stretched 1.25x; the buildings are separate pictures standing on
     // those lots, so people walk behind them. A tile is 25.6px of the painting.
-    backdrop: 'assets/maps/emberhold.jpg',
+    backdrop: 'assets/maps/emberhold.png',
     walk: [
       [4, 5, 52, 27],                                         // inside the walls
       [28, 0, 4, 5], [28, 32, 4, 8],                          // north gate road, south stairs

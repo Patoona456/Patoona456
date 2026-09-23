@@ -81,7 +81,7 @@ export async function startBrowser(pw) {
  * the errors it has collected, which every test asserts on.
  */
 export async function join(browser, { viewport = { width: 1280, height: 800 }, touch = false } = {}) {
-  const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch });
+  const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: Number(process.env.EMBERFALL_DPR ?? 1) });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));

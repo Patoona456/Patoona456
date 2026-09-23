@@ -295,8 +295,9 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
 
   ctx.save();
   if (alpha < 1) ctx.globalAlpha = alpha;
-  // art drawn big and shrunk to fit turns to jagged noise without smoothing
-  if (layout.drawScale) ctx.imageSmoothingEnabled = true;
+  // art drawn big and shrunk to fit turns to jagged noise without smoothing,
+  // but smoothing art that ends up enlarged only blurs it
+  if (layout.drawScale) ctx.imageSmoothingEnabled = scale * ctx.getTransform().a < 1;
   for (const layer of orderFor(layout)) {
     const entry = layers[layer];
     if (!entry) continue;
