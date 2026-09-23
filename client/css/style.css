@@ -1023,6 +1023,17 @@ body.landscape-ui .g-emblem { width: 20px; }
 /* ============================ forge ============================ */
 .forge { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; align-items: start; }
 .forge-pick { display: grid; gap: 8px; }
+.forge-modes { display: flex; gap: 6px; }
+.forge-grid.short { max-height: 24vh; }
+.forge-grid > .muted { grid-column: 1 / -1; }
+.forge-frame.small { width: 84px; height: 76px; }
+.forge-frame.small .icon { width: 42px !important; height: 42px !important; }
+.xfer-pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; width: 100%; }
+.xfer-side { display: grid; justify-items: center; gap: 2px; text-align: center; }
+.xfer-side .forge-step { font-size: 18px; }
+.xfer-side.to .forge-step { color: #7dffa0; }
+.xfer-arrow { font-size: 28px; color: #f2b43c; }
+.xfer-go { width: 100%; max-width: 240px; padding: 10px; font-size: 15px; }
 .forge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; max-height: 56vh; overflow: auto; padding: 4px 2px; }
 .forge-bench {
   display: grid; gap: 8px; justify-items: center; padding: 12px;

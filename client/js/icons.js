@@ -25,9 +25,6 @@ const ART = {
   summon: 'skill_summon', shout: 'skill_summon',
   potion: 'item_potion', mana: 'item_mana', antidote: 'item_antidote', food: 'item_food',
   scroll: 'item_scroll', herb: 'item_herb', tear: 'item_crystal',
-  // weapon classes, painted (the forge sheet)
-  sword: 'wpn_sword', greatsword: 'wpn_greatsword', dagger: 'wpn_dagger', axe: 'wpn_axe',
-  spear: 'wpn_spear', bow: 'wpn_bow', staff: 'wpn_staff', wand: 'wpn_wand', special: 'wpn_special',
 };
 // A few items get art of their own rather than their kind's.
 const ITEM_ART = {
@@ -497,9 +494,10 @@ export function itemIconKind(id) {
   if (!it) return 'crate';
   if (ITEM_OVERRIDE[id]) return ITEM_OVERRIDE[id];
   if (it.type === 'weapon') {
-    // classes with no art of their own borrow the nearest drawn shape
+    // every class draws as the nearest of the four weapon shapes
     const w = it.wclass ?? 'sword';
-    return { knuckle: 'gloves', throwing: 'blade' }[w] ?? w;
+    return { sword: 'blade', greatsword: 'blade', dagger: 'blade', axe: 'blade', special: 'blade',
+      throwing: 'blade', staff: 'rod', wand: 'rod', knuckle: 'gloves' }[w] ?? w;
   }
   if (it.type === 'ammo') return 'arrow';
   if (it.type === 'consumable') return 'potion';

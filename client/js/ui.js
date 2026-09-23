@@ -8,7 +8,7 @@ import { GUILD_SKILLS } from '../../shared/data/guild.js';
 import { WARP_ROUTES } from '../../shared/data/npcs.js';
 import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
-import { refineChance, refineCost, npcSellPrice, refineRisk, refineStones, refineBonus } from '../../shared/formulas.js';
+import { refineChance, refineCost, npcSellPrice, refineRisk, refineStones, refineBonus, transferFee, transferResult, transferCompatible } from '../../shared/formulas.js';
 import { itemIcon, skillIcon, icon, UI_BASE } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
 import { drawWings } from './wings.js';
@@ -2183,6 +2183,7 @@ export class UI {
    * failure would cost at this level, and what they have left to pay with.
    */
   openRefine() {
+    if (this.forgeMode === 'transfer') return this.openTransfer();
     const inv = this.game.inventory?.items ?? [];
     const gear = inv.filter((it) => ITEMS[it.id]?.refinable);
     const cat = (it) => it.type === 'weapon' ? 'weapon' : it.slot === 'accessory' ? 'acc'
@@ -2195,6 +2196,7 @@ export class UI {
     const wrap = el('div', 'forge');
     // left: what to work on
     const pick = el('div', 'forge-pick');
+    pick.append(this.forgeModes());
     const tabs = el('div', 'qlog-tabs');
     for (const [key, label] of [['weapon', 'อาวุธ'], ['armor', 'ชุดเกราะ'], ['acc', 'เครื่องประดับ'], ['other', 'อื่นๆ']]) {
       const n = gear.filter((it) => cat(it) === key).length;
@@ -2339,6 +2341,102 @@ export class UI {
     return bench;
   }
 
+  /** Enhance / transfer, the two things the smith's bench does. */
+  forgeModes() {
+    const row = el('div', 'forge-modes');
+    for (const [key, label] of [['enhance', '⚒ เสริมพลัง'], ['transfer', '⇄ ถ่ายโอน']]) {
+      const b = el('button', 'btn' + ((this.forgeMode ?? 'enhance') === key ? ' primary' : ''), label);
+      b.addEventListener('click', () => { this.forgeMode = key; this.openRefine(); });
+      row.append(b);
+    }
+    return row;
+  }
+
+  /**
+   * Moving a refine onto new gear, so levelling past an item does not mean
+   * throwing away what was spent on it. Pick the refined source on the left,
+   * a +0 item of the same kind on the right.
+   */
+  openTransfer() {
+    const inv = this.game.inventory?.items ?? [];
+    const gear = inv.filter((it) => ITEMS[it.id]?.refinable);
+    const sources = gear.filter((it) => (it.refine ?? 0) > 0).sort((a, b) => b.refine - a.refine);
+    let src = sources.find((it) => it.i === this.xferFrom) ?? sources[0];
+    this.xferFrom = src?.i;
+    const targets = src ? gear.filter((it) => it.i !== src.i && !(it.refine ?? 0) && transferCompatible(ITEMS[src.id], ITEMS[it.id])) : [];
+    let dst = targets.find((it) => it.i === this.xferTo) ?? null;
+    this.xferTo = dst?.i;
+
+    const wrap = el('div', 'forge');
+    const pick = el('div', 'forge-pick');
+    pick.append(this.forgeModes());
+    const list = (title, items, selected, onPick, empty) => {
+      pick.append(el('div', 'g-sub', title));
+      const grid = el('div', 'forge-grid short');
+      if (!items.length) grid.append(el('div', 'muted', empty));
+      for (const it of items) {
+        const node = el('button', `slot rarity-${it.rarity ?? 'common'}` + (it === selected ? ' sel' : ''));
+        node.append(itemIcon(it.id, { size: 30 }), el('span', 'plus', '+' + (it.refine ?? 0)));
+        if (it.refine) markRefine(node, it.refine);
+        if (it.equipped) node.append(el('span', 'worn'));
+        node.title = `${it.name} +${it.refine ?? 0}`;
+        node.addEventListener('click', () => onPick(it));
+        grid.append(node);
+      }
+      pick.append(grid);
+    };
+    list('1. ของต้นทาง (ที่ตีบวกแล้ว)', sources, src, (it) => { this.xferFrom = it.i; this.xferTo = null; this.openRefine(); }, 'ยังไม่มีของที่ตีบวกไว้');
+    if (src) list('2. ของปลายทาง (+0 ประเภทเดียวกัน)', targets, dst, (it) => { this.xferTo = it.i; this.openRefine(); }, 'ไม่มีของ +0 ประเภทเดียวกันในกระเป๋า');
+    wrap.append(pick);
+
+    const bench = el('div', 'forge-bench');
+    if (!src) {
+      bench.append(el('div', 'muted', 'ถ่ายโอนระดับตีบวกจากของเก่าไปของใหม่ประเภทเดียวกัน — ของเก่ากลับเป็น +0'));
+    } else {
+      const pair = el('div', 'xfer-pair');
+      const box = (it, lvl, cls) => {
+        const f = el('div', 'forge-frame small' + (lvl ? ' lit' : ''));
+        if (it) f.append(itemIcon(it.id, { size: 44 })); else f.append(el('span', 'muted', '?'));
+        if (lvl) f.style.setProperty('--glow', glowCss(lvl, 0.75));
+        const c = el('div', 'xfer-side ' + cls);
+        c.append(f, el('div', 'forge-name', esc(it?.name ?? 'เลือกของปลายทาง')), el('div', 'forge-step', it ? `+${lvl}` : ''));
+        return c;
+      };
+      const to = transferResult(src.refine);
+      pair.append(box(src, 0, 'from'), el('div', 'xfer-arrow', '⇄'), box(dst, dst ? to : 0, 'to'));
+      bench.append(pair);
+      bench.append(el('div', 'forge-step', `<b>+${src.refine}</b> <i>▶</i> <b class="up">+${to}</b>`));
+      bench.append(el('div', 'muted', src.refine > 7
+        ? 'ระดับเกิน +7 จะเสีย 1 ระดับระหว่างถ่ายโอน · ของต้นทางกลับเป็น +0'
+        : 'ระดับถ่ายโอนครบ · ของต้นทางกลับเป็น +0'));
+      if (dst) {
+        const fee = transferFee(ITEMS[dst.id]?.value ?? 0, src.refine);
+        const have = inv.filter((x) => x.id === 'runed_whetstone').reduce((a, x) => a + (x.qty ?? 1), 0);
+        const aurum = this.game.inventory?.aurum ?? 0;
+        const mats = el('div', 'forge-mats');
+        const mat = (pic, label, text, ok) => {
+          const m = el('div', 'forge-mat' + (ok ? '' : ' short'));
+          const i = el('img'); i.src = `${UI_BASE}/${pic}.webp`; i.alt = '';
+          m.append(i, el('span', 'num', text), el('small', 'muted', label));
+          mats.append(m);
+        };
+        if (fee.stones) mat('mat_enhance', 'หินลับรูน', `${fmt(have)}/${fee.stones}`, have >= fee.stones);
+        mat('rw_coin', 'ออรัม', fmt(fee.aurum), aurum >= fee.aurum);
+        bench.append(mats);
+        const short = aurum < fee.aurum ? 'ออรัมไม่พอ' : have < fee.stones ? `หินลับรูนไม่พอ (ต้องใช้ ${fee.stones})` : null;
+        const go = el('button', 'btn primary xfer-go', 'ถ่ายโอน');
+        go.disabled = !!short;
+        go.addEventListener('click', () => this.forgeConfirm(
+          `ย้าย +${src.refine} จาก <b>${esc(src.name)}</b> ไปที่ <b>${esc(dst.name)}</b> เป็น <b>+${to}</b><br>ของต้นทางจะกลับเป็น +0 · ค่าธรรมเนียม ${fmt(fee.aurum)} ออรัม${fee.stones ? ` + หินลับรูน ${fee.stones}` : ''}`,
+          () => this.game.net.send({ t: 'refineTransfer', from: src.i, to: dst.i })));
+        bench.append(go);
+        if (short) bench.append(el('div', 'forge-short', `⚠ ${short}`));
+      } else bench.append(el('div', 'muted', 'เลือกของปลายทางทางซ้ายเพื่อดูค่าธรรมเนียม'));
+    }
+    wrap.append(bench);
+    return this.panel('shop', 'ถ่ายโอนระดับตีบวก', wrap);
+  }
+
   /** One attempt of the current run. The result comes back as refineResult. */
   forgeAttempt() {
     const run = this.forgeRun;
@@ -2354,6 +2452,7 @@ export class UI {
     const run = this.forgeRun;
     this.forgeResult(m);
     if (m.result === 'destroyed') this.forgeSel = null;
+    if (m.result === 'transfer') { this.xferFrom = null; this.xferTo = null; }
     const again = run && m.result === 'success' && m.to < run.goal;
     this.forgeRun = again ? run : null;
     if (this.openPanels.has('shop') && document.querySelector('.forge')) this.openRefine();
@@ -2368,7 +2467,7 @@ export class UI {
   /** The result card, over everything, with the item in the frame's well. */
   forgeResult(m) {
     document.querySelector('.forge-result')?.remove();
-    const kind = { success: 'success', unchanged: 'fail', down: 'down', destroyed: 'fail' }[m.result] ?? 'fail';
+    const kind = { success: 'success', transfer: 'success', unchanged: 'fail', down: 'down', destroyed: 'fail' }[m.result] ?? 'fail';
     const box = el('div', `forge-result ${kind} r-${m.result}`);
     const art = el('img', 'fr-art'); art.src = `${UI_BASE}/forge_${kind}.webp`; art.alt = '';
     const well = el('div', 'fr-well');
@@ -2376,13 +2475,14 @@ export class UI {
     if (m.result === 'destroyed') well.append(el('span', 'fr-x', '✖'));
     box.append(art, well);
     const name = ITEMS[m.id]?.nameTh ?? m.id;
-    box.append(el('div', 'fr-line', m.result === 'success' ? `<b>+${m.from}</b> <i>▶</i> <b class="up">+${m.to}</b>`
+    box.append(el('div', 'fr-line', m.result === 'transfer' ? `ถ่ายโอนสำเร็จ <b class="up">+${m.to}</b>`
+      : m.result === 'success' ? `<b>+${m.from}</b> <i>▶</i> <b class="up">+${m.to}</b>`
       : m.result === 'down' ? `<b>+${m.from}</b> <i>▶</i> <b class="down">+${m.to}</b>`
       : m.result === 'destroyed' ? `<b class="down">${esc(name)} แตกสลาย</b>`
       : m.protected ? 'น้ำมันศักดิ์สิทธิ์ปกป้องไว้ · อุปกรณ์ไม่เปลี่ยนแปลง' : 'อุปกรณ์ไม่เปลี่ยนแปลง'));
     box.addEventListener('click', () => box.remove());
     document.body.append(box);
-    this.game.audio?.play(m.result === 'success' ? 'levelup' : 'bad');
+    this.game.audio?.play(m.result === 'success' || m.result === 'transfer' ? 'levelup' : 'bad');
     if (m.result === 'success') {
       this.game.renderer?.spark?.(this.game.predicted?.x ?? 0, (this.game.predicted?.y ?? 0) - 20, { color: '255,210,120', n: 24, power: 2 });
     }

@@ -264,6 +264,12 @@ export class Conn {
           this.world.broadcastChat({ ch: 'system', text: `${p.name} ตีบวก ${ITEMS[r.id]?.nameTh ?? r.id} สำเร็จเป็น +${r.refine}!` });
         }
       });
+      case OP.REFINE_TRANSFER: return this.guardNpc(['smith'], () => {
+        const r = Econ.refineTransfer(this.world, p, m.from | 0, m.to | 0);
+        if (r.error) return this.error(r.error);
+        this.sendInventory();
+        this.send({ t: 'refineResult', result: 'transfer', id: r.toId, fromItem: r.fromId, from: r.from, to: r.to });
+      });
       case OP.REPAIR: return this.guardNpc(['smith'], () => {
         const r = Econ.repair(this.world, p, m.index | 0);
         if (r.error) return this.error(r.error);

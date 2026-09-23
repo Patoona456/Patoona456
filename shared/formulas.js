@@ -269,6 +269,27 @@ export function refineBonus(refine = 0) {
   const b = refine + Math.max(0, refine - 7) * 1.5;
   return { atk: b * 2, matk: b * 1.5, def: b, mdef: b * 0.5 };
 }
+/**
+ * Moving a refine from one item to another of the same kind. The new item
+ * keeps the level up to +7; past that one level is lost on the way, so a
+ * high refine still has to be earned and refined gear keeps its price.
+ * The fee is a quarter of what refining the new item that far would have
+ * cost in aurum, plus one whetstone per three levels moved.
+ */
+export function transferResult(level) {
+  return level <= 7 ? level : level - 1;
+}
+export function transferFee(targetValue, level) {
+  let sum = 0;
+  for (let l = 0; l < level; l++) sum += refineCost(targetValue, l);
+  return { aurum: Math.floor(sum * 0.25), stones: Math.floor(level / 3) };
+}
+/** Items that can trade a refine: both weapons, or both worn in one slot. */
+export function transferCompatible(a, b) {
+  if (!a || !b) return false;
+  if (a.type === 'weapon' || b.type === 'weapon') return a.type === 'weapon' && b.type === 'weapon';
+  return a.slot === b.slot;
+}
 export function refineCost(refValue, level) {
   return Math.floor(refValue * 0.15 + 120 * Math.pow(1.35, level));
 }

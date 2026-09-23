@@ -274,3 +274,17 @@ test('from +10 an attempt eats two whetstones', () => {
   const r = refineWith(0.001, 10, { stones: 1 }).r;
   assert.match(r.error ?? '', /2 ก้อน/);
 });
+
+test('a refine moves onto a +0 item of the same kind, for a fee, and only once', () => {
+  const p = character({ items: [{ id: 'iron_pike', qty: 1, refine: 9, dur: 120 },
+    { id: 'ashwood_pike', qty: 1, refine: 0, dur: 120 }, { id: 'runed_whetstone', qty: 5 }, { id: 'leather_vest', qty: 1, refine: 0, dur: 100 }] });
+  assert.ok(Econ.refineTransfer(world, p, 0, 3).error, 'a weapon refine went onto a vest');
+  const before = p.record.aurum;
+  const r = Econ.refineTransfer(world, p, 0, 1);
+  assert.ok(r.ok, r.error);
+  assert.equal(p.inventory[0].refine, 0);
+  assert.equal(p.inventory[1].refine, 8, 'past +7 one level is lost on the way');
+  assert.ok(p.record.aurum < before);
+  assert.equal(p.countItem('runed_whetstone'), 2, 'three stones for nine levels');
+  assert.ok(Econ.refineTransfer(world, p, 0, 1).error, 'moved a +0, or onto a refined item');
+});

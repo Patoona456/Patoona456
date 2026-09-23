@@ -1,7 +1,7 @@
 // Everything that moves Aurum. The design goal: many small sinks, few faucets.
 import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
 import { SHOPS, HEAL_PRICE_PER_LEVEL, STORAGE_FEE, WARP_ROUTES, RESET_STAT_PRICE, RESET_SKILL_PRICE } from '../../shared/data/npcs.js';
-import { npcSellPrice, marketTax, refineChance, refineCost, refineRisk, refineStones } from '../../shared/formulas.js';
+import { npcSellPrice, marketTax, refineChance, refineCost, refineRisk, refineStones, transferFee, transferResult, transferCompatible } from '../../shared/formulas.js';
 import { MAX_REFINE } from '../../shared/refineglow.js';
 import { STARTING_STATS } from '../../shared/data/jobs.js';
 import { db, markDirty } from '../persistence.js';
@@ -314,6 +314,31 @@ export function refine(world, p, index, useOil) {
   p.recompute();
   markDirty();
   return { ...base, success: false, result: 'down', refine: st.refine };
+}
+
+/** Move one item's refine onto another of its kind (see transferFee). */
+export function refineTransfer(world, p, fromIndex, toIndex) {
+  const src = p.inventory[fromIndex], dst = p.inventory[toIndex];
+  if (!src || !dst || fromIndex === toIndex) return { error: 'เลือกของต้นทางและปลายทางให้ถูก' };
+  const a = ITEMS[src.id], b = ITEMS[dst.id];
+  if (!a?.refinable || !b?.refinable) return { error: 'ไอเทมนี้ตีบวกไม่ได้' };
+  if (!transferCompatible(a, b)) return { error: 'ถ่ายโอนได้เฉพาะของประเภทเดียวกัน (อาวุธกับอาวุธ หรือช่องสวมใส่เดียวกัน)' };
+  const lvl = src.refine ?? 0;
+  if (lvl < 1) return { error: 'ของต้นทางยังไม่ได้ตีบวก' };
+  if ((dst.refine ?? 0) > 0) return { error: 'ของปลายทางต้องเป็น +0' };
+  const fee = transferFee(b.value ?? 0, lvl);
+  if (p.record.aurum < fee.aurum) return { error: `ต้องใช้ ${fee.aurum.toLocaleString()} ออรัม` };
+  if (p.countItem('runed_whetstone') < fee.stones) return { error: `ต้องใช้หินลับรูน ${fee.stones} ก้อน` };
+  p.record.aurum -= fee.aurum;
+  burn(world, fee.aurum, 'refine-transfer');
+  if (fee.stones) p.removeItemById('runed_whetstone', fee.stones);
+  const to = transferResult(lvl);
+  // removeItemById may have shifted rows, so find both again by identity
+  src.refine = 0;
+  dst.refine = to;
+  p.recompute();
+  markDirty();
+  return { ok: true, from: lvl, to, fromId: src.id, toId: dst.id, fee };
 }
 
 export function repair(world, p, index) {

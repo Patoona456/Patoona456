@@ -136,6 +136,7 @@ export const OP = {
   MARKET_CANCEL: 'marketCancel',
   SOCKET: 'socket',
   REFINE: 'refine',
+  REFINE_TRANSFER: 'refineTransfer',
   REPAIR: 'repair',
   PARTY: 'party',
   FRIEND: 'friend',
