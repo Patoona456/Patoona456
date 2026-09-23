@@ -338,8 +338,10 @@ export class UI {
       this._miniZone = z.id;
     }
     g.clearRect(0, 0, c.width, c.height);
-    g.imageSmoothingEnabled = false;
-    g.drawImage(this._miniCache, 0, 0, c.width, c.height);
+    // a painted town is its own map; tiles would only show the walkable mask
+    const art = renderer.backdrop?.complete && renderer.backdrop.naturalWidth ? renderer.backdrop : null;
+    g.imageSmoothingEnabled = !!art;
+    g.drawImage(art ?? this._miniCache, 0, 0, c.width, c.height);
     for (const e of state.ents ?? []) {
       if (e.k === 'n') g.fillStyle = '#7dffb0';
       else if (e.k === 'm') g.fillStyle = e.boss ? '#ffb45e' : '#ff7a7a';

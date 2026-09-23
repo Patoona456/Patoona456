@@ -138,7 +138,7 @@ export class World {
   }
 
   respawn(p) {
-    const sp = p.record.savePoint ?? { map: 'emberhold', x: 42 * TILE, y: 34 * TILE };
+    const sp = p.record.savePoint ?? { map: 'emberhold', x: 29 * TILE, y: 20 * TILE };
     p.alive = true;
     p.hp = Math.max(1, Math.floor(p.maxHp * 0.3));
     p.sp = Math.max(1, Math.floor(p.maxSp * 0.3));

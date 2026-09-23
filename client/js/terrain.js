@@ -235,7 +235,29 @@ function drawDecals(ctx, cells, at, theme, seed) {
   }, 0.4);
 }
 
+/**
+ * A town painted as one picture: stretch it over the map once it arrives.
+ * The canvas is handed back straight away and filled in on load, since the
+ * renderer blits whatever this canvas holds each frame.
+ */
+function paintedTerrain(zone) {
+  const out = canvas(zone.width * TILE, zone.height * TILE);
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#141a14';
+  ctx.fillRect(0, 0, out.width, out.height);
+  const img = new Image();
+  img.onload = () => {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, out.width, out.height);
+  };
+  img.onerror = () => console.warn(`[terrain] ${zone.id}: backdrop ${zone.backdrop} failed to load`);
+  img.src = zone.backdrop;
+  return { canvas: out, water: [], overlays: [], backdrop: img };
+}
+
 export function buildTerrain(zone, grid) {
+  if (zone.backdrop) return paintedTerrain(zone);
   const t0 = performance.now();
   const W = zone.width, H = zone.height;
   const theme = zone.theme ?? 'grass';

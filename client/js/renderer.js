@@ -133,6 +133,7 @@ export class Renderer {
     const painted = buildTerrain(zonePayload, this.grid);
     this.terrain = painted.canvas;
     this.water = painted.water;
+    this.backdrop = painted.backdrop ?? null;
 
     const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,

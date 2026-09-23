@@ -241,3 +241,11 @@ test('in every town, each keeper and each way out can be walked to from the spaw
     }
   }
 });
+
+test('a town painted as one picture ships that picture', () => {
+  for (const m of Object.values(MAPS)) {
+    if (!m.backdrop) continue;
+    assert.ok(existsSync(onDisk(m.backdrop)), `${m.id}: ${m.backdrop} is missing`);
+    assert.ok(m.walk?.length, `${m.id} has a backdrop but no walkable ground`);
+  }
+});

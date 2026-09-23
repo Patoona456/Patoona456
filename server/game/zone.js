@@ -780,7 +780,8 @@ export class Zone {
       width: this.width, height: this.height, theme: this.def.theme, kind: this.def.kind,
       seed: this.def.seed,   // the client regrows the scenery from this
       structures: this.def.structures ?? [],
-      laidOut: !!this.def.paint,   // hand-dressed: no scattered clutter
+      laidOut: !!(this.def.paint || this.def.backdrop),   // hand-dressed: no scattered clutter
+      backdrop: this.def.backdrop ?? null,
       decor: this.def.decor ?? [],
       safe: !!this.def.safe, rle: this.rle,
       warps: (this.def.warps ?? []).map((w) => ({ x: w.x, y: w.y, w: w.w, h: w.h, label: w.label, to: w.to })),
