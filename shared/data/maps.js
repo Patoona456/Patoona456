@@ -72,6 +72,13 @@ export const MAPS = {
       { kind: 'building', img: 'assets/maps/emberhold/inn.png', x: 12.81, y: 24.48, w: 6.8, h: 5.91 },
       { kind: 'building', img: 'assets/maps/emberhold/chapel.png', x: 40.74, y: 22.55, w: 6.4, h: 7.84 },
       { kind: 'building', img: 'assets/maps/emberhold/guildhouse.png', x: 46.99, y: 23.94, w: 6.8, h: 6.45 },
+      // the side lots either side of the north road and the south stair
+      { kind: 'building', img: 'assets/maps/emberhold/tavern.png', x: 21.18, y: 6.82, w: 4.9, h: 4.32 },
+      { kind: 'building', img: 'assets/maps/emberhold/scribe.png', x: 21.69, y: 10.37, w: 3.89, h: 5.25 },
+      { kind: 'building', img: 'assets/maps/emberhold/grocer.png', x: 33.96, y: 6.25, w: 5.12, h: 4.88 },
+      { kind: 'building', img: 'assets/maps/emberhold/cottage.png', x: 34.22, y: 11.88, w: 4.61, h: 3.75 },
+      { kind: 'building', img: 'assets/maps/emberhold/wellhouse.png', x: 21.84, y: 24.62, w: 3.6, h: 4.2 },
+      { kind: 'building', img: 'assets/maps/emberhold/windmill.png', x: 34.57, y: 24.05, w: 3.9, h: 4.77 },
     ],
     npcs: [
       { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 10, y: 15, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },

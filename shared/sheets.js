@@ -107,7 +107,7 @@ export const CHIBI_WALK = {
   cols: 4,
   rows: 8,
   anchor: 184 / 192,
-  drawScale: 0.36,
+  drawScale: 0.27,   // ~47px tall, the height of an LPC NPC
   dirRows: 8,
   dirMap: null,
   anims: {

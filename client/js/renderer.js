@@ -793,8 +793,8 @@ export class Renderer {
   drawNameplate(ctx, e, state, now) {
     const isMe = e.id === state.myId;
     const isTarget = e.id === state.targetId;
-    const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a head taller than LPC
-    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 66 : 44);
+    const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a big head, a little taller than LPC
+    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : 44);
 
     if (isTarget) {
       ctx.save();

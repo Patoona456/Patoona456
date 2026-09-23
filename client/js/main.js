@@ -829,7 +829,7 @@ class Game {
       ctx.translate(0, 8);
       ctx.scale(1.55, 1.55);
       const chibi = this.self.look?.style === 'chibi';
-      drawCharacter(ctx, layers, { x: 17, y: 32, anim: 'idle', dir: 0, elapsed: 0, scale: chibi ? 0.5 : 1 });
+      drawCharacter(ctx, layers, { x: 17, y: 32, anim: 'idle', dir: 0, elapsed: 0, scale: chibi ? 0.65 : 1 });
       ctx.restore();
       if (loadedRatio() < 1) setTimeout(draw, 250);
     };
@@ -888,7 +888,7 @@ class Game {
       const layers = playerLayers(c.look, c.worn ?? {});
       const paint = () => {
         ctx.clearRect(0, 0, 52, 52);
-        drawCharacter(ctx, layers, { x: 26, y: 46, anim: 'idle', dir: 0, elapsed: 0, scale: c.look?.style === 'chibi' ? 0.7 : 1 });
+        drawCharacter(ctx, layers, { x: 26, y: 46, anim: 'idle', dir: 0, elapsed: 0, scale: c.look?.style === 'chibi' ? 0.9 : 1 });
         if (loadedRatio() < 1) setTimeout(paint, 200);
       };
       paint();
