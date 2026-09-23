@@ -141,8 +141,14 @@ export function playerLayers(look, equipment = {}) {
 }
 
 /** Layers for an NPC, whose look uses raw layer keys rather than item ids. */
+const NPC_BASE = '/assets/npc';
+/** How much of the painted NPC art makes one world pixel: ~210px art -> ~50px. */
+export const NPC_PIC_SCALE = 0.24;
+
 export function npcLayers(look) {
   if (!look) return null;
+  // a painted townsperson is one picture, not a stack of LPC layers
+  if (look.pic) return { pic: `${NPC_BASE}/${look.pic}.png` };
   const g = look.body?.startsWith('female') ? 'female' : 'male';
   const layers = { body: layerUrl('body', look.body ?? 'male/light') };
   if (look.hair) layers.hair = layerUrl('hair', look.hair, g);
@@ -321,6 +327,26 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
   }
   ctx.restore();
   return { dx, dy, size };
+}
+
+/** A painted NPC: stood on its feet, facing the camera whichever way it 'faces'. */
+export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0 }) {
+  const s = sheet(url);
+  if (!s.ready) return null;
+  const w = s.img.width * NPC_PIC_SCALE, h = s.img.height * NPC_PIC_SCALE;
+  const dx = Math.round(x - w / 2), dy = Math.round(y - h + 4);
+  ctx.save();
+  ctx.imageSmoothingEnabled = NPC_PIC_SCALE * ctx.getTransform().a < 1;
+  if (alpha < 1) ctx.globalAlpha = alpha;
+  ctx.drawImage(s.img, dx, dy, w, h);
+  if (flash) {
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.globalAlpha = flash * 0.6;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(dx, dy, w, h);
+  }
+  ctx.restore();
+  return { dx, dy, w, h };
 }
 
 /** Procedural blob monster (slimes, wisps, wolves) - no art required. */

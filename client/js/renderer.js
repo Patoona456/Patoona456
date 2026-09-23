@@ -5,7 +5,7 @@ import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
-import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers } from './sprites.js';
+import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture } from './sprites.js';
 import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
@@ -541,7 +541,9 @@ export class Renderer {
         const layers = e.k === 'p' ? playerLayers(e.look, e.eq ?? {})
           : e.k === 'n' ? npcLayers(e.look)
           : monsterLayers(e.sprite);
-        if (layers) {
+        if (layers?.pic) {
+          drawPicture(ctx, layers.pic, { x: e.x, y: e.y, flash: hurt });
+        } else if (layers) {
           const scale = e.sprite?.scale ?? 1;
           // wings sit behind the body, and beat faster while you run
           const wing = ITEMS[e.eq?.wings]?.wing;
@@ -808,7 +810,8 @@ export class Renderer {
     const isMe = e.id === state.myId;
     const isTarget = e.id === state.targetId;
     const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a big head, a little taller than LPC
-    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : 44);
+    const painted = e.k === 'n' && e.look?.pic;   // painted NPCs stand ~52px tall
+    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : painted ? 56 : 44);
 
     if (isTarget) {
       ctx.save();

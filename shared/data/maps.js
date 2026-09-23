@@ -81,15 +81,15 @@ export const MAPS = {
       { kind: 'building', img: 'assets/maps/emberhold/windmill.png', x: 34.57, y: 24.05, w: 3.9, h: 4.77 },
     ],
     npcs: [
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 10, y: 15, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
-      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 44, y: 15, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 16, y: 15, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 50, y: 15, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 44, y: 31, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 10, y: 31, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 50, y: 31, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
-      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 25, y: 18, look: null },
-      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 35, y: 18, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 10, y: 15, look: { pic: 'blacksmith' } },
+      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 44, y: 15, look: { pic: 'nun' } },
+      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 16, y: 15, shop: 'general', look: { pic: 'alchemist' } },
+      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 50, y: 15, look: { pic: 'dwarf' } },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 44, y: 31, look: { pic: 'shrinemaiden' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 10, y: 31, look: { pic: 'peddler' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 50, y: 31, look: { pic: 'knight' } },
+      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 25, y: 18, look: { pic: 'postman' } },
+      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 35, y: 18, look: { pic: 'wizard' } },
     ],
     spawns: [],
   },
@@ -106,15 +106,15 @@ export const MAPS = {
     ],
     npcs: [
       // North district (Merchant area)
-      { id: 'merchant', name: 'ผู้ค้าร็อก', role: 'vendor', x: 20, y: 14, shop: 'general', look: { body: 'male/light', hair: 'plain/brown', torso: 'shirt_white', legs: 'pants_teal', feet: 'shoes_brown' } },
-      { id: 'mh_smith', name: 'ช่างตีเหล็กกอร์ด', role: 'smith', x: 60, y: 14, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', weapon: 'spear' } },
+      { id: 'merchant', name: 'ผู้ค้าร็อก', role: 'vendor', x: 20, y: 14, shop: 'general', look: { pic: 'grocer' } },
+      { id: 'mh_smith', name: 'ช่างตีเหล็กกอร์ด', role: 'smith', x: 60, y: 14, look: { pic: 'blacksmith' } },
       // Central plaza (Services)
-      { id: 'mh_healer', name: 'พยาบาลแมร์', role: 'healer', x: 40, y: 24, look: { body: 'female/light', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'trainer', x: 40, y: 18, look: { body: 'male/tanned', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', weapon: 'spear' } },
-      { id: 'mh_banker', name: 'คำนายตัง', role: 'banker', x: 40, y: 40, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'mh_board', name: 'กระดานภารกิจ', role: 'board', x: 36, y: 28, look: null },
-      { id: 'mh_warper', name: 'นักท่องเที่ยวเลิน', role: 'warper', x: 44, y: 28, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'mh_broker', name: 'นายหน้าวิลเลียม', role: 'broker', x: 20, y: 50, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
+      { id: 'mh_healer', name: 'พยาบาลแมร์', role: 'healer', x: 40, y: 24, look: { pic: 'florist' } },
+      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'trainer', x: 40, y: 18, look: { pic: 'ranger' } },
+      { id: 'mh_banker', name: 'คำนายตัง', role: 'banker', x: 40, y: 40, look: { pic: 'grandma' } },
+      { id: 'mh_board', name: 'กระดานภารกิจ', role: 'board', x: 36, y: 28, look: { pic: 'postman' } },
+      { id: 'mh_warper', name: 'นักท่องเที่ยวเลิน', role: 'warper', x: 44, y: 28, look: { pic: 'traveller' } },
+      { id: 'mh_broker', name: 'นายหน้าวิลเลียม', role: 'broker', x: 20, y: 50, look: { pic: 'catgirl' } },
     ],
     spawns: [],
     structures: [
@@ -174,19 +174,19 @@ export const MAPS = {
     ],
     npcs: [
       // North district: High-end shops
-      { id: 'rh_vendor', name: 'ผู้ค้าเมืองอลฮัลลา', role: 'vendor', x: 24, y: 16, shop: 'general', look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'rh_smith', name: 'หลักแรงแห่งเรเวนโฮล์ม', role: 'smith', x: 64, y: 16, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      { id: 'rh_vendor', name: 'ผู้ค้าเมืองอลฮัลลา', role: 'vendor', x: 24, y: 16, shop: 'general', look: { pic: 'chef' } },
+      { id: 'rh_smith', name: 'หลักแรงแห่งเรเวนโฮล์ม', role: 'smith', x: 64, y: 16, look: { pic: 'dwarf' } },
       // Central North: Training & jobs
-      { id: 'rh_trainer', name: 'คุณพ่อแก่วยืนกราน', role: 'trainer', x: 44, y: 12, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      { id: 'rh_trainer', name: 'คุณพ่อแก่วยืนกราน', role: 'trainer', x: 44, y: 12, look: { pic: 'swordmaiden' } },
       // Central plaza: Services
-      { id: 'rh_healer', name: 'บาทหลวงอิเรน', role: 'healer', x: 24, y: 36, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'rh_banker', name: 'ผู้เฝ้าธนคลังแองเชล', role: 'banker', x: 64, y: 36, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'rh_board', name: 'กระดานภารกิจหลัก', role: 'board', x: 35, y: 32, look: null },
-      { id: 'rh_warper', name: 'พ่อค้ารถบัสเสน', role: 'warper', x: 48, y: 32, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'rh_healer', name: 'บาทหลวงอิเรน', role: 'healer', x: 24, y: 36, look: { pic: 'maid' } },
+      { id: 'rh_banker', name: 'ผู้เฝ้าธนคลังแองเชล', role: 'banker', x: 64, y: 36, look: { pic: 'panda' } },
+      { id: 'rh_board', name: 'กระดานภารกิจหลัก', role: 'board', x: 35, y: 32, look: { pic: 'postman' } },
+      { id: 'rh_warper', name: 'พ่อค้ารถบัสเสน', role: 'warper', x: 48, y: 32, look: { pic: 'witch' } },
       // East: Guild & broker
-      { id: 'rh_broker', name: 'สำนักนายหน้าตรึนดัล', role: 'broker', x: 76, y: 36, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
+      { id: 'rh_broker', name: 'สำนักนายหน้าตรึนดัล', role: 'broker', x: 76, y: 36, look: { pic: 'rogue' } },
       // South district: Oracle & premium services
-      { id: 'rh_oracle', name: 'สูตรนางกายา', role: 'oracle', x: 20, y: 56, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'rh_oracle', name: 'สูตรนางกายา', role: 'oracle', x: 20, y: 56, look: { pic: 'princess' } },
     ],
     spawns: [],
     structures: [
