@@ -293,12 +293,13 @@ export class Renderer {
     if (x1 <= x0 || y1 <= y0) return;
     const art = this.backdrop;
     if (art?.complete && art.naturalWidth) {
-      // Straight from the painting in one step, nearest-neighbour: going via
-      // the world-sized canvas resampled it twice and smeared it on phones,
-      // where the camera sits close enough to show each painted pixel.
+      // Straight from the painting in one step (going via the world-sized
+      // canvas resampled it twice and smeared it on phones). The painting is
+      // stored upscaled, so a high-quality filter keeps it crisp.
       const k = art.naturalWidth / this.terrain.width;
       ctx.save();
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(art, x0 * k, y0 * k, (x1 - x0) * k, (y1 - y0) * k, x0, y0, x1 - x0, y1 - y0);
       ctx.restore();
     } else {
@@ -434,10 +435,10 @@ export class Renderer {
       this.pictures.set(p.img, pic);
     }
     if (!pic.complete || !pic.naturalWidth) return;
-    // smooth only when it ends up smaller than drawn (else it just blurs)
-    const onScreen = (p.w / pic.naturalWidth) * ctx.getTransform().a;
+    // building art is stored upscaled: filter it, don't block it up
     const smooth = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = onScreen < 1;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(pic, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
     ctx.imageSmoothingEnabled = smooth;
   }
