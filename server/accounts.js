@@ -77,7 +77,7 @@ export function nameTaken(name) {
   return Object.values(db.characters).some((c) => c.name.toLowerCase() === lower);
 }
 
-export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes, stats }) {
+export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes, stats, startMap }) {
   if (acc.chars.length >= MAX_CHARS) return { error: `สร้างได้สูงสุด ${MAX_CHARS} ตัวละคร` };
   name = String(name ?? '').trim();
   if (!NAME_RE.test(name)) return { error: 'ชื่อตัวละครต้องยาว 3-16 ตัว' };
@@ -104,16 +104,19 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     if (total === 30) for (const k of Object.keys(base)) base[k] = Math.floor(Number(stats[k]));
   }
 
+  // Starting location: either emberhold (hub) or millhaven (intimate town)
+  const validStarts = ['emberhold', 'millhaven'];
+  const mapId = validStarts.includes(startMap) ? startMap : 'emberhold';
+  const start = MAPS[mapId];
   const id = String(db.nextCharId++);
-  const start = MAPS.emberhold;
   const c = {
     id, account: acc.key, name, look,
     job: 'novice', level: 1, jobLevel: 1, exp: 0, jobExp: 0,
     statPoints: 0, skillPoints: 1,
     ...base,
     hp: null, sp: null,           // filled from derived stats on first spawn
-    map: 'emberhold', x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32,
-    savePoint: { map: 'emberhold', x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32 },
+    map: mapId, x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32,
+    savePoint: { map: mapId, x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32 },
     aurum: 500,                   // a deliberately thin starting purse
     inventory: [
       { id: 'training_blade', qty: 1, refine: 0, dur: 120 },

@@ -926,6 +926,7 @@ class Game {
           <div class="field"><label>ทรงผม</label><div class="opts" id="o-hair"></div></div>
           <div class="field"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
           <div class="field"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
+          <div class="field"><label>เมืองเริ่มต้น</label><div class="opts" id="o-start"></div></div>
           <hr>
           <div class="field"><label>แนวทางเริ่มต้น <span class="muted">แจกแต้มให้ก่อน ปรับเองได้</span></label>
             <div class="opts" id="o-path"></div></div>
@@ -984,6 +985,23 @@ class Game {
       }
     }
     markLook();
+
+    /* ---- starting location ---- */
+    let startMap = 'emberhold';
+    const startOpts = [['emberhold', 'เอมเบอร์โฮลด์ (ศูนย์รวม)'], ['millhaven', 'มิลเฮเวน (เมืองเล็ก)']];
+    const startBox = $('#o-start');
+    for (const [id, label] of startOpts) {
+      const b = document.createElement('button');
+      b.className = 'opt' + (id === startMap ? ' sel' : '');
+      b.textContent = label;
+      b.onclick = () => {
+        startMap = id;
+        [...startBox.children].forEach((x) => x.classList.remove('sel'));
+        b.classList.add('sel');
+        this.audio.play('ui');
+      };
+      startBox.append(b);
+    }
 
     /* ---- camera-ish controls for the preview ---- */
     const dirBox = $('#o-dir');
@@ -1098,7 +1116,7 @@ class Game {
     $('#btn-create').onclick = () => {
       this.screenError('');
       this.audio.play('good');
-      this.net.send({ t: 'charCreate', name: name.value.trim(), ...look, stats });
+      this.net.send({ t: 'charCreate', name: name.value.trim(), ...look, stats, startMap });
     };
     $('#btn-back').onclick = () => { $('#screen').classList.remove('creating'); this.showCharSelect(); };
   }
