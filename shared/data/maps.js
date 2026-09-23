@@ -109,45 +109,147 @@ export const MAPS = {
 
   millhaven: {
     id: 'millhaven', name: 'Millhaven', nameTh: 'มิลเฮเวน', kind: 'town',
-    width: 56, height: 44, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
-    spawnPoint: [28, 22],
+    width: 80, height: 64, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
+    spawnPoint: [40, 32],
     warps: [
-      { x: 28, y: 41, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
-      { x: 52, y: 20, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
+      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
+      { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
     ],
     npcs: [
-      { id: 'merchant', name: 'ผู้ค้าร็อก', role: 'vendor', x: 17, y: 16, shop: 'general', look: { body: 'male/light', hair: 'plain/brown', torso: 'shirt_white', legs: 'pants_teal', feet: 'shoes_brown' } },
-      { id: 'mh_healer', name: 'พยาบาลแมร์', role: 'healer', x: 37, y: 16, look: { body: 'female/light', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'trainer', x: 28, y: 12, look: { body: 'male/tanned', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', weapon: 'spear' } },
-      { id: 'mh_banker', name: 'คำนายตัง', role: 'banker', x: 28, y: 28, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'mh_board', name: 'กระดานทำความเห็น', role: 'board', x: 24, y: 20, look: null },
+      // North district (Merchant area)
+      { id: 'merchant', name: 'ผู้ค้าร็อก', role: 'vendor', x: 20, y: 14, shop: 'general', look: { body: 'male/light', hair: 'plain/brown', torso: 'shirt_white', legs: 'pants_teal', feet: 'shoes_brown' } },
+      { id: 'mh_smith', name: 'ช่างตีเหล็กกอร์ด', role: 'smith', x: 60, y: 14, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', weapon: 'spear' } },
+      // Central plaza (Services)
+      { id: 'mh_healer', name: 'พยาบาลแมร์', role: 'healer', x: 40, y: 24, look: { body: 'female/light', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'trainer', x: 40, y: 18, look: { body: 'male/tanned', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', weapon: 'spear' } },
+      { id: 'mh_banker', name: 'คำนายตัง', role: 'banker', x: 40, y: 40, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'mh_board', name: 'กระดานภารกิจ', role: 'board', x: 36, y: 28, look: null },
+      { id: 'mh_warper', name: 'นักท่องเที่ยวเลิน', role: 'warper', x: 44, y: 28, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'mh_broker', name: 'นายหน้าวิลเลียม', role: 'broker', x: 20, y: 50, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
     ],
     spawns: [],
     structures: [
-      { kind: 'house', x: 12, y: 8, w: 6, h: 4, roof: '#8c4a3a', sign: 'ร้านค้า' },
-      { kind: 'house', x: 32, y: 8, w: 6, h: 4, roof: '#6d6d6d', sign: 'โรงรักษา' },
-      { kind: 'house', x: 22, y: 6, w: 5, h: 3, roof: '#5a6a8c', sign: 'ศาลาฝึก' },
-      { kind: 'house', x: 10, y: 24, w: 5, h: 4, roof: '#4a7a6a', sign: 'คลัง' },
-      { kind: 'house', x: 39, y: 24, w: 5, h: 4, roof: '#7a6a4a', sign: 'ร้านของ' },
-      { kind: 'house', x: 24, y: 32, w: 6, h: 4, roof: '#6d4a3a' },
-      { kind: 'stall', x: 15, y: 19, w: 3, h: 2, variant: 0 },
-      { kind: 'stall', x: 38, y: 19, w: 3, h: 2, variant: 1 },
-      { kind: 'fountain', x: 25, y: 18, w: 4, h: 4 },
+      // North zone: merchant & blacksmith
+      { kind: 'house', x: 12, y: 8, w: 8, h: 5, roof: '#8c4a3a', sign: 'ร้านค้า' },
+      { kind: 'house', x: 56, y: 8, w: 8, h: 5, roof: '#6d4a3a', sign: 'โรงตีเหล็ก' },
+      // Central zone: services
+      { kind: 'house', x: 32, y: 6, w: 6, h: 4, roof: '#5a6a8c', sign: 'ศาลาฝึก' },
+      { kind: 'house', x: 32, y: 36, w: 6, h: 4, roof: '#4a7a6a', sign: 'คลัง' },
+      { kind: 'house', x: 44, y: 36, w: 6, h: 4, roof: '#7a6a4a', sign: 'ตลาด' },
+      // South zone: inns & guild
+      { kind: 'house', x: 12, y: 44, w: 7, h: 5, roof: '#8c7a3a', sign: 'โรงแรม' },
+      { kind: 'house', x: 56, y: 44, w: 7, h: 5, roof: '#6a5a8c', sign: 'สมาคม' },
+      // Stalls & decorative
+      { kind: 'stall', x: 28, y: 24, w: 3, h: 2, variant: 0 },
+      { kind: 'stall', x: 48, y: 24, w: 3, h: 2, variant: 1 },
+      { kind: 'stall', x: 20, y: 32, w: 3, h: 2, variant: 2 },
+      { kind: 'stall', x: 57, y: 32, w: 3, h: 2, variant: 3 },
+      // Central fountain
+      { kind: 'fountain', x: 37, y: 26, w: 6, h: 6 },
+      // Water feature: river running through
+      { kind: 'fountain', x: 5, y: 20, w: 3, h: 3 },
+      { kind: 'fountain', x: 72, y: 44, w: 4, h: 4 },
     ],
     decor: [
-      // lampposts around the plaza
-      ['lamp', 22, 16], ['lamp', 34, 16], ['lamp', 22, 26], ['lamp', 34, 26],
-      // benches and planters
-      ['bench', 20, 16], ['bench', 32, 17], ['bench', 26, 24], ['bench', 30, 24],
-      ['planter', 24, 12], ['planter', 32, 12],
-      // decor scattered naturally
-      ['barrel', 19, 18], ['crate', 20, 19], ['sack', 40, 17], ['cart', 12, 20],
-      ['barrel', 40, 22], ['crate', 12, 28], ['sack', 45, 25],
-      // signs and markers
-      ['banner', 22, 10], ['banner', 34, 10], ['sign', 28, 37], ['sign', 8, 20],
-      ['flowerpot', 26, 10], ['flowerpot', 30, 10],
-      // well as decorative feature
-      ['well', 18, 24],
+      // Lantern rings around plaza and zones
+      ['lamp', 32, 20], ['lamp', 48, 20], ['lamp', 32, 36], ['lamp', 48, 36],
+      ['lamp', 14, 14], ['lamp', 66, 14], ['lamp', 14, 50], ['lamp', 66, 50],
+      // Benches around plaza
+      ['bench', 35, 22], ['bench', 45, 22], ['bench', 35, 38], ['bench', 45, 38],
+      // Planters scattered
+      ['planter', 38, 16], ['planter', 42, 16], ['planter', 40, 44],
+      ['planter', 20, 30], ['planter', 60, 30],
+      // Market clutter: barrels, crates, sacks
+      ['barrel', 18, 14], ['barrel', 62, 14], ['crate', 22, 12], ['crate', 64, 12],
+      ['sack', 20, 16], ['sack', 66, 18], ['cart', 16, 50], ['cart', 64, 50],
+      ['barrel', 18, 50], ['barrel', 68, 50], ['crate', 14, 48], ['crate', 70, 48],
+      // Signs and banners at entry points
+      ['banner', 35, 60], ['banner', 45, 60], ['sign', 2, 32], ['sign', 78, 32],
+      ['sign', 40, 10], ['banner', 14, 40], ['banner', 66, 40],
+      // Well features
+      ['well', 10, 22], ['well', 70, 46],
+      // Trees framing edges (sparse)
+      ['tree', 8, 10], ['tree', 72, 10], ['tree', 8, 54], ['tree', 72, 54],
+    ],
+  },
+
+  ravenholm: {
+    id: 'ravenholm', name: 'Ravenholm', nameTh: 'เรเวนโฮล์ม', kind: 'town',
+    width: 88, height: 72, seed: 1003, safe: true, theme: 'town', levelRange: [25, 50],
+    spawnPoint: [44, 36],
+    warps: [
+      { x: 44, y: 69, w: 4, h: 2, to: 'ashfen', at: [40, 8], label: 'หนองเถ้า' },
+      { x: 84, y: 36, w: 2, h: 4, to: 'gravebound', at: [12, 36], label: 'สุสานกราฟบาวด์' },
+      { x: 2, y: 36, w: 2, h: 4, to: 'millhaven', at: [4, 32], label: 'มิลเฮเวน' },
+      { x: 44, y: 4, w: 4, h: 2, to: 'orcwatch', at: [44, 12], label: 'สันเขาออร์ควอช' },
+    ],
+    npcs: [
+      // North district: High-end shops
+      { id: 'rh_vendor', name: 'ผู้ค้าเมืองอลฮัลลา', role: 'vendor', x: 24, y: 16, shop: 'general', look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'rh_smith', name: 'หลักแรงแห่งเรเวนโฮล์ม', role: 'smith', x: 64, y: 16, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      // Central North: Training & jobs
+      { id: 'rh_trainer', name: 'คุณพ่อแก่วยืนกราน', role: 'trainer', x: 44, y: 12, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      // Central plaza: Services
+      { id: 'rh_healer', name: 'บาทหลวงอิเรน', role: 'healer', x: 24, y: 36, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'rh_banker', name: 'ผู้เฝ้าธนคลังแองเชล', role: 'banker', x: 64, y: 36, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'rh_board', name: 'กระดานภารกิจหลัก', role: 'board', x: 40, y: 32, look: null },
+      { id: 'rh_warper', name: 'พ่อค้ารถบัสเสน', role: 'warper', x: 48, y: 32, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      // East: Guild & broker
+      { id: 'rh_broker', name: 'สำนักนายหน้าตรึนดัล', role: 'broker', x: 76, y: 36, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
+      // South district: Oracle & premium services
+      { id: 'rh_oracle', name: 'สูตรนางกายา', role: 'oracle', x: 20, y: 56, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+    ],
+    spawns: [],
+    structures: [
+      // North zone: High-end merchant & blacksmith
+      { kind: 'house', x: 8, y: 8, w: 10, h: 6, roof: '#8c4a3a', sign: 'บ้านค้าหลัก' },
+      { kind: 'house', x: 56, y: 8, w: 10, h: 6, roof: '#6d4a3a', sign: 'โรงเชื่อมแชมเบอร์' },
+      // Central north: Training temple
+      { kind: 'house', x: 36, y: 4, w: 8, h: 5, roof: '#5a6a8c', sign: 'วิหารสงคราม' },
+      // Central: Service buildings
+      { kind: 'house', x: 8, y: 30, w: 10, h: 7, roof: '#4a7a6a', sign: 'ศาสตร์สงคราม' },
+      { kind: 'house', x: 70, y: 30, w: 10, h: 7, roof: '#7a6a4a', sign: 'สมาคมพ่อค้า' },
+      // South zone: Guild hall & Oracle shrine
+      { kind: 'house', x: 8, y: 50, w: 12, h: 7, roof: '#8c7a3a', sign: 'สมาคมสามัญ' },
+      { kind: 'house', x: 68, y: 50, w: 12, h: 7, roof: '#6a5a8c', sign: 'ศาลรุ่งอรุณ' },
+      // Marketplace stalls: Three rows
+      { kind: 'stall', x: 30, y: 24, w: 4, h: 2, variant: 0 },
+      { kind: 'stall', x: 54, y: 24, w: 4, h: 2, variant: 1 },
+      { kind: 'stall', x: 30, y: 44, w: 4, h: 2, variant: 2 },
+      { kind: 'stall', x: 54, y: 44, w: 4, h: 2, variant: 3 },
+      // Central fountain plaza
+      { kind: 'fountain', x: 38, y: 28, w: 8, h: 8 },
+      // Water features: Twin ponds
+      { kind: 'fountain', x: 14, y: 20, w: 4, h: 4 },
+      { kind: 'fountain', x: 70, y: 20, w: 4, h: 4 },
+    ],
+    decor: [
+      // Grand lantern setup: Inner circle
+      ['lamp', 36, 24], ['lamp', 52, 24], ['lamp', 36, 44], ['lamp', 52, 44],
+      // Outer lantern ring
+      ['lamp', 18, 16], ['lamp', 70, 16], ['lamp', 18, 56], ['lamp', 70, 56],
+      // Zone markers
+      ['lamp', 14, 36], ['lamp', 74, 36],
+      // Benches at plazas
+      ['bench', 34, 20], ['bench', 54, 20], ['bench', 34, 48], ['bench', 54, 48],
+      ['bench', 40, 28], ['bench', 48, 28], ['bench', 40, 44], ['bench', 48, 44],
+      // Planters: abundant greenery
+      ['planter', 42, 12], ['planter', 46, 12], ['planter', 40, 52], ['planter', 48, 52],
+      ['planter', 20, 24], ['planter', 68, 24], ['planter', 20, 48], ['planter', 68, 48],
+      // Market scene: chaos of commerce
+      ['barrel', 16, 16], ['barrel', 72, 16], ['barrel', 16, 56], ['barrel', 72, 56],
+      ['crate', 20, 14], ['crate', 76, 14], ['crate', 20, 58], ['crate', 76, 58],
+      ['sack', 14, 20], ['sack', 74, 20], ['sack', 14, 52], ['sack', 74, 52],
+      ['cart', 12, 36], ['cart', 76, 36], ['awning', 32, 28], ['awning', 56, 28],
+      // Signage at main entrances
+      ['banner', 40, 62], ['banner', 48, 62], ['sign', 2, 36], ['sign', 86, 36],
+      ['banner', 40, 2], ['sign', 44, 68],
+      // Wells as gathering points
+      ['well', 20, 28], ['well', 68, 28], ['well', 44, 16],
+      // Trees framing perimeter
+      ['tree', 6, 12], ['tree', 82, 12], ['tree', 6, 60], ['tree', 82, 60],
+      ['bush', 10, 8], ['bush', 78, 8], ['bush', 10, 64], ['bush', 78, 64],
     ],
   },
 
