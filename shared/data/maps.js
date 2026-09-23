@@ -107,6 +107,50 @@ export const MAPS = {
     ],
   },
 
+  millhaven: {
+    id: 'millhaven', name: 'Millhaven', nameTh: 'มิลเฮเวน', kind: 'town',
+    width: 56, height: 44, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
+    spawnPoint: [28, 22],
+    warps: [
+      { x: 28, y: 41, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 52, y: 20, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
+    ],
+    npcs: [
+      { id: 'merchant', name: 'ผู้ค้าร็อก', role: 'vendor', x: 17, y: 16, shop: 'general', look: { body: 'male/light', hair: 'plain/brown', torso: 'shirt_white', legs: 'pants_teal', feet: 'shoes_brown' } },
+      { id: 'mh_healer', name: 'พยาบาลแมร์', role: 'healer', x: 37, y: 16, look: { body: 'female/light', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'trainer', x: 28, y: 12, look: { body: 'male/tanned', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', weapon: 'spear' } },
+      { id: 'mh_banker', name: 'คำนายตัง', role: 'banker', x: 28, y: 28, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'mh_board', name: 'กระดานทำความเห็น', role: 'board', x: 24, y: 20, look: null },
+    ],
+    spawns: [],
+    structures: [
+      { kind: 'house', x: 12, y: 8, w: 6, h: 4, roof: '#8c4a3a', sign: 'ร้านค้า' },
+      { kind: 'house', x: 32, y: 8, w: 6, h: 4, roof: '#6d6d6d', sign: 'โรงรักษา' },
+      { kind: 'house', x: 22, y: 6, w: 5, h: 3, roof: '#5a6a8c', sign: 'ศาลาฝึก' },
+      { kind: 'house', x: 10, y: 24, w: 5, h: 4, roof: '#4a7a6a', sign: 'คลัง' },
+      { kind: 'house', x: 39, y: 24, w: 5, h: 4, roof: '#7a6a4a', sign: 'ร้านของ' },
+      { kind: 'house', x: 24, y: 32, w: 6, h: 4, roof: '#6d4a3a' },
+      { kind: 'stall', x: 15, y: 19, w: 3, h: 2, variant: 0 },
+      { kind: 'stall', x: 38, y: 19, w: 3, h: 2, variant: 1 },
+      { kind: 'fountain', x: 25, y: 18, w: 4, h: 4 },
+    ],
+    decor: [
+      // lampposts around the plaza
+      ['lamp', 22, 16], ['lamp', 34, 16], ['lamp', 22, 26], ['lamp', 34, 26],
+      // benches and planters
+      ['bench', 20, 16], ['bench', 32, 17], ['bench', 26, 24], ['bench', 30, 24],
+      ['planter', 24, 12], ['planter', 32, 12],
+      // decor scattered naturally
+      ['barrel', 19, 18], ['crate', 20, 19], ['sack', 40, 17], ['cart', 12, 20],
+      ['barrel', 40, 22], ['crate', 12, 28], ['sack', 45, 25],
+      // signs and markers
+      ['banner', 22, 10], ['banner', 34, 10], ['sign', 28, 37], ['sign', 8, 20],
+      ['flowerpot', 26, 10], ['flowerpot', 30, 10],
+      // well as decorative feature
+      ['well', 18, 24],
+    ],
+  },
+
   greenmire: {
     id: 'greenmire', name: 'Greenmire Flats', nameTh: 'ทุ่งกรีนไมร์', kind: 'field',
     width: 80, height: 64, seed: 2002, theme: 'grass', levelRange: [1, 10],
