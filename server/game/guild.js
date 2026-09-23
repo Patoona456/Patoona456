@@ -23,12 +23,14 @@ import { db, markDirty } from '../persistence.js';
 import { ITEMS } from '../../shared/data/items.js';
 import { burn } from './economy.js';
 import * as Siege from './siege.js';
+import { GUILD_MAX_LEVEL, guildExpToNext, guildCapacity, killGuildExp, GUILD_SKILLS, skillsAt, GUILD_QUESTS, EMBLEMS } from '../../shared/data/guild.js';
 
 /** Founding fee, and what it costs to keep the doors open each week. */
 export const GUILD_COST = 250_000;
 export const GUILD_UPKEEP = 40_000;
 export const UPKEEP_PERIOD = 7 * 86400000;
-export const MAX_MEMBERS = 40;
+export const MAX_MEMBERS = guildCapacity(GUILD_MAX_LEVEL);
+const capOf = (g) => guildCapacity(g.level ?? 1);
 export const VAULT_SLOTS = 200;
 
 /**
@@ -85,7 +87,7 @@ export function create(world, p, name) {
   guilds()[id] = {
     id, name: clean, leader: String(p.record.id), created: Date.now(),
     members: [{ charId: String(p.record.id), name: p.name, rank: 'leader', joined: Date.now() }],
-    vault: [], aurum: 0, notice: '',
+    vault: [], aurum: 0, notice: '', level: 1, exp: 0, emblem: 'lion', week: null, goals: {},
     upkeepDue: Date.now() + UPKEEP_PERIOD, inDebt: false,
     taken: {},                          // charId -> { week, n } withdrawal budget
   };
@@ -98,14 +100,14 @@ export function invite(world, p, targetName) {
   const g = of(p);
   if (!g) return { error: 'ยังไม่ได้อยู่กิลด์' };
   if (!rankOf(member(g, p.record.id)?.rank).invite) return { error: 'ยศของคุณชวนคนเข้ากิลด์ไม่ได้' };
-  if (g.members.length >= MAX_MEMBERS) return { error: `กิลด์เต็ม (${MAX_MEMBERS} คน)` };
+  if (g.members.length >= capOf(g)) return { error: `กิลด์เต็ม (${capOf(g)} คน)` };
 
   const target = world.playerByName(targetName);
   if (!target) return { error: 'ไม่พบผู้เล่นคนนี้ (ต้องออนไลน์อยู่)' };
   if (target.record.guild) return { error: 'ผู้เล่นคนนี้อยู่กิลด์อื่นแล้ว' };
 
   target.guildInvite = { guild: g.id, from: p.name, at: Date.now() };
-  target.conn?.send({ t: 'notice', kind: 'invite', text: `${p.name} ชวนคุณเข้ากิลด์ ${g.name}` });
+  target.conn?.send({ ...state(world, target), invite: { from: p.name, guild: g.name, at: target.guildInvite.at } });
   return { ok: true };
 }
 
@@ -115,14 +117,21 @@ export function accept(world, p) {
   if (p.record.guild) return { error: 'อยู่ในกิลด์แล้ว' };
   const g = byId(inv.guild);
   if (!g) return { error: 'กิลด์นี้ถูกยุบไปแล้ว' };
-  if (g.members.length >= MAX_MEMBERS) return { error: 'กิลด์เต็ม' };
+  if (g.members.length >= capOf(g)) return { error: 'กิลด์เต็ม' };
 
   g.members.push({ charId: String(p.record.id), name: p.name, rank: 'recruit', joined: Date.now() });
   p.record.guild = g.id;
   p.guildInvite = null;
   markDirty();
   announce(world, g, `${p.name} เข้าร่วมกิลด์แล้ว`);
+  log(g, `${p.name} เข้าร่วมกิลด์`, 'join');
+  p.recompute?.();                       // the guild's skills come with the door key
   return { ok: true, id: g.id };
+}
+
+export function decline(p) {
+  p.guildInvite = null;
+  return { ok: true };
 }
 
 export function leave(world, p) {
@@ -140,7 +149,9 @@ export function leave(world, p) {
     delete guilds()[g.id];
   } else {
     announce(world, g, `${p.name} ออกจากกิลด์แล้ว`);
+    log(g, `${p.name} ออกจากกิลด์`, 'leave');
   }
+  p.recompute?.();
   markDirty();
   return { ok: true };
 }
@@ -156,13 +167,18 @@ export function kick(world, p, charId) {
 
   g.members = g.members.filter((m) => String(m.charId) !== String(charId));
   const online = world.playerByCharId(String(charId));
-  if (online) { online.record.guild = null; online.conn?.send({ t: 'notice', kind: 'bad', text: `คุณถูกเชิญออกจากกิลด์ ${g.name}` }); }
+  if (online) {
+    online.record.guild = null;
+    online.recompute?.();
+    online.conn?.send({ t: 'notice', kind: 'bad', text: `คุณถูกเชิญออกจากกิลด์ ${g.name}` });
+  }
   else {
     const rec = db.characters[String(charId)];
     if (rec) rec.guild = null;
   }
   markDirty();
   announce(world, g, `${them.name} ถูกเชิญออกจากกิลด์`);
+  log(g, `${them.name} ถูกเชิญออกจากกิลด์`, 'leave');
   return { ok: true };
 }
 
@@ -262,7 +278,8 @@ export function donate(p, amount) {
     g.upkeepDue = Date.now() + UPKEEP_PERIOD;
     log(g, 'จ่ายค่าบำรุงแล้ว คลังกลับมาใช้ได้');
   }
-  log(g, `${p.name} บริจาค ${n.toLocaleString()} ออรัม`);
+  log(g, `${p.name} บริจาค ${n.toLocaleString()} ออรัม`, 'give');
+  progress(null, g, 'donate', n);
   markDirty();
   return { ok: true, aurum: g.aurum };
 }
@@ -273,8 +290,80 @@ function returnVault(p, g) {
   if (g.aurum) p.record.aurum += g.aurum;
 }
 
-function log(g, text) {
-  g.history = [{ text, at: Date.now() }, ...(g.history ?? [])].slice(0, 30);
+function log(g, text, kind = null) {
+  g.history = [{ text, at: Date.now(), kind }, ...(g.history ?? [])].slice(0, 30);
+}
+
+/* ------------------------------------------------------------ growth */
+
+/** This week's goal counters, reset on the shared weekly schedule. */
+function goals(g) {
+  const week = weekKey();
+  if (g.week !== week) { g.week = week; g.goals = {}; }
+  return (g.goals ??= {});
+}
+
+/** Guild EXP, with the level-ups it causes told to everyone online. */
+export function addExp(world, g, n) {
+  if (!g || !(n > 0)) return;
+  g.level ??= 1;
+  g.exp = (g.exp ?? 0) + Math.floor(n);
+  let up = false;
+  while (g.level < GUILD_MAX_LEVEL && g.exp >= guildExpToNext(g.level)) {
+    g.exp -= guildExpToNext(g.level);
+    g.level++;
+    up = true;
+    const opened = GUILD_SKILLS.find((s) => s.level === g.level);
+    log(g, `กิลด์เลเวลอัพเป็น Lv.${g.level}${opened ? ` — ปลดล็อกทักษะ${opened.nameTh}` : ''}`, 'up');
+    if (world) announce(world, g, `กิลด์เลเวลอัพเป็น Lv.${g.level}!${opened ? ` ปลดล็อกทักษะ ${opened.nameTh} (${opened.desc})` : ''}`);
+  }
+  if (g.level >= GUILD_MAX_LEVEL) g.exp = 0;
+  if (up && world) {
+    for (const p of world.players.values()) {
+      if (p.record.guild === g.id) { p.recompute(); p.conn?.send({ t: 'guildLevelUp', level: g.level }); }
+    }
+  }
+  markDirty();
+}
+
+/** Progress on one of the week's goals; finishing it pays guild EXP once. */
+export function progress(world, g, id, n = 1) {
+  if (!g) return;
+  const q = GUILD_QUESTS.find((x) => x.id === id);
+  if (!q) return;
+  const gl = goals(g);
+  const before = gl[id] ?? 0;
+  if (before >= q.need) return;
+  gl[id] = Math.min(q.need, before + n);
+  if (gl[id] >= q.need) {
+    log(g, `ภารกิจกิลด์สำเร็จ: ${q.nameTh} (+${q.exp.toLocaleString()} EXP กิลด์)`, 'up');
+    addExp(world, g, q.exp);
+  }
+  markDirty();
+}
+
+/** A member's kill feeds the guild a little, and the weekly hunt. */
+export function onKill(world, p, monsterLevel) {
+  const g = of(p);
+  if (!g) return;
+  addExp(world, g, killGuildExp(monsterLevel));
+  progress(world, g, 'hunt', 1);
+}
+
+export function setEmblem(p, emblem) {
+  const g = of(p);
+  if (!g) return { error: 'ยังไม่ได้อยู่กิลด์' };
+  if (!rankOf(member(g, p.record.id)?.rank).manage) return { error: 'มีแต่หัวหน้ากิลด์ที่เปลี่ยนตรากิลด์ได้' };
+  if (!EMBLEMS.includes(emblem)) return { error: 'ไม่มีตรานี้' };
+  g.emblem = emblem;
+  markDirty();
+  return { ok: true };
+}
+
+/** The skills a character carries from their guild (none without one). */
+export function skillsOf(record) {
+  const g = record?.guild ? byId(record.guild) : null;
+  return g ? skillsAt(g.level ?? 1) : [];
 }
 
 /* ------------------------------------------------------------------ upkeep */
@@ -338,6 +427,10 @@ export function state(world, p) {
     siege,
     guild: {
       id: g.id, name: g.name, notice: g.notice ?? '', aurum: g.aurum ?? 0,
+      level: g.level ?? 1, exp: g.exp ?? 0, expToNext: guildExpToNext(g.level ?? 1),
+      capacity: capOf(g), emblem: g.emblem ?? 'lion', created: g.created,
+      leaderName: g.members.find((m) => m.rank === 'leader')?.name ?? '',
+      goals: GUILD_QUESTS.map((q) => ({ ...q, have: goals(g)[q.id] ?? 0 })),
       upkeep: GUILD_UPKEEP, upkeepDue: g.upkeepDue, inDebt: !!g.inDebt,
       holdsFortress: Siege.waivesUpkeep(g.id),
       myCharId: String(p.record.id),

@@ -53,7 +53,7 @@ export const MAPS = {
     backdrop: 'assets/maps/emberhold.webp',
     // the same picture at 4x, cut into 512px tiles (2px bleed each side) that
     // are fetched only once the camera is near them
-    backdropTiles: { dir: 'assets/maps/emberhold/ground', size: 512, bleed: 2, cols: 12, rows: 8, width: 6144, height: 4096 },
+    backdropTiles: { dir: 'assets/maps/emberhold/ground', size: 1024, bleed: 2, cols: 6, rows: 4, width: 6144, height: 4096 },
     walk: [
       [4, 5, 52, 27],                                         // inside the walls
       [28, 0, 4, 5], [28, 32, 4, 8],                          // north gate road, south stairs

@@ -4,6 +4,7 @@ import { SKILLS, val, skillCost } from '../../shared/data/skills.js';
 import { JOBS } from '../../shared/data/jobs.js';
 import { QUESTS } from '../../shared/data/quests.js';
 import { MONSTERS } from '../../shared/data/monsters.js';
+import { GUILD_SKILLS } from '../../shared/data/guild.js';
 import { WARP_ROUTES } from '../../shared/data/npcs.js';
 import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
@@ -1104,11 +1105,13 @@ export class UI {
   inviteCard(kind, d) {
     const card = el('div', 'invite-card');
     const crest = el('img', 'invite-crest'); crest.src = `${UI_BASE}/invite_crest.webp`; crest.alt = '';
-    card.append(crest, el('div', 'invite-title', kind === 'party' ? 'คำเชิญเข้าปาร์ตี้' : 'คำขอเป็นเพื่อน'));
+    const TITLE = { party: 'คำเชิญเข้าปาร์ตี้', friend: 'คำขอเป็นเพื่อน', guild: 'คำเชิญเข้ากิลด์' };
+    const LINE = { party: 'ต้องการเชิญคุณเข้าร่วมปาร์ตี้', friend: 'ต้องการเพิ่มคุณเป็นเพื่อน', guild: `ชวนคุณเข้ากิลด์ ${d.guild ?? ''}` };
+    card.append(crest, el('div', 'invite-title', TITLE[kind]));
     const body = el('div', 'invite-body');
     body.append(memberFace({ name: d.from }, false));
     const t = el('div');
-    t.append(el('b', '', esc(d.from)), el('div', 'muted', kind === 'party' ? 'ต้องการเชิญคุณเข้าร่วมปาร์ตี้' : 'ต้องการเพิ่มคุณเป็นเพื่อน'));
+    t.append(el('b', '', esc(d.from)), el('div', 'muted', esc(LINE[kind])));
     body.append(t);
     card.append(body);
     const acts = el('div', 'deal-actions');
@@ -1118,11 +1121,13 @@ export class UI {
     yes.addEventListener('click', () => {
       done();
       if (kind === 'party') this.game.net.send({ t: 'party', cmd: 'accept' });
+      else if (kind === 'guild') this.game.net.send({ t: 'guild', cmd: 'accept' });
       else this.game.net.send({ t: 'friend', cmd: 'accept', charId: d.charId });
     });
     no.addEventListener('click', () => {
       done();
       if (kind === 'party') this.game.net.send({ t: 'party', cmd: 'decline' });
+      else if (kind === 'guild') this.game.net.send({ t: 'guild', cmd: 'decline' });
       else this.game.net.send({ t: 'friend', cmd: 'decline', charId: d.charId });
     });
     acts.append(yes, no);
@@ -1132,7 +1137,7 @@ export class UI {
 
   /** Pop an invitation over the game, unless the social window already shows it. */
   popInvite(kind, d) {
-    if (this.openPanels.has('party')) return this.openParty();
+    if (kind !== 'guild' && this.openPanels.has('party')) return this.openParty();
     this._popCard?.remove();
     const card = this.inviteCard(kind, d);
     card.classList.add('pop');
@@ -1216,76 +1221,112 @@ export class UI {
   openGuild(state) {
     this.lastGuild = state ?? this.lastGuild;
     const st = this.lastGuild;
-    const wrap = el('div', 'grid');
     const send = (cmd, extra = {}) => this.game.net.send({ t: 'guild', cmd, ...extra });
-
-    if (st?.invite) {
-      const row = el('div', 'row');
-      row.innerHTML = `<span>${esc(st.invite.from)} ชวนคุณเข้ากิลด์</span>`;
-      const b = el('button', 'btn primary', 'ตอบรับ');
-      b.addEventListener('click', () => send('accept'));
-      row.append(b);
-      wrap.append(row);
-    }
-
-    // The fortress reads the same whether or not you are in a guild: knowing
-    // who holds it and when it can next be taken is half the reason to join one.
-    if (st?.siege) {
-      const s = st.siege;
-      const box = el('div', 'row');
-      const held = s.owner ? `<b>${esc(s.owner.name)}</b> ถือป้อมอยู่` : 'ยังไม่มีกิลด์ไหนถือป้อม';
-      const when = s.open
-        ? `<b style="color:var(--warn,#e8a33d)">ศึกกำลังเปิด</b>${s.holder ? ` · กำลังยึด ${Math.round(100 * s.progress / s.need)}%` : ''}`
-        : `ศึกครั้งถัดไป ${new Date(s.nextAt).toLocaleString('th-TH', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`;
-      box.innerHTML = `<span>🏰 ลานประลองเถ้า · ${held}<br><span class="muted">${when} · ผู้ถือป้อมไม่ต้องจ่ายค่าบำรุงสัปดาห์นั้น</span></span>`;
-      wrap.append(box);
-    }
-
     const g = st?.guild;
-    if (!g) {
-      wrap.append(el('div', 'muted',
-        `ยังไม่ได้อยู่กิลด์ · กิลด์อยู่ข้ามวันข้ามสัปดาห์ ไม่เหมือนปาร์ตี้ที่อยู่แค่รอบเดียว<br>
-         ค่าก่อตั้ง <b>${(st?.cost ?? 0).toLocaleString()}</b> ออรัม และมีค่าบำรุงรายสัปดาห์`));
-      const form = el('div', 'row');
-      const input = el('input');
-      input.type = 'text';
-      input.placeholder = 'ชื่อกิลด์ที่จะก่อตั้ง';
-      input.maxLength = 24;
-      this.textInput(input);
-      const b = el('button', 'btn primary', 'ก่อตั้งกิลด์');
-      b.addEventListener('click', () => {
-        if (input.value.trim()) send('create', { name: input.value.trim() });
-      });
-      form.append(input, b);
-      wrap.append(form);
-      return this.panel('guild', 'กิลด์', wrap);
-    }
+    const wrap = el('div', 'guild');
+    if (!g) return this.panel('guild', 'กิลด์', this.guildFound(st, send, wrap));
 
-    const myRank = st.ranks?.find((r) => r.id === g.myRank);
-    const canInvite = ['veteran', 'officer', 'leader'].includes(g.myRank);
-    const canKick = ['officer', 'leader'].includes(g.myRank);
-    const isLeader = g.myRank === 'leader';
-
-    /* --- the header: name, purse, dues --- */
-    const head = el('div', 'grid');
-    head.append(el('div', 'row',
-      `<b>${esc(g.name)}</b><span class="muted">${g.members.length} คน · ยศของคุณ: ${esc(myRank?.nameTh ?? g.myRank)}</span>`));
-    const days = Math.max(0, Math.ceil((g.upkeepDue - Date.now()) / 86400000));
-    head.append(el('div', 'row',
-      `<span class="muted">คลังกลาง</span><span class="num"><b>${(g.aurum ?? 0).toLocaleString()}</b> ออรัม</span>`));
-    head.append(el('div', 'row',
-      `<span class="muted">ค่าบำรุงรายสัปดาห์</span><span class="${g.inDebt ? 'rarity-legendary' : 'num'}">${
-        g.inDebt ? 'ค้างจ่าย — คลังถูกล็อก' : `${g.upkeep.toLocaleString()} ออรัม · อีก ${days} วัน`}</span>`));
+    const tab = this.guildTab ?? 'info';
+    // the header: crest, name, level and its bar, roster size
+    const head = el('div', 'g-head');
+    const crest = el('div', 'g-crest');
+    const emb = el('img', 'g-emblem'); emb.src = `${UI_BASE}/emblem_${g.emblem ?? 'lion'}.webp`; emb.alt = '';
+    const shield = el('img', 'g-shield'); shield.src = `${UI_BASE}/guild_crest.webp`; shield.alt = '';
+    crest.append(emb, shield);
+    const meta = el('div', 'g-meta');
+    meta.append(el('div', 'g-name', esc(g.name)), el('div', 'g-lv num', `Lv.${g.level}`));
+    const xp = el('div', 'bar exp g-exp');
+    const pct = g.expToNext ? Math.min(100, (g.exp / g.expToNext) * 100) : 100;
+    xp.innerHTML = `<i style="width:${pct}%"></i><span class="num">${g.expToNext ? `${fmt(g.exp)} / ${fmt(g.expToNext)}` : 'เลเวลสูงสุด'}</span>`;
+    meta.append(xp);
+    const online = g.members.filter((m) => m.online).length;
+    meta.append(el('div', 'muted num', `สมาชิก ${g.members.length}/${g.capacity} · ออนไลน์ ${online} คน · คลังกลาง ${fmt(g.aurum)} ออรัม`));
+    head.append(crest, meta);
     wrap.append(head);
 
-    if (g.notice) wrap.append(el('div', 'job-trial', esc(g.notice)));
+    const tabs = el('div', 'g-tabs');
+    for (const [key, label] of [['info', 'ข้อมูลกิลด์'], ['members', 'สมาชิก'], ['skills', 'สกิลกิลด์'],
+      ['quests', 'ภารกิจกิลด์'], ['vault', 'คลังเก็บของ'], ['war', 'สงครามกิลด์']]) {
+      const b = el('button', 'g-tab' + (tab === key ? ' on' : ''));
+      const i = el('img'); i.src = `${UI_BASE}/gtab_${key}.webp`; i.alt = '';
+      b.append(i, el('span', '', label));
+      b.addEventListener('click', () => { this.guildTab = key; this.openGuild(); });
+      tabs.append(b);
+    }
+    wrap.append(tabs);
+    const body = el('div', 'g-body');
+    ({ info: () => this.guildInfo(st, g, send, body), members: () => this.guildMembers(st, g, send, body),
+      skills: () => this.guildSkills(g, body), quests: () => this.guildQuests(g, body),
+      vault: () => this.guildVault(g, send, body), war: () => this.guildWar(st, g, body) })[tab]();
+    wrap.append(body);
+    return this.panel('guild', 'กิลด์', wrap);
+  }
 
-    /* --- donating: the only way aurum gets into the purse --- */
-    const give = el('div', 'row');
+  guildFound(st, send, wrap) {
+    const hero = el('div', 'g-head');
+    const shield = el('img', 'g-shield solo'); shield.src = `${UI_BASE}/guild_crest.webp`; shield.alt = '';
+    hero.append(shield, el('div', 'muted',
+      `ยังไม่ได้อยู่กิลด์ · กิลด์อยู่ข้ามวันข้ามสัปดาห์ มีเลเวล ทักษะที่สมาชิกทุกคนได้ และภารกิจรายสัปดาห์<br>
+       ค่าก่อตั้ง <b>${fmt(st?.cost ?? 0)}</b> ออรัม และมีค่าบำรุงรายสัปดาห์`));
+    wrap.append(hero);
+    if (st?.invite) wrap.append(this.inviteCard('guild', st.invite));
+    const form = el('div', 'social-form');
+    const input = el('input');
+    input.type = 'text'; input.placeholder = 'ชื่อกิลด์ที่จะก่อตั้ง'; input.maxLength = 24;
+    this.textInput(input);
+    const b = el('button', 'btn primary', 'ก่อตั้งกิลด์');
+    b.addEventListener('click', () => { if (input.value.trim()) send('create', { name: input.value.trim() }); });
+    form.append(input, b);
+    wrap.append(form);
+    if (st?.siege) wrap.append(this.guildWarCard(st));
+    return wrap;
+  }
+
+  guildInfo(st, g, send, body) {
+    const isLeader = g.myRank === 'leader';
+    const facts = el('div', 'g-card');
+    const row = (k, v) => facts.append(el('div', 'row', `<span class="muted">${k}</span><span>${v}</span>`));
+    row('หัวหน้ากิลด์', esc(g.leaderName));
+    row('ยศของคุณ', `${rankBadge(g.myRank)} ${esc(st.ranks?.find((r) => r.id === g.myRank)?.nameTh ?? g.myRank)}`);
+    row('ก่อตั้งเมื่อ', g.created ? new Date(g.created).toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '-');
+    const days = Math.max(0, Math.ceil((g.upkeepDue - Date.now()) / 86400000));
+    row('ค่าบำรุงรายสัปดาห์', g.holdsFortress ? 'ถือป้อมอยู่ — สัปดาห์นี้ไม่ต้องจ่าย'
+      : g.inDebt ? '<span class="rarity-legendary">ค้างจ่าย — คลังถูกล็อก</span>' : `${fmt(g.upkeep)} ออรัม · อีก ${days} วัน`);
+    body.append(facts);
+
+    // the notice board
+    const board = el('div', 'g-notice');
+    board.append(el('div', 'g-sub', 'ประกาศกิลด์'));
+    if (isLeader) {
+      const ni = el('textarea');
+      ni.maxLength = 200; ni.rows = 2; ni.value = g.notice ?? ''; ni.placeholder = 'พิมพ์ข้อความประกาศ…';
+      this.textInput(ni);
+      const nb = el('button', 'btn', 'บันทึกประกาศ');
+      nb.addEventListener('click', () => send('notice', { text: ni.value }));
+      board.append(ni, nb);
+    } else board.append(el('p', '', esc(g.notice || 'ยังไม่มีประกาศ')));
+    body.append(board);
+
+    // emblem, leader only
+    if (isLeader) {
+      const em = el('div', 'g-card');
+      em.append(el('div', 'g-sub', 'ตรากิลด์'));
+      const pick = el('div', 'g-emblems');
+      for (const k of ['lion', 'eagle', 'spirit', 'tree', 'skull']) {
+        const b = el('button', 'g-emb' + ((g.emblem ?? 'lion') === k ? ' on' : ''));
+        const i = el('img'); i.src = `${UI_BASE}/emblem_${k}.webp`; i.alt = k;
+        b.append(i);
+        b.addEventListener('click', () => send('emblem', { emblem: k }));
+        pick.append(b);
+      }
+      em.append(pick);
+      body.append(em);
+    }
+
+    // donating is the only way aurum gets into the purse
+    const give = el('div', 'social-form');
     const amount = el('input');
-    amount.type = 'number';
-    amount.min = '1';
-    amount.placeholder = 'จำนวนออรัม';
+    amount.type = 'number'; amount.min = '1'; amount.placeholder = 'จำนวนออรัมที่จะบริจาค';
     this.textInput(amount);
     const giveBtn = el('button', 'btn', 'บริจาคเข้าคลัง');
     giveBtn.addEventListener('click', () => {
@@ -1294,109 +1335,151 @@ export class UI {
       amount.value = '';
     });
     give.append(amount, giveBtn);
-    wrap.append(give);
+    body.append(give);
 
-    /* --- members --- */
-    const roster = el('div', 'grid');
-    roster.append(el('div', 'muted', 'สมาชิก'));
-    for (const m of g.members) {
-      const row = el('div', 'row');
-      const rank = st.ranks?.find((r) => r.id === m.rank);
-      row.innerHTML = `<span>${m.online ? '🟢' : '⚫'} ${esc(m.name)}
-        <span class="muted">Lv.${m.level} ${esc(JOBS[m.job]?.nameTh ?? '')}</span></span>
-        <span class="muted">${esc(rank?.nameTh ?? m.rank)}${m.online && m.map ? ` · ${esc(MAPS[m.map]?.nameTh ?? m.map)}` : ''}</span>`;
-      const tools = el('div', 'opts');
-      if (isLeader && m.rank !== 'leader') {
-        const sel = el('select');
-        for (const r of st.ranks) {
-          if (r.id === 'leader') continue;
-          const o = document.createElement('option');
-          o.value = r.id; o.textContent = r.nameTh;
-          if (r.id === m.rank) o.selected = true;
-          sel.append(o);
-        }
-        sel.addEventListener('change', () => send('rank', { charId: m.charId, rank: sel.value }));
-        tools.append(sel);
-        const hand = el('button', 'btn ghost', 'โอนหัวหน้า');
-        hand.addEventListener('click', () => send('rank', { charId: m.charId, rank: 'leader' }));
-        tools.append(hand);
+    // what has been happening
+    if (g.history?.length) {
+      const log = el('div', 'g-card');
+      log.append(el('div', 'g-sub', 'บันทึกกิจกรรม'));
+      for (const h of g.history.slice(0, 8)) {
+        const line = el('div', 'g-log');
+        const i = el('img'); i.src = `${UI_BASE}/glog_${h.kind ?? 'give'}.webp`; i.alt = '';
+        line.append(i, el('span', '', esc(h.text)), el('span', 'muted', ago(h.at)));
+        log.append(line);
       }
-      if (canKick && m.rank !== 'leader' && m.charId !== g.myCharId) {
-        const k = el('button', 'btn danger', 'เชิญออก');
-        k.addEventListener('click', () => send('kick', { charId: m.charId }));
-        tools.append(k);
-      }
-      if (tools.childNodes.length) row.append(tools);
-      roster.append(row);
+      body.append(log);
     }
-    wrap.append(roster);
+    const leave = this.sheetBtn('gb-leave', 'ออกจากกิลด์', () => { if (confirm('ออกจากกิลด์?')) send('leave'); });
+    body.append(leave);
+  }
 
-    /* --- the vault, and what your rank may take from it --- */
-    const vault = el('div', 'grid');
+  guildMembers(st, g, send, body) {
+    const isLeader = g.myRank === 'leader';
+    const canInvite = ['veteran', 'officer', 'leader'].includes(g.myRank);
+    const canKick = ['officer', 'leader'].includes(g.myRank);
+    const list = el('div', 'g-roster');
+    list.append(el('div', 'g-rhead muted', '<span>Lv.</span><span>ชื่อผู้เล่น</span><span>ตำแหน่ง</span><span>สถานะ</span><span></span>'));
+    for (const m of g.members) {
+      const row = el('div', 'g-rrow' + (m.online ? '' : ' off'));
+      const rank = st.ranks?.find((r) => r.id === m.rank);
+      row.append(el('span', 'num', String(m.level)));
+      row.append(el('b', '', esc(m.name)));
+      row.append(el('span', 'g-rank r-' + m.rank, `${rankBadge(m.rank)} ${esc(rank?.nameTh ?? m.rank)}`));
+      const dot = el('span', 'g-state' + (m.online ? ' on' : ''));
+      const di = el('img'); di.src = `${UI_BASE}/dot_${m.online ? 'online' : 'offline'}.webp`; di.alt = '';
+      dot.append(di, document.createTextNode(m.online ? ` ${MAPS[m.map]?.nameTh ?? 'ออนไลน์'}` : ' ออฟไลน์'));
+      row.append(dot);
+      const tools = el('div', 'g-tools');
+      const self = m.charId === g.myCharId;
+      if (!self && (isLeader || canKick) && m.rank !== 'leader') {
+        const more = el('button', 'btn fa-btn', '•••');
+        more.title = 'จัดการ';
+        more.addEventListener('click', () => { this.guildSel = this.guildSel === m.charId ? null : m.charId; this.openGuild(); });
+        tools.append(more);
+      }
+      row.append(tools);
+      list.append(row);
+      if (this.guildSel === m.charId) {
+        const acts = el('div', 'g-acts');
+        if (isLeader) {
+          const sel = el('select');
+          for (const r of st.ranks) {
+            if (r.id === 'leader') continue;
+            const o = document.createElement('option');
+            o.value = r.id; o.textContent = r.nameTh;
+            if (r.id === m.rank) o.selected = true;
+            sel.append(o);
+          }
+          acts.append(sel, this.sheetBtn('gb-promote', 'เลื่อนตำแหน่ง', () => send('rank', { charId: m.charId, rank: sel.value })));
+          const hand = el('button', 'btn', 'โอนหัวหน้า');
+          hand.addEventListener('click', () => { if (confirm(`โอนหัวหน้ากิลด์ให้ ${m.name}?`)) send('rank', { charId: m.charId, rank: 'leader' }); });
+          acts.append(hand);
+        }
+        if (canKick) acts.append(this.sheetBtn('gb-kick', 'ลบสมาชิก', () => { if (confirm(`เชิญ ${m.name} ออกจากกิลด์?`)) send('kick', { charId: m.charId }); }));
+        list.append(acts);
+      }
+    }
+    body.append(list);
+    if (canInvite) {
+      const form = el('div', 'social-form');
+      const input = el('input');
+      input.type = 'text'; input.placeholder = 'ชื่อผู้เล่นที่จะเชิญ (ต้องออนไลน์)';
+      this.textInput(input);
+      form.append(input, this.sheetBtn('gb-invite', 'เชิญสมาชิก', () => {
+        if (input.value.trim()) send('invite', { name: input.value.trim() });
+        input.value = '';
+      }));
+      body.append(form);
+    }
+  }
+
+  guildSkills(g, body) {
+    body.append(el('div', 'muted', 'ทักษะกิลด์ปลดล็อกตามเลเวลกิลด์ สมาชิกทุกคนได้ผลอัตโนมัติ'));
+    const grid = el('div', 'g-skills');
+    for (const s of GUILD_SKILLS) {
+      const on = (g.level ?? 1) >= s.level;
+      const card = el('div', 'g-skill' + (on ? ' on' : ''));
+      const i = el('img'); i.src = `${UI_BASE}/gskill_${s.id}.webp`; i.alt = '';
+      const t = el('div');
+      t.append(el('b', '', esc(s.nameTh)), el('div', 'muted', esc(s.desc)),
+        el('div', on ? 'g-ok' : 'muted', on ? 'ใช้งานอยู่' : `ปลดล็อกที่กิลด์ Lv.${s.level}`));
+      card.append(i, t);
+      grid.append(card);
+    }
+    body.append(grid);
+  }
+
+  guildQuests(g, body) {
+    body.append(el('div', 'muted', 'ภารกิจร่วมของทั้งกิลด์ รีเซ็ตทุกวันจันทร์ ทำสำเร็จได้ EXP กิลด์ · ล่ามอนสเตอร์ทุกตัวก็ได้ EXP กิลด์เล็กน้อยด้วย'));
+    for (const q of g.goals ?? []) {
+      const done = q.have >= q.need;
+      const row = el('div', 'g-goal' + (done ? ' done' : ''));
+      const i = el('img'); i.src = `${UI_BASE}/gq_check.webp`; i.alt = '';
+      const t = el('div', 'g-goal-t');
+      t.append(el('b', '', esc(q.nameTh)), bar('exp', q.have, q.need));
+      row.append(i, t, el('span', 'num', `${fmt(q.have)}/${fmt(q.need)}`), el('span', 'muted num', `+${fmt(q.exp)} EXP`));
+      body.append(row);
+    }
+  }
+
+  guildVault(g, send, body) {
     const allowance = g.myAllowance < 0 ? 'ไม่จำกัด' : `${g.myTaken}/${g.myAllowance} ชิ้นในสัปดาห์นี้`;
-    vault.append(el('div', 'row', `<span class="muted">คลังกิลด์</span><span class="muted">เบิกได้ ${allowance}</span>`));
+    body.append(el('div', 'row', `<span class="muted">คลังกิลด์ ${g.vault.length} ช่อง</span><span class="muted">คุณเบิกได้ ${allowance}</span>`));
     const grid = el('div', 'slot-grid');
     for (const it of g.vault) {
-      const node = el('button', 'slot');
+      const node = el('button', `slot rarity-${ITEMS[it.id]?.rarity ?? 'common'}`);
       node.append(itemIcon(it.id, { size: 30 }));
       if (it.qty > 1) node.append(el('span', 'qty', String(it.qty)));
       if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
-      node.title = `${ITEMS[it.id]?.nameTh ?? it.id} x${it.qty}`;
+      node.title = `${ITEMS[it.id]?.nameTh ?? it.id} x${it.qty} — คลิกเพื่อเบิก 1 ชิ้น`;
       node.addEventListener('click', () => send('vault', { dir: 'out', index: it.i, qty: 1 }));
       grid.append(node);
     }
     if (!g.vault.length) grid.append(el('div', 'muted', 'คลังว่าง'));
-    vault.append(grid);
-    const dep = el('button', 'btn', 'ฝากของจากกระเป๋า');
+    body.append(grid);
+    const dep = el('button', 'btn primary', 'ฝากของจากกระเป๋า');
     dep.addEventListener('click', () => this.openGuildDeposit());
-    vault.append(dep);
-    wrap.append(vault);
+    body.append(dep);
+  }
 
-    /* --- what happened while you were away --- */
-    if (g.history?.length) {
-      const log = el('div', 'grid');
-      log.append(el('div', 'muted', 'ความเคลื่อนไหวล่าสุด'));
-      for (const h of g.history.slice(0, 8)) {
-        log.append(el('div', 'qprog', esc(h.text)));
-      }
-      wrap.append(log);
+  guildWar(st, g, body) {
+    body.append(this.guildWarCard(st));
+    body.append(el('div', 'muted', 'เข้าไปในลานประลองเถ้าระหว่างศึกเปิด นับเป็นภารกิจกิลด์ "เข้าร่วมสงครามกิลด์" · กิลด์ที่ถือป้อมได้ EXP เพิ่มและไม่ต้องจ่ายค่าบำรุงสัปดาห์นั้น'));
+  }
+
+  guildWarCard(st) {
+    const s = st.siege;
+    const card = el('div', 'g-war');
+    const art = el('img'); art.src = `${UI_BASE}/guild_war.webp`; art.alt = '';
+    card.append(art, el('div', 'g-war-title', 'สงครามกิลด์ · ลานประลองเถ้า'));
+    if (s) {
+      const held = s.owner ? `<b>${esc(s.owner.name)}</b> ถือป้อมอยู่` : 'ยังไม่มีกิลด์ไหนถือป้อม';
+      const when = s.open
+        ? `<b style="color:var(--warn)">ศึกกำลังเปิด</b>${s.holder ? ` · กำลังยึด ${Math.round(100 * s.progress / s.need)}%` : ''}`
+        : `ศึกครั้งถัดไป ${new Date(s.nextAt).toLocaleString('th-TH', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`;
+      card.append(el('div', 'g-war-line', `${held}<br>${when}`));
     }
-
-    /* --- footer --- */
-    const foot = el('div', 'row');
-    if (canInvite) {
-      const input = el('input');
-      input.type = 'text';
-      input.placeholder = 'ชื่อผู้เล่นที่จะชวน';
-      this.textInput(input);
-      const b = el('button', 'btn primary', 'ชวน');
-      b.addEventListener('click', () => {
-        if (input.value.trim()) send('invite', { name: input.value.trim() });
-        input.value = '';
-      });
-      foot.append(input, b);
-    }
-    wrap.append(foot);
-
-    if (isLeader) {
-      const nrow = el('div', 'row');
-      const ni = el('input');
-      ni.type = 'text';
-      ni.placeholder = 'ประกาศของกิลด์';
-      ni.value = g.notice ?? '';
-      ni.maxLength = 200;
-      this.textInput(ni);
-      const nb = el('button', 'btn', 'บันทึกประกาศ');
-      nb.addEventListener('click', () => send('notice', { text: ni.value }));
-      nrow.append(ni, nb);
-      wrap.append(nrow);
-    }
-
-    const leave = el('button', 'btn danger', 'ออกจากกิลด์');
-    leave.addEventListener('click', () => send('leave'));
-    wrap.append(leave);
-
-    return this.panel('guild', 'กิลด์', wrap);
+    return card;
   }
 
   /** Pick something out of the bag to put in the vault. */
@@ -2717,6 +2800,9 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** A guild rank's mark from the guild sheet. */
+const rankBadge = (rank) => `<img class="rank-ico" src="${UI_BASE}/rank_${rank}.webp" alt="">`;
+
 /** What each path does in a group. */
 const ROLE_OF = {
   vanguard: 'tank', bulwark: 'tank', oathkeeper: 'tank',

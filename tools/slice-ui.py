@@ -465,3 +465,48 @@ def ring_cut(box, cx, cy, r):
 save('pring_gold', ring_cut((10, 900, 88, 998), 0, 0, 27))
 save('pring_steel', ring_cut((100, 903, 170, 988), 0, 0, 26))
 print('party sheet done')
+
+
+# ============================================================================
+# Sixth sheet: guilds (assets/ui/source/guild_sheet.png)
+# ============================================================================
+gs = cv2.imread(os.path.join(ROOT, 'assets/ui/source/guild_sheet.png'))
+
+save('guild_crest', grab((26, 38, 166, 160), pad=4, img=gs)[0])
+for k, x in {'lion': 1192, 'eagle': 1260, 'spirit': 1330, 'tree': 1398, 'skull': 1464}.items():
+    save('emblem_' + k, grab((x, 10, x + 60, 138), pad=4, img=gs)[0] if k in ('lion', 'eagle', 'spirit')
+         else lift(gs, (x, 10, x + 60, 138), ring=14, thresh=40))
+
+# the window's tab pictograms (white on the tab) - brightness becomes alpha
+for k, (x0, y0) in {'info': (478, 28), 'members': (603, 28), 'skills': (727, 28), 'quests': (852, 28),
+                    'vault': (975, 28), 'war': (1097, 28)}.items():
+    save('gtab_' + k, glyph(gs, (x0, y0, x0 + 38, y0 + 36), thresh=150))
+
+# guild skills
+for k, (x, y) in {'atk': (955, 283), 'hp': (1013, 283), 'def': (1071, 283),
+                  'exp': (955, 349), 'crit': (1013, 349), 'mdef': (1071, 349)}.items():
+    save('gskill_' + k, rounded(gs, (x, y, x + 50, y + 51), r=4))
+
+# rank marks for the roster
+for k, b in {'rank_leader': (203, 316, 238, 346), 'rank_officer': (204, 368, 236, 400),
+             'rank_member': (204, 423, 236, 453), 'rank_recruit': (204, 530, 236, 560),
+             'rank_veteran': (670, 797, 732, 862)}.items():
+    save(k, grab(b, pad=4, img=gs)[0])
+
+save('gq_check', grab((1149, 283, 1177, 312), pad=3, img=gs)[0])
+for k, y in {'glog_join': 523, 'glog_give': 557, 'glog_leave': 591, 'glog_up': 624}.items():
+    save(k, grab((832, y, 854, y + 21), pad=2, img=gs)[0])
+
+# the war card's castle, above its lettering
+war = cv2.cvtColor(gs[520:564, 1190:1510], cv2.COLOR_BGR2RGB)
+Image.fromarray(war).save(os.path.join(OUT, 'guild_war.webp'), 'WEBP', quality=90)
+
+# welcome stamp: the chibi and her bubble
+save('guild_welcome', lift(gs, (14, 904, 168, 1000), thresh=46))
+
+# buttons whose words are ours
+for k, b in {'gb_invite': (28, 618, 176, 660), 'gb_kick': (186, 618, 332, 660),
+             'gb_promote': (342, 618, 489, 660), 'gb_join': (19, 682, 181, 728),
+             'gb_leave': (194, 682, 353, 728), 'gb_emblem': (781, 387, 911, 421)}.items():
+    save(k, rounded(gs, b, r=6))
+print('guild sheet done')

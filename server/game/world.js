@@ -135,6 +135,8 @@ export class World {
     // server must forget what it told it too, or names and looks never resend
     p.seenIdentity = null;
     target.addPlayer(p);
+    // turning up to the siege while it is open is one of the guild's weekly goals
+    if (mapId === Siege.SIEGE_MAP && Siege.status().open) Guild.progress(this, Guild.of(p), 'war', 1);
     if (target.def.safe) p.record.savePoint = { map: mapId, x: p.x, y: p.y };
     p.conn.send(target.zonePayload());
     p.conn.send({ t: 'self', self: p.selfState() });
@@ -174,7 +176,10 @@ export class World {
     return { ok: true, moved: true };
   }
 
-  onKill(p, monster) { Quests.onKill(p, monster.defId); }
+  onKill(p, monster) {
+    Quests.onKill(p, monster.defId);
+    Guild.onKill(this, p, monster.level ?? 1);
+  }
 
   broadcastChat(msg) {
     const packet = { t: 'chatMsg', ...msg, ts: Date.now() };

@@ -2,6 +2,7 @@
 import { deriveStats, baseExpToNext, jobExpToNext, statCost } from '../../shared/formulas.js';
 import { ITEMS, isEquip, RETIRED_ITEMS } from '../../shared/data/items.js';
 import { JOBS, jobOf, availableSkills } from '../../shared/data/jobs.js';
+import * as Guild from './guild.js';
 import * as Siege from './siege.js';
 import { SKILLS, val } from '../../shared/data/skills.js';
 import { MAX_BASE_LEVEL, MAX_JOB_LEVEL, SLOTS, STAT_CAP, TILE } from '../../shared/constants.js';
@@ -182,6 +183,11 @@ export class Player {
     d.flee = Math.floor(d.flee * (1 + bm.fleePct / 100));
     d.moveSpeed = Math.max(40, d.moveSpeed * (1 + bm.speedPct / 100));
     d.castFactor = Math.max(0.15, d.castFactor * (1 - bm.castPct / 100));
+    // the guild's passive skills, carried by every member
+    for (const s of Guild.skillsOf(this.record)) {
+      for (const [k, v] of Object.entries(s.pct ?? {})) if (d[k] != null) d[k] = Math.floor(d[k] * (1 + v / 100));
+      for (const [k, v] of Object.entries(s.flat ?? {})) if (d[k] != null) d[k] += v;
+    }
     d.level = this.record.level;
     this.derived = d;
     this.mods = bm;
@@ -346,6 +352,8 @@ export class Player {
     // one reward that cannot distort a scarce-currency economy is the one
     // that is not currency. It is small, it is visible, and it is the reason
     // to turn up on Sunday rather than let somebody else have it.
+    const guildExp = Guild.skillsOf(r).reduce((a, s) => a + (s.exp ?? 0), 0);
+    if (guildExp) { exp *= 1 + guildExp / 100; jobExp *= 1 + guildExp / 100; }
     if (r.guild && Siege.waivesUpkeep(r.guild)) {
       exp *= 1 + Siege.HOLDER_EXP_BONUS;
       jobExp *= 1 + Siege.HOLDER_EXP_BONUS;

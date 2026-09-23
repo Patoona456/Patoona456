@@ -587,6 +587,8 @@ export class Conn {
       case 'leave': r = Guild.leave(this.world, p); break;
       case 'kick': r = Guild.kick(this.world, p, m.charId); break;
       case 'rank': r = Guild.setRank(this.world, p, m.charId, String(m.rank)); break;
+      case 'emblem': r = Guild.setEmblem(p, String(m.emblem)); break;
+      case 'decline': r = Guild.decline(p); break;
       case 'notice': r = Guild.setNotice(p, m.text); break;
       case 'donate': r = Guild.donate(p, m.amount); break;
       case 'vault': r = Guild.vaultMove(p, m.dir === 'in' ? 'in' : 'out', m.index | 0, m.qty); break;
@@ -594,7 +596,9 @@ export class Conn {
       default: return this.error('คำสั่งกิลด์ไม่ถูกต้อง');
     }
     if (r.error) return this.error(r.error);
-    if (m.cmd === 'vault' || m.cmd === 'donate' || m.cmd === 'create' || m.cmd === 'leave') {
+    if (m.cmd === 'accept' || m.cmd === 'create') this.send({ t: 'guildJoined' });
+    if (m.cmd === 'invite') this.notice(`ส่งคำเชิญเข้ากิลด์ถึง ${m.name} แล้ว`);
+    if (m.cmd === 'vault' || m.cmd === 'donate' || m.cmd === 'create' || m.cmd === 'leave' || m.cmd === 'accept') {
       this.sendInventory();
       this.send({ t: OP.SELF, self: p.selfState() });
     }
