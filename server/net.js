@@ -236,6 +236,14 @@ export class Conn {
         if (r.error) return this.error(r.error);
         this.notice(`ขายได้ ${r.gained} ออรัม${r.dampened ? ' (ราคาตกเพราะขายซ้ำเยอะ)' : ''}`);
         this.sendInventory();
+        this.send({ t: 'buyback', items: Econ.buybackList(p) });
+      });
+      case OP.SHOP_BUYBACK: return this.guardNpc(['shop', 'smith'], () => {
+        const r = Econ.buyback(this.world, p, m.index | 0);
+        if (r.error) return this.error(r.error);
+        this.notice(`ซื้อคืน ${r.name} -${r.spent} ออรัม`, 'good');
+        this.sendInventory();
+        this.send({ t: 'buyback', items: Econ.buybackList(p) });
       });
       case OP.STORAGE_MOVE: return this.guardNpc(['storage'], () => {
         const r = Econ.storageMove(p, m.dir, m.index | 0, m.qty | 0 || 1);
@@ -476,9 +484,12 @@ export class Conn {
     switch (m.action) {
       case 'shop': {
         const shop = Econ.shopPayload(m.shop ?? npc.shop ?? 'general');
+        this.send({ t: 'buyback', items: Econ.buybackList(p) });
         return this.send(shop && { ...shop, keeper: npc.name });   // the window names who you are talking to
       }
-      case 'sell': return this.send({ t: OP.SHOP, mode: 'sell', id: npc.npcId, name: npc.name, keeper: npc.name, stock: [] });
+      case 'sell':
+        this.send({ t: 'buyback', items: Econ.buybackList(p) });
+        return this.send({ t: OP.SHOP, mode: 'sell', id: npc.npcId, name: npc.name, keeper: npc.name, stock: [] });
       case 'refine': return this.send({ t: OP.SHOP, mode: 'refine', id: npc.npcId, name: npc.name });
       case 'socket': return this.send({ t: OP.SHOP, mode: 'socket', id: npc.npcId, name: npc.name });
       case 'repair': return this.send({ t: OP.SHOP, mode: 'repair', id: npc.npcId, name: npc.name });

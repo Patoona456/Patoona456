@@ -124,6 +124,7 @@ export const OP = {
   NPC_ACTION: 'npcAction',
   SHOP_BUY: 'shopBuy',
   SHOP_SELL: 'shopSell',
+  SHOP_BUYBACK: 'shopBuyback',
   STORAGE_MOVE: 'storageMove',
   MARKET_LIST: 'marketList',
   STALL_OPEN: 'stallOpen',

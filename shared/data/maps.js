@@ -90,6 +90,7 @@ export const MAPS = {
       { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 11, y: 15, look: { pic: 'blacksmith' } },
       { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 45, y: 15, look: { pic: 'nun' } },
       { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 14, y: 15, shop: 'general', look: { pic: 'alchemist' } },
+      { id: 'apothecary', name: 'แม่ค้าโรซ่า', role: 'shop', x: 32, y: 11, shop: 'apothecary', look: { pic: 'maid' } },
       { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 48, y: 15, look: { pic: 'dwarf' } },
       { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 39, y: 28, look: { pic: 'shrinemaiden' } },
       { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 11, y: 30, look: { pic: 'peddler' } },
@@ -101,7 +102,6 @@ export const MAPS = {
     walkers: [
       { name: 'ชาวนาทอม', pic: 'farmer', x: 20, y: 20, range: 6 },
       { name: 'หนูมีมี่', pic: 'bunnygirl', x: 39, y: 21, range: 6 },
-      { name: 'สาวใช้โรซ่า', pic: 'maid', x: 30, y: 11, range: 5 },
       { name: 'เนโกะ', pic: 'catgirl', x: 30, y: 26, range: 5 },
       { name: 'นักเดินทางคาอิ', pic: 'traveller', x: 9, y: 19, range: 4 },
       { name: 'พ่อครัวบิน', pic: 'chef', x: 51, y: 19, range: 4 },

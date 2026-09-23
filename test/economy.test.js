@@ -214,3 +214,30 @@ test('the weekly boss is the only thing on a lockout', () => {
     assert.ok(m.boss, `${m.id} has a lockout but is not a boss`);
   }
 });
+
+/* ------------------------------------------------------------- buy-back */
+
+test('buy-back undoes a sale exactly, and only once', () => {
+  const p = character({ items: [{ id: 'iron_sword', qty: 1, refine: 3, dur: 40 }, { id: 'lesser_salve', qty: 5 }] });
+  const start = p.record.aurum;
+  const sold = Econ.sell(world, p, 0, 1);
+  assert.ok(sold.ok, sold.error);
+  const list = Econ.buybackList(p);
+  assert.equal(list.length, 1);
+  assert.equal(list[0].price, sold.gained, 'buy-back costs what the sale paid');
+  const back = Econ.buyback(world, p, 0);
+  assert.ok(back.ok, back.error);
+  assert.equal(p.record.aurum, start, 'a sale and its buy-back must net to nothing');
+  const sword = p.inventory.find((st) => st.id === 'iron_sword');
+  assert.equal(sword.refine, 3, 'the refine came back');
+  assert.equal(sword.dur, 40, 'the wear came back');
+  assert.ok(Econ.buyback(world, p, 0).error, 'the same sale was bought back twice');
+});
+
+test('buy-back keeps only the last few sales and refuses without the money', () => {
+  const p = character({ items: [{ id: 'lesser_salve', qty: 20 }] });
+  for (let i = 0; i < Econ.BUYBACK_KEEP + 4; i++) Econ.sell(world, p, 0, 1);
+  assert.equal(Econ.buybackList(p).length, Econ.BUYBACK_KEEP);
+  p.record.aurum = 0;
+  assert.ok(Econ.buyback(world, p, 0).error, 'bought back with no money');
+});

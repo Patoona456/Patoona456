@@ -319,3 +319,37 @@ for k, b in {'sign_shop': (657, 840, 742, 910), 'sign_potion': (760, 841, 848, 9
              'sign_etc': (889, 927, 983, 995)}.items():
     save(k, grab(b, pad=4, img=shop)[0])
 print('shop sheet done')
+
+# buy-back glyph, and the market stall + lantern players' stalls are drawn with
+save('shop_buyback_icon', grab((29, 192, 51, 217), pad=3, img=shop)[0])
+stall, _ = grab((1093, 848, 1271, 1004), pad=5, img=shop)
+save('stall', stall)
+print('stall', stall.shape[1], 'x', stall.shape[0])
+
+
+def lift(img, box, ring=36, thresh=38):
+    """For pieces GrabCut loses against the backdrop (bronze on brown): paint
+    the backdrop in from a ring around the box, blur it, and keep what differs."""
+    x0, y0, x1, y1 = box
+    X0, Y0 = max(0, x0 - ring), max(0, y0 - ring)
+    X1, Y1 = min(img.shape[1], x1 + ring), min(img.shape[0], y1 + ring)
+    big = img[Y0:Y1, X0:X1]
+    inside = np.zeros(big.shape[:2], np.uint8)
+    inside[y0 - Y0:y1 - Y0, x0 - X0:x1 - X0] = 255
+    bg = cv2.GaussianBlur(cv2.inpaint(big, inside, 15, cv2.INPAINT_TELEA), (0, 0), 6)
+    d = np.abs(big.astype(np.int16) - bg.astype(np.int16)).sum(2)
+    a = np.clip((d - thresh) * 6, 0, 255).astype(np.uint8)
+    a[inside == 0] = 0
+    a = cv2.morphologyEx(a, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats((a > 100).astype(np.uint8))
+    keep = np.zeros_like(a)
+    for i in range(1, n):
+        if st[i, 4] > 30:
+            keep[lab == i] = 255
+    a = np.minimum(a, cv2.dilate(keep, np.ones((3, 3), np.uint8)))
+    rgba = cv2.cvtColor(big, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = a
+    return trim(rgba)
+
+
+save('lantern', lift(shop, (1272, 925, 1338, 1016)))

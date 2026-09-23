@@ -254,6 +254,7 @@ class Game {
     });
     n.on('questTrack', (m) => this.ui.renderQuestTrack(m.quests));
     n.on('questClear', () => this.ui.stamp('questclear'));
+    n.on('buyback', (m) => this.ui.setBuyback(m.items));
     n.on('died', (m) => this.onDied(m));
   }
 

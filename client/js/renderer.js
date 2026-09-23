@@ -24,6 +24,40 @@ function uiImage(name) {
   return img;
 }
 // fetched up front: a word that loads on its first use would miss that hit
+// the market booth from the shop sheet, and the lantern hung beside it
+const STALL_ART = typeof Image !== 'undefined' ? { stall: uiImage('stall'), lantern: uiImage('lantern') } : null;
+const BOOTH_W = 88;            // world px: a little under three tiles
+const BOOTH_COUNTER = 0.52;    // where the counter top sits, as a share of the art's height
+
+/** Draw the booth around a stall keeper: 'back' is all of it, 'front' just the counter. */
+function drawBooth(ctx, e, art, part) {
+  const img = art.stall;
+  if (!img?.naturalWidth) return;
+  const w = BOOTH_W, h = w * (img.naturalHeight / img.naturalWidth);
+  // the keeper stands behind the counter, so it sits a little in front of their feet
+  const x = e.x - w / 2, bottom = e.y + 17;
+  if (part === 'back') {
+    ctx.drawImage(img, x, bottom - h, w, h);
+    const lamp = art.lantern;
+    if (lamp?.naturalWidth) {
+      const lh = 26, lw = lh * (lamp.naturalWidth / lamp.naturalHeight);
+      const lx = x + w - 6, ly = bottom - h * 0.8;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const g = ctx.createRadialGradient(lx + lw / 2, ly + lh * 0.62, 1, lx + lw / 2, ly + lh * 0.62, 22);
+      g.addColorStop(0, 'rgba(255,190,90,0.35)');
+      g.addColorStop(1, 'rgba(255,190,90,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(lx - 16, ly - 10, lw + 32, lh + 24);
+      ctx.restore();
+      ctx.drawImage(lamp, lx, ly, lw, lh);
+    }
+    return;
+  }
+  const sy = img.naturalHeight * BOOTH_COUNTER;
+  ctx.drawImage(img, 0, sy, img.naturalWidth, img.naturalHeight - sy, x, bottom - h * (1 - BOOTH_COUNTER), w, h * (1 - BOOTH_COUNTER));
+}
+
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
   for (const name of ['miss', 'critical', 'levelup']) uiImage(name);
@@ -632,6 +666,10 @@ export class Renderer {
             x: e.x, y: e.y, dir: toDir4(e.d ?? 0), scale,
             t: now + (e.id.charCodeAt(1) ?? 0) * 37, moving: anim === 'walk',
           };
+          // a player keeping a stall stands inside a market booth: the back
+          // of it goes on first, its counter after, so they lean over it
+          const booth = e.k === 'p' && (state.stalls ?? []).some((sg) => sg.id === e.id) ? STALL_ART : null;
+          if (booth) drawBooth(ctx, e, booth, 'back');
           drawBehind(ctx, worn, dress);
           drawCharacter(ctx, layers, {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
@@ -641,6 +679,7 @@ export class Renderer {
             flash: hurt,
           });
           drawInFront(ctx, worn, dress);
+          if (booth) drawBooth(ctx, e, booth, 'front');
           if (e.k === 'p') this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
         }
       }

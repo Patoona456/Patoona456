@@ -1404,7 +1404,8 @@ export class UI {
     face.src = `${UI_BASE}/shopkeeper_${keeper.face}.webp`;
     face.alt = keeper.name;
     const talk = el('div', 'shop-talk');
-    talk.append(el('b', '', esc(d.keeper ?? keeper.name)), el('span', '', esc(mode === 'sell' ? keeper.sellLine : keeper.line)));
+    const line = mode === 'sell' ? keeper.sellLine : mode === 'buyback' ? BUYBACK_LINE : keeper.line;
+    talk.append(el('b', '', esc(d.keeper ?? keeper.name)), el('span', '', esc(line)));
     const side = el('div', 'shop-side');
     const sign = el('img', 'shop-sign');
     sign.src = `${UI_BASE}/sign_${keeper.sign}.webp`;
@@ -1414,8 +1415,9 @@ export class UI {
     wrap.append(head);
 
     const modes = el('div', 'shop-modes');
-    for (const [key, label, pic] of [['buy', 'ซื้อสินค้า', 'cat_all'], ['sell', 'ขายสินค้า', 'shop_sell_icon']]) {
-      if (key === 'sell' && d.currency) continue;          // the shard counter only takes shards
+    for (const [key, label, pic] of [['buy', 'ซื้อสินค้า', 'cat_all'], ['sell', 'ขายสินค้า', 'shop_sell_icon'],
+      ['buyback', 'ซื้อคืน', 'shop_buyback_icon']]) {
+      if (key !== 'buy' && d.currency) continue;           // the shard counter only takes shards
       if (key === 'buy' && !d.stock?.length) continue;     // a buyer-only counter has no shelves
       const b = el('button', 'btn shop-mode' + (mode === key ? ' primary' : ''));
       const img = el('img');
@@ -1426,7 +1428,7 @@ export class UI {
       modes.append(b);
     }
     wrap.append(modes);
-    wrap.append(mode === 'sell' ? this.sellPicker() : this.shopShelves(d));
+    wrap.append(mode === 'sell' ? this.sellPicker() : mode === 'buyback' ? this.buybackShelf() : this.shopShelves(d));
     return this.panel('shop', d.name ?? 'ร้านค้า', wrap);
   }
 
@@ -1507,6 +1509,68 @@ export class UI {
     const first = shown.find((e) => e.id === this.pick?.shop) ?? shown[0];
     if (first) select(first, shelf.children[shown.indexOf(first)]);
     return box;
+  }
+
+  /** What you sold here this session, at the price you were paid for it. */
+  buybackShelf() {
+    const list = this.buyback ?? [];
+    const box = el('div', 'shop-main');
+    const left = el('div', 'shop-left');
+    const counter = el('div', 'shop-counter');
+    left.append(el('div', 'muted', `ของที่ขายไป ${list.length ? `${list.length} รายการล่าสุด` : ''} ซื้อคืนได้ในราคาเดียวกับที่ขาย จนกว่าจะออกจากเกม`));
+    const shelf = el('div', 'shop-grid');
+    if (!list.length) shelf.append(el('div', 'muted', 'ยังไม่ได้ขายอะไรไป'));
+    const select = (b, card) => {
+      for (const c of shelf.children) c.classList.remove('sel');
+      card.classList.add('sel');
+      const it = ITEMS[b.id] ?? { id: b.id, nameTh: b.id };
+      const deal = el('div', 'win tip shop-deal');
+      const head = el('div', 'deal-head');
+      const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
+      ico.append(itemIcon(b.id, { size: 34 }));
+      const meta = el('div');
+      meta.append(el('div', 'tname rarity-' + (it.rarity ?? 'common'), esc(it.nameTh ?? it.name) + (b.refine ? ` +${b.refine}` : '')));
+      meta.append(el('div', 'muted', `จำนวน ${fmt(b.qty)}`));
+      head.append(ico, meta);
+      const row = el('div', 'deal-row');
+      const m = el('span', 'deal-money');
+      m.append(el('i', 'cur coin'), el('b', 'num', fmt(b.price)));
+      row.append(el('span', 'muted', 'ราคาซื้อคืน'), m);
+      const acts = el('div', 'deal-actions');
+      const buy = el('button', 'btn primary sbtn sbtn-buy', 'ซื้อคืน');
+      buy.setAttribute('aria-label', 'ซื้อคืน');
+      buy.addEventListener('click', () => this.game.net.send({ t: 'shopBuyback', index: b.i }));
+      acts.append(buy);
+      deal.append(head, row, acts);
+      counter.innerHTML = '';
+      counter.append(deal);
+    };
+    for (const b of list) {
+      const it = ITEMS[b.id] ?? {};
+      const card = el('div', 'shop-card');
+      const slot = el('div', `slot rarity-${it.rarity ?? 'common'}`);
+      slot.append(itemIcon(b.id, { size: 32 }));
+      if (b.qty > 1) slot.append(el('span', 'qty num', String(b.qty)));
+      if (b.refine) slot.append(el('span', 'plus', '+' + b.refine));
+      const price = el('div', 'price');
+      price.append(el('i', 'cur coin'), el('span', 'num', fmt(b.price)));
+      card.append(slot, price);
+      card.title = it.nameTh ?? b.id;
+      card.addEventListener('click', () => select(b, card));
+      shelf.append(card);
+    }
+    left.append(shelf);
+    box.append(left, counter);
+    if (list.length) select(list[0], shelf.children[0]);
+    return box;
+  }
+
+  /** A fresh buy-back list from the server; redraw the tab if it is showing. */
+  setBuyback(items) {
+    this.buyback = items ?? [];
+    if (this.shopMode === 'buyback' && this.openPanels.has('shop') && document.querySelector('.shop')) {
+      this.renderShop(this.lastShop ?? { id: null, name: 'ร้านค้า', stock: [] }, 'buyback');
+    }
   }
 
   /** The counter: price, a quantity you can nudge, the total, then buy. */
@@ -2313,9 +2377,12 @@ const SHOPKEEPERS = {
     line: 'ยินดีต้อนรับ! ของดีมีคุณภาพ เลือกดูได้เลย', sellLine: 'มีอะไรจะขายเหรอ? ของชิ้นเดิมขายซ้ำวันเดียวกันราคาจะตกนะ' },
   smith: { face: 'smith', sign: 'weapon', name: 'ช่างบอร์ก',
     line: 'เหล็กทุกชิ้นข้าตีเอง ใส่แล้วไม่ต้องกลัวใคร', sellLine: 'ของเก่าเอามาเถอะ ข้าหลอมใหม่ได้' },
+  apothecary: { face: 'maid', sign: 'potion', name: 'แม่ค้าโรซ่า',
+    line: 'ยาทุกขวดต้มเองกับมือค่ะ ก่อนออกไปล่าพกติดตัวไว้นะคะ', sellLine: 'มีสมุนไพรหรือของอื่นจะขายไหมคะ?' },
   dawn: { face: 'mystic', sign: 'etc', name: 'ผู้แลกเศษรุ่งอรุณ',
     line: 'เศษรุ่งอรุณ... แลกของที่หาที่ไหนไม่ได้', sellLine: '...' },
 };
+const BUYBACK_LINE = 'ขายผิดชิ้นเหรอ? ซื้อคืนได้ในราคาเดิม แต่ถ้าออกจากเกมไปแล้วก็หมดสิทธิ์นะ';
 const SHOP_CATS = [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ'], ['armor', 'ชุดเกราะ'],
   ['consumable', 'ไอเทมใช้สอย'], ['material', 'วัตถุดิบ'], ['other', 'อื่นๆ']];
 

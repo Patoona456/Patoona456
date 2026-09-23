@@ -68,6 +68,20 @@ export const SHOPS = {
   // shrine's gamble. Anything the gacha can roll can also simply be bought
   // here, for more shards than the average draw costs - so nobody is ever
   // forced to gamble for a wing they want.
+  // Rosa's counter beside the grocer: every potion the general store has,
+  // plus the greater salve, which otherwise only comes from quests and boxes.
+  // It is sold at its full reference value and in small batches, so the shop
+  // saves a trip rather than making the quest reward pointless.
+  apothecary: {
+    id: 'apothecary', name: 'ร้านยาโรซ่า',
+    buysAnything: true,
+    stock: [
+      { id: 'lesser_salve', stock: 60, restock: 300 },
+      { id: 'greater_salve', stock: 10, restock: 900 },
+      { id: 'mana_draught', stock: 30, restock: 300 },
+      { id: 'antidote', stock: 30, restock: 300 },
+    ],
+  },
   dawn: {
     id: 'dawn', name: 'ร้านแลกเศษรุ่งอรุณ', currency: 'shard_dawn',
     stock: [
@@ -93,6 +107,10 @@ export const NPC_DIALOG = {
   vendor: {
     greet: 'ยินดีต้อนรับสู่เอมเบอร์โฮลด์ ของที่นี่ไม่ถูกหรอกนะ แต่ของจริงทั้งนั้น',
     options: [{ label: 'ดูของขาย', action: 'shop', shop: 'general' }, { label: 'ขายของ', action: 'sell' }],
+  },
+  apothecary: {
+    greet: 'ยินดีต้อนรับค่ะ! ยาทุกขวดโรซ่าต้มเองกับมือ ก่อนออกไปล่าอย่าลืมพกติดตัวนะคะ',
+    options: [{ label: 'ดูยา', action: 'shop', shop: 'apothecary' }, { label: 'ขายของ', action: 'sell' }],
   },
   smith: {
     greet: 'อยากให้เหล็กชิ้นนี้แข็งขึ้นใช่ไหม? เตรียมใจไว้ด้วย มันพังได้',

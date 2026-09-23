@@ -93,11 +93,51 @@ export function sell(world, p, index, qty) {
   if (isEquip(def) && st.dur !== undefined) gained = Math.floor(gained * (0.4 + 0.6 * (st.dur / (def.durability ?? 100))));
 
   p.record.npcSales[st.id] = soldToday + qty;
+  // kept for buy-back at exactly what was paid, so a mis-click costs nothing;
+  // the copy carries refine, durability and cards along with the id
+  p.buyback ??= [];
+  p.buyback.unshift({ stack: { ...st, qty }, price: gained });
+  if (p.buyback.length > BUYBACK_KEEP) p.buyback.length = BUYBACK_KEEP;
   p.removeItemAt(index, qty);
   p.record.aurum += gained;
   mint(world, gained, 'npc-sell');
   markDirty();
   return { ok: true, gained, dampened: soldToday > 5 };
+}
+
+/** How many recent sales a player can still undo. Lives on the session, not the save. */
+export const BUYBACK_KEEP = 8;
+
+/** What the buy-back tab shows. */
+export function buybackList(p) {
+  return (p.buyback ?? []).map((b, i) => ({
+    i, id: b.stack.id, qty: b.stack.qty ?? 1, refine: b.stack.refine ?? 0, price: b.price,
+  }));
+}
+
+/**
+ * Undo a sale: the same stack back, for the same aurum. Neutral both ways,
+ * so it cannot be farmed - it only forgives a mis-click.
+ */
+export function buyback(world, p, index) {
+  const b = p.buyback?.[index];
+  if (!b) return { error: 'ไม่พบของที่ขายไป' };
+  if (p.record.aurum < b.price) return { error: 'ออรัมไม่พอ' };
+  const def = ITEMS[b.stack.id];
+  if (!def) return { error: 'ไอเทมไม่ถูกต้อง' };
+  const qty = b.stack.qty ?? 1;
+  if (p.weight() + (def.weight ?? 1) * qty > p.weightCap) return { error: 'น้ำหนักเกิน' };
+  if ((def.stack ?? 1) > 1 && !b.stack.refine) {
+    if (!p.addItem(b.stack.id, qty)) return { error: 'กระเป๋าเต็ม' };
+  } else {
+    if (p.inventory.length >= 100) return { error: 'กระเป๋าเต็ม' };
+    p.inventory.push({ ...b.stack });
+  }
+  p.buyback.splice(index, 1);
+  p.record.aurum -= b.price;
+  burn(world, b.price, 'buyback');
+  markDirty();
+  return { ok: true, spent: b.price, name: def.nameTh ?? def.name };
 }
 
 /* ---------------- boxes & the gacha shrine ---------------- */
