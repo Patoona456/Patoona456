@@ -102,63 +102,27 @@ class Game {
    * API - turn the page ourselves.
    */
   watchOrientation() {
-    const gate = $('#rotate');
-    if (!gate) return;
-    let dismissed = false;
-    const why = $('#rotate .why');
-    const manual = $('#btn-force-landscape');
+    // The game is landscape only. A phone held upright gets the page turned a
+    // quarter for it straight away - no question first - and the first tap
+    // also asks the browser for fullscreen and a real landscape lock, which
+    // replaces our turned page as soon as the screen actually rotates.
+    $('#rotate')?.classList.add('hidden');
     const portrait = () => innerHeight > innerWidth;
-    // the upright layout is a real layout now, so the gate is only ever shown
-    // once per session, and never again after it is waved away
-    try { dismissed = localStorage.getItem('emberfall-upright') === '1'; } catch { /* no storage */ }
+    const touch = () => matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
     const update = () => {
-      const show = portrait() && !dismissed && !this.forcedLandscape;
-      gate.classList.toggle('hidden', !show);
-      document.body.classList.toggle('portrait-gate', show);
-      // a real rotate beats our fake one, so drop it as soon as one happens
-      if (this.forcedLandscape && !portrait()) this.setForcedLandscape(false);
-      this.syncLayout();
+      const want = touch() && portrait();
+      if (want !== !!this.forcedLandscape) this.setForcedLandscape(want);
+      else this.syncLayout();
     };
-
-    const fullscreenThenLock = async () => {
+    const lockOnce = async () => {
+      if (!touch()) return;
       try {
-        if (!document.fullscreenElement) {
-          const done = new Promise((res) => addEventListener('fullscreenchange', res, { once: true }));
-          await document.documentElement.requestFullscreen?.();
-          await Promise.race([done, new Promise((r) => setTimeout(r, 600))]);
-        }
-      } catch { /* fullscreen refused; the lock below may still work */ }
-      try {
-        await screen.orientation?.lock?.('landscape');
-        return true;
-      } catch { return false; }
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+      } catch { /* refused: the turned page stays */ }
+      try { await screen.orientation?.lock?.('landscape'); } catch { /* iOS / iframes cannot lock */ }
+      setTimeout(update, 350);
     };
-
-    $('#btn-landscape')?.addEventListener('click', async () => {
-      const locked = await fullscreenThenLock();
-      // give the browser a moment to actually turn the screen
-      await new Promise((r) => setTimeout(r, 350));
-      if (locked && !portrait()) { update(); return; }
-      if (why) {
-        why.textContent = 'เบราว์เซอร์นี้หมุนจอให้ไม่ได้ (มักเกิดกับ iOS หรือหน้าที่ฝังในเว็บอื่น) — กดปุ่มด้านล่างให้เกมหมุนภาพเอง';
-        why.classList.remove('hidden');
-      }
-      manual?.classList.remove('hidden');
-      update();
-    });
-    manual?.addEventListener('click', () => {
-      this.setForcedLandscape(true);
-      dismissed = true;
-      update();
-      this.ui.toast('หมุนภาพเป็นแนวนอนแล้ว — ถือเครื่องตะแคงได้เลย', 'good');
-    });
-    $('#btn-stay-portrait')?.addEventListener('click', () => {
-      dismissed = true;
-      try { localStorage.setItem('emberfall-upright', '1'); } catch { /* no storage */ }
-      this.ui.toast('เล่นแนวตั้งได้เลย — เปลี่ยนเป็นแนวนอนได้ทีหลังในหน้าตั้งค่า', 'info');
-      update();
-    });
-
+    addEventListener('pointerdown', lockOnce, { once: true });
     addEventListener('resize', update);
     addEventListener('orientationchange', () => setTimeout(update, 120));
     screen.orientation?.addEventListener?.('change', update);

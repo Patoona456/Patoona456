@@ -2666,20 +2666,9 @@ export class UI {
 
     wrap.append(this.audioSettings(), el('hr'));
 
-    // screen orientation lives here now, so nothing has to block the game
     const screenBox = el('div');
     screenBox.innerHTML = '<h3 style="margin:0 0 6px">การวางจอ</h3>';
-    const screenRow = el('div', 'opts');
-    const forced = !!this.game.forcedLandscape;
-    const upright = el('button', 'btn' + (forced ? '' : ' primary'), 'ตามการหมุนเครื่อง');
-    upright.title = 'เล่นได้ทั้งแนวตั้งและแนวนอน เกมจัดหน้าจอให้เอง';
-    upright.addEventListener('click', () => { this.game.setForcedLandscape(false); this.open('settings'); });
-    const land = el('button', 'btn' + (forced ? ' primary' : ''), 'บังคับแนวนอน');
-    land.title = 'หมุนภาพทั้งหน้า 90° สำหรับเครื่องที่ล็อกการหมุนไว้';
-    land.addEventListener('click', () => { this.game.setForcedLandscape(true); this.open('settings'); });
-    screenRow.append(upright, land);
-    screenBox.append(screenRow);
-    screenBox.append(el('div', 'muted', 'เล่นแนวตั้งได้เต็มรูปแบบ ปุ่มทุกปุ่มมีที่ของตัวเอง — เลือกแนวนอนเมื่ออยากเห็นสนามกว้างขึ้น'));
+    screenBox.append(el('div', 'muted', 'เกมเล่นแนวนอนเสมอ — ถ้าถือมือถือแนวตั้ง เกมจะหมุนภาพให้เป็นแนวนอนเอง ถือเครื่องตะแคงได้เลย'));
     wrap.append(screenBox, el('hr'));
 
     const help = el('div');
