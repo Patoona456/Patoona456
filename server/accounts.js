@@ -122,13 +122,16 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     aurum: 500,                   // a deliberately thin starting purse
     inventory: [
       { id: 'training_blade', qty: 1, refine: 0, dur: 120 },
-      { id: 'cloth_shirt', qty: 1, refine: 0, dur: 150 },
-      { id: 'cloth_pants', qty: 1, refine: 0, dur: 150 },
-      { id: 'worn_boots', qty: 1, refine: 0, dur: 150 },
+      { id: 'novice_top', qty: 1, refine: 0, dur: 150 },
+      { id: 'novice_bottom', qty: 1, refine: 0, dur: 150 },
+      { id: 'novice_boots', qty: 1, refine: 0, dur: 150 },
+      { id: 'novice_gloves', qty: 1, refine: 0, dur: 150 },
+      { id: 'novice_belt', qty: 1, refine: 0, dur: 150 },
+      { id: 'novice_cape', qty: 1, refine: 0, dur: 150 },
       { id: 'lesser_salve', qty: 5 },
     ],
-    // starting kit comes pre-equipped so nobody starts the game naked
-    equipment: { weapon: 0, torso: 1, legs: 2, feet: 3 },
+    // the novice outfit comes pre-equipped so nobody starts the game naked
+    equipment: { weapon: 0, torso: 1, legs: 2, feet: 3, hands: 4, belt: 5, cloak: 6 },
     skills: {},
     hotbar: ['first_aid', null, null, null, null, null],
     quests: {},

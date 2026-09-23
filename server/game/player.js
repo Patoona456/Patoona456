@@ -1,6 +1,6 @@
 // The live, in-world representation of a character record.
 import { deriveStats, baseExpToNext, jobExpToNext, statCost } from '../../shared/formulas.js';
-import { ITEMS, isEquip } from '../../shared/data/items.js';
+import { ITEMS, isEquip, RETIRED_ITEMS } from '../../shared/data/items.js';
 import { JOBS, jobOf, availableSkills } from '../../shared/data/jobs.js';
 import * as Siege from './siege.js';
 import { SKILLS, val } from '../../shared/data/skills.js';
@@ -15,6 +15,9 @@ export class Player {
     this.kind = 'player';
     this.id = 'p' + (++seq);
     this.record = record;
+    for (const st of [...(record.inventory ?? []), ...(record.storage ?? [])]) {
+      if (st && RETIRED_ITEMS[st.id]) st.id = RETIRED_ITEMS[st.id];
+    }
     this.conn = conn;
     this.name = record.name;
     this.look = record.look;

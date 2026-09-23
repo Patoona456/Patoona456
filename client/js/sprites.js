@@ -104,7 +104,11 @@ export const CHIBI_ORDER = [
   'back', 'armor', 'belt', 'head', 'face', 'neck', 'weapon', 'offhand', 'accessory',
 ];
 
-const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_ORDER };
+/** The chibi walk body and the outfit pieces cut to its grid. The cape
+ *  hangs behind a body facing the camera and over one facing away, so it is
+ *  two sheets, one either side of the body. */
+const CHIBI_WALK_ORDER = ['cape_under', 'body', 'bottom', 'boots', 'top', 'belt', 'gloves', 'cape_over'];
+const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_WALK_ORDER };
 export function orderFor(layout) { return ORDERS[layout?.id] ?? ORDER; }
 
 const CHIBI_BASE = '/assets/chibi';
@@ -118,9 +122,22 @@ export function chibiUrl(key) {
 
 /** Build the layer list for a player-shaped entity. */
 export function playerLayers(look, equipment = {}) {
-  // No chibi gear has been drawn, so a chibi wears nothing it can show:
-  // LPC sheets are a different grid and would float off the body.
-  if (look?.style === 'chibi') return { body: chibiUrl(look.chibi) };
+  // A chibi wears only pieces drawn for the chibi grid; LPC sheets are a
+  // different size and would float off the body.
+  if (look?.style === 'chibi') {
+    const layers = { body: chibiUrl(look.chibi) };
+    for (const itemId of Object.values(equipment)) {
+      const c = ITEMS[itemId]?.chibi;
+      if (!c) continue;                 // LPC-only art would not fit this body
+      const names = c.layer === 'cape' ? [['cape_under', '_under'], ['cape_over', '_over']] : [[c.layer, '']];
+      for (const [layer, suffix] of names) {
+        const url = `${CHIBI_BASE}/gear/${c.key}${suffix}.webp`;
+        declareLayout(url, 'chibi_walk');
+        layers[layer] = url;
+      }
+    }
+    return layers;
+  }
   const g = look?.gender === 'female' ? 'female' : 'male';
   const layers = {
     body: layerUrl('body', look?.body ?? 'light', g),

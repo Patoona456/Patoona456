@@ -296,3 +296,20 @@ test('every gate style a warp can be drawn as has its picture', () => {
     assert.ok(existsSync(onDisk(`assets/warp/${style}.webp`)), `assets/warp/${style}.webp is missing`);
   }
 });
+
+test('the novice outfit is drawn for the chibi body and worn from the start', async () => {
+  const { RETIRED_ITEMS } = await import('../shared/data/items.js');
+  const outfit = ['novice_top', 'novice_bottom', 'novice_boots', 'novice_gloves', 'novice_belt', 'novice_cape'];
+  const eq = Object.fromEntries(outfit.map((id) => [ITEMS[id].slot, id]));
+  const layers = playerLayers({ style: 'chibi' }, eq);
+  for (const layer of ['top', 'bottom', 'boots', 'gloves', 'belt', 'cape_under', 'cape_over']) {
+    assert.ok(layers[layer], `the chibi draws no ${layer}`);
+    assert.ok(existsSync(onDisk(layers[layer])), `${layers[layer]} is missing`);
+  }
+  const def = outfit.reduce((n, id) => n + (ITEMS[id].def ?? 0), 0);
+  assert.equal(def, 14, 'the outfit should defend exactly as the old starter clothes did');
+  for (const [old, now] of Object.entries(RETIRED_ITEMS)) {
+    assert.ok(!ITEMS[old], `${old} was retired but still exists`);
+    assert.ok(ITEMS[now], `${old} is replaced by an unknown item`);
+  }
+});

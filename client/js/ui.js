@@ -538,7 +538,7 @@ export class UI {
       <div class="muted" style="padding:4px 0">${job?.desc ?? ''}</div>
       <div class="row"><span>อาวุธที่ใช้ได้</span><b>${(job?.weapons ?? []).map((w) => WEAPON_CLASSES[w]?.nameTh ?? w).join(', ')}</b></div>`;
     if (job?.next?.length) {
-      info.append(el('div', 'muted', `สายต่อไป: ${job.next.map((j) => JOBS[j].nameTh).join(' / ')} (คุยกับครูฝึกเมื่อ Job Lv. ${job.jobLevelToAdvance})`));
+      info.append(el('div', 'muted', `สายต่อไป: ${job.next.map((j) => JOBS[j].nameTh).join(' / ')} (คุยกับครูฝึกเมื่อ Job Lv. ${job.advance?.jobLevel ?? job.jobLevelToAdvance ?? 10})`));
     }
 
     wrap.append(gear, info, stats);

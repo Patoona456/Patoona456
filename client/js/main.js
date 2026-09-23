@@ -907,7 +907,7 @@ class Game {
     // dir is one of the eight (shared/facing.js DIR8): 0 faces the camera
     const view = { dir: 0, anim: 'walk', spin: true };
     // the starting kit, so nobody previews their character naked
-    const STARTER = { weapon: 'training_blade', torso: 'cloth_shirt', legs: 'cloth_pants', feet: 'worn_boots' };
+    const STARTER = { weapon: 'training_blade', torso: 'novice_top', legs: 'novice_bottom', feet: 'novice_boots', hands: 'novice_gloves', belt: 'novice_belt', cloak: 'novice_cape' };
     const body = $('#screen-body');
     $('#screen').classList.add('creating');
     body.innerHTML = `

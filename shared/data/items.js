@@ -11,6 +11,17 @@ const A = (o) => ({ type: 'armor', refinable: true, durability: 150, stack: 1, .
 const C = (o) => ({ type: 'consumable', stack: 99, weight: 4, ...o });
 const M = (o) => ({ type: 'material', stack: 999, weight: 2, ...o });
 
+/**
+ * Items that no longer exist, and what a character still holding one gets
+ * instead. Read when a character loads, so an old save keeps its gear rather
+ * than carrying ids the game cannot look up.
+ */
+export const RETIRED_ITEMS = {
+  cloth_shirt: 'novice_top',
+  cloth_pants: 'novice_bottom',
+  worn_boots: 'novice_boots',
+};
+
 export const ITEMS = {
   /* ================= BOXES & SCROLLS =================
      A box is opened, not consumed for stats: `opens` is a weighted table,
@@ -509,6 +520,48 @@ export const ITEMS = {
     sprite: { layer: 'armor', key: 'plate', gendered: true, tint: '#f0d89c' },
   }),
 
+  // --- the novice outfit: what every new character is wearing -------------
+  // Six pieces drawn for the chibi body (assets/chibi/gear). Together they
+  // give the same 14 DEF the old shirt, trousers and boots did, so the
+  // starting fights are no harder or easier; the extras are small and each
+  // piece has its own, so none of them is just a number.
+  novice_top: A({
+    id: 'novice_top', name: "Adventurer's Vest", nameTh: 'เสื้อกั๊กนักผจญภัย', slot: 'torso',
+    def: 5, hp: 20, level: 1, weight: 22, value: 160, rarity: 'common',
+    sprite: { layer: 'torso', key: 'shirt_white', gendered: true }, chibi: { layer: 'top', key: 'novice_top' },
+    desc: 'เสื้อเชิ้ตขาวกับเสื้อกั๊กหนัง ของที่ทุกคนเริ่มใส่ (HP +20)',
+  }),
+  novice_bottom: A({
+    id: 'novice_bottom', name: "Adventurer's Trousers", nameTh: 'กางเกงนักผจญภัย', slot: 'legs',
+    def: 4, flee: 2, level: 1, weight: 20, value: 140, rarity: 'common',
+    sprite: { layer: 'legs', key: 'pants_teal', gendered: true }, chibi: { layer: 'bottom', key: 'novice_bottom' },
+    desc: 'กางเกงผ้าหนามีกระเป๋าข้าง ขยับตัวคล่อง (FLEE +2)',
+  }),
+  novice_boots: A({
+    id: 'novice_boots', name: "Adventurer's Boots", nameTh: 'รองเท้าบูทนักผจญภัย', slot: 'feet',
+    def: 2, speed: 2, level: 1, weight: 18, value: 120, rarity: 'common',
+    sprite: { layer: 'feet', key: 'shoes_brown', gendered: true }, chibi: { layer: 'boots', key: 'novice_boots' },
+    desc: 'บูทหนังหุ้มข้อ เดินทางไกลไม่เจ็บเท้า (ความเร็ว +2)',
+  }),
+  novice_gloves: A({
+    id: 'novice_gloves', name: "Adventurer's Gloves", nameTh: 'ถุงมือนักผจญภัย', slot: 'hands',
+    def: 1, hit: 3, level: 1, weight: 8, value: 90, rarity: 'common',
+    sprite: { layer: 'hands', key: 'leather_bracers', gendered: true }, chibi: { layer: 'gloves', key: 'novice_gloves' },
+    desc: 'ถุงมือหนังกับแขนเสื้อพับ จับอาวุธได้แน่นมือ (HIT +3)',
+  }),
+  novice_belt: A({
+    id: 'novice_belt', name: "Adventurer's Belt", nameTh: 'เข็มขัดนักผจญภัย', slot: 'belt',
+    def: 1, weightCapBonus: 150, level: 1, weight: 10, value: 100, rarity: 'common',
+    sprite: { layer: 'belt', key: 'leather', gendered: true }, chibi: { layer: 'belt', key: 'novice_belt' },
+    desc: 'เข็มขัดมีกระเป๋าเล็ก พกของได้มากขึ้น (น้ำหนักพก +150)',
+  }),
+  novice_cape: A({
+    id: 'novice_cape', name: "Adventurer's Cape", nameTh: 'ผ้าคลุมนักผจญภัย', slot: 'cloak',
+    def: 1, mdef: 2, level: 1, weight: 15, value: 110, rarity: 'common', refinable: false,
+    cloak: { style: 'wool' }, chibi: { layer: 'cape', key: 'novice_cape' },
+    desc: 'ผ้าคลุมไหล่กลัดดอกไม้ทอง กันลมกันเวท (MDEF +2)',
+  }),
+
   // --- cloak: the back slot, separate from wings ------------------------
   travelers_cloak: A({
     id: 'travelers_cloak', name: "Traveler's Cloak", nameTh: 'ผ้าคลุมนักเดินทาง', slot: 'cloak',
@@ -618,7 +671,6 @@ export const ITEMS = {
   }),
 
   /* ================= ARMOR ================= */
-  cloth_shirt: A({ id: 'cloth_shirt', name: 'Cloth Shirt', nameTh: 'เสื้อผ้าฝ้าย', slot: 'torso', def: 6, level: 1, weight: 30, value: 150, rarity: 'common', sprite: { layer: 'torso', key: 'shirt_white', gendered: true } }),
   brown_tunic: A({ id: 'brown_tunic', name: 'Traveler Tunic', nameTh: 'เสื้อนักเดินทาง', slot: 'torso', def: 10, level: 5, weight: 35, value: 700, rarity: 'common', sprite: { layer: 'torso', key: 'shirt_brown', gendered: true } }),
   teal_tunic: A({ id: 'teal_tunic', name: 'Scout Tunic', nameTh: 'เสื้อหน่วยสอดแนม', slot: 'torso', def: 12, level: 10, weight: 35, value: 1600, rarity: 'common', stats: { agi: 1 }, sprite: { layer: 'torso', key: 'shirt_teal', gendered: true } }),
   mage_robe: A({ id: 'mage_robe', name: 'Runecloth Robe', nameTh: 'เสื้อคลุมรูน', slot: 'torso', def: 9, mdef: 12, level: 10, weight: 32, value: 2100, rarity: 'common', stats: { int: 2 }, sprite: { layer: 'torso', key: 'shirt_maroon', gendered: true } }),
@@ -627,13 +679,11 @@ export const ITEMS = {
   plate_cuirass: A({ id: 'plate_cuirass', name: 'Plate Cuirass', nameTh: 'เกราะอกเหล็กหนา', slot: 'torso', def: 52, level: 45, weight: 380, value: 72000, rarity: 'rare', stats: { vit: 4, str: 2 }, speed: -3, sprite: { layer: 'torso', key: 'plate', gendered: true } }),
   ashguard_plate: A({ id: 'ashguard_plate', name: 'Ashguard Plate', nameTh: 'เกราะเถ้าผู้พิทักษ์', slot: 'torso', def: 74, mdef: 24, level: 62, weight: 400, value: 240000, rarity: 'epic', stats: { vit: 6, str: 3 }, element: 'fire', sprite: { layer: 'torso', key: 'plate', gendered: true } }),
 
-  cloth_pants: A({ id: 'cloth_pants', name: 'Cloth Pants', nameTh: 'กางเกงผ้า', slot: 'legs', def: 5, level: 1, weight: 25, value: 130, rarity: 'common', sprite: { layer: 'legs', key: 'pants_white', gendered: true } }),
   scout_pants: A({ id: 'scout_pants', name: 'Scout Pants', nameTh: 'กางเกงสอดแนม', slot: 'legs', def: 9, level: 10, weight: 30, value: 1200, rarity: 'common', stats: { agi: 1 }, sprite: { layer: 'legs', key: 'pants_teal', gendered: true } }),
   crimson_pants: A({ id: 'crimson_pants', name: 'Crimson Breeches', nameTh: 'กางเกงแดงเลือด', slot: 'legs', def: 12, level: 18, weight: 40, value: 3600, rarity: 'common', stats: { str: 1 }, sprite: { layer: 'legs', key: 'pants_red', gendered: true } }),
   metal_greaves: A({ id: 'metal_greaves', name: 'Metal Greaves', nameTh: 'สนับขาเหล็ก', slot: 'legs', def: 26, level: 32, weight: 170, value: 17000, rarity: 'uncommon', speed: -2, sprite: { layer: 'legs', key: 'metal', gendered: true } }),
   golden_greaves: A({ id: 'golden_greaves', name: 'Gilded Greaves', nameTh: 'สนับขาทองคำ', slot: 'legs', def: 38, mdef: 10, level: 52, weight: 190, value: 96000, rarity: 'rare', stats: { vit: 3 }, sprite: { layer: 'legs', key: 'golden', gendered: true } }),
 
-  worn_boots: A({ id: 'worn_boots', name: 'Worn Boots', nameTh: 'รองเท้าเก่า', slot: 'feet', def: 3, level: 1, weight: 20, value: 110, rarity: 'common', sprite: { layer: 'feet', key: 'shoes_brown', gendered: true } }),
   traveler_boots: A({ id: 'traveler_boots', name: 'Traveler Boots', nameTh: 'รองเท้านักเดินทาง', slot: 'feet', def: 7, level: 12, weight: 28, value: 1900, rarity: 'common', speed: 3, sprite: { layer: 'feet', key: 'shoes_black', gendered: true } }),
   metal_boots: A({ id: 'metal_boots', name: 'Metal Boots', nameTh: 'รองเท้าเหล็ก', slot: 'feet', def: 18, level: 30, weight: 120, value: 13000, rarity: 'uncommon', sprite: { layer: 'feet', key: 'metal', gendered: true } }),
   golden_boots: A({ id: 'golden_boots', name: 'Gilded Boots', nameTh: 'รองเท้าทองคำ', slot: 'feet', def: 28, level: 50, weight: 130, value: 84000, rarity: 'rare', stats: { agi: 2 }, speed: 4, sprite: { layer: 'feet', key: 'golden', gendered: true } }),
