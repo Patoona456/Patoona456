@@ -242,6 +242,7 @@ export function vaultMove(p, dir, index, qty) {
       ? g.vault.find((s) => s.id === st.id && !s.refine) : null;
     if (merge) merge.qty += qty; else g.vault.push({ ...st, qty });
     p.removeItemAt(index, qty);
+    contribute(g, p.record.id, 'items', qty);
     log(g, `${p.name} ฝาก ${ITEMS[st.id]?.nameTh ?? st.id} x${qty}`);
   } else {
     const allowance = rankOf(me?.rank).take;
@@ -279,6 +280,7 @@ export function donate(p, amount) {
     log(g, 'จ่ายค่าบำรุงแล้ว คลังกลับมาใช้ได้');
   }
   log(g, `${p.name} บริจาค ${n.toLocaleString()} ออรัม`, 'give');
+  contribute(g, p.record.id, 'gave', n);
   progress(null, g, 'donate', n);
   markDirty();
   return { ok: true, aurum: g.aurum };
@@ -299,8 +301,39 @@ function log(g, text, kind = null) {
 /** This week's goal counters, reset on the shared weekly schedule. */
 function goals(g) {
   const week = weekKey();
-  if (g.week !== week) { g.week = week; g.goals = {}; }
+  if (g.week !== week) { g.week = week; g.goals = {}; g.contrib = {}; }
   return (g.goals ??= {});
+}
+
+/** What one member put in this week: kills, aurum given, items deposited. */
+function contribute(g, charId, key, n) {
+  goals(g);
+  g.contrib ??= {};
+  const c = (g.contrib[String(charId)] ??= { kills: 0, gave: 0, items: 0 });
+  c[key] = (c[key] ?? 0) + n;
+}
+
+/**
+ * The week's standouts, one title each: most kills, most aurum given, most
+ * items put in the vault. Earned, not bought, and gone on Monday.
+ */
+export const TITLES = [
+  { id: 'warrior', key: 'kills', nameTh: 'นักรบกิลด์', desc: 'ล่ามอนสเตอร์มากที่สุดในสัปดาห์' },
+  { id: 'donor', key: 'gave', nameTh: 'นักบริจาค', desc: 'บริจาคออรัมมากที่สุดในสัปดาห์' },
+  { id: 'helper', key: 'items', nameTh: 'ผู้ช่วยเหลือ', desc: 'ฝากของเข้าคลังมากที่สุดในสัปดาห์' },
+];
+export function titles(g) {
+  goals(g);
+  const out = {};
+  for (const t of TITLES) {
+    let best = null, top = 0;
+    for (const [cid, c] of Object.entries(g.contrib ?? {})) {
+      if (!g.members.some((m) => String(m.charId) === cid)) continue;
+      if ((c[t.key] ?? 0) > top) { top = c[t.key]; best = cid; }
+    }
+    if (best) (out[best] ??= []).push(t.id);
+  }
+  return out;
 }
 
 /** Guild EXP, with the level-ups it causes told to everyone online. */
@@ -337,6 +370,9 @@ export function progress(world, g, id, n = 1) {
   gl[id] = Math.min(q.need, before + n);
   if (gl[id] >= q.need) {
     log(g, `ภารกิจกิลด์สำเร็จ: ${q.nameTh} (+${q.exp.toLocaleString()} EXP กิลด์)`, 'up');
+    if (world) {
+      for (const p of world.players.values()) if (p.record.guild === g.id) p.conn?.send({ t: 'guildGoal', name: q.nameTh });
+    }
     addExp(world, g, q.exp);
   }
   markDirty();
@@ -347,6 +383,7 @@ export function onKill(world, p, monsterLevel) {
   const g = of(p);
   if (!g) return;
   addExp(world, g, killGuildExp(monsterLevel));
+  contribute(g, p.record.id, 'kills', 1);
   progress(world, g, 'hunt', 1);
 }
 
@@ -431,6 +468,9 @@ export function state(world, p) {
       capacity: capOf(g), emblem: g.emblem ?? 'lion', created: g.created,
       leaderName: g.members.find((m) => m.rank === 'leader')?.name ?? '',
       goals: GUILD_QUESTS.map((q) => ({ ...q, have: goals(g)[q.id] ?? 0 })),
+      titles: titles(g),
+      titleInfo: TITLES.map(({ id, nameTh, desc }) => ({ id, nameTh, desc })),
+      myContrib: (g.contrib ?? {})[String(p.record.id)] ?? { kills: 0, gave: 0, items: 0 },
       upkeep: GUILD_UPKEEP, upkeepDue: g.upkeepDue, inDebt: !!g.inDebt,
       holdsFortress: Siege.waivesUpkeep(g.id),
       myCharId: String(p.record.id),

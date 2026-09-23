@@ -41,3 +41,14 @@ test('the roster grows with the level', () => {
   assert.ok(guildCapacity(10) > guildCapacity(1));
   assert.equal(guildCapacity(1), 30);
 });
+
+test('the week\'s titles go to whoever did the most, and reset with the week', () => {
+  const g = guild('gtest4');
+  g.members = [{ charId: '1', name: 'a' }, { charId: '2', name: 'b' }];
+  const pa = { record: { id: '1', guild: 'gtest4' } }, pb = { record: { id: '2', guild: 'gtest4' } };
+  for (let i = 0; i < 5; i++) Guild.onKill(null, pa, 10);
+  for (let i = 0; i < 3; i++) Guild.onKill(null, pb, 10);
+  assert.deepEqual(Guild.titles(g), { 1: ['warrior'] });
+  g.week = 'long ago';
+  assert.deepEqual(Guild.titles(g), {});
+});

@@ -510,3 +510,12 @@ for k, b in {'gb_invite': (28, 618, 176, 660), 'gb_kick': (186, 618, 332, 660),
              'gb_leave': (194, 682, 353, 728), 'gb_emblem': (781, 387, 911, 421)}.items():
     save(k, rounded(gs, b, r=6))
 print('guild sheet done')
+
+# weekly titles, and the other three chibi speech bubbles
+for k, b in {'gtitle_warrior': (412, 795, 466, 864), 'gtitle_donor': (498, 797, 556, 864),
+             'gtitle_helper': (586, 797, 644, 864)}.items():
+    save(k, grab(b, pad=4, img=gs)[0])
+for k, b in {'guild_bubble_strong': (178, 904, 332, 1000), 'guild_bubble_family': (338, 902, 508, 1000),
+             'guild_bubble_fight': (512, 904, 670, 1000)}.items():
+    save(k, lift(gs, b, thresh=46))
+print('guild extras done')

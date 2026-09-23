@@ -1337,6 +1337,22 @@ export class UI {
     give.append(amount, giveBtn);
     body.append(give);
 
+    // the week's standouts
+    const best = el('div', 'g-card');
+    best.append(el('div', 'g-sub', 'สมาชิกดีเด่นประจำสัปดาห์'));
+    const holders = Object.entries(g.titles ?? {});
+    for (const info of g.titleInfo ?? []) {
+      const cid = holders.find(([, ts]) => ts.includes(info.id))?.[0];
+      const who = g.members.find((m) => m.charId === cid)?.name;
+      const line = el('div', 'g-best');
+      const i = el('img'); i.src = `${UI_BASE}/gtitle_${info.id}.webp`; i.alt = '';
+      line.append(i, el('b', '', esc(info.nameTh)), el('span', 'muted', esc(info.desc)), el('span', who ? 'g-ok' : 'muted', esc(who ?? 'ยังว่าง')));
+      best.append(line);
+    }
+    const c = g.myContrib ?? {};
+    best.append(el('div', 'muted num', `สัปดาห์นี้คุณล่า ${fmt(c.kills ?? 0)} ตัว · บริจาค ${fmt(c.gave ?? 0)} ออรัม · ฝากของ ${fmt(c.items ?? 0)} ชิ้น`));
+    body.append(best);
+
     // what has been happening
     if (g.history?.length) {
       const log = el('div', 'g-card');
@@ -1357,13 +1373,42 @@ export class UI {
     const isLeader = g.myRank === 'leader';
     const canInvite = ['veteran', 'officer', 'leader'].includes(g.myRank);
     const canKick = ['officer', 'leader'].includes(g.myRank);
+    body.append(mascot('guild_bubble_family'));
+    const bar2 = el('div', 'g-filter');
+    const search = el('input');
+    search.type = 'text'; search.placeholder = 'ค้นหาสมาชิก…'; search.value = this.guildFind ?? '';
+    this.textInput(search);
+    search.addEventListener('input', () => {
+      this.guildFind = search.value;
+      const q = search.value.trim().toLowerCase();
+      for (const r of body.querySelectorAll('.g-rrow')) r.hidden = !!q && !r.dataset.name.includes(q);
+    });
+    bar2.append(search);
+    const show = this.guildShow ?? 'all';
+    for (const [key, label] of [['all', 'ทั้งหมด'], ['on', 'ออนไลน์'], ['off', 'ออฟไลน์']]) {
+      const b = el('button', 'qlog-tab' + (show === key ? ' on' : ''), label);
+      b.addEventListener('click', () => { this.guildShow = key; this.openGuild(); });
+      bar2.append(b);
+    }
+    body.append(bar2);
     const list = el('div', 'g-roster');
     list.append(el('div', 'g-rhead muted', '<span>Lv.</span><span>ชื่อผู้เล่น</span><span>ตำแหน่ง</span><span>สถานะ</span><span></span>'));
+    const find = (this.guildFind ?? '').trim().toLowerCase();
     for (const m of g.members) {
+      if (show === 'on' && !m.online) continue;
+      if (show === 'off' && m.online) continue;
       const row = el('div', 'g-rrow' + (m.online ? '' : ' off'));
       const rank = st.ranks?.find((r) => r.id === m.rank);
+      row.dataset.name = m.name.toLowerCase();
+      row.hidden = !!find && !row.dataset.name.includes(find);
       row.append(el('span', 'num', String(m.level)));
-      row.append(el('b', '', esc(m.name)));
+      const who = el('b', '', esc(m.name));
+      for (const t of g.titles?.[m.charId] ?? []) {
+        const info = g.titleInfo?.find((x) => x.id === t);
+        const i = el('img', 'g-title'); i.src = `${UI_BASE}/gtitle_${t}.webp`; i.alt = info?.nameTh ?? t; i.title = `${info?.nameTh} — ${info?.desc}`;
+        who.append(i);
+      }
+      row.append(who);
       row.append(el('span', 'g-rank r-' + m.rank, `${rankBadge(m.rank)} ${esc(rank?.nameTh ?? m.rank)}`));
       const dot = el('span', 'g-state' + (m.online ? ' on' : ''));
       const di = el('img'); di.src = `${UI_BASE}/dot_${m.online ? 'online' : 'offline'}.webp`; di.alt = '';
@@ -1463,6 +1508,7 @@ export class UI {
   }
 
   guildWar(st, g, body) {
+    body.append(mascot('guild_bubble_fight'));
     body.append(this.guildWarCard(st));
     body.append(el('div', 'muted', 'เข้าไปในลานประลองเถ้าระหว่างศึกเปิด นับเป็นภารกิจกิลด์ "เข้าร่วมสงครามกิลด์" · กิลด์ที่ถือป้อมได้ EXP เพิ่มและไม่ต้องจ่ายค่าบำรุงสัปดาห์นั้น'));
   }
@@ -2800,6 +2846,11 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** One of the guild sheet's chibi girls, saying her line. */
+function mascot(name) {
+  const i = el('img', 'g-mascot'); i.src = `${UI_BASE}/${name}.webp`; i.alt = '';
+  return i;
+}
 /** A guild rank's mark from the guild sheet. */
 const rankBadge = (rank) => `<img class="rank-ico" src="${UI_BASE}/rank_${rank}.webp" alt="">`;
 

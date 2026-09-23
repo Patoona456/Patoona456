@@ -212,6 +212,7 @@ class Game {
       if (m.invite) this.ui.popInvite('guild', m.invite);
     });
     n.on('guildJoined', () => this.ui.stamp('guild_welcome'));
+    n.on('guildGoal', (m) => { this.ui.stamp('guild_bubble_strong'); this.ui.toast(`ภารกิจกิลด์สำเร็จ: ${m.name}`, 'good'); });
     n.on('guildLevelUp', (m) => { this.ui.stamp('levelup'); this.ui.toast(`กิลด์เลเวลอัพเป็น Lv.${m.level}!`, 'good'); });
     n.on('questState', (m) => {
       // only take over the screen when the player actually asked for the log
