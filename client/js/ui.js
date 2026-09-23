@@ -480,7 +480,7 @@ export class UI {
       ctx.clearRect(0, 0, 96, 116);
       ctx.save();
       ctx.scale(1.55, 1.55);
-      const pose = { x: 31, y: 70, anim: 'idle', dir: 2, elapsed: 0 };
+      const pose = { x: 31, y: 70, anim: 'idle', dir: 0, elapsed: 0 };
       const wing = worn.wings && ITEMS[worn.wings.id]?.wing;
       if (wing) drawWings(ctx, wing.style, { x: 31, y: 70, dir: 2, t, scale: wing.scale ?? 1 });
       // the code-drawn slots, same order the world draws them in

@@ -104,11 +104,23 @@ export const CHIBI_ORDER = [
   'back', 'armor', 'belt', 'head', 'face', 'neck', 'weapon', 'offhand', 'accessory',
 ];
 
-const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER };
+const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_ORDER };
 export function orderFor(layout) { return ORDERS[layout?.id] ?? ORDER; }
+
+const CHIBI_BASE = '/assets/chibi';
+/** The chibi bodies that exist; a look naming anything else gets the first. */
+export const CHIBI_BODIES = ['hero_brown'];
+export function chibiUrl(key) {
+  const url = `${CHIBI_BASE}/body/${CHIBI_BODIES.includes(key) ? key : CHIBI_BODIES[0]}.png`;
+  declareLayout(url, 'chibi_walk');
+  return url;
+}
 
 /** Build the layer list for a player-shaped entity. */
 export function playerLayers(look, equipment = {}) {
+  // No chibi gear has been drawn, so a chibi wears nothing it can show:
+  // LPC sheets are a different grid and would float off the body.
+  if (look?.style === 'chibi') return { body: chibiUrl(look.chibi) };
   const g = look?.gender === 'female' ? 'female' : 'male';
   const layers = {
     body: layerUrl('body', look?.body ?? 'light', g),
@@ -276,6 +288,7 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
   // Geometry comes from whichever layout the body sheet follows, so a
   // character drawn on a different grid lines up with its own equipment.
   const layout = layoutFor(urlOf(layers.body));
+  scale *= layout.drawScale ?? 1;
   const size = layout.frame.h * scale;
   const dx = Math.round(x - (layout.frame.w * scale) / 2);
   const dy = Math.round(y - size + size * (1 - layout.anchor));
@@ -301,7 +314,7 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
     ctx.globalCompositeOperation = 'source-atop';
     ctx.globalAlpha = flash ? flash * 0.6 : 0.35;
     ctx.fillStyle = flash ? '#ffffff' : tint;
-    ctx.fillRect(dx, dy, size, size);
+    ctx.fillRect(dx, dy, layout.frame.w * scale, size);
   }
   ctx.restore();
   return { dx, dy, size };

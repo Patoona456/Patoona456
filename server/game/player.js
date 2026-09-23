@@ -19,7 +19,7 @@ export class Player {
     this.name = record.name;
     this.look = record.look;
     this.x = record.x; this.y = record.y;
-    this.dir = 2; this.anim = 'idle'; this.animStart = 0;
+    this.dir = 0; this.anim = 'idle'; this.animStart = 0;   // DIR8: facing the camera
     this.animUntil = 0; this.animSpeed = 1;   // one-shot swing bookkeeping
     this.alive = true;
     this.statuses = [];

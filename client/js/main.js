@@ -828,7 +828,8 @@ class Game {
       ctx.save();
       ctx.translate(0, 8);
       ctx.scale(1.55, 1.55);
-      drawCharacter(ctx, layers, { x: 17, y: 32, anim: 'idle', dir: 2, elapsed: 0 });
+      const chibi = this.self.look?.style === 'chibi';
+      drawCharacter(ctx, layers, { x: 17, y: 32, anim: 'idle', dir: 0, elapsed: 0, scale: chibi ? 0.5 : 1 });
       ctx.restore();
       if (loadedRatio() < 1) setTimeout(draw, 250);
     };
@@ -887,7 +888,7 @@ class Game {
       const layers = playerLayers(c.look, c.worn ?? {});
       const paint = () => {
         ctx.clearRect(0, 0, 52, 52);
-        drawCharacter(ctx, layers, { x: 26, y: 46, anim: 'idle', dir: 2, elapsed: 0 });
+        drawCharacter(ctx, layers, { x: 26, y: 46, anim: 'idle', dir: 0, elapsed: 0, scale: c.look?.style === 'chibi' ? 0.7 : 1 });
         if (loadedRatio() < 1) setTimeout(paint, 200);
       };
       paint();
@@ -901,9 +902,10 @@ class Game {
   }
 
   showCharCreate() {
-    const look = { gender: 'male', body: 'light', hair: 'plain', hairColor: 'brown', eyes: 'brown' };
+    const look = { style: 'chibi', gender: 'male', body: 'light', hair: 'plain', hairColor: 'brown', eyes: 'brown' };
     const stats = { ...STARTING_STATS };
-    const view = { dir: 2, anim: 'walk', spin: true };
+    // dir is one of the eight (shared/facing.js DIR8): 0 faces the camera
+    const view = { dir: 0, anim: 'walk', spin: true };
     // the starting kit, so nobody previews their character naked
     const STARTER = { weapon: 'training_blade', torso: 'cloth_shirt', legs: 'cloth_pants', feet: 'worn_boots' };
     const body = $('#screen-body');
@@ -921,11 +923,12 @@ class Game {
             <label>ชื่อตัวละคร <span class="muted" id="name-hint">3–16 ตัวอักษร</span></label>
             <div class="opts"><input id="cname" type="text" maxlength="16"><button class="btn" id="btn-roll-name">สุ่มชื่อ</button></div>
           </div>
-          <div class="field"><label>เพศ</label><div class="opts" id="o-gender"></div></div>
-          <div class="field"><label>ผิว</label><div class="opts" id="o-body"></div></div>
-          <div class="field"><label>ทรงผม</label><div class="opts" id="o-hair"></div></div>
-          <div class="field"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
-          <div class="field"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
+          <div class="field"><label>สไตล์ตัวละคร <span class="muted" id="style-hint"></span></label><div class="opts" id="o-style"></div></div>
+          <div class="field lpc-only"><label>เพศ</label><div class="opts" id="o-gender"></div></div>
+          <div class="field lpc-only"><label>ผิว</label><div class="opts" id="o-body"></div></div>
+          <div class="field lpc-only"><label>ทรงผม</label><div class="opts" id="o-hair"></div></div>
+          <div class="field lpc-only"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
+          <div class="field lpc-only"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
           <div class="field"><label>เมืองเริ่มต้น</label><div class="opts" id="o-start"></div></div>
           <hr>
           <div class="field"><label>แนวทางเริ่มต้น <span class="muted">แจกแต้มให้ก่อน ปรับเองได้</span></label>
@@ -948,12 +951,12 @@ class Game {
     const paint = (now) => {
       if (!document.body.contains(cv)) return;
       elapsed += 16;
-      if (view.spin && now - spinAt > 1400) { view.dir = (view.dir + 1) % 4; spinAt = now; markDir(); }
+      if (view.spin && now - spinAt > 1100) { view.dir = (view.dir + 1) % 8; spinAt = now; markDir(); }
       ctx.clearRect(0, 0, cv.width, cv.height);
       ctx.save();
       ctx.scale(2.6, 2.6);
       drawCharacter(ctx, playerLayers(look, STARTER), {
-        x: 42, y: 62, anim: view.anim, dir: view.dir, elapsed: elapsed * 4,
+        x: 42, y: look.style === 'chibi' ? 80 : 62, anim: view.anim, dir: view.dir, elapsed: elapsed * 4,
       });
       ctx.restore();
       requestAnimationFrame(paint);
@@ -962,6 +965,7 @@ class Game {
 
     /* ---- appearance ---- */
     const options = {
+      style: [['chibi', 'Chibi (แบบ RO)'], ['lpc', 'LPC (แต่งตัวได้)']],
       gender: [['male', 'ชาย'], ['female', 'หญิง']],
       body: [['light', 'ขาว'], ['tanned', 'แทน'], ['dark', 'เข้ม'], ['darkelf', 'ดาร์กเอลฟ์']],
       hair: [['plain', 'เรียบ'], ['messy', 'ยุ่ง'], ['long', 'ยาว'], ['ponytail', 'หางม้า']],
@@ -980,11 +984,19 @@ class Game {
         const b = document.createElement('button');
         b.className = 'opt';
         b.textContent = label;
-        b.onclick = () => { look[key] = v; markLook(); this.audio.play('ui'); };
+        b.onclick = () => { look[key] = v; markLook(); markStyle(); this.audio.play('ui'); };
         box.append(b);
       }
     }
+    // the chibi set is one drawn body with no gear art yet, so the LPC-only
+    // choices would change nothing on it
+    const markStyle = () => {
+      const chibi = look.style === 'chibi';
+      body.querySelectorAll('.lpc-only').forEach((el) => { el.hidden = chibi; });
+      $('#style-hint').textContent = chibi ? 'มีหน้าตาเดียว ยังไม่แสดงชุดเกราะ/อาวุธบนตัว' : 'ชุดที่ใส่เห็นบนตัว';
+    };
     markLook();
+    markStyle();
 
     /* ---- starting location ---- */
     let startMap = 'emberhold';
@@ -1005,7 +1017,7 @@ class Game {
 
     /* ---- camera-ish controls for the preview ---- */
     const dirBox = $('#o-dir');
-    const dirs = [['⬆ หลัง', 0], ['⬅ ซ้าย', 1], ['⬇ หน้า', 2], ['➡ ขวา', 3]];
+    const dirs = [['⬆ หลัง', 4], ['⬅ ซ้าย', 2], ['⬇ หน้า', 0], ['➡ ขวา', 6]];
     const markDir = () => [...dirBox.children].forEach((b, i) => b.classList.toggle('sel', dirs[i][1] === view.dir));
     for (const [label, d] of dirs) {
       const b = document.createElement('button');
@@ -1108,7 +1120,9 @@ class Game {
     };
 
     $('#btn-random').onclick = () => {
-      for (const [key, vals] of Object.entries(options)) look[key] = vals[Math.floor(Math.random() * vals.length)][0];
+      for (const [key, vals] of Object.entries(options)) {
+        if (key !== 'style') look[key] = vals[Math.floor(Math.random() * vals.length)][0];
+      }
       markLook();
       this.audio.play('ui');
     };

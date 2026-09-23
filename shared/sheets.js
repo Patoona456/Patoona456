@@ -93,7 +93,30 @@ export const CHIBI_ALIASES = {
 
 CHIBI8.aliases = CHIBI_ALIASES;
 
-export const LAYOUTS = { lpc: LPC, chibi8: CHIBI8 };
+/**
+ * The chibi walk board (assets/chibi/body), as cut by tools/slice-chibi.py:
+ * four walk frames across, eight facings down in DIR8 order. It is drawn at
+ * source resolution and shrunk on the way to the screen, so it stays sharp
+ * when the camera zooms in. There is only a walk: every other action falls
+ * back to idle, and the renderer lunges the body for attacks instead.
+ */
+export const CHIBI_WALK = {
+  id: 'chibi_walk',
+  aliases: {},
+  frame: { w: 128, h: 192 },
+  cols: 4,
+  rows: 8,
+  anchor: 184 / 192,
+  drawScale: 0.36,
+  dirRows: 8,
+  dirMap: null,
+  anims: {
+    idle: { row: 0, frames: 1, fps: 1 },
+    walk: { row: 0, frames: 4, fps: 8 },
+  },
+};
+
+export const LAYOUTS = { lpc: LPC, chibi8: CHIBI8, chibi_walk: CHIBI_WALK };
 
 /**
  * Register a layout. Art that arrives on a different grid gets described here

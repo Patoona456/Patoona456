@@ -200,3 +200,14 @@ test('a default character is fully dressed in files that exist', () => {
     }
   }
 });
+
+test('the chibi body sheet is the grid its layout says', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { CHIBI_WALK, fits } = await import('../shared/sheets.js');
+  const url = urlOf(playerLayers({ style: 'chibi' }).body);
+  const png = readFileSync(onDisk(url));
+  // width and height sit in the IHDR chunk, right after the 8-byte signature
+  const w = png.readUInt32BE(16), h = png.readUInt32BE(20);
+  assert.ok(fits(CHIBI_WALK, w, h), `${url} is ${w}x${h}, layout wants `
+    + `${CHIBI_WALK.frame.w * CHIBI_WALK.cols}x${CHIBI_WALK.frame.h * CHIBI_WALK.rows}`);
+});

@@ -468,6 +468,14 @@ export class Renderer {
           ox = lu.dx * push; oy = lu.dy * push;
         }
       }
+      // the chibi sheet has only a walk, so a swing is a hop toward the target
+      const chibi = e.k === 'p' && e.look?.style === 'chibi';
+      if (chibi && (anim === 'slash' || anim === 'thrust' || anim === 'shoot' || anim === 'spellcast')) {
+        const k = Math.min(1, elapsed / 260);
+        const [vx, vy] = vecOf(e.d ?? 0);
+        const reach = Math.sin(k * Math.PI) * (anim === 'spellcast' ? 2 : 6);
+        ox += vx * reach; oy += vy * reach - Math.sin(k * Math.PI) * 3;
+      }
       if (ox || oy) { ctx.save(); ctx.translate(ox, oy); }
 
       // shadow: sized with the sprite, softened at the rim
@@ -500,14 +508,15 @@ export class Renderer {
           const wing = ITEMS[e.eq?.wings]?.wing;
           if (wing) {
             drawWings(ctx, wing.style, {
-              x: e.x, y: e.y, dir: e.d ?? 0, t: now + (e.id.charCodeAt(1) ?? 0) * 37,
+              x: e.x, y: e.y, dir: toDir4(e.d ?? 0), t: now + (e.id.charCodeAt(1) ?? 0) * 37,
               scale: scale * (wing.scale ?? 1), moving: anim === 'walk',
             });
           }
           // The four slots drawn in code rather than from a sheet. The cloak
           // hangs behind the body, so it goes on before it; the scarf, the
           // glasses and the mask go over the top further down.
-          const worn = apparelOf(e.eq, ITEMS);
+          // (fitted to the LPC body, so a chibi goes without for now)
+          const worn = chibi ? apparelOf({}, ITEMS) : apparelOf(e.eq, ITEMS);
           const dress = {
             x: e.x, y: e.y, dir: toDir4(e.d ?? 0), scale,
             t: now + (e.id.charCodeAt(1) ?? 0) * 37, moving: anim === 'walk',
@@ -759,7 +768,8 @@ export class Renderer {
   drawNameplate(ctx, e, state, now) {
     const isMe = e.id === state.myId;
     const isTarget = e.id === state.targetId;
-    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : 44);
+    const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a head taller than LPC
+    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 66 : 44);
 
     if (isTarget) {
       ctx.save();

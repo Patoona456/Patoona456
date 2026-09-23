@@ -44,6 +44,7 @@ async function quickStart(button) {
         t: 'charCreate',
         name: 'นักผจญภัย' + Math.floor(1000 + Math.random() * 8999),
         ...looks[Math.floor(Math.random() * looks.length)],
+        style: 'chibi',
       });
       await until(() => g.chars.length);
     }

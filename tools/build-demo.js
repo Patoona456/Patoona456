@@ -28,7 +28,8 @@ await mkdir(path.join(out, 'client', 'js'), { recursive: true });
 for (const f of CLIENT) {
   let src = await readFile(path.join(root, 'client', 'js', `${f}.js`), 'utf8');
   // published artifacts live under a path prefix, so assets are referenced relatively
-  src = src.replace("const BASE = '/assets/lpc';", "const BASE = 'assets/lpc';");
+  src = src.replace("const BASE = '/assets/lpc';", "const BASE = 'assets/lpc';")
+    .replace("const CHIBI_BASE = '/assets/chibi';", "const CHIBI_BASE = 'assets/chibi';");
   await writeFile(path.join(out, 'client', 'js', `${f}.js`), src);
 }
 await cp(path.join(root, 'shared'), path.join(out, 'shared'), { recursive: true });

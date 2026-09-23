@@ -37,7 +37,7 @@ export class Monster {
 
     this.x = x; this.y = y;
     this.anchor = anchor ?? { x, y };
-    this.dir = 2; this.anim = 'idle'; this.animStart = 0;
+    this.dir = 0; this.anim = 'idle'; this.animStart = 0;   // DIR8: facing the camera
     this.animUntil = 0; this.animSpeed = 1;
     this.alive = true;
     this.statuses = [];
