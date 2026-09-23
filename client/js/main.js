@@ -208,6 +208,8 @@ class Game {
         else if (count(m) > count(before)) this.audio.play('loot');
       }
       this.ui.renderInventory();
+      // the portrait wears what is equipped, and the worn items live here
+      if (this.self) this.renderPortrait();
     });
     n.on('snapshot', (m) => this.onSnapshot(m));
     n.on('chatMsg', (m) => this.ui.chat(m));
@@ -251,6 +253,7 @@ class Game {
       this.ui.tradeState(m);
     });
     n.on('questTrack', (m) => this.ui.renderQuestTrack(m.quests));
+    n.on('questClear', () => this.ui.stamp('questclear'));
     n.on('died', (m) => this.onDied(m));
   }
 
@@ -313,6 +316,7 @@ class Game {
         r.floater(String(ev.v), at.x, at.y,
           onMe ? '#ff9a9a' : ev.crit ? elRgba(el, 'core', 1) : mine ? '#ffffff' : '#ffb3b3',
           ev.crit ? 17 : 12, { crit: ev.crit });
+        if (ev.crit) r.floater('CRITICAL', at.x, at.y - 16, '#ff6a4a', 26, { vx: 0, crit: true, img: 'critical' });
         // the blow shoves the body, bursts in its own element, and a crit
         // holds the frame for a moment
         r.impact(ev.id, { x: ent.x, y: ent.y, from: this.entities.get(ev.src), el, crit: !!ev.crit });
@@ -332,11 +336,11 @@ class Game {
         }
         break;
       case 'miss':
-        if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 11); this.audio.play('miss', at); }
+        if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 20, { img: 'miss' }); this.audio.play('miss', at); }
         break;
       case 'levelup':
         if (ent) r.ascend(ent, { mine: ev.id === this.state.myId });
-        if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 18, { vx: 0 });
+        if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 44, { vx: 0, img: 'levelup' });
         if (ev.id === this.state.myId) {
           this.ui.toast(`เลเวลอัพ! Lv.${ev.level} / Job ${ev.jobLevel}`, 'good');
           this.audio.play('levelup');

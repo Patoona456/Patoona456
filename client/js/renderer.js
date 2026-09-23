@@ -14,6 +14,17 @@ import { skyAt } from '../../shared/daycycle.js';
 import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from './skillfx.js';
 import { Weather } from './weather.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
+import { UI_BASE } from './icons.js';
+
+const uiImages = new Map();
+/** One of the painted HUD words (miss, critical, levelup), loaded once. */
+function uiImage(name) {
+  let img = uiImages.get(name);
+  if (!img) { img = new Image(); img.src = `${UI_BASE}/${name}.webp`; uiImages.set(name, img); }
+  return img;
+}
+// fetched up front: a word that loads on its first use would miss that hit
+for (const name of ['miss', 'critical', 'levelup']) if (typeof Image !== 'undefined') uiImage(name);
 
 // Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
 export const ZOOM_STEPS = [
@@ -164,6 +175,7 @@ export class Renderer {
       vy: opts.crit ? -92 : -64,
       g: 150,
       pop: opts.crit ? 1.55 : 1.2,        // how much bigger it starts
+      img: opts.img ? uiImage(opts.img) : null,   // a painted word instead of text
     });
   }
 
@@ -1048,6 +1060,12 @@ export class Renderer {
       ctx.globalAlpha = 1 - k * k;
       // it punches in at full size, then settles - the number itself lands
       const grow = k < 0.16 ? f.pop - (f.pop - 1) * (k / 0.16) : 1;
+      if (f.img?.naturalWidth) {
+        const h = f.size * grow * this.dpr;
+        const w = h * (f.img.naturalWidth / f.img.naturalHeight);
+        ctx.drawImage(f.img, sx - w / 2, sy - h * 0.8, w, h);
+        continue;
+      }
       ctx.font = `bold ${Math.round(f.size * grow * this.dpr)}px system-ui, sans-serif`;
       ctx.lineWidth = 3;
       ctx.strokeStyle = 'rgba(0,0,0,0.9)';

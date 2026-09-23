@@ -7,7 +7,7 @@
 // when one is renamed or misspelled.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -312,4 +312,16 @@ test('the novice outfit is drawn for the chibi body and worn from the start', as
     assert.ok(!ITEMS[old], `${old} was retired but still exists`);
     assert.ok(ITEMS[now], `${old} is replaced by an unknown item`);
   }
+});
+
+test('every painted HUD piece the stylesheet and icons ask for is on disk', () => {
+  const css = readFileSync(path.join(root, 'client/css/style.css'), 'utf8');
+  const icons = readFileSync(path.join(root, 'client/js/icons.js'), 'utf8');
+  const names = new Set([
+    ...[...css.matchAll(/url\(\.\.\/\.\.\/assets\/ui\/([\w-]+)\.webp\)/g)].map((m) => m[1]),
+    ...[...icons.matchAll(/'((?:skill|item)_\w+)'/g)].map((m) => m[1]),
+    'miss', 'critical', 'levelup', 'questclear',
+  ]);
+  assert.ok(names.size > 20, `only found ${names.size} references`);
+  for (const n of names) assert.ok(existsSync(path.join(root, 'assets/ui', n + '.webp')), `assets/ui/${n}.webp is missing`);
 });

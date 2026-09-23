@@ -7,7 +7,7 @@ import { WARP_ROUTES } from '../../shared/data/npcs.js';
 import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
 import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js';
-import { itemIcon, skillIcon, icon } from './icons.js';
+import { itemIcon, skillIcon, icon, UI_BASE } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
@@ -65,6 +65,8 @@ export class UI {
     for (const b of document.querySelectorAll('#menu-buttons button')) {
       b.addEventListener('click', () => this.toggle(b.dataset.panel));
     }
+    $('#mm-in')?.addEventListener('click', () => this.zoomMinimap(1));
+    $('#mm-out')?.addEventListener('click', () => this.zoomMinimap(-1));
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
       const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade', KeyV: 'stall' };
@@ -131,6 +133,23 @@ export class UI {
     log.append(line);
     while (log.childElementCount > 120) log.firstChild.remove();
     log.scrollTop = log.scrollHeight;
+  }
+
+  /** A painted stamp (Quest Clear!) that pops in the middle and fades. */
+  stamp(name) {
+    let n = $('#stamp');
+    if (!n) {
+      n = el('img', '', '');
+      n.id = 'stamp';
+      n.alt = '';
+      document.body.append(n);
+    }
+    n.src = `${UI_BASE}/${name}.webp`;
+    n.classList.remove('show');
+    void n.offsetWidth;
+    n.classList.add('show');
+    clearTimeout(this._stampT);
+    this._stampT = setTimeout(() => n.classList.remove('show'), 1900);
   }
 
   /** Big fading title when you enter a zone, with its level bracket. */
@@ -247,6 +266,7 @@ export class UI {
     if (tradeBtn) tradeBtn.classList.toggle('hidden', ent?.k !== 'p');
     if (!ent) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
+    f.classList.toggle('boss', !!ent.boss);
     $('#tg-name').textContent = ent.n;
     $('#tg-lv').textContent = ent.lv ? `Lv.${ent.lv}` : '';
     $('#tg-hp').style.width = Math.max(0, (ent.hp / ent.mhp) * 100) + '%';
@@ -317,7 +337,6 @@ export class UI {
     if (!renderer.grid || !state.me) return;
     const g = c.getContext('2d');
     const z = renderer.zone;
-    const sx = c.width / z.width, sy = c.height / z.height;
     if (!this._miniCache || this._miniZone !== z.id) {
       const off = document.createElement('canvas');
       off.width = z.width; off.height = z.height;
@@ -340,14 +359,40 @@ export class UI {
     g.clearRect(0, 0, c.width, c.height);
     // a painted town is its own map; tiles would only show the walkable mask
     const art = renderer.backdrop?.complete && renderer.backdrop.naturalWidth ? renderer.backdrop : null;
+    const src = art ?? this._miniCache;
+    const kx = (art ? art.naturalWidth : z.width) / z.width;
+    const ky = (art ? art.naturalHeight : z.height) / z.height;
     g.imageSmoothingEnabled = !!art;
-    g.drawImage(art ?? this._miniCache, 0, 0, c.width, c.height);
+    // The round frame shows a square window around the player that the +/-
+    // buttons widen or narrow; the square card shows the whole zone.
+    let vx = 0, vy = 0, vw = z.width, vh = z.height;
+    if (document.body.dataset.ui === 'ember') {
+      const side = Math.max(z.width, z.height) / (this.miniZoom ?? 2);
+      const me = state.me;
+      vw = vh = side;
+      vx = Math.max(Math.min(me.x / TILE - side / 2, z.width - side), Math.min(0, z.width - side));
+      vy = Math.max(Math.min(me.y / TILE - side / 2, z.height - side), Math.min(0, z.height - side));
+      if (z.width < side) vx = (z.width - side) / 2;
+      if (z.height < side) vy = (z.height - side) / 2;
+      g.fillStyle = '#1a1714';
+      g.fillRect(0, 0, c.width, c.height);
+    }
+    const sx = c.width / vw, sy = c.height / vh;
+    const ix = Math.max(0, vx), iy = Math.max(0, vy);
+    const iw = Math.min(z.width, vx + vw) - ix, ih = Math.min(z.height, vy + vh) - iy;
+    g.drawImage(src, ix * kx, iy * ky, iw * kx, ih * ky, (ix - vx) * sx, (iy - vy) * sy, iw * sx, ih * sy);
     for (const e of state.ents ?? []) {
       if (e.k === 'n') g.fillStyle = '#7dffb0';
       else if (e.k === 'm') g.fillStyle = e.boss ? '#ffb45e' : '#ff7a7a';
       else g.fillStyle = e.id === state.myId ? '#ffffff' : '#7fb2ff';
-      g.fillRect((e.x / TILE) * sx - 1, (e.y / TILE) * sy - 1, 3, 3);
+      const mine = e.id === state.myId;
+      g.fillRect((e.x / TILE - vx) * sx - (mine ? 2 : 1), (e.y / TILE - vy) * sy - (mine ? 2 : 1), mine ? 5 : 3, mine ? 5 : 3);
     }
+  }
+
+  /** The +/- on the round map frame: how much of the zone it shows. */
+  zoomMinimap(dir) {
+    this.miniZoom = Math.max(1, Math.min(4, (this.miniZoom ?? 2) + dir));
   }
 
   /* ---------------- panel plumbing ---------------- */
@@ -1992,8 +2037,9 @@ export class UI {
     const themes = el('div');
     themes.innerHTML = '<h3 style="margin:0 0 6px">หน้าตา UI</h3>';
     const row = el('div', 'opts');
-    const current = document.body.dataset.ui ?? 'pixel';
+    const current = document.body.dataset.ui ?? 'ember';
     for (const [key, label, note] of [
+      ['ember', 'ทองคำ', 'กรอบทองลายวาด ไอคอนสีจากชีต UI หลัก'],
       ['pixel', 'พิกเซล', 'ขอบคม มุมบาก เข้ากับสไปรต์'],
       ['ornate', 'แฟนตาซี', 'หนังกับทอง แบบ MMO ยุคเก่า'],
       ['glass', 'มินิมอล', 'กระจกฝ้า บังฉากน้อยที่สุด'],
@@ -2069,14 +2115,18 @@ export class UI {
 
 /** UI theme lives on <body data-ui>, remembered per browser. */
 export function setTheme(name) {
-  const ok = ['pixel', 'ornate', 'glass'].includes(name) ? name : 'pixel';
+  const ok = ['ember', 'pixel', 'ornate', 'glass'].includes(name) ? name : 'ember';
   document.body.dataset.ui = ok;
-  try { localStorage.setItem('emberfall-ui', ok); } catch { /* no storage */ }
+  try { localStorage.setItem(THEME_KEY, ok); } catch { /* no storage */ }
 }
 
+// A new key, so everyone meets the painted HUD once; the old key only ever
+// held whatever the default was when the page first loaded.
+const THEME_KEY = 'emberfall-ui-v2';
+
 export function loadTheme() {
-  let saved = 'pixel';
-  try { saved = localStorage.getItem('emberfall-ui') || 'pixel'; } catch { /* no storage */ }
+  let saved = 'ember';
+  try { saved = localStorage.getItem(THEME_KEY) || 'ember'; } catch { /* no storage */ }
   setTheme(saved);
 }
 

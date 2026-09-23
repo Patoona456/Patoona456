@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/client/css/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🔥</text></svg>">
 </head>
-<body data-ui="pixel">
+<body data-ui="ember">
 <canvas id="game"></canvas>
 
 <!-- ======================= HUD ======================= -->
@@ -45,6 +45,8 @@
       <div class="map-head"><b id="zone-name">-</b><span id="zone-range" class="muted"></span></div>
       <div class="map-time"><span id="clock" class="num">🌤 12:00</span></div>
       <canvas id="minimap" width="140" height="140"></canvas>
+      <button class="mm-btn" id="mm-in" aria-label="ขยายแผนที่" title="ขยายแผนที่"></button>
+      <button class="mm-btn" id="mm-out" aria-label="ย่อแผนที่" title="ย่อแผนที่"></button>
       <div class="map-foot"><span id="coords" class="muted num"></span><span id="netinfo" class="muted"></span></div>
     </div>
   </div>

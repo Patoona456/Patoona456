@@ -30,7 +30,8 @@ for (const f of CLIENT) {
   // published artifacts live under a path prefix, so assets are referenced relatively
   src = src.replace("const BASE = '/assets/lpc';", "const BASE = 'assets/lpc';")
     .replace("const CHIBI_BASE = '/assets/chibi';", "const CHIBI_BASE = 'assets/chibi';")
-    .replace("const NPC_BASE = '/assets/npc';", "const NPC_BASE = 'assets/npc';");
+    .replace("const NPC_BASE = '/assets/npc';", "const NPC_BASE = 'assets/npc';")
+    .replace("export const UI_BASE = '/assets/ui';", "export const UI_BASE = 'assets/ui';");
   await writeFile(path.join(out, 'client', 'js', `${f}.js`), src);
 }
 await cp(path.join(root, 'shared'), path.join(out, 'shared'), { recursive: true });
@@ -39,9 +40,14 @@ for (const f of ['net.js', 'accounts.js']) {
   await cp(path.join(root, 'server', f), path.join(out, 'server', f));
 }
 await cp(path.join(root, 'demo'), path.join(out, 'demo'), { recursive: true });
-await cp(path.join(root, 'assets'), path.join(out, 'assets'), { recursive: true });
+// source/ folders hold the full-size sheets the tools cut from; the game never loads them
+await cp(path.join(root, 'assets'), path.join(out, 'assets'), {
+  recursive: true, filter: (src) => path.basename(src) !== 'source',
+});
 
-const css = await readFile(path.join(root, 'client', 'css', 'style.css'), 'utf8');
+// the stylesheet is inlined into index.html, so its ../../assets paths move up to the root
+const css = (await readFile(path.join(root, 'client', 'css', 'style.css'), 'utf8'))
+  .replaceAll('url(../../assets/', 'url(assets/');
 const html = await readFile(path.join(root, 'client', 'index.html'), 'utf8');
 const body = '<canvas id="game"></canvas>' + html.split('<canvas id="game"></canvas>')[1].split('<script')[0];
 const shell = await readFile(path.join(root, 'demo', 'page.html'), 'utf8');

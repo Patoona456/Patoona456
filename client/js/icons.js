@@ -12,6 +12,48 @@ export const RARITY = {
 };
 
 const cache = new Map();
+
+/** Painted pieces cut from the HUD sheet (tools/slice-ui.py). */
+export const UI_BASE = '/assets/ui';
+
+// Icon kinds that have painted art on the HUD sheet. Everything else keeps
+// its drawn shape, so a new skill or item still gets an icon for free.
+const ART = {
+  fire: 'skill_fire', storm: 'skill_storm', frost: 'skill_frost', heal: 'skill_heal',
+  light: 'skill_light', debuff: 'skill_debuff', poison: 'skill_debuff', slash: 'skill_slash',
+  aoe: 'skill_aoe', pierce: 'skill_pierce', guard: 'skill_guard', dash: 'skill_dash',
+  summon: 'skill_summon', shout: 'skill_summon',
+  potion: 'item_potion', mana: 'item_mana', antidote: 'item_antidote', food: 'item_food',
+  scroll: 'item_scroll',
+};
+const SQUARE = (kind) => ART[kind]?.startsWith('skill_');
+const artImages = new Map();
+function artImage(kind) {
+  let img = artImages.get(kind);
+  if (!img) {
+    img = new Image();
+    img.src = `${UI_BASE}/${ART[kind]}.webp`;
+    artImages.set(kind, img);
+  }
+  return img;
+}
+/** Paint the sheet art over a canvas now, or as soon as it has loaded. */
+function paintArt(canvas, kind) {
+  const img = artImage(kind);
+  const draw = () => {
+    if (!img.naturalWidth) return;
+    const g = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    g.clearRect(0, 0, w, h);
+    g.imageSmoothingEnabled = true;
+    if (SQUARE(kind)) { g.drawImage(img, 0, 0, w, h); return; }
+    const k = Math.min(w / img.naturalWidth, h / img.naturalHeight) * 0.94;
+    const dw = img.naturalWidth * k, dh = img.naturalHeight * k;
+    g.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  };
+  if (img.complete) draw();
+  else img.addEventListener('load', draw, { once: true });
+}
 const px = (c, x, y, w, h, fill) => { c.fillStyle = fill; c.fillRect(x, y, w, h); };
 const disc = (c, x, y, r, fill) => { c.fillStyle = fill; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill(); };
 
@@ -523,6 +565,7 @@ export function icon(kind, { rarity = null, size = 32 } = {}) {
   copy.style.width = copy.style.height = size + 'px';
   copy.className = 'icon';
   copy.getContext('2d').drawImage(c, 0, 0);
+  if (ART[kind]) paintArt(copy, kind);
   return copy;
 }
 

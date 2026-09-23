@@ -643,6 +643,7 @@ export class Conn {
       const r = Quests.complete(this.world, p, m.id);
       if (r.error) return this.error(r.error);
       this.notice(`ภารกิจสำเร็จ! +${r.rewards.aurum ?? 0} ออรัม`, 'good');
+      this.send({ t: 'questClear', id: m.id });
       this.sendInventory();
       this.send({ t: OP.SELF, self: p.selfState() });
     }

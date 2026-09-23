@@ -98,6 +98,241 @@ body[data-ui="glass"] .win,
 body[data-ui="glass"] .slot,
 body[data-ui="glass"] .btn { backdrop-filter: blur(14px) saturate(1.2); }
 
+/* ---------- theme 4: ember (default) - the painted HUD sheet ----------
+   Frames, slots, icons and the round map are cut from
+   assets/ui/source/hud_sheet.png by tools/slice-ui.py. Paths are relative to
+   this file; the offline build rewrites them for its flat layout. */
+body[data-ui="ember"] {
+  --panel: linear-gradient(180deg, rgba(36, 32, 29, .95), rgba(21, 19, 18, .95));
+  --panel-solid: #1d1a18;
+  --edge: #b98a3e;
+  --edge-soft: #5e4726;
+  --radius: 9px;
+  --pad: 9px;
+  --text: #f4ecdc;
+  --muted: #b9a888;
+  --accent: #f2c35b;
+  --accent-ink: #2b1905;
+  --slot: #1b1917;
+  --slot-edge: #8a6a32;
+  --shadow: 0 6px 18px rgba(0, 0, 0, .55);
+  --font: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font);
+  --display-spacing: .02em;
+  --display-transform: none;
+  --corner: none;
+  --notch: none;
+  --hp: linear-gradient(180deg, #ff8a7a 0%, #e8322c 42%, #a3121a 100%);
+  --sp: linear-gradient(180deg, #8adcff 0%, #248ae8 45%, #0d4fa2 100%);
+  --xp: linear-gradient(90deg, #62b52a 0%, #a8d43a 60%, #e8d23a 100%);
+  --job: linear-gradient(180deg, #ecc2ff 0%, #b36ee0 50%, #6f3196 100%);
+}
+body[data-ui="ember"] .panel,
+body[data-ui="ember"] .win {
+  border: 14px solid transparent;
+  border-image: url(../../assets/ui/frame.webp) 28 fill / 14px stretch;
+  background: none;
+  padding: max(1px, calc(var(--pad) - 9px));
+  box-shadow: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .45));
+}
+body[data-ui="ember"] .win.window { background: none; }
+body[data-ui="ember"] .win.window > header {
+  background: linear-gradient(180deg, #2b2621, #1d1a18);
+  border-bottom: 1px solid #6b5128;
+}
+body[data-ui="ember"] .win.window > header h2 { color: #fbe7b6; text-shadow: 0 1px 0 #000; }
+body[data-ui="ember"] .slot {
+  border: 8px solid transparent;
+  border-image: url(../../assets/ui/slot.webp) 14 fill / 8px stretch;
+  background: none;
+}
+body[data-ui="ember"] .slot.empty { opacity: .75; }
+body[data-ui="ember"] .slot.sel { box-shadow: 0 0 0 2px var(--accent); }
+body[data-ui="ember"] .slot .key {
+  top: auto; bottom: -6px; left: 50%; transform: translateX(-50%);
+  padding: 0 5px; border-radius: 0 0 6px 6px; background: #2a2622;
+  border: 1px solid #8a6a32; border-top: none; color: #f4ecdc; font-weight: 700;
+}
+body[data-ui="ember"] .btn {
+  background: linear-gradient(180deg, #34302b, #1c1917);
+  border: 1px solid #a47c38; border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 230, 170, .18), 0 2px 0 rgba(0, 0, 0, .5);
+}
+body[data-ui="ember"] .btn:hover { border-color: #f2c35b; }
+body[data-ui="ember"] .btn.primary {
+  background: linear-gradient(180deg, #ffe39a 0%, #f5b847 55%, #d98a1e 100%);
+  color: #2b1905; border-color: #8a5a14; text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
+}
+body[data-ui="ember"] .bar {
+  height: 14px; background: #121010; border: 1.5px solid #6b5024;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .8), 0 0 0 1px rgba(0, 0, 0, .6);
+}
+body[data-ui="ember"] .bar i { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35); }
+body[data-ui="ember"] .bar span {
+  line-height: 11px; font-size: 10px; font-weight: 700;
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 -1px #000, 0 1px #000;
+}
+body[data-ui="ember"] .bar.hp::before, body[data-ui="ember"] .bar.sp::before {
+  position: absolute; left: 7px; top: 0; z-index: 1; font-size: 9px; font-weight: 800; line-height: 11px;
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 -1px #000, 0 1px #000;
+}
+body[data-ui="ember"] #vitals .bar.hp::before { content: "HP"; }
+body[data-ui="ember"] #vitals .bar.sp::before { content: "MP"; }
+body[data-ui="ember"] .bar.exp, body[data-ui="ember"] .bar.jexp { height: 9px; }
+body[data-ui="ember"] .bar.exp span, body[data-ui="ember"] .bar.jexp span { line-height: 7px; font-size: 8px; }
+body[data-ui="ember"] .bar.small { height: 10px; }
+
+/* identity: the round gold frame with the level plate hanging under it */
+body[data-ui="ember"] #vitals { gap: 14px; padding: 4px 8px 6px 6px; }
+body[data-ui="ember"] .portrait {
+  width: 58px; height: 58px; border: none; border-radius: 50%; overflow: visible; margin: 2px 0 8px;
+  background: radial-gradient(circle at 50% 40%, #3a3f52, #15171f 72%);
+}
+body[data-ui="ember"] .portrait canvas { border-radius: 50%; }
+body[data-ui="ember"] .portrait::after {
+  content: ""; position: absolute; left: -9px; top: -8px; width: 76px; height: 82px; pointer-events: none;
+  background: url(../../assets/ui/ring.webp) center / 100% 100% no-repeat;
+}
+body[data-ui="ember"] .portrait .lv {
+  left: 50%; right: auto; bottom: -13px; transform: translateX(-50%); z-index: 2;
+  padding: 0 7px; border-radius: 7px; white-space: nowrap; font-size: 10px; color: #fbe7b6;
+  background: linear-gradient(180deg, #2c2824, #151311); border: 1px solid #b98a3e;
+}
+body[data-ui="ember"] .portrait .lv::before { content: "Lv."; }
+
+/* wallet */
+body[data-ui="ember"] .pill {
+  background: linear-gradient(180deg, #2e2a26, #171513); border: 1.5px solid #a47c38;
+  padding: 3px 12px 3px 3px; box-shadow: 0 2px 6px rgba(0, 0, 0, .5);
+}
+body[data-ui="ember"] .pill i { width: 20px; height: 20px; background: center / contain no-repeat; clip-path: none; border-radius: 0; }
+body[data-ui="ember"] .pill i.coin { background-image: url(../../assets/ui/coin.webp); }
+body[data-ui="ember"] .pill i.shard { background-image: url(../../assets/ui/gem_red.webp); }
+
+/* the round map: the frame is painted over the canvas, the plate carries the name */
+.mm-btn { display: none; }
+body[data-ui="ember"] .map-card {
+  --k: .56;
+  width: calc(278px * var(--k)); height: calc(264px * var(--k) + 16px);
+  padding: 0; border: none; border-image: none; background: none; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5));
+  display: block;
+}
+body[data-ui="ember"] .map-card::after {
+  content: ""; position: absolute; left: 0; top: 0; pointer-events: none;
+  width: calc(278px * var(--k)); height: calc(264px * var(--k));
+  background: url(../../assets/ui/minimap.webp) 0 0 / 100% 100% no-repeat;
+}
+body[data-ui="ember"] #minimap {
+  position: absolute; border-radius: 50%;
+  left: calc((131px - 99px) * var(--k)); top: calc((135px - 99px) * var(--k));
+  width: calc(198px * var(--k)); height: calc(198px * var(--k));
+}
+body[data-ui="ember"] .map-head {
+  position: absolute; z-index: 2; display: block; text-align: center;
+  left: calc(62px * var(--k)); width: calc(144px * var(--k)); top: calc(203px * var(--k));
+}
+body[data-ui="ember"] .map-head b { font-size: 11px; color: #fbe7b6; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body[data-ui="ember"] #zone-range, body[data-ui="ember"] #netinfo { display: none; }
+body[data-ui="ember"] .map-foot {
+  position: absolute; z-index: 2; left: calc(62px * var(--k)); width: calc(144px * var(--k));
+  top: calc(203px * var(--k) + 14px); justify-content: center; font-size: 9px;
+}
+body[data-ui="ember"] .map-foot #coords { color: #e9dcc0; }
+body[data-ui="ember"] .map-time {
+  position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; color: #e9dcc0;
+  text-shadow: 0 1px 2px #000;
+}
+body[data-ui="ember"] .mm-btn {
+  display: block; position: absolute; z-index: 3; padding: 0; border: none; background: none; border-radius: 50%;
+  width: calc(42px * var(--k)); height: calc(42px * var(--k));
+  left: calc((244px - 21px) * var(--k));
+}
+body[data-ui="ember"] #mm-in { top: calc((55px - 21px) * var(--k)); }
+body[data-ui="ember"] #mm-out { top: calc((103px - 21px) * var(--k)); }
+body[data-ui="ember"] .mm-btn:active { background: rgba(255, 220, 140, .25); }
+
+/* quest tracker header in gold */
+body[data-ui="ember"] #quest-track header b { color: #fbe7b6; }
+body[data-ui="ember"] .qrow { border-left-color: #b98a3e; background: rgba(0, 0, 0, .28); }
+
+/* menu rail: painted icons stacked in the dark gold-rimmed column */
+body[data-ui="ember"] #menu-buttons {
+  top: calc(50% + 24px);
+  border: 12px solid transparent; border-image: url(../../assets/ui/rail.webp) 26 14 fill / 12px 10px stretch;
+  padding: 0 1px; gap: 2px; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5));
+}
+body[data-ui="ember"] #menu-buttons .btn {
+  display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 0; width: 64px;
+  padding: 2px 0 3px; background: none; border: none; box-shadow: none; font-size: 11px; font-weight: 700;
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 1px #000, 0 -1px #000;
+}
+body[data-ui="ember"] #menu-buttons .btn:hover { filter: brightness(1.18); }
+body[data-ui="ember"] #menu-buttons svg { display: none; }
+body[data-ui="ember"] #menu-buttons .btn::before {
+  content: ""; width: 34px; height: 30px; background: center / contain no-repeat;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .6));
+}
+body[data-ui="ember"] #menu-buttons .btn[data-panel="character"]::before { background-image: url(../../assets/ui/menu_character.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="inventory"]::before { background-image: url(../../assets/ui/menu_inventory.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="skills"]::before { background-image: url(../../assets/ui/menu_skills.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="quests"]::before { background-image: url(../../assets/ui/menu_quests.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="party"]::before { background-image: url(../../assets/ui/menu_party.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="guild"]::before { background-image: url(../../assets/ui/menu_guild.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="stall"]::before { background-image: url(../../assets/ui/menu_stall.webp); }
+body[data-ui="ember"] #menu-buttons .btn[data-panel="settings"]::before { background-image: url(../../assets/ui/menu_settings.webp); }
+
+/* target: bosses wear the red BOSS badge */
+body[data-ui="ember"] #target-frame.boss { padding-left: 46px; }
+body[data-ui="ember"] #target-frame.boss::after {
+  content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+  width: 52px; height: 29px; background: url(../../assets/ui/boss.webp) center / contain no-repeat;
+}
+
+/* AUTO: the crossed-swords medallion, lit green with ON while it runs */
+body[data-ui="ember"] #btn-auto {
+  width: 54px; height: 54px; border: none; font-size: 0; color: transparent;
+  background: url(../../assets/ui/auto.webp) center / contain no-repeat;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .6));
+}
+body[data-ui="ember"] #btn-auto.on { filter: drop-shadow(0 0 7px rgba(140, 230, 90, .85)); position: relative; }
+body[data-ui="ember"] #btn-auto.on::after {
+  content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  width: 30px; height: 20px; background: url(../../assets/ui/on.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] .round:not(#btn-auto) {
+  background: radial-gradient(circle at 50% 35%, #3a342e, #171412 70%); border: 2px solid #a47c38;
+}
+
+/* touch: the gold-rimmed steel knob, gold rings on the buttons */
+body[data-ui="ember"] #stick { background: radial-gradient(circle, rgba(30, 26, 22, .35), rgba(30, 26, 22, .55)); border: 2px solid rgba(201, 158, 80, .7); }
+body[data-ui="ember"] #stick-knob { border: none; background: url(../../assets/ui/knob.webp) center / contain no-repeat; }
+body[data-ui="ember"] .tbtn {
+  background: radial-gradient(circle at 50% 35%, rgba(58, 52, 46, .92), rgba(23, 20, 18, .92) 70%);
+  border: 2px solid #b98a3e; color: #fbe7b6;
+}
+body[data-ui="ember"] .tbtn.big { background: radial-gradient(circle at 50% 35%, rgba(170, 52, 38, .92), rgba(90, 20, 16, .92) 72%); }
+
+/* chat: dark plate with gold tabs */
+body[data-ui="ember"] #chat-tabs .tab { background: #221e1b; border-color: #5e4726; color: #d9cbb0; }
+body[data-ui="ember"] #chat-tabs .tab.on { background: linear-gradient(180deg, #f5dcb0, #caa56a); color: #2b1905; border-color: #b98a3e; }
+body[data-ui="ember"] #chat-log { background: rgba(22, 20, 18, .82); border: 1.5px solid #6b5024; border-radius: 8px; }
+body[data-ui="ember"] #chat-form select, body[data-ui="ember"] #chat-form input { background: #1a1715; border-color: #5e4726; border-radius: 7px; }
+body[data-ui="ember"] .toast { background: linear-gradient(180deg, #2b2621, #181513); border-color: #a47c38; }
+
+#stamp {
+  position: fixed; left: 50%; top: 28%; width: min(300px, 62vw); transform: translate(-50%, -50%) scale(.6);
+  z-index: 46; pointer-events: none; opacity: 0; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .6));
+}
+#stamp.show { animation: stampIn 1.9s ease forwards; }
+@keyframes stampIn {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  20% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
+}
+
 /* ============================ base ============================ */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
@@ -366,6 +601,7 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
   border-radius: calc(var(--radius) * .7); padding: 6px 8px; font: inherit; font-size: 12px;
 }
 #chat-form input { flex: 1; min-width: 0; }
+#chat-form select { width: auto; flex: none; }
 
 /* ============================ windows ============================ */
 #panels { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
@@ -750,6 +986,39 @@ body.landscape-ui .win.window .body { padding: 10px; gap: 8px; }
 @media (max-width: 720px) {
   .cc { grid-template-columns: 1fr; }
   .cc-derived { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- ember on small screens ---------- */
+body.landscape-ui[data-ui="ember"] .map-card { --k: .42; }
+body.landscape-ui[data-ui="ember"] #minimap { width: calc(198px * var(--k)); height: calc(198px * var(--k)); }
+body.landscape-ui[data-ui="ember"] .map-head b { font-size: 9px; }
+body.landscape-ui[data-ui="ember"] .map-foot { top: calc(203px * var(--k) + 11px); font-size: 8px; }
+body.landscape-ui[data-ui="ember"] #menu-buttons { top: 138px; }
+body.landscape-ui[data-ui="ember"] #menu-buttons .btn { width: 40px; padding: 1px 0; }
+body.landscape-ui[data-ui="ember"] #menu-buttons .btn::before { width: 28px; height: 24px; }
+body.landscape-ui[data-ui="ember"] #menu-buttons .btn span { display: none; }
+body.landscape-ui[data-ui="ember"] #expstrip { top: 100px; }
+body.landscape-ui[data-ui="ember"] #vitals { border-width: 10px; border-image-width: 10px; padding: 0 4px 2px 2px; gap: 10px; }
+body.landscape-ui[data-ui="ember"] .portrait { width: 42px; height: 42px; margin: 2px 0 7px; }
+body.landscape-ui[data-ui="ember"] .portrait::after { left: -7px; top: -6px; width: 56px; height: 61px; }
+body.landscape-ui[data-ui="ember"] #btn-auto { width: 42px; height: 42px; }
+@media (max-width: 860px) {
+  body[data-ui="ember"] #menu-buttons .btn { width: 44px; }
+  body[data-ui="ember"] #menu-buttons .btn span { display: none; }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  body:not(.landscape-ui)[data-ui="ember"] .map-card { --k: .4; }
+  body:not(.landscape-ui)[data-ui="ember"] #minimap { width: calc(198px * var(--k)); height: calc(198px * var(--k)); }
+  body:not(.landscape-ui)[data-ui="ember"] .map-head b { font-size: 9px; }
+  body:not(.landscape-ui)[data-ui="ember"] .map-foot { top: calc(203px * var(--k) + 11px); font-size: 8px; }
+}
+@media (max-width: 620px) {
+  body[data-ui="ember"] #vitals { border-width: 10px; border-image-width: 10px; padding: 0 4px 2px 2px; gap: 10px; }
+  body[data-ui="ember"] .portrait { width: 42px; height: 42px; margin: 2px 0 7px; }
+  body[data-ui="ember"] .portrait::after { left: -7px; top: -6px; width: 56px; height: 61px; }
+  body[data-ui="ember"] #vitals .name span { white-space: nowrap; font-size: 10px; }
+  body[data-ui="ember"] .map-card { --k: .4; }
+  body[data-ui="ember"] #minimap { width: calc(198px * var(--k)); height: calc(198px * var(--k)); }
 }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
