@@ -290,3 +290,9 @@ test('a map drawn in sharp tiles ships every tile', () => {
     }
   }
 });
+
+test('every gate style a warp can be drawn as has its picture', () => {
+  for (const style of ['city', 'nature', 'dungeon', 'boss', 'holy', 'ice', 'void']) {
+    assert.ok(existsSync(onDisk(`assets/warp/${style}.webp`)), `assets/warp/${style}.webp is missing`);
+  }
+});

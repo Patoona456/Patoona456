@@ -1,7 +1,7 @@
 // Canvas renderer: procedural terrain tiles + LPC paper-doll entities.
 import { TILE, SPRITE, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
 import { vecOf, toDir4 } from '../../shared/facing.js';
-import { TILES, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
+import { TILES, MAPS, decodeGrid, generateProps, hash2 } from '../../shared/data/maps.js';
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
@@ -330,51 +330,59 @@ export class Renderer {
     ctx.restore();
   }
 
+  /**
+   * Which gate a warp is drawn as, by where it leads: a town gets the
+   * bannered stone arch, open country the vine arch, a crypt the skull gate,
+   * a boss lair the burning one, the ice caves the crystal ring, the
+   * Reliquary the void, and the duelling ground the winged gold.
+   */
+  warpStyle(to) {
+    const m = MAPS[to];
+    if (!m) return 'city';
+    if (m.pvp || to === 'ashen_lists') return 'holy';
+    if (m.kind === 'town') return 'city';
+    if (m.kind === 'boss') return 'boss';
+    if (m.kind === 'dungeon') return 'void';
+    if (m.theme === 'ice') return 'ice';
+    if (m.kind === 'cave') return 'dungeon';
+    return 'nature';
+  }
+
   drawWarps(ctx, now) {
+    this.warpArt ??= new Map();
     for (const w of this.zone.warps ?? []) {
       const cx = (w.x + w.w / 2) * TILE, cy = (w.y + w.h / 2) * TILE;
-      const rx = (w.w * TILE) / 2, ry = (w.h * TILE) / 2;
-      const pulse = 0.5 + Math.sin(now / 420) * 0.18;
+      const foot = (w.y + w.h) * TILE - 4;
+      const style = this.warpStyle(w.to);
+      let art = this.warpArt.get(style);
+      if (!art) {
+        art = new Image();
+        art.src = `assets/warp/${style}.webp`;
+        this.warpArt.set(style, art);
+      }
+      let top = foot - 64;
+      if (art.complete && art.naturalWidth) {
+        // eight frames side by side; a gate is ~2 tiles wide whatever the pad
+        const fw = art.naturalWidth / 8, fh = art.naturalHeight;
+        const frame = Math.floor(now / 110) % 8;
+        const dw = 72, dh = dw * (fh / fw);
+        top = foot - dh;
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(art, frame * fw, 0, fw, fh, cx - dw / 2, top, dw, dh);
+        ctx.restore();
+      }
 
       ctx.save();
-      // pad
-      const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, Math.max(rx, ry));
-      grad.addColorStop(0, `rgba(180,235,255,${0.55 * pulse + 0.2})`);
-      grad.addColorStop(1, 'rgba(70,150,220,0.05)');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = `rgba(200,240,255,${pulse})`;
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([5, 4]);
-      ctx.lineDashOffset = -now / 90;
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // rising motes
-      ctx.fillStyle = 'rgba(210,245,255,0.85)';
-      for (let i = 0; i < 6; i++) {
-        const t = ((now / 1400) + i / 6) % 1;
-        const a = i * 1.7 + now / 900;
-        ctx.globalAlpha = (1 - t) * 0.9;
-        ctx.fillRect(cx + Math.cos(a) * rx * 0.7, cy + ry * 0.5 - t * (ry * 2 + 20), 2, 3);
-      }
-      ctx.globalAlpha = 1;
-
-      // arch
-      ctx.strokeStyle = 'rgba(150,215,255,0.75)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(cx, cy + ry * 0.4, rx * 0.95, Math.PI * 1.08, Math.PI * 1.92);
-      ctx.stroke();
-
       ctx.font = 'bold 9px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.lineWidth = 3;
       ctx.strokeStyle = 'rgba(0,0,0,0.85)';
       const label = `\u27A4 ${w.label ?? w.to}`;
-      ctx.strokeText(label, cx, cy - ry - 8);
+      ctx.strokeText(label, cx, top - 4);
       ctx.fillStyle = '#d8f2ff';
-      ctx.fillText(label, cx, cy - ry - 8);
+      ctx.fillText(label, cx, top - 4);
       ctx.restore();
     }
   }
