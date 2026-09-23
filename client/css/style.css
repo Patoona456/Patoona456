@@ -1020,6 +1020,97 @@ body[data-ui="ember"] .btn.gb-leave { background-image: url(../../assets/ui/gb_l
 body.landscape-ui .g-crest, body.landscape-ui .g-shield.solo { width: 64px; height: 56px; }
 body.landscape-ui .g-emblem { width: 20px; }
 
+/* ============================ forge ============================ */
+.forge { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; align-items: start; }
+.forge-pick { display: grid; gap: 8px; }
+.forge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 6px; max-height: 56vh; overflow: auto; padding: 4px 2px; }
+.forge-bench {
+  display: grid; gap: 8px; justify-items: center; padding: 12px;
+  background: radial-gradient(120% 60% at 50% 0%, rgba(255, 190, 80, .14), transparent 60%), linear-gradient(180deg, #16284a, #0c1428);
+  border: 1px solid #b98a3e; border-radius: 10px;
+}
+.forge-frame {
+  position: relative; width: 116px; height: 106px; display: grid; place-items: center;
+  background: url(../../assets/ui/forge_frame.webp) center / 100% 100% no-repeat;
+}
+.forge-frame .icon { width: 58px !important; height: 58px !important; }
+.forge-frame.lit .icon { filter: drop-shadow(0 0 6px var(--glow)) drop-shadow(0 0 12px var(--glow)); }
+.forge-name { font-weight: 800; font-size: 14px; }
+.forge-step { font-size: 26px; font-weight: 900; letter-spacing: .02em; }
+.forge-step i, .forge-stats i, .fr-line i { color: #f2b43c; font-style: normal; font-size: .7em; margin: 0 4px; }
+.forge-step .up, .forge-stats .up, .fr-line .up { color: #7dffa0; }
+.fr-line .down { color: #ff6a6a; }
+.forge-pips { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+.forge-pips .pip {
+  min-width: 26px; padding: 2px 0; text-align: center; font-size: 10px; font-weight: 800; color: #7d8aa8;
+  background: #10182c; border: 1px solid #243457; border-radius: 4px;
+}
+.forge-pips .pip.got { color: #fff; background: linear-gradient(180deg, #2d6fe0, #173f96); border-color: #6aa2ff; }
+.forge-pips .pip.purple.got { background: linear-gradient(180deg, #9a3ce0, #5b1d96); border-color: #d08bff; }
+.forge-pips .pip.gold.got { background: linear-gradient(180deg, #f2b43c, #a86a12); border-color: #ffe08a; }
+.forge-pips .pip.next { color: #fff; border-color: #ffd36a; box-shadow: 0 0 8px rgba(255, 200, 90, .8); animation: pipPulse 1.2s ease-in-out infinite; }
+@keyframes pipPulse { 50% { box-shadow: 0 0 2px rgba(255, 200, 90, .3); } }
+.forge-stats { width: 100%; display: grid; }
+.forge-stats .row { padding: 3px 4px; }
+.forge-odds { display: grid; grid-template-columns: 96px 1fr 60px; gap: 10px; align-items: center; width: 100%; }
+.forge-chance {
+  display: grid; justify-items: center; align-content: center; height: 86px; padding-bottom: 12px;
+  background: center / 100% 100% no-repeat; color: #fff; text-shadow: 0 2px 2px rgba(0, 0, 0, .7);
+}
+.forge-chance span { font-size: 11px; }
+.forge-chance b { font-size: 24px; }
+.forge-chance.green { background-image: url(../../assets/ui/chance_green.webp); }
+.forge-chance.gold { background-image: url(../../assets/ui/chance_gold.webp); }
+.forge-chance.red { background-image: url(../../assets/ui/chance_red.webp); }
+.forge-risk { display: grid; gap: 4px; font-size: 12px; }
+.forge-risk img { height: 30px; width: auto; }
+.forge-sword { width: 56px; height: 64px; object-fit: contain; }
+.forge-mats { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.forge-mat {
+  display: grid; justify-items: center; gap: 1px; min-width: 84px; padding: 6px 8px;
+  background: #0e1628; border: 1px solid #2c3b5c; border-radius: 8px;
+}
+.forge-mat img { width: 38px; height: 38px; object-fit: contain; border-radius: 6px; }
+.forge-mat .num { font-weight: 800; }
+.forge-mat.short { border-color: #b83a3a; } .forge-mat.short .num { color: #ff6a6a; }
+.forge-opts { display: grid; gap: 6px; width: 100%; }
+.forge-check { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
+.forge-check input[type=checkbox] { width: 18px; height: 18px; accent-color: #f2b43c; }
+.forge-check select { width: auto; padding: 3px 6px; }
+.forge-short { color: #ff8a8a; font-size: 12px; }
+.forge-bench .btn.fb-enhance { width: 100%; max-width: 260px; }
+body:not([data-ui="ember"]) .forge-bench .btn.fb-enhance { background: var(--accent); color: var(--accent-ink); }
+body[data-ui="ember"] .btn.fb-enhance { background-image: url(../../assets/ui/fb_enhance.webp); height: 44px; }
+body[data-ui="ember"] .btn.fb-confirm { background-image: url(../../assets/ui/fb_confirm.webp); }
+body[data-ui="ember"] .btn.fb-cancel { background-image: url(../../assets/ui/fb_cancel.webp); }
+.btn.sheet-btn:disabled { filter: grayscale(1) brightness(.6); }
+.forge-result {
+  position: fixed; z-index: 60; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  width: 300px; display: grid; justify-items: center; cursor: pointer; animation: forgeIn .35s cubic-bezier(.2, 1.4, .4, 1);
+}
+.forge-result .fr-art { width: 100%; height: auto; filter: drop-shadow(0 8px 20px rgba(0, 0, 0, .6)); }
+.forge-result.fail, .forge-result.down { width: 230px; }
+.fr-well { position: absolute; display: grid; place-items: center; }
+.forge-result.success .fr-well { left: 36.3%; top: 52%; width: 26.7%; height: 36%; }
+.forge-result.fail .fr-well { left: 26.7%; top: 44.7%; width: 46.7%; height: 42.4%; }
+.forge-result.down .fr-well { left: 36.1%; top: 45.5%; width: 30.4%; height: 39.8%; }
+.fr-well .icon { width: 70% !important; height: 70% !important; }
+.forge-result.fail .fr-well .icon, .forge-result.down .fr-well .icon { filter: grayscale(.7) brightness(.8); }
+.fr-x { position: absolute; font-size: 44px; color: #ff4a4a; text-shadow: 0 0 10px #000; }
+.fr-line { margin-top: -4px; padding: 2px 16px; border-radius: 999px; background: rgba(8, 8, 14, .78); font-size: 26px; font-weight: 900; color: #fff; text-shadow: 0 2px 4px #000; text-align: center; }
+.forge-result.r-unchanged .fr-line, .forge-result.r-destroyed .fr-line { font-size: 15px; }
+.forge-result.success { animation: forgeIn .35s cubic-bezier(.2, 1.4, .4, 1), forgeGlow 1.6s ease; }
+@keyframes forgeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
+@keyframes forgeGlow { 30% { filter: brightness(1.35); } }
+.forge-confirm { position: fixed; z-index: 61; left: 50%; top: 45%; transform: translate(-50%, -50%); width: min(340px, 90vw); display: grid; gap: 8px; padding: 16px; text-align: center; }
+.forge-confirm p { margin: 0; line-height: 1.6; }
+@media (max-width: 680px) { .forge { grid-template-columns: 1fr; } .forge-grid { max-height: 22vh; } }
+body.landscape-ui .forge-grid { max-height: 60vh; }
+body.landscape-ui .forge-frame { width: 84px; height: 76px; }
+body.landscape-ui .forge-step { font-size: 20px; }
+body.landscape-ui .forge-chance { height: 66px; } body.landscape-ui .forge-chance b { font-size: 18px; }
+body.landscape-ui .forge-bench { gap: 5px; padding: 8px; }
+
 /* ============================ windows ============================ */
 #panels { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
 .win.window {

@@ -8,7 +8,7 @@ import { GUILD_SKILLS } from '../../shared/data/guild.js';
 import { WARP_ROUTES } from '../../shared/data/npcs.js';
 import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
-import { refineChance, refineCost, npcSellPrice } from '../../shared/formulas.js';
+import { refineChance, refineCost, npcSellPrice, refineRisk, refineStones, refineBonus } from '../../shared/formulas.js';
 import { itemIcon, skillIcon, icon, UI_BASE } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
 import { drawWings } from './wings.js';
@@ -2177,38 +2177,228 @@ export class UI {
     return this.renderShop(this.lastShop, 'sell');
   }
 
+  /**
+   * The forge. Everything a player needs to decide whether to press the
+   * button is on the one screen: what they stand to gain, the odds, what a
+   * failure would cost at this level, and what they have left to pay with.
+   */
   openRefine() {
-    const wrap = el('div', 'grid');
-    wrap.append(el('div', 'muted', 'ตีบวกคือบ่อดูดออรัมหลักของเกม — +4 ขึ้นไปต้องใช้หินลับรูน และล้มเหลวที่ +8 ขึ้นไปของจะแตก (น้ำมันศักดิ์สิทธิ์กันได้ 1 ครั้ง)'));
-    const gear = (this.game.inventory?.items ?? []).filter((it) => ITEMS[it.id]?.refinable);
-    wrap.append(this.itemPicker({
-      key: 'refine',
-      items: gear.map((it) => ({ id: it.i, item: it, refine: it.refine })),
-      empty: 'ไม่มีอุปกรณ์ที่ตีบวกได้',
-      onSelect: (entry) => {
-        const it = entry.item;
-        const lvl = it.refine ?? 0;
-        const def = ITEMS[it.id];
-        const chance = Math.round(refineChance(lvl) * 100);
-        const actions = el('div', 'opts');
-        actions.style.marginTop = '8px';
-        const go = el('button', 'btn primary', `ตีบวกเป็น +${lvl + 1}`);
-        go.addEventListener('click', () => { this.game.audio?.play('forge'); this.game.net.send({ t: 'refine', index: it.i, oil: false }); });
-        const oil = el('button', 'btn', 'ใช้น้ำมันศักดิ์สิทธิ์');
-        oil.addEventListener('click', () => { this.game.audio?.play('forge'); this.game.net.send({ t: 'refine', index: it.i, oil: true }); });
-        actions.append(go, oil);
-        const risk = el('div', 'muted');
-        risk.textContent = lvl >= 8 ? 'ล้มเหลว = อุปกรณ์แตกสลาย'
-          : lvl >= 1 ? 'ล้มเหลว = ตกลงหนึ่งขั้น' : 'ล้มเหลวไม่มีผลเสีย';
-        return this.detailCard(it, [
-          ['ระดับปัจจุบัน', '+' + lvl],
-          ['โอกาสสำเร็จ', chance + '%'],
-          ['ค่าใช้จ่าย', fmt(refineCost(def.value, lvl)) + ' AU'],
-          ['วัตถุดิบ', lvl >= 4 ? 'หินลับรูน x1' : '—'],
-        ], actions, risk);
-      },
-    }));
-    return this.panel('shop', 'ตีบวกอุปกรณ์', wrap);
+    const inv = this.game.inventory?.items ?? [];
+    const gear = inv.filter((it) => ITEMS[it.id]?.refinable);
+    const cat = (it) => it.type === 'weapon' ? 'weapon' : it.slot === 'accessory' ? 'acc'
+      : ['offhand', 'head', 'torso', 'armor', 'legs', 'feet', 'hands', 'belt', 'cloak'].includes(it.slot) ? 'armor' : 'other';
+    const tab = this.forgeTab ?? 'weapon';
+    let sel = gear.find((it) => it.i === this.forgeSel);
+    if (!sel) sel = gear.filter((it) => cat(it) === tab).sort((a, b) => !!b.equipped - !!a.equipped)[0];
+    this.forgeSel = sel?.i;
+
+    const wrap = el('div', 'forge');
+    // left: what to work on
+    const pick = el('div', 'forge-pick');
+    const tabs = el('div', 'qlog-tabs');
+    for (const [key, label] of [['weapon', 'อาวุธ'], ['armor', 'ชุดเกราะ'], ['acc', 'เครื่องประดับ'], ['other', 'อื่นๆ']]) {
+      const n = gear.filter((it) => cat(it) === key).length;
+      const t = el('button', 'qlog-tab' + (tab === key ? ' on' : ''), `${label} <span class="num">${n}</span>`);
+      t.addEventListener('click', () => { this.forgeTab = key; this.forgeSel = null; this.openRefine(); });
+      tabs.append(t);
+    }
+    pick.append(tabs);
+    const grid = el('div', 'forge-grid');
+    const shown = gear.filter((it) => cat(it) === tab)
+      .sort((a, b) => (!!b.equipped - !!a.equipped) || ((b.refine ?? 0) - (a.refine ?? 0)));
+    if (!shown.length) grid.append(el('div', 'muted', 'ไม่มีอุปกรณ์ที่ตีบวกได้ในหมวดนี้'));
+    for (const it of shown) {
+      const node = el('button', `slot rarity-${it.rarity ?? 'common'}` + (it === sel ? ' sel' : ''));
+      node.append(itemIcon(it.id, { size: 30 }));
+      node.append(el('span', 'plus', '+' + (it.refine ?? 0)));
+      if (it.refine) markRefine(node, it.refine);
+      if (it.equipped) node.append(el('span', 'worn'));
+      node.title = `${it.name} +${it.refine ?? 0}${it.equipped ? ' (สวมอยู่)' : ''}`;
+      node.addEventListener('click', () => { this.forgeSel = it.i; this.openRefine(); });
+      grid.append(node);
+    }
+    pick.append(grid);
+    wrap.append(pick);
+    wrap.append(sel ? this.forgeBench(sel, inv) : el('div', 'forge-bench muted', 'เลือกอุปกรณ์ทางซ้ายเพื่อตีบวก'));
+    return this.panel('shop', 'เสริมพลังอุปกรณ์', wrap);
+  }
+
+  forgeBench(it, inv) {
+    const def = ITEMS[it.id];
+    const lvl = it.refine ?? 0;
+    const maxed = lvl >= 15;
+    const bench = el('div', 'forge-bench');
+
+    // the item in its gold frame, glowing at the tier it has now
+    const frame = el('div', 'forge-frame');
+    const ico = itemIcon(it.id, { size: 64 });
+    frame.append(ico);
+    if (lvl) frame.style.setProperty('--glow', glowCss(lvl, 0.75));
+    frame.classList.toggle('lit', lvl > 0);
+    bench.append(frame);
+    bench.append(el('div', 'forge-name rarity-' + (it.rarity ?? 'common'), esc(it.name)));
+    bench.append(el('div', 'forge-step', maxed ? `<b>+${lvl}</b> <span class="muted">สูงสุดแล้ว</span>`
+      : `<b>+${lvl}</b> <i>▶</i> <b class="up">+${lvl + 1}</b>`));
+
+    // +1 .. +15, filled to where it is, the next one pulsing
+    const pips = el('div', 'forge-pips');
+    for (let n = 1; n <= 15; n++) {
+      pips.append(el('span', `pip ${n <= lvl ? 'got' : ''} ${n === lvl + 1 ? 'next' : ''} ${n >= 15 ? 'gold' : n >= 11 ? 'purple' : ''}`, `+${n}`));
+    }
+    bench.append(pips);
+    if (maxed) return bench;
+
+    // what the next level adds
+    const now = refineBonus(lvl), next = refineBonus(lvl + 1);
+    const rows = el('div', 'forge-stats');
+    const line = (label, base, key) => {
+      const a = Math.floor(base + now[key]), b = Math.floor(base + next[key]);
+      rows.append(el('div', 'row', `<span class="muted">${label}</span><span class="num">${fmt(a)} <i>▶</i> ${fmt(b)} <b class="up">(+${fmt(b - a)})</b></span>`));
+    };
+    if (it.type === 'weapon') { line('พลังโจมตี', it.atk ?? 0, 'atk'); if (it.matk) line('พลังเวทย์', it.matk, 'matk'); }
+    else { line('ป้องกัน', it.def ?? 0, 'def'); line('ต้านเวทย์', it.mdef ?? 0, 'mdef'); }
+    const tier = glowTier(lvl + 1);
+    if (tier && tier !== glowTier(lvl)) {
+      rows.append(el('div', 'row', `<span class="muted">ออร่า</span><b style="color:${glowCss(lvl + 1, 1)}">✦ ${esc(tier.name)}</b>`));
+    }
+    bench.append(rows);
+
+    // the odds, and what a failure costs here
+    const chance = Math.round(refineChance(lvl) * 100);
+    const risk = refineRisk(lvl);
+    const odds = el('div', 'forge-odds');
+    const shield = el('div', `forge-chance ${chance >= 95 ? 'green' : chance >= 50 ? 'gold' : 'red'}`);
+    shield.append(el('span', '', 'โอกาสสำเร็จ'), el('b', 'num', `${chance}%`));
+    odds.append(shield);
+    const riskBox = el('div', 'forge-risk');
+    const chip = el('img'); chip.src = `${UI_BASE}/risk_${risk.band}.webp`; chip.alt = RISK_TH[risk.band];
+    riskBox.append(chip, el('div', 'muted', RISK_FAIL[risk.onFail]));
+    const sword = el('img', 'forge-sword'); sword.src = `${UI_BASE}/forge_sword_${swordFor(lvl + 1)}.webp`; sword.alt = '';
+    sword.title = `ตัวอย่างความสว่างของอาวุธที่ +${lvl + 1}`;
+    odds.append(riskBox, sword);
+    bench.append(odds);
+
+    // what it costs, and what is in the bag to pay with
+    const have = (id) => inv.filter((x) => x.id === id).reduce((a, x) => a + (x.qty ?? 1), 0);
+    const cost = refineCost(def.value ?? 0, lvl);
+    const stones = refineStones(lvl), hasStones = have('runed_whetstone'), oils = have('blessing_oil');
+    const aurum = this.game.inventory?.aurum ?? 0;
+    const mats = el('div', 'forge-mats');
+    const mat = (pic, label, text, ok) => {
+      const m = el('div', 'forge-mat' + (ok ? '' : ' short'));
+      const i = el('img'); i.src = `${UI_BASE}/${pic}.webp`; i.alt = '';
+      m.append(i, el('span', 'num', text), el('small', 'muted', label));
+      mats.append(m);
+    };
+    if (stones) mat('mat_enhance', 'หินลับรูน', `${fmt(hasStones)}/${stones}`, hasStones >= stones);
+    mat('rw_coin', 'ออรัม', fmt(cost), aurum >= cost);
+    const canProtect = risk.onFail === 'down' || risk.onFail === 'break';
+    if (canProtect) mat('mat_protect', 'น้ำมันศักดิ์สิทธิ์', `มี ${fmt(oils)}`, true);
+    bench.append(mats);
+
+    const opts = el('div', 'forge-opts');
+    let oilBox = null;
+    if (canProtect) {
+      const lab = el('label', 'forge-check');
+      oilBox = el('input'); oilBox.type = 'checkbox';
+      oilBox.checked = !!this.forgeOil && oils > 0;
+      oilBox.disabled = oils < 1;
+      oilBox.addEventListener('change', () => { this.forgeOil = oilBox.checked; });
+      lab.append(oilBox, el('span', '', `ใช้น้ำมันศักดิ์สิทธิ์ ป้องกัน${risk.onFail === 'break' ? 'ของแตก' : 'การลดระดับ'} (เหลือ ${fmt(oils)})`));
+      opts.append(lab);
+    }
+    // keep going until a target, stopping at the first thing that is not a success
+    const auto = el('label', 'forge-check');
+    const target = el('select');
+    for (let n = lvl + 1; n <= 15; n++) {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = `+${n}`;
+      if (n === (this.forgeTarget > lvl ? this.forgeTarget : lvl + 1)) o.selected = true;
+      target.append(o);
+    }
+    target.addEventListener('change', () => { this.forgeTarget = Number(target.value); });
+    auto.append(el('span', '', 'ตีต่อเนื่องจนถึง'), target, el('small', 'muted', 'หยุดทันทีเมื่อไม่สำเร็จหรือของไม่พอ'));
+    opts.append(auto);
+    bench.append(opts);
+
+    const short = aurum < cost ? 'ออรัมไม่พอ' : hasStones < stones ? `หินลับรูนไม่พอ (ต้องใช้ ${stones})` : null;
+    const go = this.sheetBtn('fb-enhance', 'เสริมพลัง', () => {
+      const useOil = !!oilBox?.checked;
+      const goal = Number(target.value);
+      const start = () => { this.forgeRun = { index: it.i, goal, oil: useOil }; this.forgeAttempt(); };
+      // breaking is permanent: say so before, not after
+      if (risk.onFail === 'break' && !useOil) {
+        return this.forgeConfirm(`ถ้าล้มเหลว <b>${esc(it.name)} +${lvl}</b> จะแตกสลายหายไปถาวร<br>โอกาสสำเร็จ ${chance}% · ยืนยันตีบวกโดยไม่ใช้น้ำมันศักดิ์สิทธิ์?`, start);
+      }
+      start();
+    });
+    go.disabled = !!short || !!this.forgeRun;
+    bench.append(go);
+    if (short) bench.append(el('div', 'forge-short', `⚠ ${short}`));
+    if (this.forgeRun) bench.append(el('div', 'muted', `กำลังตีต่อเนื่องถึง +${this.forgeRun.goal}…`));
+    return bench;
+  }
+
+  /** One attempt of the current run. The result comes back as refineResult. */
+  forgeAttempt() {
+    const run = this.forgeRun;
+    if (!run) return;
+    this.game.audio?.play('forge');
+    this.game.net.send({ t: 'refine', index: run.index, oil: run.oil });
+    clearTimeout(this._forgeT);
+    this._forgeT = setTimeout(() => { if (this.forgeRun === run) { this.forgeRun = null; this.openRefine(); } }, 4000);
+  }
+
+  onRefineResult(m) {
+    clearTimeout(this._forgeT);
+    const run = this.forgeRun;
+    this.forgeResult(m);
+    if (m.result === 'destroyed') this.forgeSel = null;
+    const again = run && m.result === 'success' && m.to < run.goal;
+    this.forgeRun = again ? run : null;
+    if (this.openPanels.has('shop') && document.querySelector('.forge')) this.openRefine();
+    if (again) {
+      // the oil is only worth spending where it matters; recheck each rung
+      run.oil = run.oil && ['down', 'break'].includes(refineRisk(m.to).onFail);
+      if (refineRisk(m.to).onFail === 'break' && !run.oil) { this.forgeRun = null; this.openRefine(); this.toast('หยุดก่อนถึงระดับที่ของอาจแตก — กดยืนยันเองถ้าจะตีต่อ', 'warn'); return; }
+      setTimeout(() => this.forgeAttempt(), 900);
+    }
+  }
+
+  /** The result card, over everything, with the item in the frame's well. */
+  forgeResult(m) {
+    document.querySelector('.forge-result')?.remove();
+    const kind = { success: 'success', unchanged: 'fail', down: 'down', destroyed: 'fail' }[m.result] ?? 'fail';
+    const box = el('div', `forge-result ${kind} r-${m.result}`);
+    const art = el('img', 'fr-art'); art.src = `${UI_BASE}/forge_${kind}.webp`; art.alt = '';
+    const well = el('div', 'fr-well');
+    well.append(itemIcon(m.id, { size: 56 }));
+    if (m.result === 'destroyed') well.append(el('span', 'fr-x', '✖'));
+    box.append(art, well);
+    const name = ITEMS[m.id]?.nameTh ?? m.id;
+    box.append(el('div', 'fr-line', m.result === 'success' ? `<b>+${m.from}</b> <i>▶</i> <b class="up">+${m.to}</b>`
+      : m.result === 'down' ? `<b>+${m.from}</b> <i>▶</i> <b class="down">+${m.to}</b>`
+      : m.result === 'destroyed' ? `<b class="down">${esc(name)} แตกสลาย</b>`
+      : m.protected ? 'น้ำมันศักดิ์สิทธิ์ปกป้องไว้ · อุปกรณ์ไม่เปลี่ยนแปลง' : 'อุปกรณ์ไม่เปลี่ยนแปลง'));
+    box.addEventListener('click', () => box.remove());
+    document.body.append(box);
+    this.game.audio?.play(m.result === 'success' ? 'levelup' : 'bad');
+    if (m.result === 'success') {
+      this.game.renderer?.spark?.(this.game.predicted?.x ?? 0, (this.game.predicted?.y ?? 0) - 20, { color: '255,210,120', n: 24, power: 2 });
+    }
+    setTimeout(() => box.remove(), m.result === 'success' ? 1600 : 2000);
+  }
+
+  forgeConfirm(html, onYes) {
+    document.querySelector('.forge-confirm')?.remove();
+    const card = el('div', 'forge-confirm win');
+    card.append(el('div', 'g-sub', 'ยืนยันการเสริมพลัง'), el('p', '', html));
+    const acts = el('div', 'deal-actions');
+    const yes = this.sheetBtn('fb-confirm', 'ยืนยัน', () => { card.remove(); onYes(); });
+    const no = this.sheetBtn('fb-cancel', 'ยกเลิก', () => card.remove());
+    acts.append(yes, no);
+    card.append(acts);
+    document.body.append(card);
   }
 
   openRepair() {
@@ -2846,6 +3036,16 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+const RISK_TH = { safe: 'ปลอดภัย', recommended: 'แนะนำ', risky: 'เสี่ยง', danger: 'อันตราย' };
+const RISK_FAIL = {
+  none: 'ระดับนี้ไม่มีทางล้มเหลว',
+  unchanged: 'ถ้าล้มเหลว: เสียค่าใช้จ่าย แต่อุปกรณ์ไม่เปลี่ยนแปลง',
+  down: 'ถ้าล้มเหลว: อุปกรณ์ลดลง 1 ระดับ',
+  break: 'ถ้าล้มเหลว: อุปกรณ์แตกสลายหายไป',
+};
+/** Which of the sheet's six example swords a refine level looks most like. */
+const swordFor = (n) => (n >= 15 ? 5 : n >= 12 ? 4 : n >= 10 ? 3 : n >= 8 ? 2 : n >= 5 ? 1 : 0);
+
 /** One of the guild sheet's chibi girls, saying her line. */
 function mascot(name) {
   const i = el('img', 'g-mascot'); i.src = `${UI_BASE}/${name}.webp`; i.alt = '';

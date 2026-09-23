@@ -1,7 +1,7 @@
 // Everything that moves Aurum. The design goal: many small sinks, few faucets.
 import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
 import { SHOPS, HEAL_PRICE_PER_LEVEL, STORAGE_FEE, WARP_ROUTES, RESET_STAT_PRICE, RESET_SKILL_PRICE } from '../../shared/data/npcs.js';
-import { npcSellPrice, marketTax, refineChance, refineCost } from '../../shared/formulas.js';
+import { npcSellPrice, marketTax, refineChance, refineCost, refineRisk, refineStones } from '../../shared/formulas.js';
 import { MAX_REFINE } from '../../shared/refineglow.js';
 import { STARTING_STATS } from '../../shared/data/jobs.js';
 import { db, markDirty } from '../persistence.js';
@@ -280,35 +280,40 @@ export function refine(world, p, index, useOil) {
   if (lvl >= MAX_REFINE) return { error: `ตีบวกสูงสุดแล้ว (+${MAX_REFINE})` };
 
   const cost = refineCost(def.value, lvl);
-  if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost} ออรัม` };
-
-  const needStone = lvl >= 4;
-  if (needStone && p.countItem('runed_whetstone') < 1) return { error: 'ต้องใช้หินลับรูน 1 ก้อน' };
-  if (useOil && p.countItem('blessing_oil') < 1) return { error: 'ไม่มีน้ำมันศักดิ์สิทธิ์' };
+  if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost.toLocaleString()} ออรัม` };
+  const stones = refineStones(lvl);
+  if (p.countItem('runed_whetstone') < stones) return { error: `ต้องใช้หินลับรูน ${stones} ก้อน` };
+  const risk = refineRisk(lvl);
+  // oil only matters where a failure costs something; never burn it for nothing
+  const oil = useOil && (risk.onFail === 'down' || risk.onFail === 'break');
+  if (oil && p.countItem('blessing_oil') < 1) return { error: 'ไม่มีน้ำมันศักดิ์สิทธิ์' };
 
   p.record.aurum -= cost;
   burn(world, cost, 'refine');
-  if (needStone) p.removeItemById('runed_whetstone', 1);
-  if (useOil) p.removeItemById('blessing_oil', 1);
+  if (stones) p.removeItemById('runed_whetstone', stones);
+  if (oil) p.removeItemById('blessing_oil', 1);
 
-  const success = Math.random() < refineChance(lvl);
-  if (success) {
+  const base = { ok: true, id: st.id, from: lvl, cost, stones, oil };
+  if (Math.random() < refineChance(lvl)) {
     st.refine = lvl + 1;
     p.recompute();
     markDirty();
-    return { ok: true, success: true, refine: st.refine };
+    return { ...base, success: true, result: 'success', refine: st.refine };
   }
-  // failure: the oil saves it, otherwise it drops a level (and breaks past +7)
-  if (useOil) { markDirty(); return { ok: true, success: false, protected: true, refine: lvl }; }
-  if (lvl >= 8) {
-    p.removeItemAt(index, 1);
+  if (oil || risk.onFail === 'none' || risk.onFail === 'unchanged') {
     markDirty();
-    return { ok: true, success: false, destroyed: true };
+    return { ...base, success: false, result: 'unchanged', protected: oil, refine: lvl };
   }
-  st.refine = Math.max(0, lvl - 1);
+  if (risk.onFail === 'break') {
+    p.removeItemAt(index, 1);
+    p.recompute();
+    markDirty();
+    return { ...base, success: false, result: 'destroyed', destroyed: true, refine: lvl };
+  }
+  st.refine = lvl - 1;
   p.recompute();
   markDirty();
-  return { ok: true, success: false, refine: st.refine };
+  return { ...base, success: false, result: 'down', refine: st.refine };
 }
 
 export function repair(world, p, index) {

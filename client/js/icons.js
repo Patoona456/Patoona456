@@ -25,11 +25,14 @@ const ART = {
   summon: 'skill_summon', shout: 'skill_summon',
   potion: 'item_potion', mana: 'item_mana', antidote: 'item_antidote', food: 'item_food',
   scroll: 'item_scroll', herb: 'item_herb', tear: 'item_crystal',
+  // weapon classes, painted (the forge sheet)
+  sword: 'wpn_sword', greatsword: 'wpn_greatsword', dagger: 'wpn_dagger', axe: 'wpn_axe',
+  spear: 'wpn_spear', bow: 'wpn_bow', staff: 'wpn_staff', wand: 'wpn_wand', special: 'wpn_special',
 };
 // A few items get art of their own rather than their kind's.
 const ITEM_ART = {
   herbal_stew: 'item_stew', boss_casket: 'item_chest', dawn_casket: 'item_goldchest',
-  mystery_scroll: 'item_map',
+  mystery_scroll: 'item_map', runed_whetstone: 'mat_enhance', blessing_oil: 'mat_protect',
 };
 const artImages = new Map();
 function artImage(name) {
@@ -493,7 +496,11 @@ export function itemIconKind(id) {
   const it = ITEMS[id];
   if (!it) return 'crate';
   if (ITEM_OVERRIDE[id]) return ITEM_OVERRIDE[id];
-  if (it.type === 'weapon') return it.wclass ?? 'sword';
+  if (it.type === 'weapon') {
+    // classes with no art of their own borrow the nearest drawn shape
+    const w = it.wclass ?? 'sword';
+    return { knuckle: 'gloves', throwing: 'blade' }[w] ?? w;
+  }
   if (it.type === 'ammo') return 'arrow';
   if (it.type === 'consumable') return 'potion';
   if (it.type === 'material') return 'ore';

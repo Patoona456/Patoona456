@@ -255,11 +255,14 @@ export class Conn {
       case OP.REFINE: return this.guardNpc(['smith'], () => {
         const r = Econ.refine(this.world, p, m.index | 0, !!m.oil);
         if (r.error) return this.error(r.error);
-        if (r.success) this.notice(`ตีบวกสำเร็จ! +${r.refine}`, 'good');
-        else if (r.destroyed) this.notice('ล้มเหลว... อุปกรณ์แตกสลาย', 'bad');
-        else if (r.protected) this.notice('ล้มเหลว แต่น้ำมันศักดิ์สิทธิ์ปกป้องไว้', 'warn');
-        else this.notice(`ล้มเหลว ตกเป็น +${r.refine}`, 'bad');
         this.sendInventory();
+        this.send({ t: OP.SELF, self: p.selfState() });
+        // the forge window plays the result; the chat keeps a line of it
+        this.send({ t: 'refineResult', result: r.result, id: r.id, from: r.from, to: r.refine, protected: !!r.protected });
+        // a +10 and up is news
+        if (r.success && r.refine >= 10) {
+          this.world.broadcastChat({ ch: 'system', text: `${p.name} ตีบวก ${ITEMS[r.id]?.nameTh ?? r.id} สำเร็จเป็น +${r.refine}!` });
+        }
       });
       case OP.REPAIR: return this.guardNpc(['smith'], () => {
         const r = Econ.repair(this.world, p, m.index | 0);

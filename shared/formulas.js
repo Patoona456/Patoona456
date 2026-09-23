@@ -245,6 +245,30 @@ export const REFINE_ODDS = [
 export function refineChance(level) {
   return REFINE_ODDS[Math.min(level, REFINE_ODDS.length - 1)];
 }
+/**
+ * What a failure costs, by the level you are refining *from*. Four bands,
+ * named the way the forge window shows them:
+ *   safe        +0..+2  cannot fail
+ *   recommended +3..+4  a failure changes nothing but the money and stone
+ *   risky       +5..+7  a failure drops the item one level
+ *   danger      +8..+14 a failure destroys it
+ * A protect item (blessing oil) turns any failure into "nothing happens".
+ */
+export function refineRisk(level) {
+  if (level < 3) return { band: 'safe', onFail: 'none' };
+  if (level < 5) return { band: 'recommended', onFail: 'unchanged' };
+  if (level < 8) return { band: 'risky', onFail: 'down' };
+  return { band: 'danger', onFail: 'break' };
+}
+/** Runed whetstones one attempt eats: none below +4, two from +10. */
+export function refineStones(level) {
+  return level < 4 ? 0 : level < 10 ? 1 : 2;
+}
+/** What the refine itself adds to an item (the same sums the server uses). */
+export function refineBonus(refine = 0) {
+  const b = refine + Math.max(0, refine - 7) * 1.5;
+  return { atk: b * 2, matk: b * 1.5, def: b, mdef: b * 0.5 };
+}
 export function refineCost(refValue, level) {
   return Math.floor(refValue * 0.15 + 120 * Math.pow(1.35, level));
 }

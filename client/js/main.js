@@ -232,6 +232,7 @@ class Game {
     n.on('questTrack', (m) => { this.ui.renderQuestTrack(m.quests); this.updateQuestMarks(); });
     n.on('questClear', () => this.ui.stamp('quest_complete'));
     n.on('buyback', (m) => this.ui.setBuyback(m.items));
+    n.on('refineResult', (m) => this.ui.onRefineResult(m));
     n.on('died', (m) => this.onDied(m));
   }
 

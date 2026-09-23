@@ -241,3 +241,36 @@ test('buy-back keeps only the last few sales and refuses without the money', () 
   p.record.aurum = 0;
   assert.ok(Econ.buyback(world, p, 0).error, 'bought back with no money');
 });
+
+/** Refine with the dice loaded: `roll` is what Math.random returns. */
+function refineWith(roll, refine, { oil = false, stones = 5, oils = 2 } = {}) {
+  const p = character({ items: [{ id: 'iron_pike', qty: 1, refine, dur: 120 },
+    { id: 'runed_whetstone', qty: stones }, { id: 'blessing_oil', qty: oils }] });
+  const real = Math.random;
+  Math.random = () => roll;
+  try { return { p, r: Econ.refine(world, p, 0, oil) }; } finally { Math.random = real; }
+}
+
+test('each band fails the way the forge says it does', () => {
+  assert.equal(refineWith(0.999, 3).r.result, 'unchanged', '+3 lost something');
+  assert.equal(refineWith(0.999, 3).p.inventory[0].refine, 3);
+  const down = refineWith(0.999, 6);
+  assert.equal(down.r.result, 'down');
+  assert.equal(down.p.inventory[0].refine, 5);
+  const gone = refineWith(0.999, 9);
+  assert.equal(gone.r.result, 'destroyed');
+  assert.notEqual(gone.p.inventory[0]?.id, 'iron_pike', 'a +9 survived a failure');
+});
+
+test('oil turns a dangerous failure into nothing, and is not spent where it cannot help', () => {
+  const saved = refineWith(0.999, 9, { oil: true });
+  assert.equal(saved.r.result, 'unchanged');
+  assert.equal(saved.p.inventory[0].refine, 9);
+  const safe = refineWith(0.999, 3, { oil: true });
+  assert.equal(safe.p.countItem('blessing_oil'), 2, 'oil burned on a +3 that could not lose anything');
+});
+
+test('from +10 an attempt eats two whetstones', () => {
+  const r = refineWith(0.001, 10, { stones: 1 }).r;
+  assert.match(r.error ?? '', /2 ก้อน/);
+});

@@ -519,3 +519,73 @@ for k, b in {'guild_bubble_strong': (178, 904, 332, 1000), 'guild_bubble_family'
              'guild_bubble_fight': (512, 904, 670, 1000)}.items():
     save(k, lift(gs, b, thresh=46))
 print('guild extras done')
+
+
+# ============================================================================
+# Seventh sheet: the forge (assets/ui/source/refine_sheet.png)
+# ============================================================================
+rs = cv2.imread(os.path.join(ROOT, 'assets/ui/source/refine_sheet.png'))
+
+
+def card(img, box, hole, fade=16):
+    """A result card cut as a rectangle whose edges melt away, with the
+    painted sword in its frame replaced by a dark well for our own icon."""
+    x0, y0, x1, y1 = box
+    sub = img[y0:y1, x0:x1].copy()
+    hx0, hy0, hx1, hy1 = [v - o for v, o in zip(hole, (x0, y0, x0, y0))]
+    well = np.zeros((hy1 - hy0, hx1 - hx0, 3), np.uint8)
+    yy = np.linspace(0, 1, hy1 - hy0)[:, None, None]
+    well[:] = (np.array([46, 34, 28]) * (1 - yy) + np.array([22, 16, 14]) * yy).astype(np.uint8)
+    sub[hy0:hy1, hx0:hx1] = well
+    h, w = sub.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    edge = np.minimum.reduce([xx, yy, w - 1 - xx, h - 1 - yy]).astype(np.float32)
+    a = np.clip(edge / fade, 0, 1) ** 1.5 * 255
+    rgba = cv2.cvtColor(sub, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = a.astype(np.uint8)
+    return rgba
+
+
+save('forge_success', card(rs, (855, 0, 1125, 196), (952, 102, 1024, 172)))
+save('forge_fail', card(rs, (1140, 28, 1290, 198), (1180, 104, 1250, 176)))
+save('forge_down', card(rs, (1305, 22, 1535, 198), (1388, 102, 1458, 172)))
+save('forge_frame', card(rs, (270, 82, 400, 200), (298, 108, 372, 178), fade=10))
+
+for k, b in {'chance_green': (925, 480, 1030, 575), 'chance_red': (1170, 480, 1280, 575)}.items():
+    clean = erase_text(rs, (b[0] + 12, b[1] + 14, b[2] - 12, b[3] - 16), thresh=165)
+    save(k, grab(b, pad=4, img=clean)[0])
+# the gold one's lettering is the colour of its shield; recolour the clean green instead
+clean = erase_text(rs, (937, 494, 1018, 559), thresh=165)
+green, _ = grab((925, 480, 1030, 575), pad=4, img=clean)
+hsv = cv2.cvtColor(cv2.cvtColor(green, cv2.COLOR_RGBA2RGB), cv2.COLOR_RGB2HSV).astype(np.int16)
+fill = (hsv[:, :, 0] > 35) & (hsv[:, :, 0] < 95)
+hsv[:, :, 0] = np.where(fill, 20, hsv[:, :, 0])
+hsv[:, :, 2] = np.where(fill, np.clip(hsv[:, :, 2] * 1.25, 0, 255), hsv[:, :, 2])
+gold = cv2.cvtColor(cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB), cv2.COLOR_RGB2RGBA)
+gold[:, :, 3] = green[:, :, 3]
+save('chance_gold', gold)
+
+for k, b in {'risk_safe': (1020, 820, 1135, 858), 'risk_recommended': (1150, 820, 1265, 858),
+             'risk_risky': (1283, 820, 1395, 858), 'risk_danger': (1410, 820, 1528, 858)}.items():
+    save(k, rounded(rs, b, r=14))
+
+for i, x in enumerate([1080, 1158, 1235, 1312, 1392, 1472]):
+    save(f'forge_sword_{i}', lift(rs, (x - 36, 636, x + 36, 722), ring=10, thresh=34))
+
+for k, b in {'mat_enhance': (28, 627, 98, 697), 'mat_protect': (278, 627, 348, 697)}.items():
+    save(k, rounded(rs, b, r=5))
+
+for k, b in {'fb_enhance': (208, 433, 457, 475), 'fb_confirm': (865, 413, 970, 455),
+             'fb_cancel': (983, 413, 1080, 455)}.items():
+    save(k, rounded(rs, b, r=6))
+print('forge sheet done')
+
+# painted weapons for the classes that had no drawn icon: the refine level
+# baked into each tile's corner is painted out first
+WX, WY = [519, 599, 679, 759], [113, 193, 273, 353]
+for k, (c, r) in {'sword': (0, 0), 'axe': (1, 0), 'special': (3, 0), 'dagger': (0, 1), 'bow': (1, 1),
+                  'spear': (3, 1), 'greatsword': (0, 2), 'staff': (2, 2), 'wand': (0, 3)}.items():
+    x0, y0 = WX[c], WY[r]
+    clean = erase_text(rs, (x0 + 34, y0 + 40, x0 + 64, y0 + 64), thresh=175)
+    save('wpn_' + k, grab((x0 + 6, y0 + 6, x0 + 62, y0 + 62), pad=3, img=clean)[0])
+print('weapon art done')
