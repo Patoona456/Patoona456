@@ -986,10 +986,14 @@ export class Renderer {
     // time of day on top of it, skipped underground where there is no sky
     const sky = skyAt(Date.now());
     const underground = theme === 'crypt';
+    // The full-strength night grade was tuned for the code-drawn tiles; over
+    // painted art it just muddies everything. Towns have lit streets, so
+    // night there is a touch of blue; out in the wilds it is darker.
+    const nightScale = theme === 'town' ? 0.4 : 0.7;
     if (!underground && sky.alpha > 0.005) {
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
-      ctx.fillStyle = `rgba(${sky.rgb.join(',')},${sky.alpha})`;
+      ctx.fillStyle = `rgba(${sky.rgb.join(',')},${sky.alpha * nightScale})`;
       ctx.fillRect(view.x0, view.y0, w, h);
       ctx.restore();
       if (sky.phase > 0.24 && sky.phase < 0.36) {        // dawn wash
