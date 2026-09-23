@@ -330,11 +330,11 @@ body[data-ui="ember"] .doll-slot.empty { opacity: 1; }
 body[data-ui="ember"] .doll-slot .ghost { width: 64%; height: 64%; object-fit: contain; opacity: .9; filter: brightness(1.35); }
 
 /* plain buttons wear the sheet's bevelled faces */
-body[data-ui="ember"] .btn:not(.primary):not(.act) {
+body[data-ui="ember"] .btn:not(.primary):not(.act):not(.sbtn):not(.qbtn) {
   border: 6px solid transparent; border-image: url(../../assets/ui/btn_dark.webp) 9 fill / 6px stretch;
   background: none; box-shadow: none; padding: 2px 8px;
 }
-body[data-ui="ember"] .btn.danger:not(.act) { border-image-source: url(../../assets/ui/btn_red.webp); color: #fff; }
+body[data-ui="ember"] .btn.danger:not(.act):not(.sbtn) { border-image-source: url(../../assets/ui/btn_red.webp); color: #fff; }
 body[data-ui="ember"] .btn.ghost { border-image: none; border: none; }
 /* use / wear / take off / drop: the painted square buttons */
 body[data-ui="ember"] .btn.act {
@@ -649,6 +649,106 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 }
 #chat-form input { flex: 1; min-width: 0; }
 #chat-form select { width: auto; flex: none; }
+
+/* ============================ shop ============================ */
+.shop { display: grid; gap: 10px; }
+.shop-head { display: flex; gap: 12px; align-items: flex-end; }
+.shop-face {
+  width: 74px; height: 99px; object-fit: cover; flex: none; border-radius: 8px;
+  border: 2px solid var(--edge); box-shadow: 0 3px 8px rgba(0, 0, 0, .5);
+}
+.shop-talk {
+  position: relative; flex: 1; min-width: 0; display: grid; gap: 3px; align-self: center;
+  background: #f7efdf; color: #3a2a1a; border-radius: 12px; padding: 9px 12px; font-size: 13px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .4);
+}
+.shop-talk::before {
+  content: ""; position: absolute; left: -9px; bottom: 16px; border: 9px solid transparent;
+  border-right-color: #f7efdf; border-left: 0;
+}
+.shop-talk b { color: #8a4a12; font-size: 13px; }
+.shop-side { display: grid; gap: 6px; justify-items: end; flex: none; }
+.shop-sign { height: 58px; width: auto; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .5)); }
+.shop-wallet, .deal-money, .shop-card .price { display: inline-flex; align-items: center; gap: 5px; }
+.shop-wallet { padding: 3px 10px 3px 4px; border-radius: 999px; background: rgba(0, 0, 0, .45); border: 1px solid var(--edge-soft); font-size: 13px; }
+i.cur { width: 16px; height: 16px; flex: none; background: center / contain no-repeat; }
+i.cur.coin { background-image: url(../../assets/ui/coin.webp); }
+i.cur.shard { background-image: url(../../assets/ui/gem_red.webp); }
+.shop-modes { display: flex; gap: 6px; }
+.shop-mode { display: inline-flex; align-items: center; gap: 6px; }
+.shop-mode img { width: 18px; height: 18px; object-fit: contain; }
+.shop-main { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 10px; align-items: start; }
+.shop-left { display: grid; gap: 8px; min-width: 0; }
+.shop-cats { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.shop-cat {
+  flex: none; display: grid; justify-items: center; gap: 1px; min-width: 62px; padding: 5px 6px 4px;
+  background: linear-gradient(180deg, #3a2e25, #261e18); border: 1px solid #5e4726; border-radius: 7px;
+  color: #e9dcc0; font-size: 11px;
+}
+.shop-cat img { width: 20px; height: 20px; object-fit: contain; }
+.shop-cat.on { background: linear-gradient(180deg, #e0a85a, #b8732a); border-color: #f2c35b; color: #fff; text-shadow: 0 1px 1px rgba(0, 0, 0, .5); }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; max-height: 44vh; overflow: auto; padding: 6px 2px 2px; }
+.shop-card {
+  position: relative; display: grid; justify-items: center; gap: 4px; padding: 6px 4px 4px; cursor: pointer;
+  background: rgba(0, 0, 0, .3); border: 1px solid #5e4726; border-radius: 8px;
+}
+.shop-card:hover { border-color: #a47c38; }
+.shop-card.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent), 0 0 10px rgba(242, 195, 91, .25); }
+.shop-card.soldout { filter: grayscale(.85); opacity: .65; }
+.shop-card .price {
+  width: 100%; justify-content: center; font-size: 11px; font-weight: 700; padding: 1px 4px;
+  background: #15120f; border-radius: 6px; border: 1px solid #3d2f1c;
+}
+.shop-card .price i.cur { width: 13px; height: 13px; }
+.shop-tag { position: absolute; top: -7px; right: -5px; height: 17px; width: auto; z-index: 1; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.shop-deal { display: grid; gap: 7px; padding: 10px; }
+.deal-head { display: flex; gap: 10px; align-items: center; }
+.deal-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; background: rgba(0, 0, 0, .3); border-radius: 6px; }
+.deal-money b { font-size: 14px; }
+.deal-note { font-size: 11px; }
+.qty-row { display: inline-flex; align-items: center; gap: 4px; }
+.qty-row input { width: 58px; text-align: center; padding: 4px; }
+.qty-row .btn.step { width: 28px; height: 28px; padding: 0; font-weight: 700; }
+.qty-quick { display: flex; gap: 4px; justify-content: space-between; }
+.qty-quick .btn.qbtn { flex: 1; padding: 4px 0; font-size: 11px; min-width: 0; max-width: 54px; }
+.deal-actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 150px); justify-content: center; gap: 8px; margin-top: 2px; }
+@media (max-width: 680px) {
+  .shop-main { grid-template-columns: 1fr; }
+  .shop-face { width: 56px; height: 75px; }
+  .shop-sign { height: 42px; }
+  .shop-grid { max-height: 30vh; }
+}
+body.landscape-ui .shop-main { grid-template-columns: minmax(0, 1fr) 230px; }
+body.landscape-ui .shop-face { width: 48px; height: 64px; }
+body.landscape-ui .shop-sign { height: 36px; }
+body.landscape-ui .shop-talk { font-size: 11px; padding: 6px 9px; }
+body.landscape-ui .shop-grid { max-height: 38vh; }
+
+/* ember: the sheet's own slabs for the counter buttons */
+body[data-ui="ember"] .btn.sbtn, body[data-ui="ember"] .btn.qbtn {
+  border: none; border-image: none; box-shadow: none; font-size: 0; color: transparent; text-shadow: none;
+  background: center / 100% 100% no-repeat; padding: 0;
+}
+body[data-ui="ember"] .btn.sbtn { height: 40px; }
+body[data-ui="ember"] .btn.qbtn { height: 30px; }
+body[data-ui="ember"] .btn.sbtn:hover:not(:disabled), body[data-ui="ember"] .btn.qbtn:hover { filter: brightness(1.15); }
+body[data-ui="ember"] .btn.sbtn-buy { background-image: url(../../assets/ui/sbtn_buy.webp); }
+body[data-ui="ember"] .btn.sbtn-sell { background-image: url(../../assets/ui/sbtn_sell.webp); }
+body[data-ui="ember"] .btn.sbtn-cancel { background-image: url(../../assets/ui/sbtn_cancel.webp); }
+body[data-ui="ember"] .btn.q-1 { background-image: url(../../assets/ui/q_1.webp); }
+body[data-ui="ember"] .btn.q-10 { background-image: url(../../assets/ui/q_10.webp); }
+body[data-ui="ember"] .btn.q-50 { background-image: url(../../assets/ui/q_50.webp); }
+body[data-ui="ember"] .btn.q-100 { background-image: url(../../assets/ui/q_100.webp); }
+body[data-ui="ember"] .btn.q-max { background-image: url(../../assets/ui/q_max.webp); }
+/* toasts and refusals carry the sheet's notification marks */
+body[data-ui="ember"] .toast { display: flex; align-items: center; gap: 7px; }
+body[data-ui="ember"] .toast::before, body[data-ui="ember"] #flash::before {
+  content: ""; width: 18px; height: 18px; flex: none; background: url(../../assets/ui/n_info.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] .toast.good::before { background-image: url(../../assets/ui/n_ok.webp); }
+body[data-ui="ember"] .toast.bad::before, body[data-ui="ember"] #flash::before { background-image: url(../../assets/ui/n_err.webp); }
+body[data-ui="ember"] .toast.warn::before { background-image: url(../../assets/ui/n_warn.webp); }
+body[data-ui="ember"] #flash { display: flex; align-items: center; gap: 7px; }
 
 /* ============================ windows ============================ */
 #panels { position: fixed; inset: 0; pointer-events: none; z-index: 20; }

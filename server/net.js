@@ -474,8 +474,11 @@ export class Conn {
     if (!npc || dist(p, npc) > 96) return this.error('ต้องยืนคุยกับ NPC ก่อน');
 
     switch (m.action) {
-      case 'shop': return this.send(Econ.shopPayload(m.shop ?? npc.shop ?? 'general'));
-      case 'sell': return this.send({ t: OP.SHOP, mode: 'sell', id: npc.npcId, name: npc.name, stock: [] });
+      case 'shop': {
+        const shop = Econ.shopPayload(m.shop ?? npc.shop ?? 'general');
+        return this.send(shop && { ...shop, keeper: npc.name });   // the window names who you are talking to
+      }
+      case 'sell': return this.send({ t: OP.SHOP, mode: 'sell', id: npc.npcId, name: npc.name, keeper: npc.name, stock: [] });
       case 'refine': return this.send({ t: OP.SHOP, mode: 'refine', id: npc.npcId, name: npc.name });
       case 'socket': return this.send({ t: OP.SHOP, mode: 'socket', id: npc.npcId, name: npc.name });
       case 'repair': return this.send({ t: OP.SHOP, mode: 'repair', id: npc.npcId, name: npc.name });

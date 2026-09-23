@@ -248,3 +248,74 @@ for k, (x0, y0, x1, y1) in {'act_use': (1248, 339, 1311, 401), 'act_equip': (132
 plate = erase_text(inv, (462, 885, 616, 920), thresh=140)
 save('nameplate', grab((428, 858, 648, 932), pad=5, img=plate)[0])
 print('second sheet done')
+
+
+# ============================================================================
+# Third sheet: shop / NPC store (assets/ui/source/shop_sheet.png)
+# ============================================================================
+shop = cv2.imread(os.path.join(ROOT, 'assets/ui/source/shop_sheet.png'))
+
+
+def rounded(img, box, r=10):
+    """A rounded-rect cut: for buttons and badges that are plain slabs."""
+    x0, y0, x1, y1 = box
+    w, h = x1 - x0, y1 - y0
+    m = np.zeros((h * 4, w * 4), np.uint8)
+    cv2.rectangle(m, (r * 4, r * 4), (w * 4 - r * 4 - 1, h * 4 - r * 4 - 1), 255, -1)
+    m = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (r * 8, r * 8)))
+    rgba = cv2.cvtColor(img[y0:y1, x0:x1], cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = cv2.resize(cv2.GaussianBlur(m, (5, 5), 0), (w, h), interpolation=cv2.INTER_AREA)
+    return rgba
+
+
+def glyph(img, box, thresh=165):
+    """A white pictogram lifted off its tab: brightness becomes alpha."""
+    x0, y0, x1, y1 = box
+    tile = img[y0:y1, x0:x1]
+    lum = cv2.cvtColor(tile, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    a = np.clip((lum - thresh) * 4, 0, 255).astype(np.uint8)
+    rgba = np.dstack([np.full(a.shape, 255, np.uint8)] * 3 + [a])
+    return trim(rgba)
+
+
+# shopkeepers, picture only (their captions stay on the sheet)
+PORTRAITS = {'maid': 20, 'smith': 122, 'apothecary': 225, 'mystic': 327, 'trader': 430, 'general': 534}
+for k, x in PORTRAITS.items():
+    art = cv2.cvtColor(shop[847:966, x + 3:x + 92], cv2.COLOR_BGR2RGB)
+    Image.fromarray(art).save(os.path.join(OUT, 'shopkeeper_' + k + '.webp'), 'WEBP', quality=92)
+
+# category pictograms, white, tinted by CSS
+for k, b in {'all': (350, 448, 386, 482), 'weapon': (450, 450, 478, 478), 'armor': (543, 449, 576, 480),
+             'consumable': (655, 447, 685, 482), 'material': (765, 449, 797, 481), 'other': (863, 447, 895, 483)}.items():
+    save('cat_' + k, glyph(shop, b))
+save('shop_sell_icon', grab((28, 140, 52, 170), pad=3, img=shop)[0])
+
+# buttons whose words are ours: buy, sell, cancel, close, ok
+for k, b in {'sbtn_buy': (962, 502, 1080, 552), 'sbtn_sell': (1102, 502, 1220, 552),
+             'sbtn_cancel': (962, 562, 1080, 612), 'sbtn_close': (1102, 562, 1220, 612),
+             'sbtn_ok': (1383, 562, 1502, 612)}.items():
+    save(k, rounded(shop, b, r=7))
+
+# quantity shortcuts
+for k, b in {'q_1': (888, 734, 934, 777), 'q_10': (940, 734, 987, 777), 'q_50': (991, 734, 1039, 777),
+             'q_100': (1042, 734, 1092, 777), 'q_max': (1096, 734, 1143, 777)}.items():
+    save(k, rounded(shop, b, r=6))
+
+# badges for the shelf
+for k, b in {'tag_new': (960, 656, 1023, 689), 'tag_pick': (1050, 656, 1113, 689),
+             'tag_sale': (1142, 656, 1209, 689), 'tag_soldout': (1238, 656, 1321, 689),
+             'tag_limited': (1337, 656, 1419, 689), 'tag_event': (1438, 656, 1519, 689)}.items():
+    save(k, rounded(shop, b, r=4))
+
+# notification glyphs for toasts
+for k, b in {'n_ok': (1171, 732, 1197, 760), 'n_err': (1350, 732, 1377, 760),
+             'n_info': (1171, 774, 1197, 802), 'n_warn': (1350, 774, 1377, 802)}.items():
+    save(k, grab(b, pad=3, img=shop)[0])
+
+# hanging shop signs, one per kind of shop
+for k, b in {'sign_shop': (657, 840, 742, 910), 'sign_potion': (760, 841, 848, 908),
+             'sign_weapon': (862, 841, 950, 908), 'sign_armor': (967, 837, 1057, 905),
+             'sign_accessory': (662, 927, 756, 995), 'sign_material': (776, 927, 870, 995),
+             'sign_etc': (889, 927, 983, 995)}.items():
+    save(k, grab(b, pad=4, img=shop)[0])
+print('shop sheet done')

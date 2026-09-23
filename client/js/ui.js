@@ -614,6 +614,12 @@ export class UI {
 
   renderInventory() {
     this.renderQuickItems();
+    const wallet = document.querySelector('.shop-wallet');
+    if (wallet) wallet.querySelector('b').textContent = fmt(this.shopMoney({ currency: wallet.dataset.currency || null }));
+    // a sale changes what is left to sell
+    if (this.shopMode === 'sell' && this.openPanels.has('shop') && document.querySelector('.shop')) {
+      this.renderShop(this.lastShop ?? { id: null, name: 'ขายของ', stock: [] }, 'sell');
+    }
     const wrap = $('#inv-body');
     if (!wrap) return;
     const inv = this.game.inventory ?? { items: [] };
@@ -1376,59 +1382,211 @@ export class UI {
     if (d.mode === 'repair') return this.openRepair();
     if (d.mode === 'craft') return this.openCraft();
     if (d.mode === 'warp') return this.openWarp(d);
-    if (d.mode === 'sell') return this.openSell();
+    if (d.mode === 'sell') return this.openSell(d);
     if (d.mode === 'gacha') return this.openGacha(d);
     this.lastShop = d;
+    return this.renderShop(d, 'buy');
+  }
 
-    const wrap = el('div', 'grid');
-    const tabs = el('div', 'opts');
-    const buyTab = el('button', 'btn primary', 'ซื้อ');
-    const sellTab = el('button', 'btn', 'ขาย');
-    tabs.append(buyTab, sellTab);
-    const body = el('div');
-    wrap.append(tabs, body);
+  /**
+   * The storefront: who is selling, what they sell sorted into shelves, and
+   * a counter on the right where the amount and the total are settled
+   * before anything is spent. Buying and selling share the window, so the
+   * shopkeeper does not change when you turn around to sell.
+   */
+  renderShop(d, mode) {
+    this.shopMode = mode;
+    const keeper = SHOPKEEPERS[d.id] ?? SHOPKEEPERS.general;
+    const wrap = el('div', 'shop');
 
-    const renderBuy = () => {
-      body.innerHTML = '';
-      body.append(this.itemPicker({
-        key: 'shop',
-        items: d.stock.map((s) => ({ id: s.id, item: ITEMS[s.id] ?? { id: s.id, nameTh: s.name }, qty: 1, stock: s.stock, price: s.price })),
-        onSelect: (entry) => {
-          const qty = el('input');
-          qty.type = 'number'; qty.min = 1; qty.max = 999; qty.value = 1;
-          qty.style.width = '80px';
-          qty.addEventListener('focus', () => { this.game.input.textMode = true; });
-          qty.addEventListener('blur', () => { this.game.input.textMode = false; });
-          const actions = el('div', 'opts');
-          actions.style.marginTop = '8px';
-          const buy = el('button', 'btn primary', 'ซื้อ');
-          buy.addEventListener('click', () => this.game.net.send({
-            t: 'shopBuy', shop: d.id, id: entry.id, qty: Number(qty.value) || 1,
-          }));
-          actions.append(qty, buy);
-          const unit = d.currency ? (ITEMS[d.currency]?.nameTh ?? d.currency) : 'AU';
-          return this.detailCard(entry.item, [
-            ['ราคา', `${fmt(entry.price)} ${unit}`],
-            ['คงเหลือ', fmt(entry.stock)],
-            ...(entry.item.atk ? [['ATK', entry.item.atk]] : []),
-            ...(entry.item.def ? [['DEF', entry.item.def]] : []),
-            ...(entry.item.heal ? [['ฟื้น HP', entry.item.heal]] : []),
-            ...(entry.item.level ? [['ต้องเลเวล', entry.item.level]] : []),
-          ], actions);
-        },
-      }));
-    };
+    const head = el('div', 'shop-head');
+    const face = el('img', 'shop-face');
+    face.src = `${UI_BASE}/shopkeeper_${keeper.face}.webp`;
+    face.alt = keeper.name;
+    const talk = el('div', 'shop-talk');
+    talk.append(el('b', '', esc(d.keeper ?? keeper.name)), el('span', '', esc(mode === 'sell' ? keeper.sellLine : keeper.line)));
+    const side = el('div', 'shop-side');
+    const sign = el('img', 'shop-sign');
+    sign.src = `${UI_BASE}/sign_${keeper.sign}.webp`;
+    sign.alt = '';
+    side.append(sign, this.shopWallet(d));
+    head.append(face, talk, side);
+    wrap.append(head);
 
-    const renderSell = () => {
-      body.innerHTML = '';
-      body.append(el('div', 'muted', 'NPC รับซื้อราว 28% ของมูลค่าอ้างอิง และราคาจะตกถ้าขายของชิ้นเดิมซ้ำๆ ในวันเดียว'));
-      body.append(this.sellPicker());
-    };
-
-    buyTab.addEventListener('click', () => { buyTab.className = 'btn primary'; sellTab.className = 'btn'; renderBuy(); });
-    sellTab.addEventListener('click', () => { sellTab.className = 'btn primary'; buyTab.className = 'btn'; renderSell(); });
-    renderBuy();
+    const modes = el('div', 'shop-modes');
+    for (const [key, label, pic] of [['buy', 'ซื้อสินค้า', 'cat_all'], ['sell', 'ขายสินค้า', 'shop_sell_icon']]) {
+      if (key === 'sell' && d.currency) continue;          // the shard counter only takes shards
+      if (key === 'buy' && !d.stock?.length) continue;     // a buyer-only counter has no shelves
+      const b = el('button', 'btn shop-mode' + (mode === key ? ' primary' : ''));
+      const img = el('img');
+      img.src = `${UI_BASE}/${pic}.webp`;
+      img.alt = '';
+      b.append(img, el('span', '', label));
+      b.addEventListener('click', () => { if (mode !== key) this.renderShop(d, key); });
+      modes.append(b);
+    }
+    wrap.append(modes);
+    wrap.append(mode === 'sell' ? this.sellPicker() : this.shopShelves(d));
     return this.panel('shop', d.name ?? 'ร้านค้า', wrap);
+  }
+
+  /** What you have to spend here: aurum, or dawn shards at the shard counter. */
+  shopWallet(d) {
+    const box = el('div', 'shop-wallet');
+    box.append(el('i', 'cur ' + (d.currency ? 'shard' : 'coin')), el('b', 'num', fmt(this.shopMoney(d))));
+    box.dataset.currency = d.currency ?? '';
+    return box;
+  }
+
+  shopMoney(d) {
+    const inv = this.game.inventory ?? { items: [] };
+    if (!d?.currency) return inv.aurum ?? 0;
+    return (inv.items ?? []).filter((x) => x.id === d.currency).reduce((a, x) => a + (x.qty ?? 1), 0);
+  }
+
+  shopShelves(d) {
+    const box = el('div', 'shop-main');
+    const left = el('div', 'shop-left');
+    const counter = el('div', 'shop-counter');
+    const lvl = this.game.self?.level ?? 1;
+    const all = d.stock.map((s) => ({ ...s, item: ITEMS[s.id] ?? { id: s.id, nameTh: s.name } }));
+    const cat = (it) => it.type === 'weapon' ? 'weapon' : it.type === 'armor' ? 'armor'
+      : it.type === 'consumable' ? 'consumable' : it.type === 'material' || it.type === 'ammo' ? 'material' : 'other';
+
+    const cats = el('div', 'shop-cats');
+    const present = new Set(all.map((e) => cat(e.item)));
+    for (const [key, label] of SHOP_CATS) {
+      if (key !== 'all' && !present.has(key)) continue;
+      const b = el('button', 'shop-cat' + ((this.shopCat ?? 'all') === key ? ' on' : ''));
+      b.title = label;
+      const img = el('img');
+      img.src = `${UI_BASE}/cat_${key}.webp`;
+      img.alt = '';
+      b.append(img, el('span', '', label));
+      b.addEventListener('click', () => { this.shopCat = key; box.replaceWith(this.shopShelves(d)); });
+      cats.append(b);
+    }
+    left.append(cats);
+
+    const shelf = el('div', 'shop-grid');
+    const shown = all.filter((e) => (this.shopCat ?? 'all') === 'all' || cat(e.item) === this.shopCat);
+    if (!shown.length) shelf.append(el('div', 'muted', 'หมวดนี้ไม่มีสินค้า'));
+    const select = (entry, card) => {
+      this.pick ??= {};
+      this.pick.shop = entry.id;
+      for (const c of shelf.children) c.classList.remove('sel');
+      card?.classList.add('sel');
+      counter.innerHTML = '';
+      counter.append(this.shopDeal(d, entry, () => { counter.innerHTML = ''; counter.append(el('div', 'muted', 'เลือกสินค้าเพื่อดูรายละเอียด')); card?.classList.remove('sel'); }));
+    };
+    for (const entry of shown) {
+      const it = entry.item;
+      const sold = entry.stock !== undefined && entry.stock <= 0;
+      const card = el('div', 'shop-card' + (sold ? ' soldout' : ''));
+      const slot = el('div', `slot rarity-${it.rarity ?? 'common'}`);
+      slot.append(itemIcon(it.id, { size: 32 }));
+      card.append(slot);
+      const tag = sold ? 'soldout'
+        : it.level && it.level <= lvl && it.level >= lvl - 8 && (it.type === 'weapon' || it.type === 'armor') ? 'pick'
+        : entry.stock !== undefined && entry.stock <= 5 ? 'limited' : null;
+      if (tag) {
+        const t = el('img', 'shop-tag');
+        t.src = `${UI_BASE}/tag_${tag}.webp`;
+        t.alt = { soldout: 'หมด', pick: 'แนะนำ', limited: 'เหลือน้อย' }[tag];
+        card.append(t);
+      }
+      const price = el('div', 'price');
+      price.append(el('i', 'cur ' + (d.currency ? 'shard' : 'coin')), el('span', 'num', fmt(entry.price)));
+      card.append(price);
+      card.title = it.nameTh ?? it.name;
+      card.addEventListener('click', () => select(entry, card));
+      shelf.append(card);
+    }
+    left.append(shelf);
+    box.append(left, counter);
+    const first = shown.find((e) => e.id === this.pick?.shop) ?? shown[0];
+    if (first) select(first, shelf.children[shown.indexOf(first)]);
+    return box;
+  }
+
+  /** The counter: price, a quantity you can nudge, the total, then buy. */
+  shopDeal(d, entry, onCancel) {
+    const it = entry.item;
+    const money = this.shopMoney(d);
+    const most = Math.max(1, Math.min(entry.stock ?? 999, Math.floor(money / Math.max(1, entry.price)), 999));
+    const deal = el('div', 'win tip shop-deal');
+    const cur = d.currency ? 'shard' : 'coin';
+    const head = el('div', 'deal-head');
+    const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
+    ico.append(itemIcon(it.id, { size: 34 }));
+    const meta = el('div');
+    meta.append(el('div', 'tname rarity-' + (it.rarity ?? 'common'), esc(it.nameTh ?? it.name)));
+    const facts = [
+      it.atk ? `พลังโจมตี +${it.atk}` : '', it.matk ? `พลังเวทย์ +${it.matk}` : '',
+      it.def ? `ป้องกัน +${it.def}` : '', it.mdef ? `ต้านเวทย์ +${it.mdef}` : '',
+      it.heal ? `ฟื้น HP ${it.heal}` : '', it.healSp ? `ฟื้น SP ${it.healSp}` : '',
+      it.level ? `ต้องเลเวล ${it.level}` : '',
+    ].filter(Boolean);
+    if (facts.length) meta.append(el('div', 'muted', facts.join(' · ')));
+    head.append(ico, meta);
+    deal.append(head);
+    if (it.desc) deal.append(el('div', 'flavour', esc(it.desc)));
+
+    const q = this.qtyControl(most, (n) => { total.textContent = fmt(n * entry.price); });
+    const row = (label, node) => { const r = el('div', 'deal-row'); r.append(el('span', 'muted', label), node); deal.append(r); };
+    const money1 = (v) => { const m = el('span', 'deal-money'); m.append(el('i', 'cur ' + cur), el('b', 'num', v)); return m; };
+    row('ราคา', money1(fmt(entry.price)));
+    row('จำนวน', q.node);
+    deal.append(q.quick);
+    const tot = money1(fmt(entry.price));
+    const total = tot.querySelector('b');
+    row('ราคารวม', tot);
+    if (entry.stock !== undefined) deal.append(el('div', 'muted deal-note', `คงเหลือในร้าน ${fmt(entry.stock)}`));
+
+    const acts = el('div', 'deal-actions');
+    const cancel = el('button', 'btn sbtn sbtn-cancel', 'ยกเลิก');
+    cancel.setAttribute('aria-label', 'ยกเลิก');
+    cancel.addEventListener('click', onCancel);
+    const buy = el('button', 'btn primary sbtn sbtn-buy', 'ซื้อ');
+    buy.setAttribute('aria-label', 'ซื้อ');
+    buy.disabled = entry.stock !== undefined && entry.stock <= 0;
+    buy.addEventListener('click', () => this.game.net.send({ t: 'shopBuy', shop: d.id, id: entry.id, qty: q.value() }));
+    acts.append(cancel, buy);
+    deal.append(acts);
+    return deal;
+  }
+
+  /**
+   * An amount between 1 and max: - / + steppers around a number, and the
+   * +1 / +10 / +50 / +100 / MAX shortcuts under it.
+   */
+  qtyControl(max, onChange, start = 1) {
+    let n = Math.min(max, Math.max(1, start));
+    const node = el('div', 'qty-row');
+    const minus = el('button', 'btn step', '−');
+    const input = el('input', 'num');
+    input.type = 'number'; input.min = 1; input.max = max; input.value = n;
+    const plus = el('button', 'btn step', '+');
+    const set = (v) => {
+      n = Math.max(1, Math.min(max, Math.floor(Number(v)) || 1));
+      input.value = n;
+      onChange?.(n);
+    };
+    minus.addEventListener('click', () => set(n - 1));
+    plus.addEventListener('click', () => set(n + 1));
+    input.addEventListener('change', () => set(input.value));
+    input.addEventListener('focus', () => { this.game.input.textMode = true; });
+    input.addEventListener('blur', () => { this.game.input.textMode = false; });
+    node.append(minus, input, plus);
+    const quick = el('div', 'qty-quick');
+    for (const [key, label, fn] of [['1', '+1', () => n + 1], ['10', '+10', () => n + 10], ['50', '+50', () => n + 50],
+      ['100', '+100', () => n + 100], ['max', 'MAX', () => max]]) {
+      const b = el('button', `btn qbtn q-${key}`, label);
+      b.setAttribute('aria-label', label);
+      b.addEventListener('click', () => set(fn()));
+      quick.append(b);
+    }
+    return { node, quick, value: () => n };
   }
 
   sellPicker() {
@@ -1440,31 +1598,33 @@ export class UI {
       onSelect: (entry) => {
         const it = entry.item;
         const unit = npcSellPrice(it.value ?? 0, 0, it.rarity, (isEquip(it) || it.type === 'card') ? 'equip' : CRAFTING_INPUTS.has(it.id));
-        const qty = el('input');
-        qty.type = 'number'; qty.min = 1; qty.max = it.qty; qty.value = it.qty;
-        qty.style.width = '80px';
-        qty.addEventListener('focus', () => { this.game.input.textMode = true; });
-        qty.addEventListener('blur', () => { this.game.input.textMode = false; });
-        const actions = el('div', 'opts');
-        actions.style.marginTop = '8px';
-        const sell = el('button', 'btn primary', 'ขาย');
-        sell.addEventListener('click', () => this.game.net.send({
-          t: 'shopSell', index: it.i, qty: Number(qty.value) || 1,
-        }));
-        actions.append(qty, sell);
+        const q = this.qtyControl(it.qty, (n) => { total.textContent = fmt(n * unit); }, it.qty);
+        const total = el('b', 'num', fmt(unit * q.value()));
+        const money = (b) => { const m = el('span', 'deal-money'); m.append(el('i', 'cur coin'), b); return m; };
+        const qtyRow = el('div', 'deal-row');
+        qtyRow.append(el('span', 'muted', 'จำนวน'), q.node);
+        const totRow = el('div', 'deal-row');
+        totRow.append(el('span', 'muted', 'ได้รับรวม'), money(total));
+        const acts = el('div', 'deal-actions');
+        const sell = el('button', 'btn primary sbtn sbtn-sell', 'ขาย');
+        sell.setAttribute('aria-label', 'ขาย');
+        sell.addEventListener('click', () => this.game.net.send({ t: 'shopSell', index: it.i, qty: q.value() }));
+        acts.append(sell);
+        const extra = el('div', 'grid');
+        extra.style.gap = '6px';
+        extra.append(qtyRow, q.quick, totRow,
+          el('div', 'muted deal-note', 'NPC รับซื้อราว 28% ของมูลค่าอ้างอิง ขายของชิ้นเดิมซ้ำในวันเดียวราคาจะตก'));
         return this.detailCard(it, [
-          ['ได้รับต่อชิ้น', fmt(unit) + ' AU'],
+          ['ราคาขายต่อชิ้น', fmt(unit) + ' AU'],
           ['มูลค่าอ้างอิง', fmt(it.value ?? 0) + ' AU'],
-          ['มีอยู่', fmt(it.qty)],
-        ], actions);
+        ], acts, extra);
       },
     });
   }
 
-  openSell() {
-    const wrap = el('div', 'grid');
-    wrap.append(this.sellPicker());
-    return this.panel('shop', 'ขายของ', wrap);
+  openSell(d) {
+    this.lastShop = { id: d?.id, name: d?.name ?? 'ขายของ', keeper: d?.keeper, stock: [] };
+    return this.renderShop(this.lastShop, 'sell');
   }
 
   openRefine() {
@@ -2147,6 +2307,18 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** Who stands behind each counter, from the shop sheet's portraits. */
+const SHOPKEEPERS = {
+  general: { face: 'general', sign: 'shop', name: 'พ่อค้า',
+    line: 'ยินดีต้อนรับ! ของดีมีคุณภาพ เลือกดูได้เลย', sellLine: 'มีอะไรจะขายเหรอ? ของชิ้นเดิมขายซ้ำวันเดียวกันราคาจะตกนะ' },
+  smith: { face: 'smith', sign: 'weapon', name: 'ช่างบอร์ก',
+    line: 'เหล็กทุกชิ้นข้าตีเอง ใส่แล้วไม่ต้องกลัวใคร', sellLine: 'ของเก่าเอามาเถอะ ข้าหลอมใหม่ได้' },
+  dawn: { face: 'mystic', sign: 'etc', name: 'ผู้แลกเศษรุ่งอรุณ',
+    line: 'เศษรุ่งอรุณ... แลกของที่หาที่ไหนไม่ได้', sellLine: '...' },
+};
+const SHOP_CATS = [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ'], ['armor', 'ชุดเกราะ'],
+  ['consumable', 'ไอเทมใช้สอย'], ['material', 'วัตถุดิบ'], ['other', 'อื่นๆ']];
+
 /** Status (by key, then by type) -> painted icon from the UI sheet. */
 const STATUS_ART = {
   food: 'st_plus', buff: 'st_sword', shield: 'st_shield', poison: 'st_skull',
