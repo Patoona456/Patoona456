@@ -884,7 +884,151 @@ function drawFountain(g, w, h) {
   g.restore();
 }
 
-const SIZED = { house: drawHouse, stall: drawStall, fountain: drawFountain };
+/** Coursed stone: rows of blocks with staggered joints, shaded per block. */
+function stonework(g, x, y, w, h, top, bottom, seed) {
+  const grad = g.createLinearGradient(0, y, 0, y + h);
+  grad.addColorStop(0, top); grad.addColorStop(1, bottom);
+  g.fillStyle = grad;
+  g.fillRect(x, y, w, h);
+  let s = seed;
+  const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  const rowH = 9;
+  for (let ry = 0, row = 0; ry < h; ry += rowH, row++) {
+    let bx = x - (row % 2 ? 7 : 0);
+    while (bx < x + w) {
+      const bw = 12 + Math.floor(rnd() * 8);
+      g.fillStyle = `rgba(255,255,255,${0.03 + rnd() * 0.08})`;
+      g.fillRect(Math.max(x, bx) + 1, y + ry + 1, Math.min(bw, x + w - bx) - 2, rowH - 2);
+      g.fillStyle = 'rgba(40,36,34,0.45)';
+      g.fillRect(Math.max(x, bx), y + ry, 1, rowH);
+      bx += bw;
+    }
+    g.fillStyle = 'rgba(40,36,34,0.45)';
+    g.fillRect(x, y + ry, w, 1);
+  }
+}
+
+/**
+ * A stretch of city wall. Laid east-west it shows its walkway and the face
+ * that looks into town; north-south it is seen from above, so it is walkway
+ * between two rows of merlons.
+ */
+function drawRampart(g, w, h) {
+  const across = w >= h;
+  const C = { top: '#b3aea4', face: '#97918a', deep: '#5d5852', walk: '#a39d92' };
+  if (across) {
+    const merlon = 14, walkH = 22;
+    stonework(g, 0, merlon + walkH, w, h - merlon - walkH - 2, C.face, C.deep, w * 7 + h);
+    g.fillStyle = C.walk;
+    g.fillRect(0, merlon, w, walkH);
+    g.fillStyle = 'rgba(0,0,0,0.18)';
+    g.fillRect(0, merlon + walkH - 3, w, 3);
+    for (let x = 2; x < w - 4; x += 20) {
+      stonework(g, x, 2, 11, merlon, C.top, C.face, x + 3);
+      g.fillStyle = 'rgba(0,0,0,0.25)';
+      g.fillRect(x, merlon, 11, 2);
+    }
+  } else {
+    stonework(g, 0, 12, w, h - 14, C.walk, shade(C.walk, -18), w + h * 3);
+    for (const x of [0, w - 12]) {
+      for (let y = 14; y < h - 12; y += 20) stonework(g, x, y, 12, 12, C.top, C.face, y + x);
+      g.fillStyle = 'rgba(0,0,0,0.22)';
+      g.fillRect(x === 0 ? 12 : w - 14, 12, 2, h - 14);
+    }
+    stonework(g, 0, h - 26, w, 24, C.face, C.deep, h);
+  }
+}
+
+/** Round tower with a conical roof, the kind that stands on a wall corner. */
+function drawTower(g, w, h, roofColor = '#3f5f9e') {
+  const cx = w / 2, bodyTop = 78, base = h - 4, rx = w / 2 - 8;
+  g.save();
+  g.filter = 'blur(6px)';
+  g.fillStyle = 'rgba(0,0,0,0.4)';
+  g.beginPath(); g.ellipse(cx, base, rx + 4, 12, 0, 0, Math.PI * 2); g.fill();
+  g.restore();
+
+  // the drum: coursed stone, lit from the left so it reads as round
+  g.save();
+  g.beginPath();
+  g.ellipse(cx, bodyTop, rx, 10, 0, Math.PI, 0);
+  g.lineTo(cx + rx, base - 8);
+  g.ellipse(cx, base - 8, rx, 10, 0, 0, Math.PI);
+  g.closePath();
+  g.clip();
+  stonework(g, cx - rx, bodyTop - 10, rx * 2, base - bodyTop + 10, '#b8b3a8', '#7d7870', w * 11);
+  const round = g.createLinearGradient(cx - rx, 0, cx + rx, 0);
+  round.addColorStop(0, 'rgba(255,255,255,0.18)');
+  round.addColorStop(0.4, 'rgba(255,255,255,0)');
+  round.addColorStop(1, 'rgba(0,0,0,0.42)');
+  g.fillStyle = round;
+  g.fillRect(cx - rx, bodyTop - 10, rx * 2, base - bodyTop + 10);
+  g.restore();
+  // arrow slit and a window with a warm light
+  g.fillStyle = '#26221f';
+  g.fillRect(cx - 2, bodyTop + 20, 4, 14);
+  g.fillStyle = '#e8b85a';
+  g.fillRect(cx - 4, bodyTop + 44, 8, 10);
+  g.fillStyle = '#4a3a2a';
+  g.fillRect(cx - 5, bodyTop + 43, 10, 1);
+
+  // crenellated ring under the roof
+  g.fillStyle = '#a8a39a';
+  g.beginPath(); g.ellipse(cx, bodyTop, rx + 5, 12, 0, 0, Math.PI * 2); g.fill();
+  for (let a = Math.PI * 0.08; a < Math.PI; a += Math.PI / 5) {
+    const mx = cx - Math.cos(a) * (rx + 2);
+    g.fillStyle = a > Math.PI / 2 ? '#8a857d' : '#c2bdb2';
+    g.fillRect(mx - 5, bodyTop + Math.sin(a) * 9 - 8, 10, 10);
+  }
+
+  // conical roof, split light/dark down the middle
+  const peak = 4, eave = bodyTop + 2;
+  g.fillStyle = shade(roofColor, 30);
+  g.beginPath();
+  g.moveTo(cx, peak);
+  g.lineTo(cx + rx + 9, eave);
+  g.quadraticCurveTo(cx, eave + 14, cx - rx - 9, eave);
+  g.closePath(); g.fill();
+  g.fillStyle = shade(roofColor, -30);
+  g.beginPath();
+  g.moveTo(cx, peak);
+  g.lineTo(cx + rx + 9, eave);
+  g.quadraticCurveTo(cx + rx * 0.5, eave + 11, cx + 4, eave + 7);
+  g.closePath(); g.fill();
+  g.save();
+  g.globalAlpha = 0.18; g.strokeStyle = '#000'; g.lineWidth = 1.2;
+  for (let i = 1; i < 5; i++) {
+    const t = i / 5;
+    g.beginPath();
+    g.moveTo(cx - (rx + 9) * t, peak + (eave - peak) * t);
+    g.quadraticCurveTo(cx, peak + (eave - peak) * t + 12 * t, cx + (rx + 9) * t, peak + (eave - peak) * t);
+    g.stroke();
+  }
+  g.restore();
+  // finial pennant
+  g.fillStyle = '#d9b44a';
+  g.fillRect(cx - 1, peak - 2, 2, 5);
+}
+
+/** A straw practice dummy on a post, for the training ground. */
+DRAW.dummy = (g, w, h) => {
+  const cx = w / 2, base = h - 3;
+  shadow(g, w, h, 7);
+  g.fillStyle = '#6b4a28';
+  g.fillRect(cx - 2, base - 30, 4, 30);
+  g.fillRect(cx - 11, base - 24, 22, 3);
+  g.fillStyle = '#c9a55a';
+  g.beginPath(); g.ellipse(cx, base - 22, 7, 9, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(cx, base - 35, 5, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = '#8a6a30'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(cx - 6, base - 22); g.lineTo(cx + 6, base - 22); g.stroke();
+  g.strokeStyle = '#b3322b'; g.lineWidth = 1.5;
+  g.beginPath(); g.arc(cx, base - 22, 3, 0, Math.PI * 2); g.stroke();
+};
+
+const SIZED = { house: drawHouse, stall: drawStall, fountain: drawFountain, rampart: drawRampart, tower: drawTower };
+/** How far each sized kind's art rises above its footprint. */
+const RISE = { house: 26, rampart: 14, tower: 78 };
 
 /** `prop` may be a plain kind string or a full prop record (buildings). */
 export function propSprite(prop) {
@@ -906,7 +1050,7 @@ export function propSprite(prop) {
   let c = cache.get(key);
   if (c) return c;
   if (sized) {
-    const w = Math.round(prop.w), h = Math.round(prop.h + (kind === 'house' ? 26 : 12));
+    const w = Math.round(prop.w), h = Math.round(prop.h + (RISE[kind] ?? 12));
     c = make(w, h, (g) => sized(g, w, h, prop.roof, prop.sign, prop.variant ?? 0));
   } else {
     const draw = DRAW[kind] ?? DRAW.rock;

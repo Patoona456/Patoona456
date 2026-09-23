@@ -127,6 +127,9 @@ export class World {
     p.cast = null;
     p.warpSafeUntil = Date.now() + 1200;
     p.padArmed = false;            // must step off a pad before one fires again
+    // the client forgets every entity when a zone payload lands, so the
+    // server must forget what it told it too, or names and looks never resend
+    p.seenIdentity = null;
     target.addPlayer(p);
     if (target.def.safe) p.record.savePoint = { map: mapId, x: p.x, y: p.y };
     p.conn.send(target.zonePayload());
@@ -135,7 +138,7 @@ export class World {
   }
 
   respawn(p) {
-    const sp = p.record.savePoint ?? { map: 'emberhold', x: 32 * TILE, y: 28 * TILE };
+    const sp = p.record.savePoint ?? { map: 'emberhold', x: 42 * TILE, y: 34 * TILE };
     p.alive = true;
     p.hp = Math.max(1, Math.floor(p.maxHp * 0.3));
     p.sp = Math.max(1, Math.floor(p.maxSp * 0.3));

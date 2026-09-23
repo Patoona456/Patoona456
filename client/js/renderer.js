@@ -137,7 +137,8 @@ export class Renderer {
     const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
         theme: zonePayload.theme ?? 'grass', kind: zonePayload.kind,
-        structures: zonePayload.structures ?? [], decor: zonePayload.decor ?? [] },
+        structures: zonePayload.structures ?? [], decor: zonePayload.decor ?? [],
+        paint: zonePayload.laidOut ? [] : undefined },
       this.grid
     );
     this.props = scenery.concat(painted.overlays).sort((a, b) => a.y - b.y);
@@ -251,7 +252,13 @@ export class Renderer {
       y0: this.camera.y - halfH - 64, y1: this.camera.y + halfH + 64,
     };
     const visibleProps = this.props
-      ? this.props.filter((p) => p.x > view.x0 && p.x < view.x1 && p.y > view.y0 && p.y < view.y1)
+      // by extent, not anchor: a building whose foot is off-screen can still
+      // fill half of it
+      ? this.props.filter((p) => {
+        const hw = (p.w ?? 0) / 2;
+        return p.x + hw > view.x0 && p.x - hw < view.x1
+          && p.y > view.y0 && p.y - (p.h ?? 0) - 80 < view.y1;
+      })
       : [];
 
     this.drawTerrain(ctx, halfW, halfH, now);

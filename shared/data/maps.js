@@ -44,66 +44,124 @@ function noise2d(w, h, scale, seed) {
 export const MAPS = {
   emberhold: {
     id: 'emberhold', name: 'Emberhold', nameTh: 'เอมเบอร์โฮลด์', kind: 'town',
-    width: 64, height: 48, seed: 1001, safe: true, theme: 'town',
-    // south of the fountain: a spawn that touches the basin corner wedges
-    // the player's collision box against it
-    spawnPoint: [32, 28],
+    width: 84, height: 64, seed: 1001, safe: true, theme: 'town',
+    // A walled capital: forest outside, a ring of wall with a gate on each
+    // side, the fountain square in the middle and a canal across the south.
+    // Wall runs x 4-79 / y 4-59, two tiles thick; each gate is a 4-tile gap
+    // filled by its warp pad, so leaving town means walking through a gate.
+    spawnPoint: [42, 34],
     warps: [
-      { x: 32, y: 45, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
-      { x: 12, y: 44, w: 3, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
-      { x: 2, y: 24, w: 2, h: 4, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
+      { x: 40, y: 4, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
+      { x: 40, y: 58, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 4, y: 30, w: 2, h: 4, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
+      { x: 78, y: 30, w: 2, h: 4, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
     ],
+    // each keeper stands outside the door of the building they work in
     npcs: [
-      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 21, y: 20, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 42, y: 20, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
-      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 21, y: 28, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 42, y: 28, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
-      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 32, y: 15, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 32, y: 30, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
-      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 36, y: 24, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 28, y: 24, look: null },
-      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 27, y: 21, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 12, y: 15, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
+      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 24, y: 15, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 60, y: 15, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 71, y: 15, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 59, y: 26, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 71, y: 27, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 18, y: 39, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 37, y: 35, look: null },
+      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 47, y: 35, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
     ],
     spawns: [],
-    // hand-placed town: footprints become walls, the client draws the buildings.
-    // Deliberately off-grid - a town that mirrors perfectly reads as a template.
-    structures: [
-      { kind: 'house', x: 27, y: 8, w: 8, h: 5, roof: '#b0b4c0', sign: 'วิหารรุ่งอรุณ' },
-      { kind: 'house', x: 16, y: 14, w: 6, h: 4, roof: '#8c4a3a', sign: 'ร้านค้า' },
-      { kind: 'house', x: 39, y: 13, w: 6, h: 5, roof: '#6a5a8c', sign: 'โรงตีเหล็ก' },
-      { kind: 'house', x: 17, y: 29, w: 5, h: 4, roof: '#4a7a6a', sign: 'คลังสมบัติ' },
-      { kind: 'house', x: 38, y: 29, w: 7, h: 4, roof: '#8c7a3a', sign: 'ตลาดกลาง' },
-      { kind: 'house', x: 46, y: 21, w: 5, h: 4, roof: '#7a5a4a', sign: 'โรงเตี๊ยม' },
-      { kind: 'house', x: 11, y: 21, w: 5, h: 4, roof: '#5a6a8c', sign: 'หอยาม' },
-      { kind: 'house', x: 24, y: 36, w: 6, h: 4, roof: '#6d4a3a' },
-      { kind: 'house', x: 35, y: 37, w: 5, h: 3, roof: '#4a6a5a' },
-      // market row: uneven spacing, four different awnings
-      { kind: 'stall', x: 25, y: 18, w: 3, h: 2, variant: 0 },
-      { kind: 'stall', x: 35, y: 17, w: 3, h: 2, variant: 1 },
-      { kind: 'stall', x: 24, y: 27, w: 3, h: 2, variant: 2 },
-      { kind: 'stall', x: 25, y: 31, w: 4, h: 2, variant: 3 },
-      { kind: 'stall', x: 26, y: 33, w: 3, h: 2, variant: 1 },
-      { kind: 'fountain', x: 30, y: 22, w: 4, h: 4 },
+    // later ops paint over earlier ones; anything left is grass
+    paint: [
+      // forest outside the wall, with a trodden road out of each gate
+      { tile: 'TREE', rect: [0, 0, 84, 4], density: 0.8 },
+      { tile: 'TREE', rect: [0, 62, 84, 2], density: 0.8 },   // clear of the wall, which it would hide
+      { tile: 'TREE', rect: [0, 4, 4, 56], density: 0.8 },
+      { tile: 'TREE', rect: [80, 4, 4, 56], density: 0.8 },
+      { tile: 'PATH', rect: [40, 0, 4, 4] }, { tile: 'PATH', rect: [40, 60, 4, 4] },
+      { tile: 'PATH', rect: [0, 30, 4, 4] }, { tile: 'PATH', rect: [80, 30, 4, 4] },
+      // the town is paved; lawns where people train and live
+      { tile: 'FLOOR', rect: [6, 6, 72, 52] },
+      { tile: 'GRASS', rect: [6, 6, 72, 2] },
+      { tile: 'GRASS', rect: [7, 35, 14, 8] },
+      { tile: 'GRASS', rect: [6, 47, 32, 11] },
+      { tile: 'GRASS', rect: [48, 47, 30, 11] },
+      // flower beds round the fountain, cut by a cross of paving
+      { tile: 'FLOWER', rect: [35, 18, 14, 14] },
+      { tile: 'FLOOR', rect: [40, 18, 4, 14] },
+      { tile: 'FLOOR', rect: [35, 23, 14, 4] },
+      // the canal, and three bridges over it
+      { tile: 'WATER', rect: [6, 44, 72, 3] },
+      { tile: 'BRIDGE', rect: [40, 44, 4, 3] },
+      { tile: 'BRIDGE', rect: [13, 44, 3, 3] },
+      { tile: 'BRIDGE', rect: [68, 44, 3, 3] },
     ],
-    // props that do not block anything: lamps, benches, crates, greenery
+    structures: [
+      // the wall, broken only at the four gates
+      { kind: 'rampart', x: 4, y: 4, w: 36, h: 2 }, { kind: 'rampart', x: 44, y: 4, w: 36, h: 2 },
+      { kind: 'rampart', x: 4, y: 58, w: 36, h: 2 }, { kind: 'rampart', x: 44, y: 58, w: 36, h: 2 },
+      { kind: 'rampart', x: 4, y: 6, w: 2, h: 24 }, { kind: 'rampart', x: 4, y: 34, w: 2, h: 24 },
+      { kind: 'rampart', x: 78, y: 6, w: 2, h: 24 }, { kind: 'rampart', x: 78, y: 34, w: 2, h: 24 },
+      // towers on the corners, either side of every gate, and along the long walls
+      { kind: 'tower', x: 3, y: 3, w: 3, h: 3 }, { kind: 'tower', x: 77, y: 3, w: 3, h: 3 },
+      { kind: 'tower', x: 3, y: 57, w: 3, h: 3 }, { kind: 'tower', x: 77, y: 57, w: 3, h: 3 },
+      { kind: 'tower', x: 37, y: 3, w: 3, h: 3 }, { kind: 'tower', x: 44, y: 3, w: 3, h: 3 },
+      { kind: 'tower', x: 37, y: 57, w: 3, h: 3 }, { kind: 'tower', x: 44, y: 57, w: 3, h: 3 },
+      { kind: 'tower', x: 3, y: 27, w: 3, h: 3 }, { kind: 'tower', x: 3, y: 34, w: 3, h: 3 },
+      { kind: 'tower', x: 77, y: 27, w: 3, h: 3 }, { kind: 'tower', x: 77, y: 34, w: 3, h: 3 },
+      { kind: 'tower', x: 20, y: 3, w: 3, h: 3 }, { kind: 'tower', x: 61, y: 3, w: 3, h: 3 },
+      { kind: 'tower', x: 20, y: 57, w: 3, h: 3 }, { kind: 'tower', x: 61, y: 57, w: 3, h: 3 },
+      // north row: the trades
+      { kind: 'house', x: 8, y: 9, w: 9, h: 5, roof: '#3f5f9e', sign: 'โรงตีเหล็ก' },
+      { kind: 'house', x: 20, y: 9, w: 8, h: 5, roof: '#3f5f9e', sign: 'ร้านยา' },
+      { kind: 'house', x: 56, y: 9, w: 8, h: 5, roof: '#3f5f9e', sign: 'ร้านอุปกรณ์' },
+      { kind: 'house', x: 67, y: 9, w: 9, h: 5, roof: '#4c5a78', sign: 'คลังเก็บของ' },
+      // middle row, either side of the square
+      { kind: 'house', x: 8, y: 20, w: 9, h: 5, roof: '#7a4e32', sign: 'โรงแรม' },
+      { kind: 'house', x: 20, y: 20, w: 10, h: 6, roof: '#a33a2f', sign: 'กิลด์' },
+      { kind: 'house', x: 55, y: 20, w: 9, h: 5, roof: '#c46a9a', sign: 'กาชา' },
+      { kind: 'house', x: 67, y: 20, w: 9, h: 6, roof: '#34406a', sign: 'ตลาดประมูล' },
+      // across the canal
+      { kind: 'house', x: 9, y: 49, w: 10, h: 6, roof: '#b0b4c0', sign: 'วิหารรุ่งอรุณ' },
+      { kind: 'house', x: 23, y: 50, w: 7, h: 5, roof: '#7a4e32' },
+      { kind: 'house', x: 52, y: 50, w: 7, h: 5, roof: '#3f5f9e' },
+      { kind: 'house', x: 63, y: 49, w: 9, h: 6, roof: '#6d4a3a', sign: 'หอยาม' },
+      // stalls on the north avenue and the market row
+      { kind: 'stall', x: 31, y: 10, w: 3, h: 2, variant: 0 },
+      { kind: 'stall', x: 50, y: 10, w: 3, h: 2, variant: 2 },
+      { kind: 'stall', x: 52, y: 36, w: 3, h: 2, variant: 0 },
+      { kind: 'stall', x: 56, y: 36, w: 3, h: 2, variant: 1 },
+      { kind: 'stall', x: 60, y: 37, w: 4, h: 2, variant: 2 },
+      { kind: 'stall', x: 65, y: 36, w: 3, h: 2, variant: 3 },
+      { kind: 'stall', x: 69, y: 36, w: 3, h: 2, variant: 1 },
+      { kind: 'fountain', x: 39, y: 22, w: 6, h: 6 },
+    ],
+    // props that do not block anything
     decor: [
-      // lantern ring around the plaza
-      ['lamp', 27, 20], ['lamp', 37, 20], ['lamp', 27, 28], ['lamp', 37, 28],
-      ['lamp', 32, 17], ['lamp', 32, 31], ['lamp', 22, 24], ['lamp', 42, 24],
-      // somewhere to sit, and something green to look at
-      ['bench', 29, 20], ['bench', 36, 21], ['bench', 28, 29], ['bench', 34, 31],
-      ['planter', 30, 17], ['planter', 34, 18], ['planter', 29, 31], ['planter', 35, 29],
-      ['tree', 21, 12], ['tree', 45, 16], ['tree', 14, 33], ['tree', 47, 34], ['tree', 20, 40],
-      ['bush', 23, 13], ['bush', 44, 18], ['bush', 16, 35],
-      // working clutter around the shops
-      ['well', 25, 24], ['cart', 42, 27], ['awning', 44, 20],
-      ['barrel', 23, 18], ['barrel', 22, 19], ['crate', 38, 16], ['sack', 39, 17],
-      ['crate', 19, 27], ['sack', 20, 28], ['barrel', 41, 32], ['crate', 42, 32],
-      ['sack', 27, 34], ['barrel', 31, 35], ['crate', 26, 20], ['sack', 37, 29],
-      // banners and signposts at the ways in and out
-      ['banner', 30, 13], ['banner', 34, 13], ['sign', 32, 36], ['sign', 6, 24],
-      ['banner', 22, 30], ['banner', 43, 21],
-      ['flowerpot', 28, 12], ['flowerpot', 36, 12], ['flowerpot', 46, 25], ['flowerpot', 12, 25],
+      // lamps down the avenues, round the square, at the bridge and the gates
+      ['lamp', 38, 8], ['lamp', 46, 8], ['lamp', 38, 14], ['lamp', 46, 14],
+      ['lamp', 34, 17], ['lamp', 49, 17], ['lamp', 34, 32], ['lamp', 49, 32],
+      ['lamp', 39, 43], ['lamp', 44, 43], ['lamp', 39, 47], ['lamp', 44, 47],
+      ['lamp', 7, 29], ['lamp', 7, 34], ['lamp', 76, 29], ['lamp', 76, 34],
+      ['lamp', 38, 56], ['lamp', 46, 56],
+      // banners at the gates and on the corners of the square
+      ['banner', 38, 7], ['banner', 45, 7], ['banner', 33, 20], ['banner', 50, 20],
+      ['banner', 33, 29], ['banner', 50, 29], ['banner', 37, 55], ['banner', 46, 55],
+      ['banner', 8, 30], ['banner', 75, 30],
+      // somewhere to sit by the fountain
+      ['bench', 33, 25], ['bench', 50, 25], ['bench', 38, 33], ['bench', 46, 33],
+      // the training ground
+      ['dummy', 9, 37], ['dummy', 12, 37], ['dummy', 15, 37], ['dummy', 9, 40], ['dummy', 12, 40],
+      // shop fronts
+      ['flowerpot', 10, 14], ['flowerpot', 15, 14], ['flowerpot', 22, 14], ['flowerpot', 26, 14],
+      ['flowerpot', 58, 14], ['flowerpot', 62, 14], ['flowerpot', 69, 14], ['flowerpot', 74, 14],
+      ['barrel', 17, 12], ['barrel', 18, 13], ['crate', 18, 11], ['crate', 76, 12], ['sack', 66, 13],
+      ['barrel', 51, 39], ['crate', 58, 40], ['sack', 64, 39], ['cart', 72, 40], ['well', 29, 37],
+      ['sign', 42, 9], ['sign', 46, 55], ['sign', 9, 32], ['sign', 74, 32],
+      // greenery on the lawns and along the top of the wall
+      ['tree', 7, 7], ['tree', 18, 7], ['tree', 30, 7], ['tree', 54, 7], ['tree', 65, 7], ['tree', 76, 7],
+      ['tree', 8, 56], ['tree', 20, 48], ['tree', 33, 48], ['tree', 33, 55],
+      ['tree', 50, 48], ['tree', 60, 56], ['tree', 75, 48], ['tree', 75, 55],
+      ['bush', 21, 43], ['bush', 62, 43], ['bush', 30, 49], ['bush', 55, 56], ['bush', 7, 43],
+      ['planter', 36, 17], ['planter', 47, 17], ['planter', 36, 32], ['planter', 47, 32],
     ],
   },
 
@@ -115,6 +173,7 @@ export const MAPS = {
       { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
+      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [75, 32], label: 'เอมเบอร์โฮลด์' },
     ],
     npcs: [
       // North district (Merchant area)
@@ -193,7 +252,7 @@ export const MAPS = {
       // Central plaza: Services
       { id: 'rh_healer', name: 'บาทหลวงอิเรน', role: 'healer', x: 24, y: 36, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
       { id: 'rh_banker', name: 'ผู้เฝ้าธนคลังแองเชล', role: 'banker', x: 64, y: 36, look: { body: 'male/dark', hair: 'plain/black', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'rh_board', name: 'กระดานภารกิจหลัก', role: 'board', x: 40, y: 32, look: null },
+      { id: 'rh_board', name: 'กระดานภารกิจหลัก', role: 'board', x: 35, y: 32, look: null },
       { id: 'rh_warper', name: 'พ่อค้ารถบัสเสน', role: 'warper', x: 48, y: 32, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
       // East: Guild & broker
       { id: 'rh_broker', name: 'สำนักนายหน้าตรึนดัล', role: 'broker', x: 76, y: 36, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
@@ -258,7 +317,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 2002, theme: 'grass', levelRange: [1, 10],
     spawnPoint: [40, 6],
     warps: [
-      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [32, 42], label: 'เอมเบอร์โฮลด์' },
+      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [42, 55], label: 'เอมเบอร์โฮลด์' },
       { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
     ],
     // the north strip by the town gate stays gentle; anything that bites
@@ -278,7 +337,7 @@ export const MAPS = {
     spawnPoint: [8, 32],
     warps: [
       { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [72, 32], label: 'ทุ่งกรีนไมร์' },
-      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [8, 26], label: 'เอมเบอร์โฮลด์' },
+      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [8, 32], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
     spawns: [
@@ -450,7 +509,7 @@ export const MAPS = {
     width: 44, height: 44, seed: 4411, theme: 'ember', levelRange: [40, 70],
     pvp: true,
     spawnPoint: [22, 40],
-    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [16, 41], label: 'เอมเบอร์โฮลด์' }],
+    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [42, 8], label: 'เอมเบอร์โฮลด์' }],
     spawns: [],
   },
 
@@ -524,6 +583,29 @@ function buildDungeon(map) {
 }
 
 /** Build the tile grid for a map. Same input => same output, always. */
+/**
+ * Lay a map out from a list of rectangles instead of noise, for places that
+ * are built rather than grown. Ops run in order, later ones on top:
+ *   { tile: 'FLOOR', rect: [x, y, w, h] }            fill it
+ *   { tile: 'TREE', rect: [...], density: 0.6 }      scatter it, deterministically
+ * Anything no op covers is grass.
+ */
+function paintLayout(g, map) {
+  const { width: w, height: h, seed } = map;
+  g.fill(TILES.GRASS);
+  for (const op of map.paint) {
+    const tile = TILES[op.tile];
+    if (tile === undefined) throw new Error(`${map.id}: unknown tile ${op.tile}`);
+    const [x0, y0, rw, rh] = op.rect ?? [0, 0, w, h];
+    for (let y = Math.max(0, y0); y < Math.min(h, y0 + rh); y++) {
+      for (let x = Math.max(0, x0); x < Math.min(w, x0 + rw); x++) {
+        if (op.density !== undefined && hash2(x, y, seed ^ 0x3c1) >= op.density) continue;
+        g[y * w + x] = tile;
+      }
+    }
+  }
+}
+
 export function buildGrid(map) {
   if (map.kind === 'dungeon') {
     const g = buildDungeon(map);
@@ -552,64 +634,68 @@ export function buildGrid(map) {
   const ground = { town: T.GRASS, grass: T.GRASS, marsh: T.MOSS, crypt: T.FLOOR, rock: T.SAND, ice: T.SNOW }[theme] ?? T.GRASS;
   const solid = { crypt: T.WALL, ice: T.WALL, rock: T.ROCK }[theme] ?? T.TREE;
 
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = y * w + x;
-      const n = base[i] * 0.72 + detail[i] * 0.28;
-      const edge = Math.min(x, y, w - 1 - x, h - 1 - y);
-      let t = ground;
-
-      if (theme === 'crypt' || theme === 'ice') {
-        // cave: carve rooms out of rock
-        t = n > 0.45 ? T.FLOOR : T.WALL;
-        if (theme === 'ice' && t === T.FLOOR && detail[i] > 0.78) t = T.WATER;
-      } else {
-        if (n < 0.28) t = T.WATER;
-        else if (n < 0.34) t = theme === 'ice' ? T.SNOW : T.SAND;
-        else if (n > 0.74) t = solid;
-        else if (detail[i] > 0.88) t = T.FLOWER;
-        else if (theme === 'marsh' && detail[i] < 0.16) t = T.WATER;
-        else if (theme === 'rock' && detail[i] > 0.80) t = T.ROCK;
-      }
-      if (edge < 2) t = theme === 'crypt' || theme === 'ice' ? T.WALL : solid;
-      g[i] = t;
-    }
-  }
-
-  // a walkable path/plaza through the middle so zones are never bisected
-  const carve = (x, y, rad, tile) => {
-    for (let dy = -rad; dy <= rad; dy++) {
-      for (let dx = -rad; dx <= rad; dx++) {
-        const nx = x + dx, ny = y + dy;
-        if (nx < 1 || ny < 1 || nx >= w - 1 || ny >= h - 1) continue;
-        if (dx * dx + dy * dy > rad * rad) continue;
-        g[ny * w + nx] = tile;
-      }
-    }
-  };
   const path = theme === 'crypt' || theme === 'ice' ? T.FLOOR : T.PATH;
-  const roadWidth = map.kind === 'town' ? 2 : 0;   // fields get a thin trail, not a highway
-  let cx = 2, cy = Math.floor(h / 2);
-  const steps = w + h;
-  for (let s = 0; s < steps; s++) {
-    carve(cx, cy, roadWidth, path);
-    if (r() < 0.62 && cx < w - 3) cx++;
-    else cy += r() < 0.5 ? 1 : -1;
-    cy = Math.max(3, Math.min(h - 4, cy));
-  }
-  // vertical spine
-  cx = Math.floor(w / 2);
-  for (let y2 = 2; y2 < h - 2; y2++) carve(cx, y2, map.kind === 'town' ? 2 : 1, path);
+  // A hand-laid map says what goes where; everything else grows from noise.
+  if (map.paint) paintLayout(g, map);
+  else {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const n = base[i] * 0.72 + detail[i] * 0.28;
+        const edge = Math.min(x, y, w - 1 - x, h - 1 - y);
+        let t = ground;
 
-  if (map.kind === 'town') {
-    carve(Math.floor(w / 2), Math.floor(h / 2), 11, T.FLOOR);
-    // the roads keep their dirt outside the square, but the square is all stone
-    const px = Math.floor(w / 2), py = Math.floor(h / 2);
-    for (let y2 = py - 13; y2 <= py + 13; y2++) {
-      for (let x2 = px - 13; x2 <= px + 13; x2++) {
-        if (x2 < 1 || y2 < 1 || x2 >= w - 1 || y2 >= h - 1) continue;
-        const d = (x2 - px) ** 2 + (y2 - py) ** 2;
-        if (d <= 13 * 13 && g[y2 * w + x2] === T.PATH) g[y2 * w + x2] = T.FLOOR;
+        if (theme === 'crypt' || theme === 'ice') {
+          // cave: carve rooms out of rock
+          t = n > 0.45 ? T.FLOOR : T.WALL;
+          if (theme === 'ice' && t === T.FLOOR && detail[i] > 0.78) t = T.WATER;
+        } else {
+          if (n < 0.28) t = T.WATER;
+          else if (n < 0.34) t = theme === 'ice' ? T.SNOW : T.SAND;
+          else if (n > 0.74) t = solid;
+          else if (detail[i] > 0.88) t = T.FLOWER;
+          else if (theme === 'marsh' && detail[i] < 0.16) t = T.WATER;
+          else if (theme === 'rock' && detail[i] > 0.80) t = T.ROCK;
+        }
+        if (edge < 2) t = theme === 'crypt' || theme === 'ice' ? T.WALL : solid;
+        g[i] = t;
+      }
+    }
+
+    // a walkable path/plaza through the middle so zones are never bisected
+    const carve = (x, y, rad, tile) => {
+      for (let dy = -rad; dy <= rad; dy++) {
+        for (let dx = -rad; dx <= rad; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 1 || ny < 1 || nx >= w - 1 || ny >= h - 1) continue;
+          if (dx * dx + dy * dy > rad * rad) continue;
+          g[ny * w + nx] = tile;
+        }
+      }
+    };
+    const roadWidth = map.kind === 'town' ? 2 : 0;   // fields get a thin trail, not a highway
+    let cx = 2, cy = Math.floor(h / 2);
+    const steps = w + h;
+    for (let s = 0; s < steps; s++) {
+      carve(cx, cy, roadWidth, path);
+      if (r() < 0.62 && cx < w - 3) cx++;
+      else cy += r() < 0.5 ? 1 : -1;
+      cy = Math.max(3, Math.min(h - 4, cy));
+    }
+    // vertical spine
+    cx = Math.floor(w / 2);
+    for (let y2 = 2; y2 < h - 2; y2++) carve(cx, y2, map.kind === 'town' ? 2 : 1, path);
+
+    if (map.kind === 'town') {
+      carve(Math.floor(w / 2), Math.floor(h / 2), 11, T.FLOOR);
+      // the roads keep their dirt outside the square, but the square is all stone
+      const px = Math.floor(w / 2), py = Math.floor(h / 2);
+      for (let y2 = py - 13; y2 <= py + 13; y2++) {
+        for (let x2 = px - 13; x2 <= px + 13; x2++) {
+          if (x2 < 1 || y2 < 1 || x2 >= w - 1 || y2 >= h - 1) continue;
+          const d = (x2 - px) ** 2 + (y2 - py) ** 2;
+          if (d <= 13 * 13 && g[y2 * w + x2] === T.PATH) g[y2 * w + x2] = T.FLOOR;
+        }
       }
     }
   }
@@ -711,8 +797,12 @@ export function generateProps(map, grid) {
     variant: st.variant ?? 0,
     scale: 1,
     flip: 0,
-    tall: st.kind !== 'fountain',
+    // a wall is ground-level stone; sorting a long one by its foot would put
+    // it over the tower standing on its end
+    tall: st.kind !== 'fountain' && st.kind !== 'rampart',
   }));
+  // a tower stands on the wall, so where they share a bottom edge it goes on top
+  for (const st of structures) if (st.kind === 'tower') st.y += 1;
   // hand-placed decor: exact tiles, no blocking, drawn like any other prop
   const decor = (map.decor ?? []).map(([kind, dx, dy, scale = 1, flip = 0]) => ({
     x: (dx + 0.5) * 32,
@@ -723,7 +813,8 @@ export function generateProps(map, grid) {
 
   const set = PROP_SETS[map.theme] ?? PROP_SETS.grass;
   const total = set.reduce((n, [, w]) => n + w, 0);
-  const density = map.kind === 'town' ? 0.07 : 0.17;
+  // a laid-out map is dressed by hand; scattering clutter over it undoes that
+  const density = map.paint ? 0 : map.kind === 'town' ? 0.07 : 0.17;
   const props = [];
   for (let y = 1; y < map.height - 1; y++) {
     for (let x = 1; x < map.width - 1; x++) {

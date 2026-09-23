@@ -16,7 +16,7 @@ import { MONSTERS } from '../shared/data/monsters.js';
 import { SKILLS } from '../shared/data/skills.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { QUESTS } from '../shared/data/quests.js';
-import { MAPS } from '../shared/data/maps.js';
+import { MAPS, buildGrid, BLOCKING } from '../shared/data/maps.js';
 import { SHOPS, NPC_DIALOG } from '../shared/data/npcs.js';
 import { ELEMENTS } from '../shared/constants.js';
 import { ELEMENT_LOOK } from '../shared/elements.js';
@@ -210,4 +210,34 @@ test('the chibi body sheet is the grid its layout says', async () => {
   const w = png.readUInt32BE(16), h = png.readUInt32BE(20);
   assert.ok(fits(CHIBI_WALK, w, h), `${url} is ${w}x${h}, layout wants `
     + `${CHIBI_WALK.frame.w * CHIBI_WALK.cols}x${CHIBI_WALK.frame.h * CHIBI_WALK.rows}`);
+});
+
+test('in every town, each keeper and each way out can be walked to from the spawn', () => {
+  for (const m of Object.values(MAPS)) {
+    if (m.kind !== 'town') continue;
+    const g = buildGrid(m), W = m.width, H = m.height;
+    const onPad = (x, y) => m.warps.some((w) => x >= w.x && x < w.x + w.w && y >= w.y && y < w.y + w.h);
+    const seen = new Uint8Array(W * H);
+    const start = m.spawnPoint[1] * W + m.spawnPoint[0];
+    const queue = [start];
+    seen[start] = 1;
+    while (queue.length) {
+      const i = queue.pop(), x = i % W, y = (i / W) | 0;
+      if (onPad(x, y)) continue;            // stepping on a pad leaves the map
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy, j = ny * W + nx;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H || seen[j] || BLOCKING.has(g[j])) continue;
+        seen[j] = 1;
+        queue.push(j);
+      }
+    }
+    const near = (cx, cy, r) => {
+      for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) if (seen[y * W + x]) return true;
+      return false;
+    };
+    for (const n of m.npcs) assert.ok(near(n.x, n.y, 2), `${m.id}: nobody can reach ${n.id} at ${n.x},${n.y}`);
+    for (const w of m.warps) {
+      assert.ok(near(w.x + (w.w >> 1), w.y + (w.h >> 1), 2), `${m.id}: the way to ${w.to} cannot be reached`);
+    }
+  }
 });

@@ -26,6 +26,23 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
     await ctx.close();
   });
 
+  await t.test('after walking through a gate you still have a name', async () => {
+    const { page, errors, ctx } = await join(browser);
+    const myName = () => page.evaluate(() => {
+      const g = window.__game;
+      return g.entities.get(g.state.myId)?.n ?? null;
+    });
+    const expected = await page.evaluate(() => window.__game.self?.name);
+    for (const map of ['greenmire', 'emberhold']) {
+      await page.evaluate((m) => window.__game.net.send({ t: 'devWarp', map: m }), map);
+      await page.waitForFunction((m) => window.__game.renderer.zone?.id === m, map, { timeout: 5000 });
+      await page.waitForTimeout(400);
+      assert.equal(await myName(), expected, `own name missing after arriving in ${map}`);
+    }
+    assert.deepEqual(errors, []);
+    await ctx.close();
+  });
+
   await t.test('every menu panel opens without throwing', async () => {
     const { page, errors, ctx } = await join(browser);
     for (const panel of ['character', 'inventory', 'skills', 'quests', 'party', 'settings']) {
