@@ -579,3 +579,52 @@ for k, b in {'fb_enhance': (208, 433, 457, 475), 'fb_confirm': (865, 413, 970, 4
              'fb_cancel': (983, 413, 1080, 455)}.items():
     save(k, rounded(rs, b, r=6))
 print('forge sheet done')
+
+
+# ============================================================================
+# Eighth sheet: the shrine / gacha (assets/ui/source/gacha_sheet.png)
+# ============================================================================
+gg = cv2.imread(os.path.join(ROOT, 'assets/ui/source/gacha_sheet.png'))
+
+save('gacha_banner', card(gg, (20, 14, 500, 282), (0, 0, 0, 0), fade=18))
+for k, x in {'R': 568, 'SR': 652, 'SSR': 732, 'UR': 815, 'LR': 896}.items():
+    save('grade_' + k, grab((x - 36, 364, x + 36, 438), pad=4, img=gg)[0])
+for k, x in {'R': 83, 'SR': 190, 'SSR': 300, 'UR': 420, 'LR': 545}.items():
+    save('beam_' + k, lift(gg, (x - 58, 728, x + 58, 820), ring=8, thresh=30))
+for i, x in enumerate([755, 815, 878, 943]):
+    save(f'gchest_{i}', grab((x - 28, 904, x + 28, 966), pad=3, img=gg)[0])
+save('tag_pickup', grab((1316, 928, 1372, 992), pad=4, img=gg)[0])
+save('tag_rateup', grab((1386, 928, 1442, 992), pad=4, img=gg)[0])
+
+
+def reveal_card(img, box):
+    """The SSR reveal with its silhouette and its baked 'SSR' painted out, a
+    soft golden glow left where our icon and grade badge will sit."""
+    x0, y0, x1, y1 = box
+    base = img[y0:y1, x0:x1].copy()
+    h, w = base.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    cx, cy = 248 - x0, 515 - y0
+    oval = ((((xx - cx) / 78) ** 2 + ((yy - cy) / 72) ** 2) < 1) & (yy < 596 - y0)
+    title = (xx > 175 - x0) & (xx < 320 - x0) & (yy > 396 - y0) & (yy < 452 - y0)
+    m = ((oval | title) * 255).astype(np.uint8)
+    base = cv2.inpaint(base, m, 11, cv2.INPAINT_TELEA)
+    # the silhouette's dark wings become the same warm light as the wings behind
+    wide = ((((xx - cx) / 150) ** 2 + ((yy - cy) / 110) ** 2) < 1) & (yy < 598 - y0)
+    lum = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY)
+    dark = (wide & (lum < 150)).astype(np.float32)
+    dark = cv2.GaussianBlur(dark, (0, 0), 3)[..., None]
+    light = np.array([150, 222, 255], np.float32)
+    base = np.clip(base * (1 - dark * 0.8) + light * dark * 0.8, 0, 255).astype(np.uint8)
+    r = np.hypot((xx - cx) / 110, (yy - cy) / 90)
+    t = np.clip(1 - r, 0, 1)[..., None] ** 1.3
+    glow = np.array([120, 214, 255], np.float32)            # BGR warm gold
+    base = np.clip(base * (1 - t * 0.6) + glow * t * 0.6, 0, 255).astype(np.uint8)
+    edge = np.minimum.reduce([xx, yy, w - 1 - xx, h - 1 - yy]).astype(np.float32)
+    rgba = cv2.cvtColor(base, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = (np.clip(edge / 14, 0, 1) ** 1.5 * 255).astype(np.uint8)
+    return rgba
+
+
+save('gacha_reveal', reveal_card(gg, (20, 392, 500, 676)))
+print('gacha sheet done')

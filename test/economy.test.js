@@ -288,3 +288,28 @@ test('a refine moves onto a +0 item of the same kind, for a fee, and only once',
   assert.equal(p.countItem('runed_whetstone'), 2, 'three stones for nine levels');
   assert.ok(Econ.refineTransfer(world, p, 0, 1).error, 'moved a +0, or onto a refined item');
 });
+
+test('a ten-draw always holds an SR or better, and draws fill the point track', () => {
+  const real = Math.random;
+  Math.random = () => 0.001;                     // every roll the commonest thing
+  try {
+    const p = character({ items: [{ id: 'shard_dawn', qty: 40 }] });
+    const r = Econ.gachaDraw(world, p, 10);
+    assert.ok(r.ok, r.error);
+    assert.ok(r.results.some((x) => ['SR', 'SSR', 'UR', 'LR'].includes(x.grade)), 'a ten-draw came up all R');
+    assert.equal(r.points, 10);
+  } finally { Math.random = real; }
+});
+
+test('milestone chests pay once, and the track restarts after the last', () => {
+  const p = character({ items: [] });
+  p.record.gachaPoints = 120;
+  const got = Econ.gachaClaim(p);
+  assert.ok(got.ok);
+  assert.equal(got.got.length, 2, 'the 50 and 100 chests');
+  assert.ok(Econ.gachaClaim(p).error, 'claimed twice');
+  p.record.gachaPoints = Econ.GACHA.pointsMax;
+  assert.ok(Econ.gachaClaim(p).ok);
+  assert.equal(p.record.gachaPoints, 0);
+  assert.deepEqual(p.record.gachaClaimed, []);
+});

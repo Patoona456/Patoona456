@@ -182,22 +182,35 @@ export function openBox(p, index) {
  */
 export const GACHA = {
   cost: 2,                       // shard_dawn per draw
-  pity: 10,                      // draws until a guaranteed rare+
+  pity: 10,                      // draws until a guaranteed SSR or better
+  // Five grades, named the way the shrine window shows them. `tier` is
+  // what the pity counts: anything SSR and up resets it.
   pool: [
-    { id: 'runed_whetstone', qty: [1, 3], weight: 26, tier: 'common' },
-    { id: 'greater_salve', qty: [5, 10], weight: 16, tier: 'common' },
-    { id: 'mana_draught', qty: [5, 10], weight: 12, tier: 'common' },
-    { id: 'blessing_oil', qty: [1, 2], weight: 14, tier: 'common' },
-    { id: 'mystery_scroll', qty: [2, 4], weight: 10, tier: 'common' },
-    { id: 'boss_casket', qty: 1, weight: 6, tier: 'rare' },
-    { id: 'wings_feather', qty: 1, weight: 5, tier: 'rare' },
-    { id: 'wings_raven', qty: 1, weight: 5, tier: 'rare' },
-    { id: 'wings_bat', qty: 1, weight: 3, tier: 'rare' },
-    { id: 'wings_frost', qty: 1, weight: 2, tier: 'rare' },
-    { id: 'wings_ember', qty: 1, weight: 0.8, tier: 'legendary' },
-    { id: 'wings_dawn', qty: 1, weight: 0.2, tier: 'legendary' },
+    { id: 'runed_whetstone', qty: [1, 3], weight: 26, grade: 'R' },
+    { id: 'greater_salve', qty: [5, 10], weight: 16, grade: 'R' },
+    { id: 'mana_draught', qty: [5, 10], weight: 12, grade: 'R' },
+    { id: 'blessing_oil', qty: [1, 2], weight: 14, grade: 'SR' },
+    { id: 'mystery_scroll', qty: [2, 4], weight: 10, grade: 'SR' },
+    { id: 'boss_casket', qty: 1, weight: 6, grade: 'SSR' },
+    { id: 'wings_feather', qty: 1, weight: 5, grade: 'SSR' },
+    { id: 'wings_raven', qty: 1, weight: 5, grade: 'SSR' },
+    { id: 'wings_bat', qty: 1, weight: 3, grade: 'UR' },
+    { id: 'wings_frost', qty: 1, weight: 2, grade: 'UR' },
+    { id: 'wings_ember', qty: 1, weight: 0.8, grade: 'LR' },
+    { id: 'wings_dawn', qty: 1, weight: 0.2, grade: 'LR' },
+  ].map((o) => ({ ...o, tier: o.grade === 'LR' ? 'legendary' : ['SSR', 'UR'].includes(o.grade) ? 'rare' : 'common' })),
+  // Every draw is a point; points unlock a chest at each milestone, and the
+  // track starts over after the last one. Small things - the shrine is a
+  // sink, and the track only softens a long unlucky run.
+  pointsMax: 200,
+  milestones: [
+    { at: 50, items: [{ id: 'runed_whetstone', qty: 3 }] },
+    { at: 100, items: [{ id: 'blessing_oil', qty: 2 }] },
+    { at: 150, items: [{ id: 'boss_casket', qty: 1 }] },
+    { at: 200, items: [{ id: 'wings_frost', qty: 1 }] },
   ],
 };
+const GRADE_RANK = { R: 0, SR: 1, SSR: 2, UR: 3, LR: 4 };
 
 export function gachaDraw(world, p, times = 1) {
   const n = Math.max(1, Math.min(10, times | 0));
@@ -208,6 +221,7 @@ export function gachaDraw(world, p, times = 1) {
 
   const r = p.record;
   r.gachaPity = r.gachaPity ?? 0;
+  r.gachaPoints = r.gachaPoints ?? 0;
   const results = [];
   for (let i = 0; i < n; i++) {
     r.gachaPity++;
@@ -217,19 +231,56 @@ export function gachaDraw(world, p, times = 1) {
     if (roll.tier !== 'common') r.gachaPity = 0;
     const qty = qtyOf(roll.qty);
     p.addItem(roll.id, qty);
-    results.push({ id: roll.id, qty, tier: roll.tier, guaranteed });
+    results.push({ id: roll.id, qty, tier: roll.tier, grade: roll.grade, guaranteed });
   }
+  // a ten-draw always holds at least one SR; upgrade its worst roll if not
+  if (n === 10 && !results.some((x) => GRADE_RANK[x.grade] >= 1)) {
+    const sr = rollTable(GACHA.pool.filter((o) => o.grade === 'SR'));
+    const worst = results[results.length - 1];
+    p.removeItemById(worst.id, worst.qty);
+    const qty = qtyOf(sr.qty);
+    p.addItem(sr.id, qty);
+    results[results.length - 1] = { id: sr.id, qty, tier: sr.tier, grade: sr.grade, guaranteed: true };
+  }
+  r.gachaPoints = Math.min(GACHA.pointsMax, r.gachaPoints + n);
+  // the notable pulls are remembered, newest first
+  const at = Date.now();
+  r.gachaLog = [...results.filter((x) => GRADE_RANK[x.grade] >= 1).map((x) => ({ id: x.id, grade: x.grade, at })).reverse(),
+    ...(r.gachaLog ?? [])].slice(0, 20);
   markDirty();
-  return { ok: true, results, spent: cost, pity: GACHA.pity - r.gachaPity };
+  return { ok: true, results, spent: cost, pity: GACHA.pity - r.gachaPity, points: r.gachaPoints };
+}
+
+/** Claim every milestone reached; after the last one the track restarts. */
+export function gachaClaim(p) {
+  const r = p.record;
+  const claimed = new Set(r.gachaClaimed ?? []);
+  const due = GACHA.milestones.filter((m) => (r.gachaPoints ?? 0) >= m.at && !claimed.has(m.at));
+  if (!due.length) return { error: 'ยังไม่มีรางวัลให้รับ' };
+  const got = [];
+  for (const m of due) {
+    for (const it of m.items) { p.addItem(it.id, it.qty); got.push(it); }
+    claimed.add(m.at);
+  }
+  r.gachaClaimed = [...claimed];
+  if (claimed.has(GACHA.pointsMax)) { r.gachaPoints = 0; r.gachaClaimed = []; }
+  markDirty();
+  return { ok: true, got };
 }
 
 /** The shard counter, shown next to the shrine. */
 export function shardShop(p) {
+  const r = p.record;
   return {
     cost: GACHA.cost,
     have: p.countItem('shard_dawn'),
-    pity: GACHA.pity - (p.record.gachaPity ?? 0),
-    pool: GACHA.pool.map((o) => ({ id: o.id, qty: o.qty, tier: o.tier, chance: o.weight })),
+    pity: GACHA.pity - (r.gachaPity ?? 0),
+    pityMax: GACHA.pity,
+    points: r.gachaPoints ?? 0,
+    pointsMax: GACHA.pointsMax,
+    milestones: GACHA.milestones.map((m) => ({ ...m, claimed: (r.gachaClaimed ?? []).includes(m.at) })),
+    log: r.gachaLog ?? [],
+    pool: GACHA.pool.map((o) => ({ id: o.id, qty: o.qty, tier: o.tier, grade: o.grade, chance: o.weight })),
   };
 }
 

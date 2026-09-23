@@ -542,11 +542,21 @@ export class Conn {
       case 'gachaDraw': return this.guardNpc(['gacha'], () => {
         const r = Econ.gachaDraw(this.world, p, m.times | 0 || 1);
         if (r.error) return this.error(r.error);
-        const best = r.results.find((x) => x.tier === 'legendary') ?? r.results.find((x) => x.tier === 'rare');
-        this.notice(best
-          ? `ศาลตอบรับ! ได้ ${ITEMS[best.id]?.nameTh ?? best.id}`
-          : `เสี่ยงทาย ${r.results.length} ครั้ง — ยังไม่ได้ของหายาก`, best ? 'good' : 'info');
-        this.send({ t: 'gachaResult', results: r.results, pity: r.pity });
+        this.send({ t: 'gachaResult', results: r.results, pity: r.pity, points: r.points });
+        // UR and LR are news: everyone sees the name and what came out
+        for (const x of r.results) {
+          if (x.grade !== 'UR' && x.grade !== 'LR') continue;
+          const packet = { t: 'worldNotice', who: p.name, id: x.id, grade: x.grade };
+          for (const o of this.world.players.values()) o.conn?.send(packet);
+          this.world.broadcastChat({ ch: 'system', text: `ยินดีด้วย! ${p.name} ได้รับ ${ITEMS[x.id]?.nameTh ?? x.id} (${x.grade}) จากศาลรุ่งอรุณ` });
+        }
+        this.sendInventory();
+        this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
+      });
+      case 'gachaClaim': return this.guardNpc(['gacha'], () => {
+        const r = Econ.gachaClaim(p);
+        if (r.error) return this.error(r.error);
+        this.notice(`รับรางวัลแต้มสะสม: ${r.got.map((i) => `${ITEMS[i.id]?.nameTh ?? i.id} x${i.qty}`).join(', ')}`, 'good');
         this.sendInventory();
         this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
       });

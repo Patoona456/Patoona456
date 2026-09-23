@@ -2823,63 +2823,190 @@ export class UI {
    * are left before the guaranteed one - a gacha that hides its numbers is
    * a gacha that is hiding something.
    */
+  /**
+   * The Dawn Shrine. Paid in dawn shards only - nothing here is for sale -
+   * so the window's job is honesty: the odds, the pity counter and the
+   * point track are all on the one screen, next to the banner.
+   */
   openGacha(d) {
-    const wrap = el('div', 'grid');
+    this.lastGacha = d;
+    const wrap = el('div', 'shrine');
     const shard = ITEMS.shard_dawn?.nameTh ?? 'เศษรุ่งอรุณ';
-    const head = el('div', 'row');
-    head.innerHTML = `<span>มี<b class="num"> ${fmt(d.have)}</b> ${esc(shard)}</span>
-      <span class="muted">ครั้งละ ${d.cost} ชิ้น · การันตีของหายากในอีก <b>${d.pity}</b> ครั้ง</span>`;
-    wrap.append(head);
 
-    const roll = el('div', 'opts');
-    for (const [times, label] of [[1, 'เสี่ยง 1 ครั้ง'], [10, 'เสี่ยง 10 ครั้ง']]) {
-      const b = el('button', 'btn' + (times === 10 ? ' primary' : ''), `${label} (${d.cost * times})`);
-      b.disabled = d.have < d.cost * times;
-      b.addEventListener('click', () => this.game.net.send({ t: 'npcAction', action: 'gachaDraw', times }));
-      roll.append(b);
+    // left: the banner and the two buttons
+    const left = el('div', 'shrine-left');
+    const banner = el('div', 'shrine-banner');
+    const bi = el('img'); bi.src = `${UI_BASE}/gacha_banner.webp`; bi.alt = '';
+    banner.append(bi);
+    left.append(banner);
+    const wallet = el('div', 'shop-wallet');
+    wallet.append(el('i', 'cur shard'), el('b', 'num', fmt(d.have)), el('span', 'muted', ` ${esc(shard)}`));
+    left.append(wallet);
+    const pulls = el('div', 'shrine-pulls');
+    for (const [times, label, cls] of [[1, 'เปิด 1 ครั้ง', 'one'], [10, 'เปิด 10 ครั้ง', 'ten']]) {
+      const b = el('button', `shrine-pull ${cls}`);
+      b.append(el('b', '', label), el('span', 'num', `<i class="cur shard"></i> ${d.cost * times}`));
+      if (times === 10) b.append(el('em', '', 'การันตี SR ขึ้นไป'));
+      b.disabled = d.have < d.cost * times || !!this.gachaBusy;
+      b.addEventListener('click', () => {
+        this.gachaBusy = true;
+        this.game.net.send({ t: 'npcAction', action: 'gachaDraw', times });
+        setTimeout(() => { this.gachaBusy = false; }, 3000);
+      });
+      pulls.append(b);
     }
-    wrap.append(roll);
-    wrap.append(el('div', 'muted', 'ไม่มีอะไรในศาลที่ซื้อด้วยเงินจริงได้ และของทุกชิ้นหาได้จากบอสหรือร้านแลกเหมือนกัน — ศาลคือทางลัดที่ต้องเสี่ยง ไม่ใช่ทางเดียว'));
+    left.append(pulls);
+    const skip = el('label', 'forge-check');
+    const cb = el('input'); cb.type = 'checkbox'; cb.checked = !!this.gachaSkip;
+    cb.addEventListener('change', () => { this.gachaSkip = cb.checked; });
+    skip.append(cb, el('span', '', 'ข้ามแอนิเมชัน'));
+    left.append(skip);
+    wrap.append(left);
 
+    // right: grades, the two counters, the point track, the odds, the history
+    const right = el('div', 'shrine-right');
+    const grades = el('div', 'g-card');
+    grades.append(el('div', 'g-sub', 'ระดับความหายาก'));
+    const row = el('div', 'shrine-grades');
+    for (const g of ['R', 'SR', 'SSR', 'UR', 'LR']) {
+      const i = el('img'); i.src = `${UI_BASE}/grade_${g}.webp`; i.alt = g; i.title = GRADE_TH[g];
+      row.append(i);
+    }
+    grades.append(row);
+    right.append(grades);
+
+    const counters = el('div', 'shrine-counters');
+    const pityDone = (d.pityMax ?? 10) - d.pity;
+    const pity = el('div', 'g-card');
+    pity.append(el('div', 'g-sub', 'การันตี'), el('div', '', `ของ SSR ขึ้นไปภายใน <b>${d.pity}</b> ครั้ง`), bar('exp', pityDone, d.pityMax ?? 10),
+      el('div', 'muted num', `${pityDone} / ${d.pityMax ?? 10}`));
+    const pts = el('div', 'g-card');
+    pts.append(el('div', 'g-sub', 'แต้มสะสม'), el('div', 'num', `<b>${fmt(d.points ?? 0)}</b> / ${fmt(d.pointsMax ?? 200)}`), bar('cast', d.points ?? 0, d.pointsMax ?? 200),
+      el('div', 'muted', 'เปิด 1 ครั้ง = 1 แต้ม'));
+    counters.append(pity, pts);
+    right.append(counters);
+
+    // the point track with its four chests
+    const track = el('div', 'g-card');
+    track.append(el('div', 'g-sub', 'รางวัลแต้มสะสม'));
+    const chests = el('div', 'shrine-track');
+    let due = false;
+    (d.milestones ?? []).forEach((m, i) => {
+      const reached = (d.points ?? 0) >= m.at;
+      if (reached && !m.claimed) due = true;
+      const c = el('div', 'shrine-chest' + (m.claimed ? ' claimed' : reached ? ' ready' : ''));
+      const ci = el('img'); ci.src = `${UI_BASE}/gchest_${i}.webp`; ci.alt = '';
+      const it = m.items[0];
+      c.title = `${ITEMS[it.id]?.nameTh ?? it.id} x${it.qty}`;
+      c.append(ci, el('b', 'num', String(m.at)), el('small', 'muted', m.claimed ? 'รับแล้ว' : `${ITEMS[it.id]?.nameTh ?? it.id} x${it.qty}`));
+      chests.append(c);
+    });
+    track.append(chests);
+    const claim = el('button', 'btn' + (due ? ' primary' : ''), 'รับรางวัลทั้งหมด');
+    claim.disabled = !due;
+    claim.addEventListener('click', () => this.game.net.send({ t: 'npcAction', action: 'gachaClaim' }));
+    track.append(claim);
+    right.append(track);
+
+    // the odds, grouped by grade
     const total = d.pool.reduce((a, o) => a + o.chance, 0);
-    const list = el('div', 'grid');
-    list.append(el('h3', '', 'โอกาสออกของแต่ละชิ้น'));
+    const odds = el('div', 'g-card');
+    odds.append(el('div', 'g-sub', 'โอกาสออกของแต่ละชิ้น'));
     for (const o of [...d.pool].sort((a, b) => a.chance - b.chance)) {
       const it = ITEMS[o.id] ?? { id: o.id, nameTh: o.id };
-      const row = el('div', 'listing');
+      const line = el('div', 'shrine-odd');
+      const gi = el('img'); gi.src = `${UI_BASE}/grade_${o.grade}.webp`; gi.alt = o.grade;
       const ico = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
-      ico.append(itemIcon(o.id, { size: 28 }));
-      const qty = Array.isArray(o.qty) ? `x${o.qty[0]}-${o.qty[1]}` : o.qty > 1 ? `x${o.qty}` : '';
-      row.append(ico,
-        el('div', '', `<b class="rarity-${it.rarity ?? 'common'}">${esc(it.nameTh ?? it.name)}</b> ${qty}
-          <div class="muted">${o.tier === 'legendary' ? 'ระดับตำนาน' : o.tier === 'rare' ? 'ของหายาก (นับในการันตี)' : 'ของทั่วไป'}</div>`),
-        el('span', 'num', ((o.chance / total) * 100).toFixed(1) + '%'));
-      list.append(row);
+      ico.append(itemIcon(o.id, { size: 24 }));
+      const qty = Array.isArray(o.qty) ? ` x${o.qty[0]}-${o.qty[1]}` : o.qty > 1 ? ` x${o.qty}` : '';
+      line.append(gi, ico, el('span', `g-${o.grade}`, esc(it.nameTh ?? it.name) + qty), el('span', 'num', ((o.chance / total) * 100).toFixed(1) + '%'));
+      if (o.grade === 'LR') { const t = el('img', 'odd-tag'); t.src = `${UI_BASE}/tag_pickup.webp`; t.alt = 'PICK UP'; line.append(t); }
+      odds.append(line);
     }
-    wrap.append(list);
+    odds.append(el('div', 'muted', 'ศาลรับแต่เศษรุ่งอรุณ ไม่มีอะไรซื้อด้วยเงินจริงได้ · ของทุกชิ้นหาได้จากบอสหรือร้านแลกด้วย'));
+    right.append(odds);
+
+    // what you have pulled
+    const hist = el('div', 'g-card');
+    hist.append(el('div', 'g-sub', 'ประวัติการเปิด (SR ขึ้นไป)'));
+    if (!(d.log ?? []).length) hist.append(el('div', 'muted', 'ยังไม่มี'));
+    for (const h of (d.log ?? []).slice(0, 8)) {
+      const line = el('div', 'g-log');
+      const gi = el('img'); gi.src = `${UI_BASE}/grade_${h.grade}.webp`; gi.alt = h.grade;
+      line.append(gi, el('span', `g-${h.grade}`, `${esc(ITEMS[h.id]?.nameTh ?? h.id)} (${h.grade})`), el('span', 'muted', ago(h.at)));
+      hist.append(line);
+    }
+    right.append(hist);
+    wrap.append(right);
     return this.panel('gacha', 'ศาลรุ่งอรุณ', wrap);
   }
 
-  /** The draw animation: one card per pull, rare ones announced. */
+  /**
+   * The draw, told in three beats: a beam in the colour of the best grade,
+   * the cards turning over one by one, then - for SSR and up - the best one
+   * held up on the winged reveal.
+   */
   showGachaResult(m) {
-    const wrap = el('div', 'grid');
-    const grid = el('div', 'slot-grid');
-    for (const r of m.results) {
+    this.gachaBusy = false;
+    document.querySelector('.gacha-stage')?.remove();
+    const rank = { R: 0, SR: 1, SSR: 2, UR: 3, LR: 4 };
+    const best = m.results.reduce((a, r) => (rank[r.grade] > rank[a.grade] ? r : a), m.results[0]);
+    const stage = el('div', 'gacha-stage');
+    const skip = !!this.gachaSkip;
+    const beam = el('img', 'gacha-beam'); beam.src = `${UI_BASE}/beam_${best.grade}.webp`; beam.alt = '';
+    if (!skip) stage.append(beam);
+    const cards = el('div', 'gacha-cards' + (m.results.length > 1 ? ' ten' : ''));
+    m.results.forEach((r, i) => {
       const it = ITEMS[r.id] ?? { id: r.id, nameTh: r.id };
-      const node = el('div', 'slot rarity-' + (it.rarity ?? 'common') + (r.tier !== 'common' ? ' sel' : ''));
-      node.append(itemIcon(r.id, { size: 32 }));
-      if (r.qty > 1) node.append(el('span', 'qty num', String(r.qty)));
-      node.title = `${it.nameTh ?? it.name}${r.guaranteed ? ' (การันตี)' : ''}`;
-      grid.append(node);
+      const c = el('div', `gacha-card g-${r.grade}`);
+      c.style.animationDelay = skip ? '0s' : `${0.9 + i * 0.16}s`;
+      const b = el('img', 'gc-beam'); b.src = `${UI_BASE}/beam_${r.grade}.webp`; b.alt = '';
+      const slot = el('div', 'slot rarity-' + (it.rarity ?? 'common'));
+      slot.append(itemIcon(r.id, { size: 34 }));
+      if (r.qty > 1) slot.append(el('span', 'qty num', String(r.qty)));
+      const g = el('img', 'gc-grade'); g.src = `${UI_BASE}/grade_${r.grade}.webp`; g.alt = r.grade;
+      c.append(b, slot, g, el('div', 'gc-name', esc(it.nameTh ?? it.name)));
+      c.title = `${it.nameTh ?? it.name}${r.guaranteed ? ' (การันตี)' : ''}`;
+      cards.append(c);
+    });
+    stage.append(cards);
+    const foot = el('div', 'gacha-foot');
+    foot.append(el('div', 'muted', `การันตี SSR ขึ้นไปในอีก ${m.pity} ครั้ง · แต้มสะสม ${fmt(m.points ?? 0)}`));
+    const again = el('button', 'btn', 'ตกลง');
+    again.addEventListener('click', () => stage.remove());
+    foot.append(again);
+    stage.append(foot);
+    document.body.append(stage);
+    const cardsDone = skip ? 0 : 900 + m.results.length * 160 + 300;
+    this.game.audio?.play(rank[best.grade] >= 2 ? 'levelup' : 'ui');
+    if (rank[best.grade] >= 2) {
+      setTimeout(() => {
+        const it = ITEMS[best.id] ?? { id: best.id, nameTh: best.id };
+        const rv = el('div', 'gacha-reveal');
+        const art = el('img', 'rv-art'); art.src = `${UI_BASE}/gacha_reveal.webp`; art.alt = '';
+        const g = el('img', 'rv-grade'); g.src = `${UI_BASE}/grade_${best.grade}.webp`; g.alt = best.grade;
+        const ico = el('div', 'rv-icon');
+        ico.append(itemIcon(best.id, { size: 72 }));
+        rv.append(art, g, ico, el('div', 'rv-name', esc(it.nameTh ?? it.name)));
+        rv.addEventListener('click', () => rv.remove());
+        stage.append(rv);
+        this.game.audio?.play('levelup', null, { gain: 1.3 });
+        setTimeout(() => rv.remove(), 2600);
+      }, cardsDone);
     }
-    wrap.append(grid);
-    const best = m.results.find((r) => r.tier === 'legendary') ?? m.results.find((r) => r.tier === 'rare');
-    wrap.append(el('div', best ? '' : 'muted', best
-      ? `✦ ได้ ${esc(ITEMS[best.id]?.nameTh ?? best.id)}!`
-      : 'รอบนี้ยังไม่มีของหายาก'));
-    wrap.append(el('div', 'muted', `การันตีของหายากในอีก ${m.pity} ครั้ง`));
-    this.game.audio?.play(best ? 'levelup' : 'ui');
-    return this.panel('gachaResult', 'ผลการเสี่ยงทาย', wrap);
+    if (this.lastGacha) this.lastGacha.pity = m.pity;
+  }
+
+  /** Someone, somewhere, pulled a UR or LR: a banner across the top. */
+  worldNotice(m) {
+    const n = el('div', `world-notice g-${m.grade}`);
+    const gi = el('img'); gi.src = `${UI_BASE}/grade_${m.grade}.webp`; gi.alt = m.grade;
+    n.append(gi, el('div', '', `ยินดีด้วย! <b>${esc(m.who)}</b> ได้รับ <b class="g-${m.grade}">${esc(ITEMS[m.id]?.nameTh ?? m.id)} (${m.grade})</b>`));
+    const ico = el('div', 'slot rarity-' + (ITEMS[m.id]?.rarity ?? 'common'));
+    ico.append(itemIcon(m.id, { size: 28 }));
+    n.append(ico);
+    document.body.append(n);
+    setTimeout(() => n.remove(), 6000);
   }
 
   /* ---------------- player trading ---------------- */
@@ -3136,6 +3263,8 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+const GRADE_TH = { R: 'ธรรมดา', SR: 'หายาก', SSR: 'หายากมาก', UR: 'ยอดเยี่ยม', LR: 'ตำนาน' };
+
 const RISK_TH = { safe: 'ปลอดภัย', recommended: 'แนะนำ', risky: 'เสี่ยง', danger: 'อันตราย' };
 const RISK_FAIL = {
   none: 'ระดับนี้ไม่มีทางล้มเหลว',

@@ -180,6 +180,7 @@ class Game {
     n.on('npcDialog', (m) => this.ui.open('dialog', m));
     n.on('shop', (m) => this.ui.openShop(m));
     n.on('gachaResult', (m) => this.ui.showGachaResult(m));
+    n.on('worldNotice', (m) => this.ui.worldNotice(m));
     n.on('boxOpened', (m) => {
       this.audio.play(m.rarity === 'common' ? 'loot' : 'levelup');
       this.ui.renderInventory();
