@@ -72,6 +72,7 @@ export class Zone {
     this.grid = buildGrid(this.def);
     this.rle = encodeGrid(this.grid);
     this.entities = new Map();
+    this.walkers = [];
     this.players = new Map();
     this.ground = [];            // dropped items
     this.effects = [];           // ground skill effects
@@ -203,6 +204,60 @@ export class Zone {
         netState() { return { ...this.netMotion(), ...this.netIdentity() }; },
       };
       this.entities.set(e.id, e);
+    }
+    // townsfolk: no shop, no quest, they just stroll about near home
+    (this.def.walkers ?? []).forEach((w, i) => {
+      const home = { x: w.x * TILE + TILE / 2, y: w.y * TILE + TILE / 2 };
+      const e = {
+        kind: 'npc', id: `n_walker${i}`, npcId: `walker${i}`, name: w.name, role: 'townsfolk',
+        x: home.x, y: home.y, dir: 0, anim: 'idle', alive: true, look: { pic: w.pic },
+        home, range: (w.range ?? 5) * TILE, target: null, restUntil: 0,
+        netMotion() {
+          return { id: this.id, k: 'n', x: Math.round(this.x), y: Math.round(this.y), d: this.dir, a: this.anim };
+        },
+        netIdentity() {
+          return { n: this.name, role: this.role, npcId: this.npcId, look: this.look };
+        },
+        netState() { return { ...this.netMotion(), ...this.netIdentity() }; },
+      };
+      this.entities.set(e.id, e);
+      this.walkers.push(e);
+    });
+  }
+
+  /**
+   * Walk, stop and look about, pick somewhere else nearby. A step that would
+   * put them into a tree, a wall or a person-shaped obstacle ends the walk
+   * there, so they turn round instead of sliding along scenery.
+   */
+  updateWalkers(dt, t) {
+    const speed = 42;
+    for (const w of this.walkers) {
+      if (!w.target) {
+        if (t < w.restUntil) continue;
+        const a = Math.random() * Math.PI * 2, r = w.range * (0.3 + Math.random() * 0.7);
+        const x = w.home.x + Math.cos(a) * r, y = w.home.y + Math.sin(a) * r;
+        if (!this.walkable(x, y, 12) || !lineClear(this.grid, this.width, this.height, w, { x, y }, 12)) {
+          w.restUntil = t + 400;
+          continue;
+        }
+        w.target = { x, y };
+        w.anim = 'walk';
+      }
+      const dx = w.target.x - w.x, dy = w.target.y - w.y, d = Math.hypot(dx, dy);
+      const step = speed * dt;
+      const nx = d <= step ? w.target.x : w.x + (dx / d) * step;
+      const ny = d <= step ? w.target.y : w.y + (dy / d) * step;
+      const blockedByPlayer = [...this.players.values()].some((p) => (p.x - nx) ** 2 + (p.y - ny) ** 2 < 18 * 18);
+      if (d <= step || !this.walkable(nx, ny, 12) || blockedByPlayer) {
+        w.target = null;
+        w.anim = 'idle';
+        w.restUntil = t + 1500 + Math.random() * 3500;
+        if (d <= step) { w.x = nx; w.y = ny; }
+        continue;
+      }
+      w.x = nx; w.y = ny;
+      w.dir = facing8(dx, dy);
     }
   }
 
@@ -428,6 +483,7 @@ export class Zone {
     const t = now();
     this.updateStatuses(t);
     this.updatePlayers(dt, t);
+    this.updateWalkers(dt, t);
     this.updateMonsters(dt, t);
     this.updateEffects(t);
     this.updateGround(t);

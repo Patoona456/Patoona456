@@ -542,7 +542,15 @@ export class Renderer {
           : e.k === 'n' ? npcLayers(e.look)
           : monsterLayers(e.sprite);
         if (layers?.pic) {
-          drawPicture(ctx, layers.pic, { x: e.x, y: e.y, flash: hurt });
+          // a walking picture hops a little with each step and turns to face
+          // left or right (it has no side or back view)
+          const walking = anim === 'walk';
+          const d = e.d ?? 0;
+          if (walking) e._faceLeft = d >= 1 && d <= 3 ? true : d >= 5 && d <= 7 ? false : e._faceLeft;
+          drawPicture(ctx, layers.pic, {
+            x: e.x, y: e.y, flash: hurt, flip: !!e._faceLeft,
+            bob: walking ? Math.abs(Math.sin(now / 130 + e.x * 0.01)) * 3 : 0,
+          });
         } else if (layers) {
           const scale = e.sprite?.scale ?? 1;
           // wings sit behind the body, and beat faster while you run

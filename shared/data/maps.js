@@ -2,6 +2,8 @@
 // The server builds the tile grid at boot and ships it to clients RLE-encoded,
 // so the generator only has to be right once.
 
+import { EMBERHOLD_OBSTACLES } from './emberhold-obstacles.js';
+
 export const TILES = {
   GRASS: 0, PATH: 1, WATER: 2, TREE: 3, ROCK: 4, SAND: 5,
   FLOOR: 6, WALL: 7, BRIDGE: 8, SNOW: 9, LAVA: 10, FLOWER: 11, ASH: 12, MOSS: 13,
@@ -55,6 +57,7 @@ export const MAPS = {
       [0, 17, 4, 3], [56, 17, 4, 3],                          // the moat bridges
     ],
     block: [[28, 16, 5, 5]],                                  // the fountain
+    obstacles: EMBERHOLD_OBSTACLES,                           // painted trees and lamps
     spawnPoint: [30, 23],
     warps: [
       { x: 28, y: 0, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
@@ -81,15 +84,24 @@ export const MAPS = {
       { kind: 'building', img: 'assets/maps/emberhold/windmill.png', x: 34.57, y: 24.05, w: 3.9, h: 4.77 },
     ],
     npcs: [
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 10, y: 15, look: { pic: 'blacksmith' } },
-      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 44, y: 15, look: { pic: 'nun' } },
-      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 16, y: 15, shop: 'general', look: { pic: 'alchemist' } },
-      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 50, y: 15, look: { pic: 'dwarf' } },
-      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 44, y: 31, look: { pic: 'shrinemaiden' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 10, y: 31, look: { pic: 'peddler' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 50, y: 31, look: { pic: 'knight' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 11, y: 15, look: { pic: 'blacksmith' } },
+      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 45, y: 15, look: { pic: 'nun' } },
+      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 14, y: 15, shop: 'general', look: { pic: 'alchemist' } },
+      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 48, y: 15, look: { pic: 'dwarf' } },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 45, y: 30, look: { pic: 'shrinemaiden' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 10, y: 30, look: { pic: 'peddler' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 48, y: 30, look: { pic: 'knight' } },
       { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 25, y: 18, look: { pic: 'postman' } },
-      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 35, y: 18, look: { pic: 'wizard' } },
+      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 36, y: 18, look: { pic: 'wizard' } },
+    ],
+    // people out and about in the square; they wander near home and stop to rest
+    walkers: [
+      { name: 'ชาวนาทอม', pic: 'farmer', x: 20, y: 20, range: 6 },
+      { name: 'หนูมีมี่', pic: 'bunnygirl', x: 39, y: 21, range: 6 },
+      { name: 'สาวใช้โรซ่า', pic: 'maid', x: 30, y: 11, range: 5 },
+      { name: 'เนโกะ', pic: 'catgirl', x: 30, y: 26, range: 5 },
+      { name: 'นักเดินทางคาอิ', pic: 'traveller', x: 9, y: 19, range: 4 },
+      { name: 'พ่อครัวบิน', pic: 'chef', x: 51, y: 19, range: 4 },
     ],
     spawns: [],
   },
@@ -184,7 +196,7 @@ export const MAPS = {
       { id: 'rh_board', name: 'กระดานภารกิจหลัก', role: 'board', x: 35, y: 32, look: { pic: 'postman' } },
       { id: 'rh_warper', name: 'พ่อค้ารถบัสเสน', role: 'warper', x: 48, y: 32, look: { pic: 'witch' } },
       // East: Guild & broker
-      { id: 'rh_broker', name: 'สำนักนายหน้าตรึนดัล', role: 'broker', x: 76, y: 36, look: { pic: 'rogue' } },
+      { id: 'rh_broker', name: 'สำนักนายหน้าตรึนดัล', role: 'broker', x: 75, y: 37, look: { pic: 'rogue' } },
       // South district: Oracle & premium services
       { id: 'rh_oracle', name: 'สูตรนางกายา', role: 'oracle', x: 20, y: 56, look: { pic: 'princess' } },
     ],
@@ -550,6 +562,9 @@ function walkGrid(map) {
   };
   for (const r of map.walk) fill(TILES.FLOOR, r);
   for (const r of map.block ?? []) fill(TILES.WALL, r);
+  (map.obstacles ?? []).forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) if (row[x] === '#' && y < h && x < w) g[y * w + x] = TILES.WALL;
+  });
   // a building picture is roof above and walls below: only the walls stop
   // you, so you can walk behind the roof and be hidden by it
   for (const st of map.structures ?? []) {

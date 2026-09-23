@@ -257,3 +257,22 @@ test('every building picture a map places exists', () => {
     }
   }
 });
+
+test('no keeper stands inside a wall, a tree or a lamp', () => {
+  for (const m of Object.values(MAPS)) {
+    if (m.kind !== 'town') continue;
+    const g = buildGrid(m);
+    for (const n of m.npcs) {
+      assert.ok(!BLOCKING.has(g[n.y * m.width + n.x]), `${m.id}: ${n.id} at ${n.x},${n.y} stands in scenery`);
+    }
+  }
+});
+
+test('every townsperson starts somewhere they can stand', () => {
+  for (const m of Object.values(MAPS)) {
+    const g = buildGrid(m);
+    for (const w of m.walkers ?? []) {
+      assert.ok(!BLOCKING.has(g[w.y * m.width + w.x]), `${m.id}: ${w.name} starts in scenery at ${w.x},${w.y}`);
+    }
+  }
+});

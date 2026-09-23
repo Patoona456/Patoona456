@@ -330,12 +330,14 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
 }
 
 /** A painted NPC: stood on its feet, facing the camera whichever way it 'faces'. */
-export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0 }) {
+export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0, flip = false, bob = 0 }) {
   const s = sheet(url);
   if (!s.ready) return null;
   const w = s.img.width * NPC_PIC_SCALE, h = s.img.height * NPC_PIC_SCALE;
-  const dx = Math.round(x - w / 2), dy = Math.round(y - h + 4);
+  const dx = Math.round(x - w / 2), dy = Math.round(y - h + 4 - bob);
   ctx.save();
+  // the art only faces forward, so walking left is the same picture mirrored
+  if (flip) { ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
   ctx.imageSmoothingEnabled = NPC_PIC_SCALE * ctx.getTransform().a < 1;
   if (alpha < 1) ctx.globalAlpha = alpha;
   ctx.drawImage(s.img, dx, dy, w, h);

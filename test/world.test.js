@@ -401,3 +401,34 @@ test('the leader cannot simply walk out on a guild with members in it', (t) => {
   assert.ok(Guild.leave(w, p).ok, 'the last member could not leave');
   assert.equal(Guild.byId(g.id), null, 'an empty guild was left behind');
 });
+
+test('townsfolk wander, but never into a tree, a wall or a building', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('emberhold');
+  assert.ok(zone.walkers.length > 0, 'the square has nobody walking about');
+  const start = zone.walkers.map((e) => ({ x: e.x, y: e.y }));
+  let clock = Date.now();
+  const realNow = Date.now;
+  Date.now = () => clock;
+  try {
+    for (let i = 0; i < 12000; i++) {       // ten minutes at 20 ticks a second
+      clock += 50;
+      zone.updateWalkers(0.05, clock);
+      for (const e of zone.walkers) {
+        assert.ok(zone.walkable(e.x, e.y, 10), `${e.name} walked into scenery at ${Math.round(e.x)},${Math.round(e.y)}`);
+        const far = Math.hypot(e.x - e.home.x, e.y - e.home.y);
+        assert.ok(far <= e.range + 1, `${e.name} strayed ${Math.round(far)}px from home`);
+      }
+    }
+  } finally { Date.now = realNow; }
+  const moved = zone.walkers.filter((e, i) => Math.hypot(e.x - start[i].x, e.y - start[i].y) > 32);
+  assert.ok(moved.length >= zone.walkers.length / 2, 'the townsfolk stood still all day');
+  // the shop keepers never budge
+  for (const e of zone.entities.values()) {
+    if (e.kind === 'npc' && e.role !== 'townsfolk') {
+      const def = zone.def.npcs.find((n) => `n_${n.id}` === e.id);
+      assert.equal(e.x, def.x * 32 + 16, `${e.name} wandered off their post`);
+    }
+  }
+});

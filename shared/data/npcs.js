@@ -83,6 +83,10 @@ export const SHOPS = {
 };
 
 export const NPC_DIALOG = {
+  townsfolk: {
+    greet: 'อากาศดีนะวันนี้ เดินเล่นรอบน้ำพุสักรอบไหม',
+    options: [],
+  },
   vendor: {
     greet: 'ยินดีต้อนรับสู่เอมเบอร์โฮลด์ ของที่นี่ไม่ถูกหรอกนะ แต่ของจริงทั้งนั้น',
     options: [{ label: 'ดูของขาย', action: 'shop', shop: 'general' }, { label: 'ขายของ', action: 'sell' }],
