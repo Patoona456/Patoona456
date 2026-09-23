@@ -24,29 +24,34 @@ const ART = {
   aoe: 'skill_aoe', pierce: 'skill_pierce', guard: 'skill_guard', dash: 'skill_dash',
   summon: 'skill_summon', shout: 'skill_summon',
   potion: 'item_potion', mana: 'item_mana', antidote: 'item_antidote', food: 'item_food',
-  scroll: 'item_scroll',
+  scroll: 'item_scroll', herb: 'item_herb', tear: 'item_crystal',
 };
-const SQUARE = (kind) => ART[kind]?.startsWith('skill_');
+// A few items get art of their own rather than their kind's.
+const ITEM_ART = {
+  herbal_stew: 'item_stew', boss_casket: 'item_chest', dawn_casket: 'item_goldchest',
+  mystery_scroll: 'item_map',
+};
 const artImages = new Map();
-function artImage(kind) {
-  let img = artImages.get(kind);
+function artImage(name) {
+  let img = artImages.get(name);
   if (!img) {
     img = new Image();
-    img.src = `${UI_BASE}/${ART[kind]}.webp`;
-    artImages.set(kind, img);
+    img.src = `${UI_BASE}/${name}.webp`;
+    artImages.set(name, img);
   }
   return img;
 }
 /** Paint the sheet art over a canvas now, or as soon as it has loaded. */
-function paintArt(canvas, kind) {
-  const img = artImage(kind);
+function paintArt(canvas, name) {
+  const img = artImage(name);
+  const square = name.startsWith('skill_');
   const draw = () => {
     if (!img.naturalWidth) return;
     const g = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     g.clearRect(0, 0, w, h);
     g.imageSmoothingEnabled = true;
-    if (SQUARE(kind)) { g.drawImage(img, 0, 0, w, h); return; }
+    if (square) { g.drawImage(img, 0, 0, w, h); return; }
     const k = Math.min(w / img.naturalWidth, h / img.naturalHeight) * 0.94;
     const dw = img.naturalWidth * k, dh = img.naturalHeight * k;
     g.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
@@ -556,7 +561,7 @@ function render(kind, rarity, size) {
 }
 
 /** A cached <canvas> for one icon. Clone it before putting it in the DOM twice. */
-export function icon(kind, { rarity = null, size = 32 } = {}) {
+export function icon(kind, { rarity = null, size = 32, art = null } = {}) {
   const key = `${kind}|${rarity}|${size}`;
   let c = cache.get(key);
   if (!c) { c = render(kind, rarity, size); cache.set(key, c); }
@@ -565,9 +570,9 @@ export function icon(kind, { rarity = null, size = 32 } = {}) {
   copy.style.width = copy.style.height = size + 'px';
   copy.className = 'icon';
   copy.getContext('2d').drawImage(c, 0, 0);
-  if (ART[kind]) paintArt(copy, kind);
+  if (art ?? ART[kind]) paintArt(copy, art ?? ART[kind]);
   return copy;
 }
 
-export const itemIcon = (id, opts = {}) => icon(itemIconKind(id), { rarity: ITEMS[id]?.rarity, ...opts });
+export const itemIcon = (id, opts = {}) => icon(itemIconKind(id), { rarity: ITEMS[id]?.rarity, art: ITEM_ART[id], ...opts });
 export const skillIcon = (id, opts = {}) => icon(skillIconKind(id), opts);

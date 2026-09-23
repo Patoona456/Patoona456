@@ -208,7 +208,7 @@ export class World {
           aurum: p.record.aurum, alive: p.alive, target: p.targetId, attacking: p.attacking,
           cast: p.cast ? { skill: p.cast.skillId, until: p.cast.until } : null,
           cooldowns: p.cooldowns, weight: p.weight(), weightCap: p.weightCap,
-          statuses: p.statuses.map((s) => ({ type: s.type, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),
+          statuses: p.statuses.map((s) => ({ type: s.type, key: s.key, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),
         };
         p.conn.send(snap);
         if (p.questsDirty && Date.now() - (p.questsSentAt ?? 0) > 1000) {

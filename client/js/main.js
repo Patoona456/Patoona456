@@ -315,7 +315,7 @@ class Game {
         const el = ev.el ?? 'neutral';
         r.floater(String(ev.v), at.x, at.y,
           onMe ? '#ff9a9a' : ev.crit ? elRgba(el, 'core', 1) : mine ? '#ffffff' : '#ffb3b3',
-          ev.crit ? 17 : 12, { crit: ev.crit });
+          ev.crit ? 17 : 12, { crit: ev.crit, digits: mine && !onMe });
         if (ev.crit) r.floater('CRITICAL', at.x, at.y - 16, '#ff6a4a', 26, { vx: 0, crit: true, img: 'critical' });
         // the blow shoves the body, bursts in its own element, and a crit
         // holds the frame for a moment

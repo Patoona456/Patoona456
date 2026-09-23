@@ -320,6 +320,53 @@ body[data-ui="ember"] #chat-log { background: rgba(22, 20, 18, .82); border: 1.5
 body[data-ui="ember"] #chat-form select, body[data-ui="ember"] #chat-form input { background: #1a1715; border-color: #5e4726; border-radius: 7px; }
 body[data-ui="ember"] .toast { background: linear-gradient(180deg, #2b2621, #181513); border-color: #a47c38; }
 
+/* rarity frames from the inventory sheet: bronze, steel, blue, violet, gold */
+body[data-ui="ember"] .slot.rarity-common { border-image-source: url(../../assets/ui/slot_common.webp); border-image-slice: 12 fill; }
+body[data-ui="ember"] .slot.rarity-uncommon { border-image-source: url(../../assets/ui/slot_uncommon.webp); border-image-slice: 12 fill; }
+body[data-ui="ember"] .slot.rarity-rare { border-image-source: url(../../assets/ui/slot_rare.webp); border-image-slice: 12 fill; }
+body[data-ui="ember"] .slot.rarity-epic { border-image-source: url(../../assets/ui/slot_epic.webp); border-image-slice: 12 fill; }
+body[data-ui="ember"] .slot.rarity-legendary { border-image-source: url(../../assets/ui/slot_legendary.webp); border-image-slice: 12 fill; }
+body[data-ui="ember"] .doll-slot.empty { opacity: 1; }
+body[data-ui="ember"] .doll-slot .ghost { width: 64%; height: 64%; object-fit: contain; opacity: .9; filter: brightness(1.35); }
+
+/* plain buttons wear the sheet's bevelled faces */
+body[data-ui="ember"] .btn:not(.primary):not(.act) {
+  border: 6px solid transparent; border-image: url(../../assets/ui/btn_dark.webp) 9 fill / 6px stretch;
+  background: none; box-shadow: none; padding: 2px 8px;
+}
+body[data-ui="ember"] .btn.danger:not(.act) { border-image-source: url(../../assets/ui/btn_red.webp); color: #fff; }
+body[data-ui="ember"] .btn.ghost { border-image: none; border: none; }
+/* use / wear / take off / drop: the painted square buttons */
+body[data-ui="ember"] .btn.act {
+  width: 52px; height: 52px; padding: 0; border: none; border-radius: 8px; font-size: 0; color: transparent;
+  background: center / contain no-repeat; box-shadow: none; text-shadow: none;
+}
+body[data-ui="ember"] .btn.act:hover { filter: brightness(1.15); }
+body[data-ui="ember"] .btn.act-use { background-image: url(../../assets/ui/act_use.webp); }
+body[data-ui="ember"] .btn.act-equip { background-image: url(../../assets/ui/act_equip.webp); }
+body[data-ui="ember"] .btn.act-unequip { background-image: url(../../assets/ui/act_unequip.webp); }
+body[data-ui="ember"] .btn.act-drop { background-image: url(../../assets/ui/act_drop.webp); }
+
+/* status row: painted icons */
+body[data-ui="ember"] #statuses div { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 1px; background: rgba(20, 18, 16, .75); border-color: #6b5024; }
+#statuses .st-ico { width: 20px; height: 20px; object-fit: contain; display: block; }
+
+/* toasts ride the glowing notice banners */
+body[data-ui="ember"] .toast {
+  border-style: solid; border-width: 0 18px 0 22px; border-radius: 0; background: none; box-shadow: none;
+  border-image: url(../../assets/ui/notice_blue.webp) 0 36 0 44 fill / 0 18px 0 22px stretch;
+  padding: 7px 10px; color: #eaf6ff; text-shadow: 0 1px 2px #000; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .5));
+}
+body[data-ui="ember"] .toast.good { border-image-source: url(../../assets/ui/notice_green.webp); color: #eaffe0; }
+body[data-ui="ember"] .toast.warn { border-image-source: url(../../assets/ui/notice_purple.webp); color: #fbe9ff; }
+body[data-ui="ember"] .toast.bad { border-image-source: url(../../assets/ui/notice_purple.webp); color: #ffd7dd; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .5)) hue-rotate(60deg); }
+
+/* zone title on the winged name plate */
+body[data-ui="ember"] #zone-banner b {
+  display: inline-block; padding: 14px 76px 20px; font-size: 24px; color: #fbe7b6;
+  background: url(../../assets/ui/nameplate.webp) center / 100% 100% no-repeat;
+}
+
 #stamp {
   position: fixed; left: 50%; top: 28%; width: min(300px, 62vw); transform: translate(-50%, -50%) scale(.6);
   z-index: 46; pointer-events: none; opacity: 0; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .6));

@@ -24,7 +24,12 @@ function uiImage(name) {
   return img;
 }
 // fetched up front: a word that loads on its first use would miss that hit
-for (const name of ['miss', 'critical', 'levelup']) if (typeof Image !== 'undefined') uiImage(name);
+const DIGITS = [];
+if (typeof Image !== 'undefined') {
+  for (const name of ['miss', 'critical', 'levelup']) uiImage(name);
+  for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
+}
+const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
 
 // Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
 export const ZOOM_STEPS = [
@@ -176,6 +181,7 @@ export class Renderer {
       g: 150,
       pop: opts.crit ? 1.55 : 1.2,        // how much bigger it starts
       img: opts.img ? uiImage(opts.img) : null,   // a painted word instead of text
+      digits: !!opts.digits && /^\d+$/.test(text), // the sheet's gold numerals
     });
   }
 
@@ -1064,6 +1070,15 @@ export class Renderer {
         const h = f.size * grow * this.dpr;
         const w = h * (f.img.naturalWidth / f.img.naturalHeight);
         ctx.drawImage(f.img, sx - w / 2, sy - h * 0.8, w, h);
+        continue;
+      }
+      if (f.digits && digitsReady()) {
+        const h = f.size * 1.35 * grow * this.dpr;
+        const glyphs = [...f.text].map((c) => DIGITS[+c]);
+        const ws = glyphs.map((g) => h * (g.naturalWidth / g.naturalHeight));
+        const gap = -h * 0.08;
+        let x = sx - (ws.reduce((a, b) => a + b, 0) + gap * (ws.length - 1)) / 2;
+        glyphs.forEach((g, i) => { ctx.drawImage(g, x, sy - h * 0.8, ws[i], h); x += ws[i] + gap; });
         continue;
       }
       ctx.font = `bold ${Math.round(f.size * grow * this.dpr)}px system-ui, sans-serif`;

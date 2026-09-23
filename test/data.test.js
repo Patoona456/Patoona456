@@ -317,9 +317,13 @@ test('the novice outfit is drawn for the chibi body and worn from the start', as
 test('every painted HUD piece the stylesheet and icons ask for is on disk', () => {
   const css = readFileSync(path.join(root, 'client/css/style.css'), 'utf8');
   const icons = readFileSync(path.join(root, 'client/js/icons.js'), 'utf8');
+  const ui = readFileSync(path.join(root, 'client/js/ui.js'), 'utf8');
+  const ghosts = ui.match(/const GHOSTS = new Set\(\[([^\]]*)\]/)[1].match(/\w+/g).map((g) => 'ghost_' + g);
   const names = new Set([
     ...[...css.matchAll(/url\(\.\.\/\.\.\/assets\/ui\/([\w-]+)\.webp\)/g)].map((m) => m[1]),
     ...[...icons.matchAll(/'((?:skill|item)_\w+)'/g)].map((m) => m[1]),
+    ...[...ui.matchAll(/'(st_\w+)'/g)].map((m) => m[1]),
+    ...ghosts, ...Array.from({ length: 10 }, (_, i) => 'digit_' + i),
     'miss', 'critical', 'levelup', 'questclear',
   ]);
   assert.ok(names.size > 20, `only found ${names.size} references`);

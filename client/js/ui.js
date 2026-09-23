@@ -278,7 +278,15 @@ export class UI {
     box.innerHTML = '';
     for (const s of list ?? []) {
       if (!s.icon) continue;
-      box.append(el('div', s.beneficial ? 'good' : 'bad', s.icon));
+      const pic = STATUS_ART[s.key] ?? STATUS_ART[s.type];
+      const node = el('div', s.beneficial ? 'good' : 'bad', pic ? '' : s.icon);
+      if (pic) {
+        const img = el('img', 'st-ico');
+        img.src = `${UI_BASE}/${pic}.webp`;
+        img.alt = s.icon;
+        node.append(img);
+      }
+      box.append(node);
     }
   }
 
@@ -499,6 +507,12 @@ export class UI {
         node.append(itemIcon(it.id, { size: 30 }));
         if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
         node.addEventListener('click', () => this.game.net.send({ t: 'unequip', slot }));
+      } else if (GHOSTS.has(slot)) {
+        // the sheet's grey outline of what goes here, the name on hover
+        const img = el('img', 'ghost');
+        img.src = `${UI_BASE}/ghost_${slot}.webp`;
+        img.alt = LABELS[slot];
+        node.append(img);
       } else {
         node.append(el('span', 'doll-label', LABELS[slot]));
       }
@@ -719,19 +733,21 @@ export class UI {
   itemActions(it) {
     const box = el('div', 'opts');
     box.style.marginTop = '8px';
-    const add = (label, fn, cls = 'btn') => {
-      const b = el('button', cls, label);
+    // `act` names the painted button the ember theme swaps in for the text
+    const add = (label, fn, cls = 'btn', act = null) => {
+      const b = el('button', cls + (act ? ` act act-${act}` : ''), label);
+      if (act) b.setAttribute('aria-label', label);
       b.addEventListener('click', fn);
       box.append(b);
     };
     if (it.type === 'weapon' || it.type === 'armor') {
-      if (it.equipped) add('ถอด', () => this.game.net.send({ t: 'unequip', slot: it.equipped }));
-      else add('สวมใส่', () => this.game.net.send({ t: 'equip', index: it.i }), 'btn primary');
+      if (it.equipped) add('ถอด', () => this.game.net.send({ t: 'unequip', slot: it.equipped }), 'btn', 'unequip');
+      else add('สวมใส่', () => this.game.net.send({ t: 'equip', index: it.i }), 'btn primary', 'equip');
     }
-    if (it.type === 'consumable') add('ใช้', () => { this.game.audio?.play('potion'); this.game.net.send({ t: 'useItem', index: it.i }); }, 'btn primary');
+    if (it.type === 'consumable') add('ใช้', () => { this.game.audio?.play('potion'); this.game.net.send({ t: 'useItem', index: it.i }); }, 'btn primary', 'use');
     add('ทิ้ง', () => {
       if (confirm(`ทิ้ง ${it.name} ?`)) this.game.net.send({ t: 'dropItem', index: it.i, qty: it.qty });
-    }, 'btn danger');
+    }, 'btn danger', 'drop');
     return box;
   }
 
@@ -2131,6 +2147,14 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** Status (by key, then by type) -> painted icon from the UI sheet. */
+const STATUS_ART = {
+  food: 'st_plus', buff: 'st_sword', shield: 'st_shield', poison: 'st_skull',
+  burn: 'st_fire', chill: 'st_frost', stun: 'st_bolt',
+};
+/** Empty paper-doll slots that have a grey outline on the sheet. */
+const GHOSTS = new Set(['head', 'torso', 'legs', 'hands', 'armor', 'weapon', 'offhand', 'accessory', 'scarf']);
+
 /** A refined item wears its aura in the bag too, in the same colour it glows. */
 function markRefine(node, refine) {
   const tier = glowTier(refine);

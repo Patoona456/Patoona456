@@ -29,6 +29,8 @@ def grab(box, pad=6, iters=6, fill_holes=True, img=None):
     bg, fg = np.zeros((1, 65)), np.zeros((1, 65))
     cv2.grabCut(sub, mask, (x0 - X0, y0 - Y0, x1 - x0, y1 - y0), bg, fg, iters, cv2.GC_INIT_WITH_RECT)
     m = np.where((mask == 1) | (mask == 3), 255, 0).astype(np.uint8)
+    if not m.any():
+        raise SystemExit(f'GrabCut found nothing in {box}')
     n, lab, st, _ = cv2.connectedComponentsWithStats(m)
     if n > 1:
         m = np.where(lab == 1 + np.argmax(st[1:, 4]), 255, 0).astype(np.uint8)
@@ -153,3 +155,96 @@ for k, (x0, y0, x1, y1) in ITEM.items():
     obj, _ = grab((x0 + 8, y0 + 7, x1 - 8, y1 - 8), pad=4, img=clean)
     save('item_' + k, obj)
 print('done')
+
+
+# ============================================================================
+# Second sheet: inventory / general UI (assets/ui/source/inv_sheet.png)
+# ============================================================================
+inv = cv2.imread(os.path.join(ROOT, 'assets/ui/source/inv_sheet.png'))
+
+# slot frames, one per rarity
+for k, b in {'common': (1035, 47, 1084, 96), 'uncommon': (1094, 47, 1143, 96), 'rare': (1155, 47, 1203, 96),
+             'epic': (1214, 47, 1263, 96), 'legendary': (1274, 47, 1323, 96)}.items():
+    save('slot_' + k, grab(b, pad=4, img=inv)[0])
+
+# greyed "nothing worn here" glyphs for the paper doll, keyed off the tile
+GHOST = {'head': (0, 0), 'torso': (1, 0), 'legs': (2, 0), 'hands': (0, 1), 'armor': (1, 1),
+         'weapon': (2, 1), 'offhand': (0, 2), 'accessory': (1, 2), 'scarf': (2, 2)}
+COLS, ROWS = [1346, 1408, 1470], [46, 108, 170, 232]
+for k, (c, r) in GHOST.items():
+    tile = inv[ROWS[r] + 7:ROWS[r] + 46, COLS[c] + 7:COLS[c] + 46]
+    lum = cv2.cvtColor(tile, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    bg = np.median(np.concatenate([lum[:3].ravel(), lum[-3:].ravel()]))
+    a = np.clip((lum - bg - 10) * 5, 0, 255).astype(np.uint8)
+    rgba = cv2.cvtColor(tile, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = a
+    save('ghost_' + k, trim(rgba))
+
+# more item art (inside the rarity frames, stack counts painted out)
+for k, (x0, y0, x1, y1) in {'stew': (1153, 169, 1202, 220), 'herb': (1273, 169, 1322, 220),
+                            'map': (1213, 169, 1262, 220), 'crystal': (1032, 231, 1082, 282),
+                            'chest': (1153, 231, 1202, 282),
+                            'key': (1213, 231, 1262, 282), 'goldchest': (1273, 231, 1322, 282)}.items():
+    clean = erase_text(inv, (x0 + 24, y0 + 30, x1 - 2, y1 - 2), thresh=185)
+    save('item_' + k, grab((x0 + 7, y0 + 6, x1 - 7, y1 - 7), pad=3, img=clean)[0])
+
+# status icons
+for k, b in {'st_sword': (891, 873, 919, 902), 'st_shield': (921, 873, 949, 902), 'st_heart': (951, 873, 980, 902),
+             'st_plus': (982, 873, 1010, 902), 'st_wing': (1013, 873, 1042, 902), 'st_skull': (891, 906, 918, 936),
+             'st_sleep': (921, 906, 950, 936), 'st_fire': (952, 906, 980, 936), 'st_frost': (983, 906, 1011, 936),
+             'st_bolt': (1015, 906, 1042, 936)}.items():
+    save(k, grab(b, pad=4, img=inv)[0])
+
+# gold digits 0-9: keep the lit glyph and a thin dark rim, drop the tile
+DIGIT_X = [(665, 678), (688, 696), (708, 719), (731, 742), (753, 765), (776, 787), (797, 810),
+           (820, 831), (842, 854), (864, 877)]   # lit columns of each numeral, measured
+for i, (gx0, gx1) in enumerate(DIGIT_X):
+    tile = inv[976:1010, gx0 - 4:gx1 + 5]
+    hsv = cv2.cvtColor(tile, cv2.COLOR_BGR2HSV)
+    glyph = ((hsv[:, :, 2] > 150)).astype(np.uint8) * 255
+    n, lab, st, _ = cv2.connectedComponentsWithStats(glyph)
+    if n > 1:  # the numeral is the biggest bright blob; tile highlights are specks
+        big = 1 + np.argmax(st[1:, 4])
+        glyph = np.where(lab == big, 255, 0).astype(np.uint8)
+        # holes of 0/4/6/8/9 are inside the blob's box - keep other bright bits there
+    rim = cv2.dilate(glyph, np.ones((5, 5), np.uint8))
+    rgba = cv2.cvtColor(tile, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, :3] = np.where(glyph[..., None] > 0, rgba[:, :, :3], (40, 22, 8))
+    rgba[:, :, 3] = cv2.GaussianBlur(rim, (3, 3), 0)
+    save(f'digit_{i}', trim(rgba))
+
+# notice banners (toasts): caps from the sheet, the lettered middle rebuilt
+# from a clean column so the game can write its own line
+for k, (y0, y1) in {'blue': (684, 722), 'green': (718, 756), 'purple': (751, 790)}.items():
+    left, mid, right = inv[y0:y1, 286:336], inv[y0:y1, 468:474], inv[y0:y1, 536:576]
+    strip = np.concatenate([left] + [mid] * 10 + [right], axis=1)
+    mm = np.zeros(strip.shape[:2], np.uint8)
+    cv2.grabCut(strip.copy(), mm, (7, 3, strip.shape[1] - 14, strip.shape[0] - 6),
+                np.zeros((1, 65)), np.zeros((1, 65)), 6, cv2.GC_INIT_WITH_RECT)
+    a = np.where((mm == 1) | (mm == 3), 255, 0).astype(np.uint8)
+    ff = a.copy()
+    cv2.floodFill(ff, np.zeros((a.shape[0] + 2, a.shape[1] + 2), np.uint8), (0, 0), 255)
+    a = a | cv2.bitwise_not(ff)
+    rgba = cv2.cvtColor(strip, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = cv2.GaussianBlur(a, (3, 3), 0)
+    save('notice_' + k, trim(rgba))
+
+# plain button faces, and the four item buttons whose words match ours
+for k, b in {'btn_dark': (194, 981, 230, 1006), 'btn_blue': (237, 981, 273, 1006),
+             'btn_green': (281, 981, 317, 1006), 'btn_red': (325, 981, 362, 1006)}.items():
+    save(k, grab(b, pad=4, img=inv)[0])
+# the item buttons are plain rounded squares, so a drawn mask beats GrabCut
+for k, (x0, y0, x1, y1) in {'act_use': (1248, 339, 1311, 401), 'act_equip': (1321, 339, 1385, 401),
+                            'act_unequip': (1395, 339, 1459, 401), 'act_drop': (1466, 339, 1530, 401)}.items():
+    w, h = x1 - x0, y1 - y0
+    m = np.zeros((h * 4, w * 4), np.uint8)
+    cv2.rectangle(m, (28, 28), (w * 4 - 29, h * 4 - 29), 255, -1)
+    m = cv2.GaussianBlur(cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (48, 48))), (5, 5), 0)
+    rgba = cv2.cvtColor(inv[y0:y1, x0:x1], cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = cv2.resize(m, (w, h), interpolation=cv2.INTER_AREA)
+    save(k, rgba)
+
+# the winged name plate, lettering removed, for the zone title
+plate = erase_text(inv, (462, 885, 616, 920), thresh=140)
+save('nameplate', grab((428, 858, 648, 932), pad=5, img=plate)[0])
+print('second sheet done')
