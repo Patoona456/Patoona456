@@ -452,6 +452,37 @@ export const MAPS = {
     spawnPoint: [22, 40],
     warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [16, 41], label: 'เอมเบอร์โฮลด์' }],
     spawns: [],
+    structures: [
+      // Central arena with lava pit ring
+      { kind: 'lava_pit', x: 20, y: 18, w: 4, h: 4 },  // Central lava hazard
+      // Tactical pillars for cover (arranged in cross pattern)
+      { kind: 'pillar', x: 6, y: 22, w: 2, h: 2 },      // West
+      { kind: 'pillar', x: 36, y: 22, w: 2, h: 2 },     // East
+      { kind: 'pillar', x: 22, y: 8, w: 2, h: 2 },      // North
+      { kind: 'pillar', x: 22, y: 34, w: 2, h: 2 },     // South
+      // Secondary pillars for flanking routes
+      { kind: 'pillar', x: 10, y: 12, w: 2, h: 2 },     // Northwest
+      { kind: 'pillar', x: 32, y: 12, w: 2, h: 2 },     // Northeast
+      { kind: 'pillar', x: 10, y: 30, w: 2, h: 2 },     // Southwest
+      { kind: 'pillar', x: 32, y: 30, w: 2, h: 2 },     // Southeast
+      // Elevated viewing platforms
+      { kind: 'platform', x: 4, y: 4, w: 6, h: 3 },     // North gate platform
+      { kind: 'platform', x: 34, y: 4, w: 6, h: 3 },    // Northeast platform
+      { kind: 'platform', x: 4, y: 37, w: 6, h: 3 },    // Southwest platform
+      { kind: 'platform', x: 34, y: 37, w: 6, h: 3 },   // Southeast platform
+    ],
+    decor: [
+      // Banners marking guild zones
+      ['banner', 10, 6], ['banner', 32, 6],   // North
+      ['banner', 10, 38], ['banner', 32, 38], // South
+      // Braziers along edges (torches)
+      ['lamp', 2, 2], ['lamp', 40, 2],        // North corners
+      ['lamp', 2, 40], ['lamp', 40, 40],      // South corners
+      ['lamp', 2, 20], ['lamp', 40, 20],      // Side corners
+      // Neutral supply caches (barrels)
+      ['barrel', 22, 12], ['barrel', 22, 28], // North/South supply
+      ['barrel', 12, 20], ['barrel', 32, 20], // East/West supply
+    ],
   },
 
   vhaal: {
