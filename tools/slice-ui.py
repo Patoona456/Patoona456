@@ -413,3 +413,55 @@ tag = qs[763:795, 1059:1195]
 plate = np.concatenate([tag[:, :22]] + [tag[:, 22:26]] * 12 + [tag[:, 112:]], axis=1)
 save('npc_plate', rounded(np.ascontiguousarray(plate), (0, 0, plate.shape[1], plate.shape[0]), r=4))
 print('quest sheet done')
+
+
+# ============================================================================
+# Fifth sheet: party and friends (assets/ui/source/party_sheet.png)
+# ============================================================================
+ps = cv2.imread(os.path.join(ROOT, 'assets/ui/source/party_sheet.png'))
+
+# party roles
+for k, b in {'role_leader': (952, 764, 1002, 806), 'role_tank': (1036, 764, 1076, 808),
+             'role_dps': (1104, 764, 1146, 808), 'role_support': (1248, 762, 1292, 808)}.items():
+    save(k, grab(b, pad=4, img=ps)[0])
+save('role_healer', lift(ps, (1168, 762, 1214, 808), thresh=60))
+
+# party buttons whose words are ours
+for k, b in {'pb_create': (797, 17, 1017, 73), 'pb_invite': (797, 89, 971, 146),
+             'pb_kick': (987, 89, 1157, 146), 'pb_lead': (1173, 89, 1337, 146)}.items():
+    save(k, rounded(ps, b, r=6))
+
+# presence dots: online, offline, in game, away, fighting
+for k, b in {'dot_online': (806, 324, 830, 349), 'dot_offline': (942, 324, 966, 349),
+             'dot_busy': (1081, 324, 1105, 349), 'dot_away': (1226, 324, 1250, 349)}.items():
+    save(k, grab(b, pad=3, img=ps)[0])
+
+# friend action glyphs
+for k, b in {'fa_whisper': (1365, 404, 1402, 442), 'fa_profile': (1366, 460, 1400, 497),
+             'fa_group': (1364, 516, 1404, 553), 'fa_remove': (1364, 570, 1402, 608)}.items():
+    save(k, grab(b, pad=3, img=ps)[0])
+save('fa_block', lift(ps, (1364, 623, 1402, 660), ring=12, thresh=60))
+
+# the crest over invitation cards
+save('invite_crest', lift(ps, (512, 368, 718, 432), thresh=44))
+
+# stamps: joined, left, new friend
+save('party_joined', grab((488, 650, 746, 735), pad=5, img=ps)[0])
+save('party_left', grab((772, 656, 994, 735), pad=5, img=ps)[0])
+save('new_friend', grab((1256, 650, 1528, 750), pad=5, img=ps)[0])
+
+# portrait rings for party frames: gold for the leader, steel for the rest
+def ring_cut(box, cx, cy, r):
+    rgba = lift(ps, box, ring=20, thresh=40)
+    full = np.zeros((box[3] - box[1] + 80, box[2] - box[0] + 80, 4), np.uint8)
+    # lift() trims; redo the punch in its own frame by locating the dark disc
+    h, w = rgba.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    dark = rgba[:, :, :3].max(axis=2) < 40
+    ys, xs = np.nonzero(dark)
+    my, mx = ys.mean(), xs.mean()
+    rgba[np.hypot(xx - mx, yy - my) < r, 3] = 0
+    return rgba
+save('pring_gold', ring_cut((10, 900, 88, 998), 0, 0, 27))
+save('pring_steel', ring_cut((100, 903, 170, 988), 0, 0, 26))
+print('party sheet done')

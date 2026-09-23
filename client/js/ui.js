@@ -71,6 +71,9 @@ export class UI {
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
       const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade', KeyV: 'stall' };
+      if (e.code === 'KeyF') { this.socialTab = 'friends'; this.game.net.send({ t: 'friend', cmd: 'state' }); }
+      if (e.code === 'KeyP') this.socialTab = 'party';
+      if (e.code === 'KeyF') { e.preventDefault(); this.toggle('party'); }
       if (map[e.code]) { e.preventDefault(); this.toggle(map[e.code]); }
       if (e.code === 'Enter') { e.preventDefault(); $('#chat-input').focus(); }
       if (e.code === 'KeyM') {
@@ -127,7 +130,8 @@ export class UI {
 
   chat(m) {
     const log = $('#chat-log');
-    const prefix = { say: '', party: '[ปาร์ตี้] ', trade: '[ซื้อขาย] ', world: '[โลก] ', system: '' }[m.ch] ?? '';
+    const prefix = m.ch === 'whisper' ? (m.to ? `[กระซิบถึง ${esc(m.to)}] ` : '[กระซิบ] ')
+      : { say: '', party: '[ปาร์ตี้] ', trade: '[ซื้อขาย] ', world: '[โลก] ', system: '' }[m.ch] ?? '';
     const line = el('div', m.ch, `${prefix}${m.from ? `<b>${esc(m.from)}</b>: ` : ''}${esc(m.text)}`);
     line.dataset.ch = m.ch;
     if (this.chatFilter && this.chatFilter !== 'all' && this.chatFilter !== m.ch) line.hidden = true;
@@ -923,49 +927,282 @@ export class UI {
     return card;
   }
 
-  /* ---------------- party ---------------- */
+  /* ---------------- party & friends ---------------- */
+  /** One window, three tabs: the party, your friends, and the way to the guild. */
   openParty(state) {
-    this.lastParty = state;
-    const wrap = el('div');
+    this.lastParty = state ?? this.lastParty;
+    const tab = this.socialTab ?? 'party';
+    const wrap = el('div', 'social');
+    const tabs = el('div', 'social-tabs');
+    for (const [key, label, pic] of [['party', 'ปาร์ตี้', 'fa_group'], ['friends', 'เพื่อน', 'menu_party'], ['guild', 'กิลด์', 'menu_guild']]) {
+      const b = el('button', 'social-tab' + (tab === key ? ' on' : ''));
+      const i = el('img'); i.src = `${UI_BASE}/${pic}.webp`; i.alt = '';
+      b.append(i, el('span', '', label));
+      const reqs = key === 'friends' ? (this.lastFriends?.requests?.length ?? 0) : 0;
+      if (reqs) b.append(el('b', 'social-badge num', String(reqs)));
+      b.addEventListener('click', () => {
+        if (key === 'guild') { this.close('party'); return this.open('guild'); }
+        this.socialTab = key;
+        if (key === 'friends') this.game.net.send({ t: 'friend', cmd: 'state' });
+        this.openParty();
+      });
+      tabs.append(b);
+    }
+    wrap.append(tabs, tab === 'friends' ? this.friendsPane() : this.partyPane());
+    return this.panel('party', tab === 'friends' ? 'เพื่อน' : 'ปาร์ตี้', wrap);
+  }
+
+  partyPane() {
+    const state = this.lastParty;
     const pt = state?.party;
-    if (state?.invite) {
-      const row = el('div', 'row');
-      row.innerHTML = `<span>${esc(state.invite.from)} ชวนคุณเข้าปาร์ตี้</span>`;
-      const b = el('button', 'btn primary', 'ตอบรับ');
-      b.addEventListener('click', () => this.game.net.send({ t: 'party', cmd: 'accept' }));
-      row.append(b);
-      wrap.append(row);
-    }
+    const me = myCharId(pt, this.game.state.myId);
+    const box = el('div', 'grid');
+    if (state?.invite) box.append(this.inviteCard('party', state.invite));
     if (pt) {
-      wrap.append(el('div', 'row', `<b>${esc(pt.name)}</b><span class="muted">${pt.members.length}/6 คน</span>`));
+      const lead = String(pt.leader) === me;
+      box.append(el('div', 'row', `<b>${esc(pt.name)}</b><span class="muted">${pt.members.length}/6 คน · EXP รวม +${(pt.members.length - 1) * 10}%</span>`));
       for (const m of pt.members) {
-        wrap.append(el('div', 'row', `<span>${esc(m.name)} ${m.online ? `Lv.${m.level} ${JOBS[m.job]?.nameTh ?? ''}` : ''}</span>
-          <span class="muted">${m.online ? `${m.hp}/${m.maxHp} HP · ${m.map}` : 'ออฟไลน์'}</span>`));
+        const row = el('div', 'pmember' + (m.online ? '' : ' off'));
+        row.append(memberFace(m, String(pt.leader) === String(m.charId)));
+        const info = el('div', 'pm-info');
+        const top = el('div', 'pm-top');
+        top.append(el('span', 'muted num', `Lv.${m.level}`), el('b', '', esc(m.name)));
+        top.append(roleIcon(m.job));
+        info.append(top);
+        if (m.online) {
+          info.append(bar('hp', m.hp, m.maxHp), bar('sp', m.sp, m.maxSp));
+          info.append(el('div', 'muted pm-where', esc(ZONE_NAMES[m.map] ?? m.map ?? '')));
+        } else info.append(el('div', 'muted', 'ออฟไลน์'));
+        row.append(info);
+        if (lead && String(m.charId) !== me) {
+          const acts = el('div', 'pm-acts');
+          acts.append(this.sheetBtn('pb-lead', 'ตั้งหัวหน้าทีม', () => this.game.net.send({ t: 'party', cmd: 'promote', charId: m.charId })));
+          acts.append(this.sheetBtn('pb-kick', 'เตะออก', () => {
+            if (confirm(`เชิญ ${m.name} ออกจากปาร์ตี้?`)) this.game.net.send({ t: 'party', cmd: 'kick', charId: m.charId });
+          }));
+          row.append(acts);
+        }
+        box.append(row);
       }
-      const leave = el('button', 'btn danger', 'ออกจากปาร์ตี้');
-      leave.addEventListener('click', () => this.game.net.send({ t: 'party', cmd: 'leave' }));
-      wrap.append(leave);
     } else {
-      wrap.append(el('div', 'muted', 'ยังไม่ได้อยู่ปาร์ตี้ · ปาร์ตี้ได้ EXP รวม +10% ต่อสมาชิกหนึ่งคน (ต้องอยู่ในระยะ)'));
+      box.append(el('div', 'muted', 'ยังไม่ได้อยู่ปาร์ตี้ · ปาร์ตี้ได้ EXP รวม +10% ต่อสมาชิกหนึ่งคน (ต้องอยู่ในระยะ)'));
+      box.append(this.sheetBtn('pb-create', 'สร้างปาร์ตี้', () => this.game.net.send({ t: 'party', cmd: 'create' })));
     }
-    const form = el('div', 'row');
-    const input = el('input');
-    input.type = 'text';
-    input.placeholder = 'ชื่อผู้เล่นที่จะชวน';
-    input.addEventListener('focus', () => { this.game.input.textMode = true; });
-    input.addEventListener('blur', () => { this.game.input.textMode = false; });
-    const b = el('button', 'btn primary', 'ชวน');
-    b.addEventListener('click', () => {
+    const form = el('div', 'social-form');
+    const input = this.nameInput('ชื่อผู้เล่นที่จะเชิญ');
+    form.append(input, this.sheetBtn('pb-invite', 'เชิญ', () => {
       if (input.value.trim()) this.game.net.send({ t: 'party', cmd: 'invite', name: input.value.trim() });
       input.value = '';
-    });
-    form.append(input, b);
-    wrap.append(form);
-
+    }));
+    box.append(form);
+    const foot = el('div', 'opts');
+    if (pt) {
+      const leave = el('button', 'btn danger', 'ออกจากปาร์ตี้');
+      leave.addEventListener('click', () => this.game.net.send({ t: 'party', cmd: 'leave' }));
+      foot.append(leave);
+    }
     const trade = el('button', 'btn', 'เทรดกับผู้เล่นใกล้ๆ');
     trade.addEventListener('click', () => this.openTradePicker());
-    wrap.append(trade);
-    return this.panel('party', 'ปาร์ตี้', wrap);
+    foot.append(trade);
+    box.append(foot);
+    return box;
+  }
+
+  friendsPane() {
+    const fs = this.lastFriends ?? { friends: [], blocked: [], requests: [] };
+    const sub = this.friendTab ?? 'list';
+    const box = el('div', 'grid');
+    const tabs = el('div', 'qlog-tabs');
+    for (const [key, label, n] of [['list', 'เพื่อนของฉัน', fs.friends.length], ['add', 'เพิ่มเพื่อน', null],
+      ['requests', 'คำร้องขอ', fs.requests.length], ['blocked', 'บล็อก', fs.blocked.length]]) {
+      const b = el('button', 'qlog-tab' + (sub === key ? ' on' : ''), `${label}${n != null ? ` <span class="num">${n}</span>` : ''}`);
+      b.addEventListener('click', () => { this.friendTab = key; this.openParty(); });
+      tabs.append(b);
+    }
+    box.append(tabs);
+    const act = (pic, title, fn) => {
+      const b = el('button', 'btn fa-btn');
+      b.title = title;
+      b.setAttribute('aria-label', title);
+      const i = el('img'); i.src = `${UI_BASE}/${pic}.webp`; i.alt = '';
+      b.append(i);
+      b.addEventListener('click', fn);
+      return b;
+    };
+    if (sub === 'list') {
+      if (!fs.friends.length) box.append(el('div', 'muted', 'ยังไม่มีเพื่อน — เพิ่มจากแท็บ "เพิ่มเพื่อน"'));
+      for (const f of fs.friends) {
+        const row = el('div', 'frow' + (f.online ? '' : ' off'));
+        const dot = el('img', 'fdot'); dot.src = `${UI_BASE}/dot_${f.online ? (f.party ? 'busy' : 'online') : 'offline'}.webp`; dot.alt = '';
+        const info = el('div', 'fr-info');
+        info.append(el('b', '', esc(f.name)), el('div', 'muted num', `Lv.${f.level} ${JOBS[f.job]?.nameTh ?? ''}`));
+        const st = el('div', 'fr-state ' + (f.online ? 'on' : ''), f.online
+          ? (f.party ? 'อยู่ในปาร์ตี้' : 'ออนไลน์') + (f.map ? ` · ${esc(ZONE_NAMES[f.map] ?? f.map)}` : '')
+          : `ออฟไลน์${f.lastSeen ? ` · ${ago(f.lastSeen)}` : ''}`);
+        const acts = el('div', 'fr-acts');
+        if (f.online) {
+          acts.append(act('fa_whisper', 'กระซิบ', () => this.startWhisper(f.name)));
+          acts.append(act('fa_group', 'เชิญเข้าปาร์ตี้', () => this.game.net.send({ t: 'party', cmd: 'invite', name: f.name })));
+        }
+        acts.append(act('fa_remove', 'ลบเพื่อน', () => {
+          if (confirm(`ลบ ${f.name} ออกจากรายชื่อเพื่อน?`)) this.game.net.send({ t: 'friend', cmd: 'remove', charId: f.charId });
+        }));
+        acts.append(act('fa_block', 'บล็อก', () => {
+          if (confirm(`บล็อก ${f.name}? จะไม่เห็นข้อความและคำเชิญจากผู้เล่นคนนี้`)) this.game.net.send({ t: 'friend', cmd: 'block', name: f.name });
+        }));
+        row.append(dot, info, st, acts);
+        box.append(row);
+      }
+    } else if (sub === 'add') {
+      const form = el('div', 'social-form');
+      const input = this.nameInput('ชื่อผู้เล่น (ต้องออนไลน์อยู่)');
+      const go = el('button', 'btn primary', 'เพิ่มเพื่อน');
+      go.addEventListener('click', () => {
+        if (input.value.trim()) this.game.net.send({ t: 'friend', cmd: 'request', name: input.value.trim() });
+        input.value = '';
+      });
+      form.append(input, go);
+      box.append(form, el('div', 'muted', `เพิ่มได้สูงสุด 50 คน · กระซิบหาใครก็ได้ด้วยการพิมพ์ /w ชื่อ ข้อความ ในช่องแชท`));
+      // people standing nearby are the easiest to add
+      const near = [...this.game.entities.values()].filter((e) => e.k === 'p' && e.id !== this.game.state.myId && e.n);
+      const known = new Set(fs.friends.map((f) => f.name));
+      for (const e of near.filter((e) => !known.has(e.n)).slice(0, 6)) {
+        const row = el('div', 'row');
+        row.append(el('span', '', `${esc(e.n)} <span class="muted">อยู่ใกล้ๆ</span>`));
+        const b = el('button', 'btn', 'เพิ่ม');
+        b.addEventListener('click', () => this.game.net.send({ t: 'friend', cmd: 'request', name: e.n }));
+        row.append(b);
+        box.append(row);
+      }
+    } else if (sub === 'requests') {
+      if (!fs.requests.length) box.append(el('div', 'muted', 'ไม่มีคำร้องขอค้างอยู่'));
+      for (const r of fs.requests) box.append(this.inviteCard('friend', r));
+    } else {
+      if (!fs.blocked.length) box.append(el('div', 'muted', 'ยังไม่ได้บล็อกใคร'));
+      for (const b of fs.blocked) {
+        const row = el('div', 'row');
+        row.append(el('span', '', esc(b.name)));
+        const un = el('button', 'btn', 'ปลดบล็อก');
+        un.addEventListener('click', () => this.game.net.send({ t: 'friend', cmd: 'unblock', charId: b.charId }));
+        row.append(un);
+        box.append(row);
+      }
+      const form = el('div', 'social-form');
+      const input = this.nameInput('ชื่อผู้เล่นที่จะบล็อก');
+      const go = el('button', 'btn danger', 'บล็อก');
+      go.addEventListener('click', () => {
+        if (input.value.trim()) this.game.net.send({ t: 'friend', cmd: 'block', name: input.value.trim() });
+        input.value = '';
+      });
+      form.append(input, go);
+      box.append(form);
+    }
+    return box;
+  }
+
+  /** The crested invitation card: a party invite or a friend request. */
+  inviteCard(kind, d) {
+    const card = el('div', 'invite-card');
+    const crest = el('img', 'invite-crest'); crest.src = `${UI_BASE}/invite_crest.webp`; crest.alt = '';
+    card.append(crest, el('div', 'invite-title', kind === 'party' ? 'คำเชิญเข้าปาร์ตี้' : 'คำขอเป็นเพื่อน'));
+    const body = el('div', 'invite-body');
+    body.append(memberFace({ name: d.from }, false));
+    const t = el('div');
+    t.append(el('b', '', esc(d.from)), el('div', 'muted', kind === 'party' ? 'ต้องการเชิญคุณเข้าร่วมปาร์ตี้' : 'ต้องการเพิ่มคุณเป็นเพื่อน'));
+    body.append(t);
+    card.append(body);
+    const acts = el('div', 'deal-actions');
+    const yes = el('button', 'btn primary', 'ยอมรับ');
+    const no = el('button', 'btn danger', 'ปฏิเสธ');
+    const done = () => { card.remove(); if (this._popCard === card) this._popCard = null; };
+    yes.addEventListener('click', () => {
+      done();
+      if (kind === 'party') this.game.net.send({ t: 'party', cmd: 'accept' });
+      else this.game.net.send({ t: 'friend', cmd: 'accept', charId: d.charId });
+    });
+    no.addEventListener('click', () => {
+      done();
+      if (kind === 'party') this.game.net.send({ t: 'party', cmd: 'decline' });
+      else this.game.net.send({ t: 'friend', cmd: 'decline', charId: d.charId });
+    });
+    acts.append(yes, no);
+    card.append(acts);
+    return card;
+  }
+
+  /** Pop an invitation over the game, unless the social window already shows it. */
+  popInvite(kind, d) {
+    if (this.openPanels.has('party')) return this.openParty();
+    this._popCard?.remove();
+    const card = this.inviteCard(kind, d);
+    card.classList.add('pop');
+    document.body.append(card);
+    this._popCard = card;
+    this.game.audio?.play('warn');
+    clearTimeout(this._popT);
+    this._popT = setTimeout(() => { if (this._popCard === card) { card.remove(); this._popCard = null; } }, 30000);
+  }
+
+  setFriends(m) {
+    const before = new Set((this.lastFriends?.requests ?? []).map((r) => r.charId));
+    this.lastFriends = m;
+    const fresh = (m.requests ?? []).find((r) => !before.has(r.charId));
+    if (fresh) this.popInvite('friend', fresh);
+    if (this.openPanels.has('party')) this.openParty();
+  }
+
+  startWhisper(name) {
+    this.close('party');
+    const input = $('#chat-input');
+    input.value = `/w ${name} `;
+    input.focus();
+  }
+
+  /** Small party frames down the left of the HUD: everyone but you. */
+  renderPartyFrames() {
+    const box = $('#party-frames');
+    if (!box) return;
+    const pt = this.lastParty?.party;
+    const me = myCharId(pt, this.game.state.myId);
+    const others = (pt?.members ?? []).filter((m) => String(m.charId) !== me);
+    document.body.classList.toggle('in-party', others.length > 0);
+    box.classList.toggle('hidden', !others.length);
+    box.innerHTML = '';
+    for (const m of others) {
+      const row = el('div', 'pf' + (m.online ? '' : ' off'));
+      row.append(memberFace(m, String(pt.leader) === String(m.charId)));
+      const info = el('div', 'pf-info');
+      const top = el('div', 'pf-top');
+      top.append(el('span', 'num', `Lv.${m.level}`), el('b', '', esc(m.name)), roleIcon(m.job));
+      info.append(top);
+      if (m.online) info.append(bar('hp', m.hp, m.maxHp), bar('sp', m.sp, m.maxSp));
+      else info.append(el('div', 'muted', 'ออฟไลน์'));
+      row.append(info);
+      // tap a frame to target them - how a healer picks who to mend
+      if (m.online && m.id) row.addEventListener('click', () => {
+        this.game.state.targetId = m.id;
+        this.game.net.send({ t: 'target', id: m.id });
+      });
+      box.append(row);
+    }
+    const rows = box.children.length;
+    document.documentElement.style.setProperty('--pf-h', rows ? `${box.offsetHeight + 6}px` : '0px');
+  }
+
+  sheetBtn(cls, label, fn) {
+    const b = el('button', `btn sheet-btn ${cls}`, label);
+    b.setAttribute('aria-label', label);
+    b.addEventListener('click', fn);
+    return b;
+  }
+
+  nameInput(placeholder) {
+    const input = el('input');
+    input.type = 'text';
+    input.placeholder = placeholder;
+    input.addEventListener('focus', () => { this.game.input.textMode = true; });
+    input.addEventListener('blur', () => { this.game.input.textMode = false; });
+    return input;
   }
 
   /* ---------------- guild ---------------- */
@@ -2491,6 +2728,46 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** What each path does in a group. */
+const ROLE_OF = {
+  vanguard: 'tank', bulwark: 'tank', oathkeeper: 'tank',
+  warden: 'healer', hierophant: 'healer',
+  trickster: 'support', beastcaller: 'support', stormsinger: 'support',
+};
+const ROLE_TH = { tank: 'แทงก์', dps: 'ดาเมจ', healer: 'ฮีลเลอร์', support: 'ซัพพอร์ต' };
+function roleIcon(job) {
+  const role = ROLE_OF[job] ?? 'dps';
+  const i = el('img', 'role-ico');
+  i.src = `${UI_BASE}/role_${role}.webp`;
+  i.alt = ROLE_TH[role];
+  i.title = `${ROLE_TH[role]} · ${JOBS[job]?.nameTh ?? ''}`;
+  return i;
+}
+/** A ringed initial: gold ring and a crown for the leader. */
+function memberFace(m, leader) {
+  const f = el('div', 'mface' + (leader ? ' lead' : ''));
+  f.append(el('span', '', esc((m.name ?? '?').slice(0, 1).toUpperCase())));
+  const ring = el('img', 'mring'); ring.src = `${UI_BASE}/pring_${leader ? 'gold' : 'steel'}.webp`; ring.alt = '';
+  f.append(ring);
+  if (leader) { const c = el('img', 'mcrown'); c.src = `${UI_BASE}/role_leader.webp`; c.alt = 'หัวหน้า'; f.append(c); }
+  return f;
+}
+function bar(kind, cur, max) {
+  const b = el('div', `bar ${kind} small`);
+  const i = el('i');
+  i.style.width = `${max > 0 ? Math.max(0, Math.min(100, (cur / max) * 100)) : 0}%`;
+  b.append(i);
+  return b;
+}
+/** My character id inside a party list (the client knows its entity id). */
+const myCharId = (pt, entityId) => String((pt?.members ?? []).find((m) => m.id === entityId)?.charId ?? '');
+function ago(ts) {
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 60) return `${Math.max(1, m)} นาทีก่อน`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h} ชั่วโมงก่อน` : `${Math.floor(h / 24)} วันก่อน`;
+}
+
 /** A quest's giver, as the role that NPC stands in the world with. */
 export const GIVER_ROLE = { board: 'quests', trainer: 'trainer', smith: 'smith', healer: 'healer',
   vendor: 'shop', banker: 'storage', broker: 'market', oracle: 'gacha' };

@@ -6,6 +6,7 @@ import { Player } from './game/player.js';
 import * as Skills from './game/skills.js';
 import * as Econ from './game/economy.js';
 import * as Stall from './game/stall.js';
+import * as Friends from './game/friends.js';
 import * as Party from './game/party.js';
 import * as Guild from './game/guild.js';
 import * as Trade from './game/trade.js';
@@ -375,6 +376,7 @@ export class Conn {
         return this.send({ t: OP.SELF, self: p.selfState() });
       }
       case OP.PARTY: return this.partyCmd(m);
+      case OP.FRIEND: return this.friendCmd(m);
       case OP.GUILD: return this.guildCmd(m);
       case OP.TRADE: return this.tradeCmd(m);
       // the quest log is readable anywhere; only turn-ins need an NPC
@@ -451,11 +453,21 @@ export class Conn {
       return this.notice(r.moved ? 'ย้ายออกจากจุดที่ติดแล้ว' : 'ตรงนี้เดินได้ปกติอยู่แล้ว', r.moved ? 'good' : 'info');
     }
 
+    // "/w name text" (or the whisper channel with a `to`) is a private line
+    const w = text.match(/^\/(?:w|whisper|กระซิบ)\s+(\S+)\s+([\s\S]+)$/i);
+    if (w || m.ch === 'whisper') {
+      const to = w ? w[1] : m.to;
+      const body = w ? w[2] : text;
+      if (!to) return this.error('พิมพ์ /w ชื่อผู้เล่น ข้อความ');
+      const r = Friends.whisper(this.world, p, to, body);
+      if (r.error) return this.error(r.error);
+      return;
+    }
     const ch = ['say', 'party', 'guild', 'trade', 'world'].includes(m.ch) ? m.ch : 'say';
     if (ch === 'party' && !p.party) return this.error('ยังไม่ได้อยู่ปาร์ตี้');
     if (ch === 'guild' && !p.record.guild) return this.error('ยังไม่ได้อยู่กิลด์');
     this.world.broadcastChat({
-      ch, text, from: p.name, map: p.record.map, party: p.party, guild: p.record.guild,
+      ch, text, from: p.name, fromChar: String(p.record.id), map: p.record.map, party: p.party, guild: p.record.guild,
     });
   }
 
@@ -601,16 +613,64 @@ export class Conn {
       case 'create': r = Party.create(p, m.name); break;
       case 'invite': r = Party.invite(this.world, p, m.name); break;
       case 'accept': r = Party.accept(this.world, p); break;
-      case 'leave': r = Party.leave(this.world, p); break;
+      case 'leave': {
+        const was = p.party;
+        r = Party.leave(this.world, p);
+        if (!r.error) {
+          this.send({ t: 'partyLeft' });
+          for (const other of this.world.players.values()) {
+            if (other.party && other.party === was) other.conn.send(Party.state(this.world, other));
+          }
+        }
+        break;
+      }
+      case 'decline': r = Party.decline(p); break;
+      case 'kick': r = Party.kick(this.world, p, m.charId); break;
+      case 'promote': r = Party.promote(this.world, p, m.charId); break;
       case 'state': r = { ok: true }; break;
       default: return this.error('คำสั่งปาร์ตี้ไม่ถูกต้อง');
     }
     if (r.error) return this.error(r.error);
+    if (m.cmd === 'accept') this.send({ t: 'partyJoined' });
+    if (m.cmd === 'invite') this.notice(`ส่งคำเชิญถึง ${m.name} แล้ว`);
     this.send(Party.state(this.world, p));
     // refresh everyone else in the party
     for (const other of this.world.players.values()) {
       if (other !== p && other.party && other.party === p.party) other.conn.send(Party.state(this.world, other));
     }
+  }
+
+  friendCmd(m) {
+    const p = this.player;
+    const w = this.world;
+    let r;
+    switch (m.cmd) {
+      case 'request': r = Friends.request(w, p, m.name); if (!r.error) this.notice(`ส่งคำขอเป็นเพื่อนถึง ${r.name} แล้ว`); break;
+      case 'accept': {
+        r = Friends.accept(w, p, m.charId);
+        if (!r.error) {
+          this.send({ t: 'newFriend', name: r.name });
+          const other = w.playerByCharId(r.charId);
+          if (other) {
+            other.conn?.send({ t: 'newFriend', name: p.name });
+            other.conn?.send(Friends.state(w, other));
+          }
+        }
+        break;
+      }
+      case 'decline': r = Friends.decline(p, m.charId); break;
+      case 'remove': {
+        r = Friends.remove(p, m.charId);
+        w.playerByCharId(String(m.charId))?.conn?.send(Friends.state(w, w.playerByCharId(String(m.charId))));
+        break;
+      }
+      case 'block': r = Friends.block(w, p, m.name); if (!r.error) this.notice(`บล็อก ${r.name} แล้ว`); break;
+      case 'unblock': r = Friends.unblock(p, m.charId); break;
+      case 'state': r = { ok: true }; break;
+      default: return this.error('คำสั่งเพื่อนไม่ถูกต้อง');
+    }
+    if (r.error) return this.error(r.error);
+    this.send(Friends.state(w, p));
   }
 
   /** Player-to-player trading. Every command answers with the whole window. */

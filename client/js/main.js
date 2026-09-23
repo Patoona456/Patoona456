@@ -223,10 +223,19 @@ class Game {
     n.on('storage', (m) => this.ui.open('storage', m));
     n.on('market', (m) => this.ui.open('market', m));
     n.on('partyState', (m) => {
+      const hadInvite = this.ui.lastParty?.invite?.at;
       this.ui.lastParty = m;
-      if (this.ui.openPanels.has('party')) this.ui.open('party', m);
-      if (m.invite) this.ui.toast(`${m.invite.from} ชวนเข้าปาร์ตี้ — เปิดเมนูปาร์ตี้เพื่อตอบรับ`, 'warn');
+      this.ui.renderPartyFrames();
+      // the once-a-second refresh keeps the frames live; the window only
+      // redraws when it is on the party tab and nothing is being typed
+      if (this.ui.openPanels.has('party') && (this.ui.socialTab ?? 'party') === 'party'
+        && document.activeElement?.tagName !== 'INPUT') this.ui.openParty(m);
+      if (m.invite && m.invite.at !== hadInvite) this.ui.popInvite('party', m.invite);
     });
+    n.on('friendState', (m) => this.ui.setFriends(m));
+    n.on('partyJoined', () => this.ui.stamp('party_joined'));
+    n.on('partyLeft', () => { this.ui.lastParty = { party: null }; this.ui.renderPartyFrames(); this.ui.stamp('party_left'); });
+    n.on('newFriend', (m) => { this.ui.stamp('new_friend'); this.ui.toast(`${m.name} เป็นเพื่อนกับคุณแล้ว`, 'good'); });
     n.on('stall', (m) => {
       if (m.view !== undefined) return m.view ? this.ui.open('stallView', m.view) : this.ui.close('stallView');
       this.ui.lastStall = m;

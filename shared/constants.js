@@ -138,6 +138,7 @@ export const OP = {
   REFINE: 'refine',
   REPAIR: 'repair',
   PARTY: 'party',
+  FRIEND: 'friend',
   GUILD: 'guild',
   TRADE: 'trade',
   WARP: 'warp',

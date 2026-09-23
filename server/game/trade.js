@@ -47,7 +47,7 @@ export function invite(world, p, targetName) {
   if (target.trade) return { error: 'ผู้เล่นกำลังเทรดกับคนอื่นอยู่' };
   if (!target.alive) return { error: 'ผู้เล่นคนนั้นตายอยู่' };
   if (!near(p, target)) return { error: 'ต้องยืนใกล้กันจึงจะเทรดได้' };
-  if (target.tradeBlock) return { error: 'ผู้เล่นปิดรับคำขอเทรด' };
+  if (target.tradeBlock || (target.record?.blocked ?? []).includes(String(p.record.id))) return { error: 'ผู้เล่นปิดรับคำขอเทรด' };
 
   target.tradeInvite = { from: p.name, fromId: p.id, at: Date.now() };
   target.conn?.send({

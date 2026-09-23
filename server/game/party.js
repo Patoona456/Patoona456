@@ -7,6 +7,7 @@
 // vanishing on restart it is pruned when nobody in it has been seen for a
 // while - which is the behaviour people actually expect.
 import { db, markDirty } from '../persistence.js';
+import { blocks } from './friends.js';
 
 const MAX_MEMBERS = 6;
 /** A party nobody has touched for this long is over. */
@@ -33,18 +34,20 @@ export function create(p, name) {
 }
 
 export function invite(world, p, targetName) {
+  const target = world.playerByName(targetName);
+  if (!target) return { error: 'ไม่พบผู้เล่นคนนี้' };
+  if (target === p) return { error: 'ชวนตัวเองไม่ได้' };
+  if (blocks(target, p)) return { error: 'ผู้เล่นไม่รับคำเชิญ' };
   if (!p.party) {
     const r = create(p);
     if (r.error) return r;
   }
-  const target = world.playerByName(targetName);
-  if (!target) return { error: 'ไม่พบผู้เล่นคนนี้' };
   if (target.party) return { error: 'ผู้เล่นอยู่ในปาร์ตี้อื่นแล้ว' };
   const pt = get(p.party);
   if (!pt) return { error: 'ปาร์ตี้ถูกยุบไปแล้ว' };
   if (pt.members.length >= MAX_MEMBERS) return { error: `ปาร์ตี้เต็ม (${MAX_MEMBERS} คน)` };
   target.pendingInvite = { party: p.party, from: p.name, at: Date.now() };
-  target.conn?.send({ t: 'notice', kind: 'invite', text: `${p.name} ชวนคุณเข้าปาร์ตี้ (ตอบรับในเมนูปาร์ตี้)`, party: p.party });
+  target.conn?.send(state(world, target));   // the invitation card pops from this
   return { ok: true };
 }
 
@@ -60,6 +63,43 @@ export function accept(world, p) {
   p.pendingInvite = null;
   touch(pt);
   return { ok: true, id: pt.id };
+}
+
+export function decline(p) {
+  p.pendingInvite = null;
+  return { ok: true };
+}
+
+/** The leader removes someone. They are told, and their party is cleared. */
+export function kick(world, p, charId) {
+  const pt = get(p.party);
+  if (!pt) return { error: 'ยังไม่ได้อยู่ปาร์ตี้' };
+  if (String(pt.leader) !== String(p.record.id)) return { error: 'เฉพาะหัวหน้าปาร์ตี้' };
+  charId = String(charId);
+  if (charId === String(p.record.id)) return { error: 'ใช้ปุ่มออกจากปาร์ตี้แทน' };
+  if (!pt.members.includes(charId)) return { error: 'ไม่ได้อยู่ในปาร์ตี้นี้' };
+  pt.members = pt.members.filter((c) => c !== charId);
+  const rec = db.characters[charId];
+  if (rec?.party === pt.id) rec.party = null;
+  const out = world.playerByCharId(charId);
+  if (out) {
+    out.party = null;
+    out.conn?.send({ t: 'notice', kind: 'warn', text: 'คุณถูกเชิญออกจากปาร์ตี้' });
+    out.conn?.send(state(world, out));
+    out.conn?.send({ t: 'partyLeft' });
+  }
+  touch(pt);
+  return { ok: true };
+}
+
+export function promote(world, p, charId) {
+  const pt = get(p.party);
+  if (!pt) return { error: 'ยังไม่ได้อยู่ปาร์ตี้' };
+  if (String(pt.leader) !== String(p.record.id)) return { error: 'เฉพาะหัวหน้าปาร์ตี้' };
+  if (!pt.members.includes(String(charId))) return { error: 'ไม่ได้อยู่ในปาร์ตี้นี้' };
+  pt.leader = String(charId);
+  touch(pt);
+  return { ok: true };
 }
 
 export function leave(world, p) {

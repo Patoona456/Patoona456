@@ -6,6 +6,7 @@ import { db, markDirty, save, closeStore } from '../persistence.js';
 import { sweepMarket } from './economy.js';
 import * as Quests from './quests.js';
 import * as Party from './party.js';
+import * as Friends from './friends.js';
 import * as Trade from './trade.js';
 import * as Guild from './guild.js';
 import * as Siege from './siege.js';
@@ -77,6 +78,8 @@ export class World {
     p.conn.send(zone.zonePayload());
     p.conn.send({ t: 'self', self: p.selfState() });
     this.broadcastChat({ ch: 'system', text: `${p.name} เข้าสู่โลก` });
+    this.tellFriends(p, `เพื่อน ${p.name} ออนไลน์แล้ว`);
+    p.conn.send(Friends.state(this, p));
   }
 
   removePlayer(p) {
@@ -88,6 +91,7 @@ export class World {
     p.zone?.removePlayer(p);
     this.players.delete(p.id);
     this.byCharId.delete(p.record.id);
+    this.tellFriends(p, `เพื่อน ${p.name} ออฟไลน์แล้ว`);
     markDirty();
   }
 
@@ -147,6 +151,16 @@ export class World {
     this.warpPlayer(p, sp.map, sp.x, sp.y);
   }
 
+  /** Tell everyone online who lists `p` as a friend, and refresh their list. */
+  tellFriends(p, text) {
+    const me = String(p.record.id);
+    for (const o of this.players.values()) {
+      if (o === p || !(o.record.friends ?? []).includes(me)) continue;
+      o.conn?.send({ t: 'notice', kind: 'info', text });
+      o.conn?.send(Friends.state(this, o));
+    }
+  }
+
   /** Player-facing escape hatch: free a character wedged in scenery. */
   unstick(p) {
     const zone = p.zone ?? this.zone(p.record.map);
@@ -168,6 +182,7 @@ export class World {
       if (msg.ch === 'say' && p.record.map !== msg.map) continue;
       if (msg.ch === 'party' && p.party !== msg.party) continue;
       if (msg.ch === 'guild' && p.record.guild !== msg.guild) continue;
+      if (msg.fromChar && (p.record.blocked ?? []).includes(msg.fromChar)) continue;
       p.conn.send(packet);
     }
   }
@@ -211,6 +226,11 @@ export class World {
           statuses: p.statuses.map((s) => ({ type: s.type, key: s.key, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),
         };
         p.conn.send(snap);
+        // party frames want live health, but a second's lag is fine
+        if (p.party && Date.now() - (p.partySentAt ?? 0) > 1000) {
+          p.partySentAt = Date.now();
+          p.conn.send(Party.state(this, p));
+        }
         if (p.questsDirty && Date.now() - (p.questsSentAt ?? 0) > 1000) {
           p.questsDirty = false;
           p.questsSentAt = Date.now();
