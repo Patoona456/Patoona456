@@ -45,40 +45,44 @@ export const MAPS = {
   emberhold: {
     id: 'emberhold', name: 'Emberhold', nameTh: 'เอมเบอร์โฮลด์', kind: 'town',
     width: 60, height: 40, seed: 1001, safe: true, theme: 'town',
-    // The whole town is one painting (1536x1024), stretched 1.25x so the
-    // people painted into it stand as tall as ours. A tile is 25.6px of the
-    // painting; every rectangle in `walk` is a street, square or stair on it.
+    // The ground is one painting (1536x1024) of the walled square with empty
+    // lots, stretched 1.25x; the buildings are separate pictures standing on
+    // those lots, so people walk behind them. A tile is 25.6px of the painting.
     backdrop: 'assets/maps/emberhold.jpg',
     walk: [
-      [28, 4, 4, 2], [28, 6, 5, 5],                          // north gate and avenue
-      [4, 13, 24, 2], [32, 13, 18, 3],                       // the street in front of the shops
-      [15, 8, 2, 5], [23, 8, 5, 5], [4, 11, 2, 3],         // lanes between them
-      [22, 11, 4, 10], [33, 11, 7, 10], [23, 19, 14, 3],    // round the fountain
-      [28, 21, 3, 7], [26, 27, 6, 2], [28, 29, 4, 11],     // south avenue and the great stair
-      [36, 20, 3, 3], [38, 22, 12, 3], [48, 20, 2, 5], [50, 23, 3, 2], [48, 16, 2, 4],
-      [52, 24, 8, 2], [50, 25, 2, 7], [48, 29, 4, 3],      // east gate, stair, lower market
-      [4, 15, 2, 6], [3, 20, 12, 2], [10, 22, 2, 5],         // west side and its stair
-      [4, 26, 12, 6], [0, 26, 5, 2],                         // training ground, west gate
+      [4, 5, 52, 27],                                         // inside the walls
+      [28, 0, 4, 5], [28, 32, 4, 8],                          // north gate road, south stairs
+      [0, 17, 4, 3], [56, 17, 4, 3],                          // the moat bridges
     ],
-    block: [[14, 12, 5, 2], [12, 26, 4, 2], [26, 28, 2, 1]], // café tables, canal edge, statue
-    spawnPoint: [29, 20],
+    block: [[28, 16, 5, 5]],                                  // the fountain
+    spawnPoint: [30, 23],
     warps: [
-      { x: 28, y: 4, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
-      { x: 28, y: 39, w: 4, h: 1, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
-      { x: 0, y: 26, w: 1, h: 2, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
-      { x: 59, y: 24, w: 1, h: 2, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
+      { x: 28, y: 0, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
+      { x: 28, y: 38, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 0, y: 17, w: 1, h: 3, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
+      { x: 59, y: 17, w: 1, h: 3, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
     ],
-    // each keeper stands at the door of the building the painting gives them
+    // two to a lot; the lower half of each is its walls (see walkGrid)
+    structures: [
+      { kind: 'building', img: 'assets/maps/emberhold/smith.png', x: 6.54, y: 6.47, w: 6.45, h: 7.28 },
+      { kind: 'building', img: 'assets/maps/emberhold/potion.png', x: 12.9, y: 7.56, w: 6.61, h: 6.19 },
+      { kind: 'building', img: 'assets/maps/emberhold/healer.png', x: 40.94, y: 6.92, w: 6.0, h: 6.83 },
+      { kind: 'building', img: 'assets/maps/emberhold/storehouse.png', x: 47.58, y: 7.88, w: 5.63, h: 5.87 },
+      { kind: 'building', img: 'assets/maps/emberhold/market.png', x: 7.35, y: 26.27, w: 4.83, h: 4.12 },
+      { kind: 'building', img: 'assets/maps/emberhold/inn.png', x: 12.81, y: 24.48, w: 6.8, h: 5.91 },
+      { kind: 'building', img: 'assets/maps/emberhold/chapel.png', x: 40.74, y: 22.55, w: 6.4, h: 7.84 },
+      { kind: 'building', img: 'assets/maps/emberhold/guildhouse.png', x: 46.99, y: 23.94, w: 6.8, h: 6.45 },
+    ],
     npcs: [
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 8, y: 14, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
-      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 21, y: 14, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 41, y: 14, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 48, y: 14, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
-      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 42, y: 23, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 54, y: 24, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 9, y: 29, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
-      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 29, y: 26, look: null },
-      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 30, y: 24, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 10, y: 15, look: { body: 'male/dark', hair: 'messy/black', torso: 'leather', legs: 'pants_red', feet: 'metal', hands: 'metal_gloves' } },
+      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 44, y: 15, look: { body: 'female/light', hair: 'plain/white', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 16, y: 15, shop: 'general', look: { body: 'female/light', hair: 'ponytail/brown', torso: 'shirt_teal', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 50, y: 15, look: { body: 'female/tanned', hair: 'long/black', torso: 'shirt_white', legs: 'pants_white', feet: 'shoes_black' } },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 44, y: 31, look: { body: 'female/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black', head: 'cloth_hood' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 10, y: 31, look: { body: 'male/light', hair: 'plain/blonde', torso: 'shirt_maroon', legs: 'pants_teal', feet: 'shoes_brown', head: 'cloth_hood' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 50, y: 31, look: { body: 'male/tanned', hair: 'ponytail/black', torso: 'chain', legs: 'metal', feet: 'metal', weapon: 'spear' } },
+      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 25, y: 18, look: null },
+      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 35, y: 18, look: { body: 'male/darkelf', hair: 'long/white', torso: 'shirt_maroon', legs: 'pants_white', feet: 'shoes_black' } },
     ],
     spawns: [],
   },
@@ -91,7 +95,7 @@ export const MAPS = {
       { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
-      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [56, 24], label: 'เอมเบอร์โฮลด์' },
+      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [55, 18], label: 'เอมเบอร์โฮลด์' },
     ],
     npcs: [
       // North district (Merchant area)
@@ -235,7 +239,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 2002, theme: 'grass', levelRange: [1, 10],
     spawnPoint: [40, 6],
     warps: [
-      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [30, 36], label: 'เอมเบอร์โฮลด์' },
+      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },
       { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
     ],
     // the north strip by the town gate stays gentle; anything that bites
@@ -255,7 +259,7 @@ export const MAPS = {
     spawnPoint: [8, 32],
     warps: [
       { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [72, 32], label: 'ทุ่งกรีนไมร์' },
-      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [4, 26], label: 'เอมเบอร์โฮลด์' },
+      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 18], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
     spawns: [
@@ -427,7 +431,7 @@ export const MAPS = {
     width: 44, height: 44, seed: 4411, theme: 'ember', levelRange: [40, 70],
     pvp: true,
     spawnPoint: [22, 40],
-    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [30, 7], label: 'เอมเบอร์โฮลด์' }],
+    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [30, 4], label: 'เอมเบอร์โฮลด์' }],
     spawns: [],
   },
 
@@ -539,6 +543,14 @@ function walkGrid(map) {
   };
   for (const r of map.walk) fill(TILES.FLOOR, r);
   for (const r of map.block ?? []) fill(TILES.WALL, r);
+  // a building picture is roof above and walls below: only the walls stop
+  // you, so you can walk behind the roof and be hidden by it
+  for (const st of map.structures ?? []) {
+    if (st.kind !== 'building') continue;
+    const x0 = Math.round(st.x + st.w * 0.1), x1 = Math.round(st.x + st.w * 0.9);
+    const y0 = Math.round(st.y + st.h * 0.5), y1 = Math.round(st.y + st.h - 0.3);
+    fill(TILES.WALL, [x0, y0, x1 - x0, y1 - y0]);
+  }
   return g;
 }
 
@@ -732,6 +744,7 @@ export function generateProps(map, grid) {
     roof: st.roof,
     sign: st.sign,
     variant: st.variant ?? 0,
+    img: st.img,
     scale: 1,
     flip: 0,
     // a wall is ground-level stone; sorting a long one by its foot would put

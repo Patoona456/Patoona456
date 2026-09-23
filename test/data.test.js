@@ -249,3 +249,11 @@ test('a town painted as one picture ships that picture', () => {
     assert.ok(m.walk?.length, `${m.id} has a backdrop but no walkable ground`);
   }
 });
+
+test('every building picture a map places exists', () => {
+  for (const m of Object.values(MAPS)) {
+    for (const st of m.structures ?? []) {
+      if (st.img) assert.ok(existsSync(onDisk(st.img)), `${m.id}: ${st.img} is missing`);
+    }
+  }
+});

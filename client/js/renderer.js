@@ -412,6 +412,22 @@ export class Renderer {
     }
   }
 
+  /** A building drawn as art rather than code: stood on its foot, at its size. */
+  drawPictureProp(ctx, p) {
+    this.pictures ??= new Map();
+    let pic = this.pictures.get(p.img);
+    if (!pic) {
+      pic = new Image();
+      pic.src = p.img;
+      this.pictures.set(p.img, pic);
+    }
+    if (!pic.complete || !pic.naturalWidth) return;
+    const smooth = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = true;          // shrunk art aliases badly without it
+    ctx.drawImage(pic, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
+    ctx.imageSmoothingEnabled = smooth;
+  }
+
   drawGroundItems(ctx, state, now) {
     for (const g of state.ground ?? []) {
       const bob = Math.sin(now / 300 + g.x) * 2;
@@ -437,6 +453,7 @@ export class Renderer {
   }
 
   drawProp(ctx, p, now) {
+    if (p.img) return this.drawPictureProp(ctx, p);
     const img = propSprite(p.w ? p : p.kind);
     const w = img.width * (p.w ? 1 : p.scale), h = img.height * (p.w ? 1 : p.scale);
     ctx.save();
