@@ -358,6 +358,43 @@ export const EPIC_SWORDS = {
 };
 Object.assign(ITEMS, EPIC_SWORDS);
 
+/* ============ LEGENDARY SWORDS (assets/ui/source/swords_legendary.png) ============
+   Twenty-five legendary swords, Lv.45 to Lv.70. The plates repeat 57 and 58,
+   so the ladder follows the board's order, left to right and down. A
+   legendary sword is the common sword of its level plus three fifths more
+   ATK (epic two fifths, rare one), the fastest swing, the most crit, and
+   STR/AGI/DEX/LUK. The rarest find in the game: a boss is the likely source. */
+const LEGEND_SWORD = (art, o) => W({ art: 'swords_legendary#' + art, wclass: 'sword', range: 47, rarity: 'legendary',
+  weight: 50 + Math.round(o.level * 0.6), ...o });
+export const LEGENDARY_SWORDS = {
+  sword_legend_45: LEGEND_SWORD(0, { id: 'sword_legend_45', name: 'Crimson Oath', nameTh: 'ดาบคำสาบานโลหิต', level: 45, atk: 111, delay: 0.78, value: 139860, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_46: LEGEND_SWORD(1, { id: 'sword_legend_46', name: 'Scarlet Fang', nameTh: 'ดาบเขี้ยวชาด', level: 46, atk: 113, delay: 0.78, value: 145540, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_47: LEGEND_SWORD(2, { id: 'sword_legend_47', name: 'Bloodspire', nameTh: 'ดาบยอดโลหิต', level: 47, atk: 115, delay: 0.78, value: 151340, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_48: LEGEND_SWORD(3, { id: 'sword_legend_48', name: 'Emberwing', nameTh: 'ดาบปีกถ่านเพลิง', level: 48, atk: 116, delay: 0.78, value: 155900, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_49: LEGEND_SWORD(4, { id: 'sword_legend_49', name: 'Ruby Tyrant', nameTh: 'ดาบทรราชทับทิม', level: 49, atk: 118, delay: 0.78, value: 161900, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_50: LEGEND_SWORD(5, { id: 'sword_legend_50', name: 'Cinderclaw', nameTh: 'ดาบกรงเล็บเถ้าเพลิง', level: 50, atk: 119, delay: 0.78, value: 166600, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_51: LEGEND_SWORD(6, { id: 'sword_legend_51', name: 'Flameheart', nameTh: 'ดาบหัวใจเพลิง', level: 51, atk: 121, delay: 0.78, value: 172790, crit: 6, stats: { str: 7, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_52: LEGEND_SWORD(7, { id: 'sword_legend_52', name: 'Hellfang', nameTh: 'ดาบเขี้ยวนรก', level: 52, atk: 122, delay: 0.77, value: 177630, crit: 6, stats: { str: 7, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_53: LEGEND_SWORD(8, { id: 'sword_legend_53', name: 'Wyrmblood Edge', nameTh: 'ดาบคมเลือดวายุภักษ์', level: 53, atk: 124, delay: 0.77, value: 184020, crit: 7, stats: { str: 7, agi: 4, dex: 2, luk: 1 } }),
+  sword_legend_54: LEGEND_SWORD(9, { id: 'sword_legend_54', name: 'Crimson Reaver', nameTh: 'ดาบผลาญแดงฉาน', level: 54, atk: 125, delay: 0.77, value: 189000, crit: 7, stats: { str: 7, agi: 4, dex: 2, luk: 1 } }),
+  sword_legend_55: LEGEND_SWORD(10, { id: 'sword_legend_55', name: 'Pyre Sovereign', nameTh: 'ดาบราชันกองไฟ', level: 55, atk: 127, delay: 0.77, value: 195580, crit: 7, stats: { str: 7, agi: 4, dex: 3, luk: 1 } }),
+  sword_legend_56: LEGEND_SWORD(11, { id: 'sword_legend_56', name: 'Scarlet Talon', nameTh: 'ดาบกรงเล็บแดง', level: 56, atk: 128, delay: 0.77, value: 200700, crit: 7, stats: { str: 7, agi: 4, dex: 3, luk: 1 } }),
+  sword_legend_58: LEGEND_SWORD(12, { id: 'sword_legend_58', name: 'Inferno Crest', nameTh: 'ดาบตรานรกเพลิง', level: 58, atk: 131, delay: 0.77, value: 212740, crit: 7, stats: { str: 8, agi: 4, dex: 3, luk: 2 } }),
+  sword_legend_59: LEGEND_SWORD(13, { id: 'sword_legend_59', name: 'Bloodmoon', nameTh: 'ดาบจันทร์โลหิต', level: 59, atk: 133, delay: 0.77, value: 219720, crit: 7, stats: { str: 8, agi: 4, dex: 3, luk: 2 } }),
+  sword_legend_60: LEGEND_SWORD(14, { id: 'sword_legend_60', name: 'Dragonflame', nameTh: 'ดาบเพลิงมังกร', level: 60, atk: 134, delay: 0.77, value: 225120, crit: 7, stats: { str: 8, agi: 4, dex: 3, luk: 2 } }),
+  sword_legend_61: LEGEND_SWORD(15, { id: 'sword_legend_61', name: 'Magma Lord', nameTh: 'ดาบจ้าวลาวา', level: 61, atk: 136, delay: 0.77, value: 232290, crit: 8, stats: { str: 8, agi: 5, dex: 3, luk: 2 } }),
+  sword_legend_62: LEGEND_SWORD(16, { id: 'sword_legend_62', name: 'Crimson Wyrm', nameTh: 'ดาบวายุภักษ์แดง', level: 62, atk: 137, delay: 0.77, value: 237830, crit: 8, stats: { str: 8, agi: 5, dex: 3, luk: 2 } }),
+  sword_legend_63: LEGEND_SWORD(17, { id: 'sword_legend_63', name: 'Blazeborn', nameTh: 'ดาบกำเนิดเปลวไฟ', level: 63, atk: 138, delay: 0.77, value: 243430, crit: 8, stats: { str: 9, agi: 5, dex: 3, luk: 2 } }),
+  sword_legend_64: LEGEND_SWORD(18, { id: 'sword_legend_64', name: 'Phoenix Talon', nameTh: 'ดาบกรงเล็บหงส์เพลิง', level: 64, atk: 140, delay: 0.76, value: 250880, crit: 8, stats: { str: 9, agi: 5, dex: 3, luk: 2 } }),
+  sword_legend_65: LEGEND_SWORD(19, { id: 'sword_legend_65', name: 'Hellfire Monarch', nameTh: 'ดาบกษัตริย์ไฟนรก', level: 65, atk: 141, delay: 0.76, value: 256620, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
+  sword_legend_66: LEGEND_SWORD(20, { id: 'sword_legend_66', name: 'Ruby Dragonfang', nameTh: 'ดาบเขี้ยวมังกรทับทิม', level: 66, atk: 143, delay: 0.76, value: 264260, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
+  sword_legend_67: LEGEND_SWORD(21, { id: 'sword_legend_67', name: 'Sanguine Emperor', nameTh: 'ดาบจักรพรรดิโลหิต', level: 67, atk: 144, delay: 0.76, value: 270140, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
+  sword_legend_68: LEGEND_SWORD(22, { id: 'sword_legend_68', name: 'Infernal Crown', nameTh: 'ดาบมงกุฎนรกันต์', level: 68, atk: 146, delay: 0.76, value: 277980, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
+  sword_legend_69: LEGEND_SWORD(23, { id: 'sword_legend_69', name: 'Dragonking Blade', nameTh: 'ดาบราชามังกร', level: 69, atk: 147, delay: 0.76, value: 284000, crit: 9, stats: { str: 10, agi: 6, dex: 4, luk: 3 } }),
+  sword_legend_70: LEGEND_SWORD(24, { id: 'sword_legend_70', name: 'Heart of the Inferno', nameTh: 'ดาบหัวใจอัคคี', level: 70, atk: 149, delay: 0.76, value: 292040, crit: 9, stats: { str: 10, agi: 6, dex: 4, luk: 3 } }),
+};
+Object.assign(ITEMS, LEGENDARY_SWORDS);
+
 /** Items that game systems use by role, not by drop table. */
 export const KEY_ITEMS = {
   refineStone: 'runed_whetstone',   // spent on every refine attempt

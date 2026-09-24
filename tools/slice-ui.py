@@ -860,10 +860,13 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
     matte = raw[:, :, 3].astype(np.float32) if raw.shape[2] == 4 and raw[:, :, 3].min() < 16 else None
     b, g, r = [img[:, :, i].astype(int) for i in range(3)]
     lum = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(int)
-    # the level plates: navy on the rare sheet, near-black violet on the epic one
-    ink = (b - r > 25) & (lum < 90) if plate == 'navy' else (lum < 70) & (b - g > 20)
+    # the level plates: navy on the rare sheet, near-black violet on the epic
+    # one, near-black maroon on the legendary one
+    ink = {'navy': (b - r > 25) & (lum < 90), 'violet': (lum < 70) & (b - g > 20),
+           'maroon': (lum < 70) & (r - g > 20)}[plate]
     n, lab, st, _ = cv2.connectedComponentsWithStats(ink.astype(np.uint8))
-    plates = [st[i][:4] for i in range(1, n) if st[i, 2] > 70 and 18 < st[i, 3] < 50]
+    wide = (80, 110) if plate == 'maroon' else (70, 9999)    # the maroon board's rim has plate-coloured scraps
+    plates = [st[i][:4] for i in range(1, n) if wide[0] < st[i, 2] < wide[1] and 18 < st[i, 3] < 50]
     plates.sort(key=lambda p: (p[1] // 100, p[0]))
     mask = np.zeros(img.shape[:2], np.uint8)
     for (x, y, w, h) in plates:
@@ -901,6 +904,9 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
         if matte is not None:
             # the matte's own gaps between the spikes are real: keep them open
             own = cv2.dilate((lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8), np.ones((5, 5), np.uint8))
+            # a sword that touches its plate would bring the plate along
+            for (px, py, pw, ph) in plates:
+                own[max(0, py - 4 - by):max(0, py + ph + 4 - by), max(0, px - 12 - bx):max(0, px + pw + 12 - bx)] = 0
             alpha = rim * own
         rgba = cv2.cvtColor(img[by:by + bh, bx:bx + bw], cv2.COLOR_BGR2RGBA)
         rgba[:, :, 3] = (alpha * 255).astype(np.uint8)
@@ -914,3 +920,6 @@ print('rare swords', plated_weapons('sword_rare_sheet.png', 'swords_rare'))
 # Epic, Lv.45-70: 23 swords on a violet board; several plates are misnumbered,
 # so the order on the board is the order of the ladder (shared/data/items.js)
 print('epic swords', plated_weapons('swords_epic.png', 'swords_epic', plate='violet'))
+# Legendary, Lv.45-70: 25 swords; the plates repeat 57 and 58, so again the
+# board's order is the ladder's
+print('legendary swords', plated_weapons('swords_legendary.png', 'swords_legendary', plate='maroon'))

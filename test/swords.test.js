@@ -1,15 +1,16 @@
 // The swordsman's ladders: the common starters and the rare sheet on
-// five-level steps from Lv.1 to Lv.120, and the epic sheet from Lv.45 to Lv.70.
+// five-level steps from Lv.1 to Lv.120, and the epic and legendary sheets from
+// Lv.45 to Lv.70.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SWORDS, RARE_SWORDS, EPIC_SWORDS } from '../shared/data/items.js';
+import { SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS } from '../shared/data/items.js';
 import { MONSTERS } from '../shared/data/monsters.js';
 import { SHOPS } from '../shared/data/npcs.js';
 
 const byLevel = (set) => Object.values(set).sort((a, b) => a.level - b.level);
 
 test('each ladder runs its span, climbing, one picture each', () => {
-  for (const [set, n, from, to] of [[SWORDS, 24, 1, 120], [RARE_SWORDS, 25, 1, 120], [EPIC_SWORDS, 23, 45, 70]]) {
+  for (const [set, n, from, to] of [[SWORDS, 24, 1, 120], [RARE_SWORDS, 25, 1, 120], [EPIC_SWORDS, 23, 45, 70], [LEGENDARY_SWORDS, 25, 45, 70]]) {
     const list = byLevel(set);
     assert.equal(list.length, n);
     assert.equal(list[0].level, from);
@@ -40,6 +41,30 @@ test('an epic sword beats the rare one of its level, and is still a sword of tha
     assert.ok(e.atk < c.atk * 1.6, `${e.id} skips a whole tier`);
     assert.equal(e.rarity, 'epic');
   }
+});
+
+test('a legendary sword beats the epic one of its level, and stays within reach of it', () => {
+  const epics = byLevel(EPIC_SWORDS), commons = byLevel(SWORDS);
+  for (const l of byLevel(LEGENDARY_SWORDS)) {
+    const e = epics.filter((w) => w.level <= l.level).pop();
+    const c = commons.filter((w) => w.level <= l.level).pop();
+    assert.ok(l.atk > e.atk, `${l.id} (${l.atk}) is not above ${e.id} (${e.atk})`);
+    assert.ok(l.atk < c.atk * 1.8, `${l.id} leaves the other ladders behind`);
+    assert.equal(l.rarity, 'legendary');
+  }
+});
+
+test('legendary swords only drop, every one of them, rarest of all', () => {
+  const sold = new Set(Object.values(SHOPS).flatMap((s) => s.stock.map((l) => l.id)));
+  const chance = {};
+  for (const m of Object.values(MONSTERS)) for (const d of m.drops) if (!m.boss) chance[d.id] = Math.max(chance[d.id] ?? 0, d.chance);
+  const anyDrop = new Set(Object.values(MONSTERS).flatMap((m) => m.drops.map((d) => d.id)));
+  for (const l of Object.values(LEGENDARY_SWORDS)) {
+    assert.ok(!sold.has(l.id), `${l.id} is on a shelf`);
+    assert.ok(anyDrop.has(l.id), `${l.id} cannot be had`);
+  }
+  const top = (set) => Math.max(...Object.values(set).map((w) => chance[w.id] ?? 0));
+  assert.ok(top(LEGENDARY_SWORDS) < top(EPIC_SWORDS), 'a legendary is as easy to find as an epic');
 });
 
 test('epic swords only drop, and bosses are the likeliest source', () => {
