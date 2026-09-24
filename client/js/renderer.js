@@ -26,9 +26,9 @@ function uiImage(name) {
 // fetched up front: a word that loads on its first use would miss that hit
 // the market booth from the shop sheet, and the lantern hung beside it
 const STALL_ART = typeof Image !== 'undefined' ? { stall: uiImage('stall'), lantern: uiImage('lantern') } : null;
-// lock-on, picked, and friendly target reticles
-const RETICLES = typeof Image !== 'undefined'
-  ? { lock: uiImage('reticle_lock'), pick: uiImage('reticle_pick'), ally: uiImage('reticle_ally') } : null;
+// lock-on, picked, and friendly target reticles, side by side in one strip
+const RETICLES = typeof Image !== 'undefined' ? uiImage('reticles') : null;
+const RETICLE_CELLS = ['lock', 'pick', 'ally'];
 const BOOTH_W = 88;            // world px: a little under three tiles
 const BOOTH_COUNTER = 0.52;    // where the counter top sits, as a share of the art's height
 
@@ -934,15 +934,16 @@ export class Renderer {
       // the sheet's reticles: red once you are hitting it, gold while it is
       // only picked, blue on a player or anyone else who is not a foe
       const kind = e.k !== 'm' ? 'ally' : state.lockOn ? 'lock' : 'pick';
-      const img = RETICLES?.[kind];
+      const img = RETICLES;
       if (img?.naturalWidth) {
+        const cell = img.naturalHeight, sx = RETICLE_CELLS.indexOf(kind) * cell;
         const size = (e.boss ? 62 : 38) * (kind === 'lock' ? 1 + Math.sin(now / 140) * 0.04 : 1);
         const cy = e.y - (e.boss ? 22 : chibi ? 18 : 14);
         ctx.save();
         ctx.globalAlpha = kind === 'lock' ? 0.92 : 0.8;
         ctx.translate(e.x, cy);
         ctx.rotate(kind === 'lock' ? 0 : now / 2400);
-        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.drawImage(img, sx, 0, cell, cell, -size / 2, -size / 2, size, size);
         ctx.restore();
       } else {
         ctx.save();

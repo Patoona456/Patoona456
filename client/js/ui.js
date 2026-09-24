@@ -303,8 +303,14 @@ export class UI {
     for (const s of list ?? []) {
       if (!s.icon) continue;
       const pic = STATUS_ART[s.key] ?? STATUS_ART[s.type];
-      const node = el('div', s.beneficial ? 'good' : 'bad', pic ? '' : s.icon);
-      if (pic) {
+      const ail = AILMENTS.indexOf(s.key) >= 0 ? AILMENTS.indexOf(s.key) : AILMENTS.indexOf(s.type);
+      const node = el('div', s.beneficial ? 'good' : 'bad', pic || ail >= 0 ? '' : s.icon);
+      if (ail >= 0) {
+        // a cell of the combat sheet's ailment strip
+        const ico = el('i', 'st-ico ail');
+        ico.style.backgroundPosition = `${(ail / (AILMENTS.length - 1)) * 100}% 0`;
+        node.append(ico);
+      } else if (pic) {
         const img = el('img', 'st-ico');
         img.src = `${UI_BASE}/${pic}.webp`;
         img.alt = s.icon;
@@ -3578,10 +3584,9 @@ const SHOP_CATS = [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ
   ['consumable', 'ไอเทมใช้สอย'], ['material', 'วัตถุดิบ'], ['other', 'อื่นๆ']];
 
 /** Status (by key, then by type) -> painted icon from the UI sheet. */
-const STATUS_ART = {
-  food: 'st_plus', buff: 'st_sword', shield: 'st_shield', poison: 'ail_poison',
-  burn: 'ail_burn', chill: 'ail_freeze', stun: 'ail_stun', root: 'ail_slow', debuff: 'ail_curse',
-};
+const STATUS_ART = { food: 'st_plus', buff: 'st_sword', shield: 'st_shield' };
+/** The harmful ones, in the order of assets/ui/ailments.webp (tools/slice-ui.py). */
+const AILMENTS = ['stun', 'chill', 'root', 'debuff', 'poison', 'burn'];
 const STATUS_TH = {
   food: 'อาหาร', buff: 'เสริมพลัง', shield: 'โล่', poison: 'พิษ', burn: 'ไฟลวก',
   chill: 'เยือกแข็ง (ช้าลง)', stun: 'มึนงง (ขยับไม่ได้)', root: 'ถูกตรึง (เดินไม่ได้)', debuff: 'คำสาป (อ่อนแอลง)',

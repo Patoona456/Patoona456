@@ -351,6 +351,7 @@ body[data-ui="ember"] .btn.act-drop { background-image: url(../../assets/ui/act_
 /* status row: painted icons */
 body[data-ui="ember"] #statuses div { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 1px; background: rgba(20, 18, 16, .75); border-color: #6b5024; }
 #statuses .st-ico { width: 20px; height: 20px; object-fit: contain; display: block; }
+#statuses .st-ico.ail { background: url(../../assets/ui/ailments.webp) 0 0 / 600% 100% no-repeat; border-radius: 3px; }
 
 /* toasts ride the glowing notice banners */
 body[data-ui="ember"] .toast {

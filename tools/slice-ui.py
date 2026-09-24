@@ -691,13 +691,29 @@ def reticle(cx, cy, tint, r=50):
     return trim(rgba)
 
 
-for k, cx, tint in [('lock', 855, (255, 60, 50)), ('pick', 950, (255, 196, 40)), ('ally', 1043, (50, 150, 255))]:
-    save('reticle_' + k, reticle(cx, 250, tint))
+def strip(pieces, cell):
+    """Pieces side by side in equal square cells, one file for the lot
+    (the offline demo counts its files)."""
+    out = np.zeros((cell, cell * len(pieces), 4), np.uint8)
+    for i, p in enumerate(pieces):
+        h, w = p.shape[:2]
+        k = min(cell / w, cell / h, 1)
+        if k < 1:
+            p = cv2.resize(p, (max(1, round(w * k)), max(1, round(h * k))), interpolation=cv2.INTER_AREA)
+            h, w = p.shape[:2]
+        y, x = (cell - h) // 2, i * cell + (cell - w) // 2
+        out[y:y + h, x:x + w] = p
+    return out
+
+
+# lock, pick, ally - in that order (client/js/renderer.js RETICLE_CELLS)
+save('reticles', strip([reticle(cx, 250, tint) for cx, tint in
+                        [(855, (255, 60, 50)), (950, (255, 196, 40)), (1043, (50, 150, 255))]], 96))
 
 # the ailments the game actually has, art only (captions stay on the sheet)
-for k, cx in {'stun': 50, 'freeze': 107, 'slow': 282, 'curse': 341, 'poison': 402, 'burn': 464}.items():
-    art = cv2.cvtColor(cb[711:747, cx - 18:cx + 18], cv2.COLOR_BGR2RGBA)
-    save('ail_' + k, art)
+# stun, freeze, slow, curse, poison, burn - in that order (client/js/ui.js AILMENTS)
+save('ailments', strip([cv2.cvtColor(cb[711:747, cx - 18:cx + 18], cv2.COLOR_BGR2RGBA)
+                        for cx in (50, 107, 282, 341, 402, 464)], 36))
 
 # warning plates, words painted out so the game writes its own
 def erase_red(img, box):
