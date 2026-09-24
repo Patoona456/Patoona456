@@ -1812,8 +1812,8 @@ body.landscape-ui #combo { top: auto; right: auto; left: 250px; bottom: 150px; }
   border-radius: 10px; font-size: 18px; background: var(--panel-solid); border: 1px solid var(--edge);
 }
 #gm-panel {
-  position: fixed; z-index: 47; left: 56px; top: 70px; width: min(560px, calc(100vw - 72px));
-  max-height: calc(100vh - 90px); display: flex; flex-direction: column; padding: 0; overflow: hidden;
+  position: fixed; z-index: 47; left: 56px; top: 70px; width: min(560px, calc(100% - 72px));
+  display: flex; flex-direction: column; padding: 0; overflow: hidden;
 }
 #gm-panel > header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--edge-soft); }
 #gm-panel > header h2 { margin: 0; font-size: 14px; }
@@ -1821,14 +1821,14 @@ body.landscape-ui #combo { top: auto; right: auto; left: 250px; bottom: 150px; }
 .gm-tabs { display: flex; gap: 6px; padding: 8px 12px 0; }
 .gm-tabs button { padding: 5px 12px; border-radius: 8px; background: none; border: 1px solid var(--edge-soft); color: var(--muted); }
 .gm-tabs button.sel { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
-.gm-body { padding: 10px 12px 12px; overflow: auto; display: grid; gap: 8px; }
+.gm-body { padding: 10px 12px 12px; overflow: auto; display: grid; gap: 8px; flex: 1 1 auto; min-height: 0; }
 .gm-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .gm-filters input { flex: 1 1 160px; min-width: 0; }
 .gm-filters input, .gm-filters select, .gm-give input, .gm-give select, .gm-rows input {
   background: var(--panel-solid); color: var(--text); border: 1px solid var(--edge-soft); border-radius: 7px; padding: 5px 8px;
 }
 .gm-count { font-size: 11px; color: var(--muted); }
-.gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; max-height: 44vh; overflow: auto; }
+.gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; max-height: 44vh; overflow: auto; min-height: 0; }
 .gm-item {
   display: grid; justify-items: center; gap: 2px; padding: 5px 3px; border-radius: 8px;
   background: rgba(0, 0, 0, .25); border: 1px solid var(--edge-soft); color: var(--text); font-size: 10px; line-height: 1.2;
@@ -1841,3 +1841,39 @@ body.landscape-ui #combo { top: auto; right: auto; left: 250px; bottom: 150px; }
 .gm-rows { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .gm-rows input { width: 120px; }
 .gm-warps { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ======================= phones on their side ======================= */
+/* Every window, on a phone held (or turned by us) sideways: a floating card
+   in the middle at about four fifths of desktop size, never a bottom sheet
+   that swallows the screen. `landscape-ui` is set by JS, which also covers
+   the page we rotate ourselves - where the browser still thinks it is
+   portrait, so the max-width rules above would otherwise make every window
+   a full-width sheet. Sizes are in % of the (rotated) page, not vw/vh,
+   which point the wrong way on a rotated page. */
+body.landscape-ui { --ui-k: .74; }
+body.landscape-ui .win.window {
+  top: 50%; left: 50%; bottom: auto; right: auto;
+  transform: translate(-50%, -50%) scale(var(--ui-k));
+  width: min(640px, calc(96% / var(--ui-k)));
+  max-height: calc(88% / var(--ui-k));
+  border-radius: var(--radius); clip-path: var(--notch);
+  padding-bottom: 0;
+}
+body.landscape-ui .win.window:has(.wmap) { width: min(980px, calc(96% / var(--ui-k))); }
+body.landscape-ui .cols-2 { grid-template-columns: 1fr 1fr; }
+body.landscape-ui .forge { grid-template-columns: 1fr 1fr; }
+body.landscape-ui .shrine { grid-template-columns: 1fr 1fr; }
+body.landscape-ui .wmap { grid-template-columns: 1fr 220px; }
+
+/* the admin panel: the same card, laid out to fit a short screen */
+body.landscape-ui #gm-panel {
+  top: 50%; left: 50%; transform: translate(-50%, -50%) scale(var(--ui-k));
+  width: min(600px, calc(94% / var(--ui-k))); max-height: calc(88% / var(--ui-k));
+}
+#gm-panel { max-height: calc(100% - 90px); }
+.gm-filters { flex-wrap: nowrap; }
+.gm-filters select { flex: 0 0 auto; max-width: 30%; }
+body.landscape-ui .gm-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); max-height: none; }
+body.landscape-ui .gm-body { gap: 6px; padding: 8px 10px 10px; min-height: 0; }
+body.landscape-ui .gm-tabs { padding: 6px 10px 0; }
+body.landscape-ui #gm-toggle { top: 70px; width: 34px; height: 34px; font-size: 16px; }
