@@ -212,7 +212,7 @@ export function rollDamage(a, d, o = {}) {
 // ore around is not interesting. Anything a crafter actually wants has to be
 // sold to a crafter.
 export const NPC_BUY_RATE = {
-  common: 0.28, uncommon: 0.09, rare: 0.04, epic: 0.02, legendary: 0.01,
+  common: 0.28, uncommon: 0.09, rare: 0.04, epic: 0.02, legendary: 0.01, mythic: 0.005,
 };
 // A recipe ingredient - and a piece of gear - is worth what another player
 // will pay, never what a vendor will. Rarity alone was not enough: a steel

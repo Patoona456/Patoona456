@@ -139,8 +139,8 @@ export function specialMarks(def) {
   return Object.keys(SPECIAL_MARKS).filter((m) => out.has(m));
 }
 
-/** The signature a legendary piece wears, or null for everything else. */
+/** The signature a legendary (or mythic) piece wears, or null for everything else. */
 export function signatureOf(def) {
-  if (!def || def.rarity !== 'legendary') return null;
+  if (!def || (def.rarity !== 'legendary' && def.rarity !== 'mythic')) return null;
   return BY_ELEMENT[canonicalElement(def.element)] ?? null;
 }

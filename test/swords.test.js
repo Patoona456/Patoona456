@@ -3,14 +3,14 @@
 // the same span: a grade is not a band. And the weapon boxes that hold them.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ITEMS, SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, WEAPON_BOXES, BOX_ODDS } from '../shared/data/items.js';
+import { ITEMS, SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS, WEAPON_BOXES, BOX_ODDS } from '../shared/data/items.js';
 import { MONSTERS } from '../shared/data/monsters.js';
 import { SHOPS } from '../shared/data/npcs.js';
 
 const byLevel = (set) => Object.values(set).sort((a, b) => a.level - b.level);
 
 test('each ladder runs its span, climbing, one picture each', () => {
-  for (const [set, n, from, to] of [[SWORDS, 24, 1, 120], [RARE_SWORDS, 25, 1, 120], [EPIC_SWORDS, 23, 1, 120], [LEGENDARY_SWORDS, 25, 1, 120]]) {
+  for (const [set, n, from, to] of [[SWORDS, 24, 1, 120], [RARE_SWORDS, 25, 1, 120], [EPIC_SWORDS, 23, 1, 120], [LEGENDARY_SWORDS, 25, 1, 120], [MYTHIC_SWORDS, 26, 1, 120]]) {
     const list = byLevel(set);
     assert.equal(list.length, n);
     assert.equal(list[0].level, from);
@@ -88,11 +88,11 @@ test('rare swords are found, not bought from the smith', () => {
 });
 
 test('every grade starts at Lv.1: a new character can find an epic or a legendary', () => {
-  for (const set of [RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS]) assert.equal(byLevel(set)[0].level, 1);
+  for (const set of [RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS]) assert.equal(byLevel(set)[0].level, 1);
 });
 
 test('the weapon boxes hold every grade of their band, the better ones more rarely', () => {
-  const grades = ['common', 'rare', 'epic', 'legendary'];
+  const grades = ['common', 'rare', 'epic', 'legendary', 'mythic'];
   const covered = new Set();
   for (const box of Object.values(WEAPON_BOXES)) {
     const [from, to] = box.band;
@@ -108,7 +108,7 @@ test('the weapon boxes hold every grade of their band, the better ones more rare
     for (let i = 1; i < grades.length; i++) assert.ok(share[grades[i]] < share[grades[i - 1]], `${box.id}: ${grades[i]} is no rarer`);
   }
   // between them the boxes hold every sword there is
-  for (const set of [SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS]) {
+  for (const set of [SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS]) {
     for (const w of Object.values(set)) assert.ok(covered.has(w.id), `no box holds ${w.id}`);
   }
 });
@@ -120,4 +120,25 @@ test('weapon boxes drop in the field and from bosses, and the ticket counter has
   assert.ok(drops.has('box_weapon_1') && drops.has('box_weapon_2'), 'the field drops no weapon box');
   assert.ok([...bossDrops].some((id) => WEAPON_BOXES[id]), 'no boss drops a weapon box');
   for (const id of Object.keys(WEAPON_BOXES)) assert.ok(counter.has(id), `${id} is not at the ticket counter`);
+});
+
+test('a mythic sword beats the legendary one of its level, and there is one at the level cap', () => {
+  const legends = byLevel(LEGENDARY_SWORDS), commons = byLevel(SWORDS);
+  for (const m of byLevel(MYTHIC_SWORDS)) {
+    const l = legends.filter((w) => w.level <= m.level).pop();
+    const c = commons.filter((w) => w.level <= m.level).pop();
+    assert.ok(m.atk > l.atk, `${m.id} (${m.atk}) is not above ${l.id} (${l.atk})`);
+    assert.ok(m.atk < c.atk * 2, `${m.id} leaves everything behind`);
+    assert.equal(m.rarity, 'mythic');
+  }
+  assert.ok(MYTHIC_SWORDS.sword_mythic_99, 'no mythic at the level cap');
+});
+
+test('mythic is the rarest grade: rarer from monsters than legendary, never sold', () => {
+  const sold = new Set(Object.values(SHOPS).flatMap((s) => s.stock.map((l) => l.id)));
+  const chance = {};
+  for (const m of Object.values(MONSTERS)) for (const d of m.drops) if (!m.boss) chance[d.id] = Math.max(chance[d.id] ?? 0, d.chance);
+  const top = (set) => Math.max(...Object.values(set).map((w) => chance[w.id] ?? 0));
+  assert.ok(top(MYTHIC_SWORDS) < top(LEGENDARY_SWORDS), 'a mythic is as easy to find as a legendary');
+  for (const m of Object.values(MYTHIC_SWORDS)) assert.ok(!sold.has(m.id), `${m.id} is on a shelf`);
 });

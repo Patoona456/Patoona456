@@ -8,7 +8,7 @@ import { SKILLS } from '../../shared/data/skills.js';
 
 export const RARITY = {
   common: '#cfd8dc', uncommon: '#66bb6a', rare: '#42a5f5',
-  epic: '#ab47bc', legendary: '#ffa726',
+  epic: '#ab47bc', legendary: '#ffa726', mythic: '#ff4d5e',
 };
 
 const cache = new Map();
@@ -38,7 +38,7 @@ function artImage(name) {
   return img;
 }
 /** Atlases: many icons in one file, as equal square cells, `cols` across. */
-const ATLAS = { potions: { cols: 8 }, scrolls: { cols: 8 }, swords: { cols: 6 }, swords_rare: { cols: 8 }, swords_epic: { cols: 8 }, swords_legendary: { cols: 8 } };
+const ATLAS = { potions: { cols: 8 }, scrolls: { cols: 8 }, swords: { cols: 6 }, swords_rare: { cols: 8 }, swords_epic: { cols: 8 }, swords_legendary: { cols: 8 }, swords_mythic: { cols: 8 } };
 /** Paint the sheet art over a canvas now, or as soon as it has loaded. */
 function paintArt(canvas, name) {
   // 'potions#12' is cell 12 of the potions atlas

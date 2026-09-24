@@ -852,7 +852,7 @@ print('sword sheet done')
 # each sword, so it is modelled - shrink the sheet hard, median it, grow it
 # back, and the thin swords vanish while the gradient and glows stay - and a
 # sword is whatever differs from it. Out: assets/ui/swords_rare.webp.
-def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
+def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy', orphans=False):
     raw = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src), cv2.IMREAD_UNCHANGED)
     img = raw[:, :, :3]
     # a board that comes already cut out (the epic one) says where the art is
@@ -862,11 +862,14 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
     lum = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(int)
     # the level plates: navy on the rare sheet, near-black violet on the epic
     # one, near-black maroon on the legendary one
+    sat = img.max(2).astype(int) - img.min(2).astype(int)
     ink = {'navy': (b - r > 25) & (lum < 90), 'violet': (lum < 70) & (b - g > 20),
-           'maroon': (lum < 70) & (r - g > 20)}[plate]
+           'maroon': (lum < 70) & (r - g > 20), 'black': (lum < 50) & (sat < 40)}[plate]
     n, lab, st, _ = cv2.connectedComponentsWithStats(ink.astype(np.uint8))
-    wide = (80, 110) if plate == 'maroon' else (70, 9999)    # the maroon board's rim has plate-coloured scraps
-    plates = [st[i][:4] for i in range(1, n) if wide[0] < st[i, 2] < wide[1] and 18 < st[i, 3] < 50]
+    # the maroon board's rim has plate-coloured scraps; the black plates have
+    # an inner frame that reads as a second, thinner plate
+    wide, tall = {'maroon': ((80, 110), (18, 50)), 'black': ((90, 115), (23, 33))}.get(plate, ((70, 9999), (18, 50)))
+    plates = [st[i][:4] for i in range(1, n) if wide[0] < st[i, 2] < wide[1] and tall[0] < st[i, 3] < tall[1]]
     plates.sort(key=lambda p: (p[1] // 100, p[0]))
     mask = np.zeros(img.shape[:2], np.uint8)
     for (x, y, w, h) in plates:
@@ -875,22 +878,60 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
     small = cv2.resize(clean, (clean.shape[1] // 8, clean.shape[0] // 8), interpolation=cv2.INTER_AREA)
     bg = cv2.resize(cv2.medianBlur(small, 9), (clean.shape[1], clean.shape[0]), interpolation=cv2.INTER_CUBIC)
     d = np.abs(clean.astype(int) - bg.astype(int)).sum(2).astype(np.float32)
+    if matte is None and plate == 'black':
+        # the mythic board has the transparency checks painted in: pale and
+        # colourless is board, anything else is art (the blades' own white
+        # glints sit inside their dark outline and come back with the holes)
+        # The checks are two flat greys (about 214 and 252) with no tint (3 or less) at
+        # all; the blades' pale facets are tinted and shaded. So board is a
+        # large patch of untinted pale grey; a small one is a glint.
+        pale = ((sat <= 3) & (lum >= 204)).astype(np.uint8)
+        k4, pl, ps, _ = cv2.connectedComponentsWithStats(pale)
+        board = np.isin(pl, [j for j in range(1, k4) if ps[j, 4] > 300])
+        # the antialiased rim between check and outline: pale and nearly untinted
+        rim_px = cv2.dilate(board.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool) & (sat < 20) & (lum > 185)
+        matte = np.where(board | rim_px, 0, 255).astype(np.uint8)
+        matte = cv2.morphologyEx(matte, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        matte = cv2.GaussianBlur(matte, (3, 3), 0).astype(np.float32)
+        filled_holes = True
+    else:
+        filled_holes = False
     if matte is not None:
         d = matte                       # 0..255: lo/hi below become alpha thresholds
         lo, hi = 128, 250
     solid = (d > lo).astype(np.uint8)
     solid = cv2.morphologyEx(solid, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
     n, lab, st, _ = cv2.connectedComponentsWithStats(solid)
-    rows = (len(plates) + cols - 1) // cols
-    atlas = np.zeros((cell * rows, cell * cols, 4), np.uint8)
-    for k, (x, y, w, h) in enumerate(plates):
-        # the biggest blob whose box comes down to the plate from above
-        best, area = 0, 0
+    # each plate's sword: of the blobs whose box comes down to the plate from
+    # above and ends there (not a taller sword from the row below), the one
+    # whose pommel corner - its box's lower left - is nearest the plate's own
+    # left end, which is where every board sets the plate (a neighbour or a
+    # title badge can cover the plate too, but its pommel is elsewhere)
+    picks = []
+    for (x, y, w, h) in plates:
+        best, score = 0, None
         for i in range(1, n):
             bx, by, bw, bh, a = st[i]
-            # ...and ends at the plate, not a taller sword from the row below
-            if a > area and bx < x + w and bx + bw > x and y - 40 < by + bh < y + h + 8 and by < y:
-                best, area = i, a
+            over = min(x + w, bx + bw) - max(x, bx)
+            # (bh > 60: the plate is a blob of its own, and it is not a sword)
+            if over > 0 and y - 40 < by + bh < y + h + 8 and by < y and a > 1500 and bh > 60:
+                dist = abs(bx - x) + abs(by + bh - y)
+                if score is None or dist < score:
+                    best, score = i, dist
+        picks.append(((y // 100, x), best))
+    if orphans:
+        # a sword the artist left without a plate still belongs on the ladder,
+        # where it sits on the board (not the title badge, which is wide)
+        used = {b for _, b in picks}
+        typical = np.median([st[b, 4] for b in used])
+        for i in range(1, n):
+            bx, by, bw, bh, a = st[i]
+            if i not in used and a > typical * 0.5 and bw < bh * 1.3:
+                picks.append((((by + bh) // 100, bx), i))
+        picks.sort(key=lambda t: t[0])
+    rows = (len(picks) + cols - 1) // cols
+    atlas = np.zeros((cell * rows, cell * cols, 4), np.uint8)
+    for k, (_, best) in enumerate(picks):
         bx, by, bw, bh, _ = st[best]
         m = (lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8) * 255
         ff = cv2.copyMakeBorder(m, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
@@ -906,14 +947,31 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
             own = cv2.dilate((lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8), np.ones((5, 5), np.uint8))
             # a sword that touches its plate would bring the plate along
             for (px, py, pw, ph) in plates:
-                own[max(0, py - 4 - by):max(0, py + ph + 4 - by), max(0, px - 12 - bx):max(0, px + pw + 12 - bx)] = 0
+                own[max(0, py - 4 - by):max(0, py + ph + 8 - by), max(0, px - 16 - bx):max(0, px + pw + 16 - bx)] = 0
+            if filled_holes:
+                # a glint inside the blade is a hole in a colour matte: fill the
+                # small ones; a big one shows the checks, and is a real gap
+                body = (lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8)
+                holes = cv2.bitwise_not(cv2.dilate(body, np.ones((1, 1), np.uint8)) * 255)
+                k2, hl, hs, _ = cv2.connectedComponentsWithStats((holes > 0).astype(np.uint8))
+                for j in range(1, k2):
+                    hx, hy, hw, hh, ha = hs[j]
+                    inner_hole = hx > 0 and hy > 0 and hx + hw < bw and hy + hh < bh
+                    if inner_hole and ha < 90:
+                        rim[hl == j] = 1.0
+                        own[hl == j] = 1
             alpha = rim * own
+        # crumbs left over from a plate's frame or lettering: not part of the sword
+        k3, cl, cs, _ = cv2.connectedComponentsWithStats((alpha > 0.1).astype(np.uint8))
+        for j in range(1, k3):
+            if cs[j, 4] < 80:
+                alpha[cl == j] = 0
         rgba = cv2.cvtColor(img[by:by + bh, bx:bx + bw], cv2.COLOR_BGR2RGBA)
         rgba[:, :, 3] = (alpha * 255).astype(np.uint8)
         rr, cc = divmod(k, cols)
         atlas[rr * cell:(rr + 1) * cell, cc * cell:(cc + 1) * cell] = strip([trim(rgba)], cell)
     save(out, atlas, quality=96)
-    return len(plates)
+    return len(picks)
 
 
 print('rare swords', plated_weapons('sword_rare_sheet.png', 'swords_rare'))
@@ -923,3 +981,7 @@ print('epic swords', plated_weapons('swords_epic.png', 'swords_epic', plate='vio
 # Legendary, Lv.45-70: 25 swords; the plates repeat 57 and 58, so again the
 # board's order is the ladder's
 print('legendary swords', plated_weapons('swords_legendary.png', 'swords_legendary', plate='maroon'))
+# Mythic, Lv.45-70 by its badge: 25 plates and 26 swords (the big one at the
+# end of the third row has none, and there is no Lv.65 plate); the checks
+# are painted in, not transparent
+print('mythic swords', plated_weapons('swords_mythic.png', 'swords_mythic', plate='black', orphans=True))

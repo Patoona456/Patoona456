@@ -284,7 +284,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls', 'swords', 'swords_rare', 'swords_epic', 'swords_legendary']) uiImage(name);
+  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls', 'swords', 'swords_rare', 'swords_epic', 'swords_legendary', 'swords_mythic']) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);

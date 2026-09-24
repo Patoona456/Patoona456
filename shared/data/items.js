@@ -397,12 +397,53 @@ export const LEGENDARY_SWORDS = {
 };
 Object.assign(ITEMS, LEGENDARY_SWORDS);
 
+/* ============ MYTHIC SWORDS (assets/ui/source/swords_mythic.png) ============
+   Twenty-six mythic swords, the grade above legendary, Lv.1 to Lv.120. The
+   board has 25 plates for 26 swords (the big one closing the third row has
+   none, and there is no Lv.65 plate), all saying Lv.45-70; the pictures keep
+   the board's order. The ladder is the rare one's five-level steps with one
+   more at Lv.99, the level cap, so the best mythic a character can wear
+   today is a step of its own. A mythic sword is the common sword of its
+   level plus four fifths more ATK (legendary three fifths), the most crit,
+   and five stats. Almost never seen: a boss, now and then; a box, rarely. */
+const MYTHIC_SWORD = (art, o) => W({ art: 'swords_mythic#' + art, wclass: 'sword', range: 47, rarity: 'mythic',
+  weight: 52 + Math.round(o.level * 0.6), ...o });
+export const MYTHIC_SWORDS = {
+  sword_mythic_1: MYTHIC_SWORD(0, { id: 'sword_mythic_1', name: 'Obsidian Oath', nameTh: 'ดาบคำสัตย์ออบซิเดียน', level: 1, atk: 32, delay: 0.8, value: 5180, crit: 5, stats: { str: 4, agi: 3, dex: 2, luk: 2, vit: 1 } }),
+  sword_mythic_5: MYTHIC_SWORD(1, { id: 'sword_mythic_5', name: 'Gilded Night', nameTh: 'ดาบราตรีปิดทอง', level: 5, atk: 44, delay: 0.8, value: 14520, crit: 5, stats: { str: 4, agi: 3, dex: 2, luk: 2, vit: 1 } }),
+  sword_mythic_10: MYTHIC_SWORD(2, { id: 'sword_mythic_10', name: 'Blackgold Fang', nameTh: 'ดาบเขี้ยวทองดำ', level: 10, atk: 57, delay: 0.79, value: 30780, crit: 5, stats: { str: 5, agi: 3, dex: 2, luk: 2, vit: 1 } }),
+  sword_mythic_15: MYTHIC_SWORD(3, { id: 'sword_mythic_15', name: 'Eclipse Warden', nameTh: 'ดาบผู้พิทักษ์คราส', level: 15, atk: 68, delay: 0.79, value: 51000, crit: 5, stats: { str: 5, agi: 4, dex: 3, luk: 2, vit: 1 } }),
+  sword_mythic_20: MYTHIC_SWORD(4, { id: 'sword_mythic_20', name: 'Onyx Talon', nameTh: 'ดาบกรงเล็บนิล', level: 20, atk: 78, delay: 0.79, value: 74880, crit: 6, stats: { str: 6, agi: 4, dex: 3, luk: 3, vit: 1 } }),
+  sword_mythic_25: MYTHIC_SWORD(5, { id: 'sword_mythic_25', name: 'Umbral Regent', nameTh: 'ดาบผู้สำเร็จราชการเงา', level: 25, atk: 88, delay: 0.78, value: 102960, crit: 6, stats: { str: 6, agi: 5, dex: 3, luk: 3, vit: 1 } }),
+  sword_mythic_30: MYTHIC_SWORD(6, { id: 'sword_mythic_30', name: 'Nightforged Edge', nameTh: 'ดาบหลอมราตรี', level: 30, atk: 98, delay: 0.78, value: 135240, crit: 6, stats: { str: 7, agi: 5, dex: 4, luk: 3, vit: 2 } }),
+  sword_mythic_35: MYTHIC_SWORD(7, { id: 'sword_mythic_35', name: 'Void Aurum', nameTh: 'ดาบทองห้วงมืด', level: 35, atk: 107, delay: 0.78, value: 170130, crit: 6, stats: { str: 7, agi: 5, dex: 4, luk: 3, vit: 2 } }),
+  sword_mythic_40: MYTHIC_SWORD(8, { id: 'sword_mythic_40', name: 'Shadowcrown', nameTh: 'ดาบมงกุฎเงา', level: 40, atk: 117, delay: 0.77, value: 210600, crit: 7, stats: { str: 8, agi: 6, dex: 4, luk: 4, vit: 2 } }),
+  sword_mythic_45: MYTHIC_SWORD(9, { id: 'sword_mythic_45', name: 'Abyssal Gilt', nameTh: 'ดาบทองห้วงลึก', level: 45, atk: 125, delay: 0.77, value: 251250, crit: 7, stats: { str: 9, agi: 6, dex: 5, luk: 4, vit: 2 } }),
+  sword_mythic_50: MYTHIC_SWORD(10, { id: 'sword_mythic_50', name: 'Dusk Tyrant', nameTh: 'ดาบทรราชสนธยา', level: 50, atk: 134, delay: 0.77, value: 297480, crit: 7, stats: { str: 9, agi: 7, dex: 5, luk: 4, vit: 2 } }),
+  sword_mythic_55: MYTHIC_SWORD(11, { id: 'sword_mythic_55', name: 'Obsidian Wyrm', nameTh: 'ดาบวายุภักษ์ออบซิเดียน', level: 55, atk: 142, delay: 0.76, value: 345060, crit: 7, stats: { str: 10, agi: 7, dex: 5, luk: 4, vit: 2 } }),
+  sword_mythic_60: MYTHIC_SWORD(12, { id: 'sword_mythic_60', name: 'Blackstar Reaver', nameTh: 'ดาบผลาญดาราดำ', level: 60, atk: 151, delay: 0.76, value: 398640, crit: 8, stats: { str: 10, agi: 8, dex: 6, luk: 5, vit: 3 } }),
+  sword_mythic_65: MYTHIC_SWORD(13, { id: 'sword_mythic_65', name: 'Gloomthorn', nameTh: 'ดาบหนามอนธการ', level: 65, atk: 159, delay: 0.76, value: 453150, crit: 8, stats: { str: 11, agi: 8, dex: 6, luk: 5, vit: 3 } }),
+  sword_mythic_70: MYTHIC_SWORD(14, { id: 'sword_mythic_70', name: 'Nether Sovereign', nameTh: 'ดาบราชันนรก', level: 70, atk: 167, delay: 0.75, value: 511020, crit: 8, stats: { str: 11, agi: 8, dex: 6, luk: 5, vit: 3 } }),
+  sword_mythic_75: MYTHIC_SWORD(15, { id: 'sword_mythic_75', name: 'Midnight Crest', nameTh: 'ดาบตราเที่ยงคืน', level: 75, atk: 175, delay: 0.75, value: 572250, crit: 8, stats: { str: 12, agi: 9, dex: 7, luk: 5, vit: 3 } }),
+  sword_mythic_80: MYTHIC_SWORD(16, { id: 'sword_mythic_80', name: 'Voidfang Emperor', nameTh: 'ดาบจักรพรรดิเขี้ยวห้วงมืด', level: 80, atk: 183, delay: 0.75, value: 636840, crit: 9, stats: { str: 12, agi: 9, dex: 7, luk: 6, vit: 3 } }),
+  sword_mythic_85: MYTHIC_SWORD(17, { id: 'sword_mythic_85', name: 'Eternal Eclipse', nameTh: 'ดาบคราสนิรันดร์', level: 85, atk: 191, delay: 0.74, value: 704790, crit: 9, stats: { str: 13, agi: 10, dex: 7, luk: 6, vit: 3 } }),
+  sword_mythic_90: MYTHIC_SWORD(18, { id: 'sword_mythic_90', name: 'Onyx Dragonlord', nameTh: 'ดาบจ้าวมังกรนิล', level: 90, atk: 198, delay: 0.74, value: 772200, crit: 9, stats: { str: 14, agi: 10, dex: 8, luk: 6, vit: 4 } }),
+  sword_mythic_95: MYTHIC_SWORD(19, { id: 'sword_mythic_95', name: 'Worldrend', nameTh: 'ดาบฉีกพิภพ', level: 95, atk: 206, delay: 0.74, value: 846660, crit: 9, stats: { str: 14, agi: 10, dex: 8, luk: 6, vit: 4 } }),
+  sword_mythic_99: MYTHIC_SWORD(20, { id: 'sword_mythic_99', name: 'Starless Throne', nameTh: 'ดาบบัลลังก์ไร้ดาว', level: 99, atk: 212, delay: 0.73, value: 906940, crit: 9, stats: { str: 15, agi: 11, dex: 8, luk: 6, vit: 4 } }),
+  sword_mythic_100: MYTHIC_SWORD(21, { id: 'sword_mythic_100', name: 'Doomclaw', nameTh: 'ดาบกรงเล็บวิบัติ', level: 100, atk: 213, delay: 0.73, value: 920160, crit: 10, stats: { str: 15, agi: 11, dex: 8, luk: 7, vit: 4 } }),
+  sword_mythic_105: MYTHIC_SWORD(22, { id: 'sword_mythic_105', name: 'Oblivion Crown', nameTh: 'ดาบมงกุฎลืมเลือน', level: 105, atk: 221, delay: 0.73, value: 1001130, crit: 10, stats: { str: 15, agi: 11, dex: 9, luk: 7, vit: 4 } }),
+  sword_mythic_110: MYTHIC_SWORD(23, { id: 'sword_mythic_110', name: 'Chaos Aurelion', nameTh: 'ดาบทองโกลาหล', level: 110, atk: 228, delay: 0.73, value: 1080720, crit: 10, stats: { str: 16, agi: 12, dex: 9, luk: 7, vit: 4 } }),
+  sword_mythic_115: MYTHIC_SWORD(24, { id: 'sword_mythic_115', name: 'Godslayer Night', nameTh: 'ดาบราตรีสังหารเทพ', level: 115, atk: 235, delay: 0.72, value: 1163250, crit: 10, stats: { str: 16, agi: 12, dex: 9, luk: 7, vit: 4 } }),
+  sword_mythic_120: MYTHIC_SWORD(25, { id: 'sword_mythic_120', name: 'Mythbreaker', nameTh: 'ดาบทำลายตำนาน', level: 120, atk: 243, delay: 0.72, value: 1253880, crit: 11, stats: { str: 17, agi: 13, dex: 10, luk: 8, vit: 5 } }),
+};
+Object.assign(ITEMS, MYTHIC_SWORDS);
+
 /* ============ WEAPON BOXES ============
    A sealed box of swords for one band of levels. Every grade is in it, the
-   better ones more rarely: common 62, rare 28, epic 8.5, legendary 1.5 in a
-   hundred, shared evenly among that grade's swords in the band. They drop
+   better ones more rarely: common 62, rare 28, epic 8.5, legendary 1.2 and
+   mythic 0.3 in a hundred, shared evenly among that grade's swords in the band. They drop
    from monsters of the band, from bosses, and are at the ticket counter. */
-export const BOX_ODDS = { common: 62, rare: 28, epic: 8.5, legendary: 1.5 };
+export const BOX_ODDS = { common: 62, rare: 28, epic: 8.5, legendary: 1.2, mythic: 0.3 };
 const BOX_BANDS = [
   { id: 'box_weapon_1', from: 1, to: 39, name: "Novice's Weapon Box", nameTh: 'กล่องสุ่มอาวุธนักผจญภัย', value: 3000, rarity: 'uncommon' },
   { id: 'box_weapon_2', from: 40, to: 79, name: "Veteran's Weapon Box", nameTh: 'กล่องสุ่มอาวุธทหารผ่านศึก', value: 12000, rarity: 'rare' },
@@ -411,14 +452,14 @@ const BOX_BANDS = [
 export const WEAPON_BOXES = {};
 for (const band of BOX_BANDS) {
   const opens = [];
-  for (const [grade, set] of [['common', SWORDS], ['rare', RARE_SWORDS], ['epic', EPIC_SWORDS], ['legendary', LEGENDARY_SWORDS]]) {
+  for (const [grade, set] of [['common', SWORDS], ['rare', RARE_SWORDS], ['epic', EPIC_SWORDS], ['legendary', LEGENDARY_SWORDS], ['mythic', MYTHIC_SWORDS]]) {
     const inBand = Object.values(set).filter((w) => w.level >= band.from && w.level <= band.to);
     for (const w of inBand) opens.push({ id: w.id, qty: 1, weight: BOX_ODDS[grade] / inBand.length });
   }
   WEAPON_BOXES[band.id] = C({
     id: band.id, name: band.name, nameTh: band.nameTh, value: band.value, rarity: band.rarity, box: true, weight: 10,
     level: 1, cooldown: 1, band: [band.from, band.to], opens,
-    desc: `เปิดแล้วได้ดาบ Lv.${band.from}–${band.to} หนึ่งเล่ม — ธรรมดา 62% · Rare 28% · Epic 8.5% · Legendary 1.5%`,
+    desc: `เปิดแล้วได้ดาบ Lv.${band.from}–${band.to} หนึ่งเล่ม — ธรรมดา 62% · Rare 28% · Epic 8.5% · Legendary 1.2% · Mythic 0.3%`,
   });
 }
 Object.assign(ITEMS, WEAPON_BOXES);
@@ -473,7 +514,7 @@ export function cardFits(cardDef, gearDef) {
 }
 
 export const RARITY_COLORS = {
-  common: '#cfd8dc', uncommon: '#66bb6a', rare: '#42a5f5', epic: '#ab47bc', legendary: '#ffa726',
+  common: '#cfd8dc', uncommon: '#66bb6a', rare: '#42a5f5', epic: '#ab47bc', legendary: '#ffa726', mythic: '#ff4d5e',
 };
 
 export function item(id) { return ITEMS[id]; }

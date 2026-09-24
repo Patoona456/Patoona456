@@ -1,4 +1,4 @@
-import { SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, WEAPON_BOXES } from './items.js';
+import { SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS, WEAPON_BOXES } from './items.js';
 // Bestiary.
 //
 // sprite.kind:
@@ -480,11 +480,13 @@ const SWORD_LADDER = Object.values(SWORDS).sort((a, b) => a.level - b.level);
 const RARE_LADDER = Object.values(RARE_SWORDS).sort((a, b) => a.level - b.level);
 const EPIC_LADDER = Object.values(EPIC_SWORDS).sort((a, b) => a.level - b.level);
 const LEGEND_LADDER = Object.values(LEGENDARY_SWORDS).sort((a, b) => a.level - b.level);
+const MYTHIC_LADDER = Object.values(MYTHIC_SWORDS).sort((a, b) => a.level - b.level);
 const bandOf = (ladder, lv) => ladder.filter((w) => w.level <= lv).pop();
 /** The epic swords a monster of this level may carry: the band's own and the ones just around it. */
 const near = (ladder, lv) => ladder.filter((w) => w.level <= lv + 3 && w.level > lv - 6);
 const epicsNear = (lv) => near(EPIC_LADDER, lv);
 const legendsNear = (lv) => near(LEGEND_LADDER, lv);
+const mythicsNear = (lv) => near(MYTHIC_LADDER, lv);
 /** The weapon box whose band a monster of this level falls in. */
 const boxOf = (lv) => Object.values(WEAPON_BOXES).find((b) => lv >= b.band[0] && lv <= b.band[1])?.id ?? 'box_weapon_3';
 const ITEM_BOOK = { fire: 'book_fire', ice: 'book_ice', wind: 'book_wind', lightning: 'book_lightning',
@@ -515,6 +517,7 @@ export function potionDrops(m) {
       { id: bandOf(RARE_LADDER, m.level)?.id, chance: 0.35 },
       ...epicsNear(m.level).map((e, _, all) => ({ id: e.id, chance: 0.1 / all.length })),
       ...legendsNear(m.level).map((e, _, all) => ({ id: e.id, chance: 0.03 / all.length })),
+      ...mythicsNear(m.level).map((e, _, all) => ({ id: e.id, chance: 0.008 / all.length })),
       { id: boxOf(m.level), chance: 0.5 },
     ].filter((d) => d.id);
   }
@@ -542,6 +545,8 @@ export function potionDrops(m) {
   out.push({ id: boxOf(m.level), chance: 0.003 });
   // and a legendary one: most players will only ever see it from a boss or a box
   for (const e of legendsNear(m.level)) out.push({ id: e.id, chance: 0.00006 / legendsNear(m.level).length });
+  // a mythic one from the field is a story the server will hear about
+  for (const e of mythicsNear(m.level)) out.push({ id: e.id, chance: 0.00001 / mythicsNear(m.level).length });
   if (m.level >= 20) {
     out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },
       { id: 'item_find', chance: 0.003 }, { id: 'curse_potion', chance: 0.004 });

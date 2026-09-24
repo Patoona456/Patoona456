@@ -21,6 +21,7 @@
   --rarity-rare: #42a5f5;
   --rarity-epic: #ab47bc;
   --rarity-legendary: #ffa726;
+  --rarity-mythic: #ff4d5e;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
 
@@ -327,6 +328,8 @@ body[data-ui="ember"] .slot.rarity-uncommon { border-image-source: url(../../ass
 body[data-ui="ember"] .slot.rarity-rare { border-image-source: url(../../assets/ui/slot_rare.webp); border-image-slice: 12 fill; }
 body[data-ui="ember"] .slot.rarity-epic { border-image-source: url(../../assets/ui/slot_epic.webp); border-image-slice: 12 fill; }
 body[data-ui="ember"] .slot.rarity-legendary { border-image-source: url(../../assets/ui/slot_legendary.webp); border-image-slice: 12 fill; }
+/* no framed slot art for mythic yet: the legendary frame, and a crimson glow over it */
+body[data-ui="ember"] .slot.rarity-mythic { border-image-source: url(../../assets/ui/slot_legendary.webp); border-image-slice: 12 fill; box-shadow: 0 0 0 1px var(--rarity-mythic), inset 0 0 14px rgba(255, 77, 94, .45); }
 body[data-ui="ember"] .doll-slot.empty { opacity: 1; }
 body[data-ui="ember"] .doll-slot .ghost { width: 64%; height: 64%; object-fit: contain; opacity: .9; filter: brightness(1.35); }
 
@@ -467,6 +470,7 @@ body[data-ui="pixel"] .bar, body[data-ui="pixel"] .bar i { border-radius: 0; }
 .slot.rarity-rare { border-color: var(--rarity-rare); box-shadow: inset 0 0 12px rgba(66, 165, 245, .25); }
 .slot.rarity-epic { border-color: var(--rarity-epic); box-shadow: inset 0 0 12px rgba(171, 71, 188, .28); }
 .slot.rarity-legendary { border-color: var(--rarity-legendary); box-shadow: inset 0 0 12px rgba(255, 167, 38, .28); }
+.slot.rarity-mythic { border-color: var(--rarity-mythic); box-shadow: inset 0 0 14px rgba(255, 77, 94, .4); }
 .slot.broken { filter: grayscale(1) brightness(.6); }
 
 .btn {
@@ -1441,6 +1445,7 @@ body.landscape-ui .wm-side { max-height: 62vh; }
 .rarity-common { color: var(--rarity-common); } .rarity-uncommon { color: var(--rarity-uncommon); }
 .rarity-rare { color: var(--rarity-rare); } .rarity-epic { color: var(--rarity-epic); }
 .rarity-legendary { color: var(--rarity-legendary); }
+.rarity-mythic { color: var(--rarity-mythic); }
 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--edge-soft); }
