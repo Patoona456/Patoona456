@@ -2,7 +2,7 @@
 //
 // Item art is named 'sheet#cell' (shared/data/items.js), and that name never
 // changes. Some sheets are files of their own; the five sword grades share
-// one file, weapons.webp, to keep the demo under its file cap. This table is
+// one file, weapons.webp, with the bows, to keep the demo under its file cap. This table is
 // the only place that knows which is which, so the icons, the held weapon and
 // the loot on the ground all find the same picture.
 //
@@ -21,6 +21,7 @@ export const ATLASES = {
   swords_epic: { in: 'weapons', cols: 8, row: 8, count: 23 },
   swords_legendary: { in: 'weapons', cols: 8, row: 11, count: 25 },
   swords_mythic: { in: 'weapons', cols: 8, row: 15, count: 26 },
+  bows: { in: 'weapons', cols: 8, row: 19, count: 21 },
 };
 
 /** The file a sheet's pictures are in (without the .webp). */

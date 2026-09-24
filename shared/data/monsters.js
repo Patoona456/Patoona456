@@ -1,4 +1,4 @@
-import { SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS, WEAPON_BOXES } from './items.js';
+import { SWORDS, BOWS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS, WEAPON_BOXES } from './items.js';
 // Bestiary.
 //
 // sprite.kind:
@@ -477,6 +477,7 @@ export const MONSTERS = {
  */
 const BAND = (lv) => (lv < 20 ? 's' : lv < 40 ? 'm' : lv < 58 ? 'l' : 'xl');
 const SWORD_LADDER = Object.values(SWORDS).sort((a, b) => a.level - b.level);
+const BOW_LADDER = Object.values(BOWS).sort((a, b) => a.level - b.level);
 const RARE_LADDER = Object.values(RARE_SWORDS).sort((a, b) => a.level - b.level);
 const EPIC_LADDER = Object.values(EPIC_SWORDS).sort((a, b) => a.level - b.level);
 const LEGEND_LADDER = Object.values(LEGENDARY_SWORDS).sort((a, b) => a.level - b.level);
@@ -536,6 +537,8 @@ export function potionDrops(m) {
   // the starter sword of its band: the best one a character this level can hold
   const sword = bandOf(SWORD_LADDER, m.level);
   if (sword) out.push({ id: sword.id, chance: 0.004 });
+  const bow = bandOf(BOW_LADDER, m.level);            // and the archer's
+  if (bow) out.push({ id: bow.id, chance: 0.004 });
   const rare = bandOf(RARE_LADDER, m.level);         // a rare sword is a real find
   if (rare) out.push({ id: rare.id, chance: 0.0012 });
   // an epic one, a story to tell: any of those a few levels either side of

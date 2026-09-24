@@ -864,12 +864,17 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy', orpha
     # one, near-black maroon on the legendary one
     sat = img.max(2).astype(int) - img.min(2).astype(int)
     ink = {'navy': (b - r > 25) & (lum < 90), 'violet': (lum < 70) & (b - g > 20),
-           'maroon': (lum < 70) & (r - g > 20), 'black': (lum < 50) & (sat < 40)}[plate]
+           'maroon': (lum < 70) & (r - g > 20), 'black': (lum < 50) & (sat < 40),
+           'matte': np.zeros_like(lum, bool)}[plate]
     n, lab, st, _ = cv2.connectedComponentsWithStats(ink.astype(np.uint8))
     # the maroon board's rim has plate-coloured scraps; the black plates have
     # an inner frame that reads as a second, thinner plate
     wide, tall = {'maroon': ((80, 110), (18, 50)), 'black': ((90, 115), (23, 33))}.get(plate, ((70, 9999), (18, 50)))
     plates = [st[i][:4] for i in range(1, n) if wide[0] < st[i, 2] < wide[1] and tall[0] < st[i, 3] < tall[1]]
+    if plate == 'matte':
+        # a board already cut out: its plates are the short wide pieces of it
+        n, lab, st, _ = cv2.connectedComponentsWithStats((matte > 128).astype(np.uint8))
+        plates = [st[i][:4] for i in range(1, n) if 90 < st[i, 2] < 135 and 24 < st[i, 3] < 45]
     plates.sort(key=lambda p: (p[1] // 100, p[0]))
     mask = np.zeros(img.shape[:2], np.uint8)
     for (x, y, w, h) in plates:
@@ -985,6 +990,9 @@ print('legendary swords', plated_weapons('swords_legendary.png', 'swords_legenda
 # end of the third row has none, and there is no Lv.65 plate); the checks
 # are painted in, not transparent
 print('mythic swords', plated_weapons('swords_mythic.png', 'swords_mythic', plate='black', orphans=True))
+# Archer, Ordinary: 21 bows, cut out already; the plates skip Lv.10, and the
+# ladder is the swords' five-level steps to 80, then ten (shared/data/items.js)
+print('common bows', plated_weapons('bows_common.png', 'bows', plate='matte'))
 
 
 # ---- the five sword grades share one file ------------------------------------
@@ -992,19 +1000,27 @@ print('mythic swords', plated_weapons('swords_mythic.png', 'swords_mythic', plat
 # and keeping its own column count. shared/atlas.js ATLASES says the same; the
 # individual atlases are removed once merged, since the demo counts files.
 WEAPON_SHEETS = [('swords', 6, 24), ('swords_rare', 8, 25), ('swords_epic', 8, 23),
-                 ('swords_legendary', 8, 25), ('swords_mythic', 8, 26)]
+                 ('swords_legendary', 8, 25), ('swords_mythic', 8, 26), ('bows', 8, 21)]
 
 
 def merge_weapons(cell=160, merged_cols=8):
     rows = sum((n + c - 1) // c for _, c, n in WEAPON_SHEETS)
     out = Image.new('RGBA', (merged_cols * cell, rows * cell), (0, 0, 0, 0))
     row = 0
+    # a sheet cut this run has a file of its own; one cut before comes out of
+    # the merged file as it stands, from the same rows
+    merged = os.path.join(OUT, 'weapons.webp')
+    prior = Image.open(merged).convert('RGBA') if os.path.exists(merged) else None
     for name, cols, count in WEAPON_SHEETS:
-        src = Image.open(os.path.join(OUT, name + '.webp')).convert('RGBA')
-        size = src.width // cols
+        own = os.path.join(OUT, name + '.webp')
+        if os.path.exists(own):
+            src, top = Image.open(own).convert('RGBA'), 0
+            size = src.width // cols
+        else:
+            src, top, size = prior, row, prior.width // merged_cols
         for i in range(count):
             r, c = divmod(i, cols)
-            piece = src.crop((c * size, r * size, (c + 1) * size, (r + 1) * size))
+            piece = src.crop((c * size, (top + r) * size, (c + 1) * size, (top + r + 1) * size))
             if size != cell:
                 piece = piece.resize((cell, cell), Image.LANCZOS)
             out.paste(piece, (c * cell, (row + r) * cell))
@@ -1014,7 +1030,8 @@ def merge_weapons(cell=160, merged_cols=8):
     # would soften them
     out.save(os.path.join(OUT, 'weapons.webp'), 'WEBP', lossless=True, method=6)
     for name, _, _ in WEAPON_SHEETS:
-        os.remove(os.path.join(OUT, name + '.webp'))
+        if os.path.exists(os.path.join(OUT, name + '.webp')):
+            os.remove(os.path.join(OUT, name + '.webp'))
 
 
 merge_weapons()

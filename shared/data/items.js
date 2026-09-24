@@ -285,6 +285,40 @@ export const SWORDS = {
 };
 Object.assign(ITEMS, SWORDS);
 
+/* ================= BOWS (assets/ui/source/bows_common.png) =================
+   The archer's starter ladder: twenty-one plain bows, Lv.1 to Lv.120. The
+   board's plates skip Lv.10 (5 goes to 15); the pictures keep the board's
+   order on the swords' five-level steps to Lv.80, then ten-level steps to
+   Lv.120 as the board itself does. A bow hits a little softer than the sword
+   of its level (nine tenths) and draws slower, and pays for it in reach:
+   range 180 at Lv.1, 240 at the top. +1 DEX every twenty levels. */
+const BOW = (art, o) => W({ art: 'bows#' + art, wclass: 'bow', rarity: 'common', twoHanded: true,
+  weight: 45 + Math.round(o.level * 0.5), ...o });
+export const BOWS = {
+  practice_bow: BOW(0, { id: 'practice_bow', name: 'Practice Bow', nameTh: 'ธนูไม้ฝึกหัด', level: 1, atk: 16, delay: 0.95, range: 180, value: 350, desc: 'ธนูไม้เบา ๆ สำหรับหัดยิง ยิงได้ไกลกว่าดาบมาก' }),
+  hunting_bow: BOW(1, { id: 'hunting_bow', name: 'Hunting Bow', nameTh: 'ธนูนายพราน', level: 5, atk: 22, delay: 0.95, range: 182, value: 640 }),
+  ironbrace_bow: BOW(2, { id: 'ironbrace_bow', name: 'Ironbrace Bow', nameTh: 'ธนูรัดเหล็ก', level: 10, atk: 28, delay: 0.94, range: 185, value: 1260 }),
+  scout_bow: BOW(3, { id: 'scout_bow', name: 'Scout Bow', nameTh: 'ธนูพลลาดตระเวน', level: 15, atk: 34, delay: 0.94, range: 188, value: 2160 }),
+  longwood_bow: BOW(4, { id: 'longwood_bow', name: 'Longwood Bow', nameTh: 'ธนูไม้ยาว', level: 20, atk: 39, delay: 0.93, range: 190, value: 3340, stats: { dex: 1 } }),
+  steelhorn_bow: BOW(5, { id: 'steelhorn_bow', name: 'Steelhorn Bow', nameTh: 'ธนูเขาเหล็ก', level: 25, atk: 44, delay: 0.93, range: 192, value: 4800, stats: { dex: 1 } }),
+  ranger_bow: BOW(6, { id: 'ranger_bow', name: 'Ranger Bow', nameTh: 'ธนูเรนเจอร์', level: 30, atk: 49, delay: 0.93, range: 195, value: 6540, stats: { dex: 1 } }),
+  silverstring_bow: BOW(7, { id: 'silverstring_bow', name: 'Silverstring Bow', nameTh: 'ธนูสายเงิน', level: 35, atk: 54, delay: 0.92, range: 198, value: 8560, stats: { dex: 1 } }),
+  hawkeye_bow: BOW(8, { id: 'hawkeye_bow', name: 'Hawkeye Bow', nameTh: 'ธนูตาเหยี่ยว', level: 40, atk: 58, delay: 0.92, range: 200, value: 10860, stats: { dex: 2 } }),
+  crescent_bow: BOW(9, { id: 'crescent_bow', name: 'Crescent Bow', nameTh: 'ธนูจันทร์เสี้ยว', level: 45, atk: 63, delay: 0.92, range: 202, value: 13440, stats: { dex: 2 } }),
+  bladed_bow: BOW(10, { id: 'bladed_bow', name: 'Bladed Bow', nameTh: 'ธนูใบมีด', level: 50, atk: 67, delay: 0.91, range: 205, value: 16300, stats: { dex: 2 } }),
+  warden_bow: BOW(11, { id: 'warden_bow', name: 'Warden Bow', nameTh: 'ธนูผู้คุม', level: 55, atk: 71, delay: 0.91, range: 208, value: 19440, stats: { dex: 2 } }),
+  talon_bow: BOW(12, { id: 'talon_bow', name: 'Talon Bow', nameTh: 'ธนูกรงเล็บ', level: 60, atk: 75, delay: 0.9, range: 210, value: 22860, stats: { dex: 3 } }),
+  stormstring_bow: BOW(13, { id: 'stormstring_bow', name: 'Stormstring Bow', nameTh: 'ธนูสายพายุ', level: 65, atk: 80, delay: 0.9, range: 212, value: 26560, stats: { dex: 3 } }),
+  moonfang_bow: BOW(14, { id: 'moonfang_bow', name: 'Moonfang Bow', nameTh: 'ธนูเขี้ยวจันทร์', level: 70, atk: 84, delay: 0.9, range: 215, value: 30540, stats: { dex: 3 } }),
+  knightwing_bow: BOW(15, { id: 'knightwing_bow', name: 'Knightwing Bow', nameTh: 'ธนูปีกอัศวิน', level: 75, atk: 88, delay: 0.89, range: 218, value: 34800, stats: { dex: 3 } }),
+  frostglint_bow: BOW(16, { id: 'frostglint_bow', name: 'Frostglint Bow', nameTh: 'ธนูประกายเหมันต์', level: 80, atk: 91, delay: 0.89, range: 220, value: 39340, stats: { dex: 4 } }),
+  skyreaver_bow: BOW(17, { id: 'skyreaver_bow', name: 'Skyreaver Bow', nameTh: 'ธนูผลาญนภา', level: 90, atk: 99, delay: 0.88, range: 225, value: 49260, stats: { dex: 4 } }),
+  starpiercer_bow: BOW(18, { id: 'starpiercer_bow', name: 'Starpiercer Bow', nameTh: 'ธนูทะลวงดารา', level: 100, atk: 107, delay: 0.87, range: 230, value: 60300, stats: { dex: 5 } }),
+  seraph_bow: BOW(19, { id: 'seraph_bow', name: 'Seraph Bow', nameTh: 'ธนูเทวทูต', level: 110, atk: 114, delay: 0.87, range: 235, value: 72460, stats: { dex: 5 } }),
+  heavenbreaker_bow: BOW(20, { id: 'heavenbreaker_bow', name: 'Heavenbreaker Bow', nameTh: 'ธนูทลายสวรรค์', level: 120, atk: 121, delay: 0.86, range: 240, value: 85740, stats: { dex: 6 } }),
+};
+Object.assign(ITEMS, BOWS);
+
 /* ============ RARE SWORDS (assets/ui/source/sword_rare_sheet.png) ============
    Twenty-five rare swords on the common ladder's own steps, Lv.1 to Lv.120.
    A rare sword is the common sword of its level plus a fifth more ATK, a
@@ -439,7 +473,8 @@ export const MYTHIC_SWORDS = {
 Object.assign(ITEMS, MYTHIC_SWORDS);
 
 /* ============ WEAPON BOXES ============
-   A sealed box of swords for one band of levels. Every grade is in it, the
+   A sealed box of weapons for one band of levels - swords, and the plain
+   bows among the commons. Every grade is in it, the
    better ones more rarely: common 62, rare 28, epic 8.5, legendary 1.2 and
    mythic 0.3 in a hundred, shared evenly among that grade's swords in the band. They drop
    from monsters of the band, from bosses, and are at the ticket counter. */
@@ -452,14 +487,14 @@ const BOX_BANDS = [
 export const WEAPON_BOXES = {};
 for (const band of BOX_BANDS) {
   const opens = [];
-  for (const [grade, set] of [['common', SWORDS], ['rare', RARE_SWORDS], ['epic', EPIC_SWORDS], ['legendary', LEGENDARY_SWORDS], ['mythic', MYTHIC_SWORDS]]) {
+  for (const [grade, set] of [['common', { ...SWORDS, ...BOWS }], ['rare', RARE_SWORDS], ['epic', EPIC_SWORDS], ['legendary', LEGENDARY_SWORDS], ['mythic', MYTHIC_SWORDS]]) {
     const inBand = Object.values(set).filter((w) => w.level >= band.from && w.level <= band.to);
     for (const w of inBand) opens.push({ id: w.id, qty: 1, weight: BOX_ODDS[grade] / inBand.length });
   }
   WEAPON_BOXES[band.id] = C({
     id: band.id, name: band.name, nameTh: band.nameTh, value: band.value, rarity: band.rarity, box: true, weight: 10,
     level: 1, cooldown: 1, band: [band.from, band.to], opens,
-    desc: `เปิดแล้วได้ดาบ Lv.${band.from}–${band.to} หนึ่งเล่ม — ธรรมดา 62% · Rare 28% · Epic 8.5% · Legendary 1.2% · Mythic 0.3%`,
+    desc: `เปิดแล้วได้อาวุธ Lv.${band.from}–${band.to} หนึ่งชิ้น (ดาบหรือธนู) — ธรรมดา 62% · Rare 28% · Epic 8.5% · Legendary 1.2% · Mythic 0.3%`,
   });
 }
 Object.assign(ITEMS, WEAPON_BOXES);

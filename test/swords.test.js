@@ -99,7 +99,7 @@ test('the weapon boxes hold every grade of their band, the better ones more rare
     const share = Object.fromEntries(grades.map((g) => [g, 0]));
     for (const o of box.opens) {
       const w = ITEMS[o.id];
-      assert.ok(w?.wclass === 'sword', `${box.id} holds the unknown ${o.id}`);
+      assert.ok(w?.wclass === 'sword' || w?.wclass === 'bow', `${box.id} holds the unknown ${o.id}`);
       assert.ok(w.level >= from && w.level <= to, `${box.id} holds ${o.id} from outside its band`);
       share[w.rarity] += o.weight;
       covered.add(o.id);

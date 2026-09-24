@@ -40,7 +40,8 @@ function heldArt(e) {
   const [file, cell] = (ITEMS[e.eq?.weapon]?.art ?? '').split('#');
   if (cell == null) return null;
   const img = uiImage(atlasFile(file));
-  return img.naturalWidth ? { img, file, cell: +cell } : null;
+  const bow = ITEMS[e.eq?.weapon]?.wclass === 'bow';
+  return img.naturalWidth ? { img, file, cell: +cell, bow } : null;
 }
 
 /**
@@ -69,6 +70,22 @@ const CHIBI_GRIP = [
  */
 const CHIBI_STRIDE = 72;
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
+/**
+ * A bow is held at the middle, standing up, its belly toward the facing.
+ * Facing the camera or away it hangs in the fist beside the body like a
+ * sword; in profile the fist that shows hangs at the back, but an archer
+ * holds the bow out ahead, so there it stands in front of the chest (the far
+ * hand, hidden behind the bow) and goes on after the body. `at` is where, in
+ * frame pixels, for the side rows; `rest` tips it from level as for swords.
+ */
+const BOW_POSE = [
+  { rest: 1.4 },                                  // down
+  { rest: 1.5, at: [38, 146] },                   // left
+  { rest: 1.4 },                                  // up
+  { rest: 1.5, at: [90, 146] },                   // right
+];
+/** Tip to tip, in screen pixels: a bow stands taller in the hand than a sword. */
+const BOW_LEN = 25;
 /** Pommel to tip, in screen pixels, on a ~50px chibi: under half its height. */
 const HELD_LEN = 22;
 /** The fist's radius in frame pixels, for painting it back over the grip. */
@@ -79,6 +96,13 @@ function chibiRow(e) { return CHIBI_WALK.dirMap[((e.d ?? 0) % 8 + 8) % 8]; }
 
 /** The grip for this facing (so the draw order can ask before the body goes on). */
 export function chibiHand(e) { return CHIBI_GRIP[chibiRow(e)]; }
+
+/** A point on the chibi's frame, in frame pixels, on screen. */
+function chibiFrameToScreen(e, fx, fy) {
+  const { w, h } = CHIBI_WALK.frame;
+  const sc = (e.sprite?.scale ?? 1) * CHIBI_WALK.drawScale;
+  return { x: e.x + (fx - w / 2) * sc, y: e.y + (fy - CHIBI_WALK.anchor * h) * sc };
+}
 
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
@@ -101,8 +125,8 @@ function chibiFist(e, anim, elapsed) {
  */
 const GRIPS = new Map();
 const GRIP_FALLBACK = { x: 0.24, y: 0.76, angle: -Math.PI / 4, len: 1.2 };
-function gripOf(img, file, cell) {
-  const key = `${file}#${cell}`;
+function gripOf(img, file, cell, bow = false) {
+  const key = `${file}#${cell}${bow ? ':bow' : ''}`;
   if (GRIPS.has(key)) return GRIPS.get(key);
   let g = GRIP_FALLBACK;
   try {
@@ -170,7 +194,8 @@ function gripOf(img, file, cell) {
         const wdt = hi[b] - lo[b];
         if (wdt > widest + 0.5) { widest = wdt; guard = b; }
       }
-      const tg = Math.max(2, guard * 0.55);
+      // a sword is held just under its guard; a bow at the middle of its limb
+      const tg = bow ? len * 0.5 : Math.max(2, guard * 0.55);
       let su = 0, k = 0;
       for (let i = 0; i < m; i++) if (Math.abs(t[i] - tmin - tg) <= 1.5) { su += u[i]; k++; }
       const ug = k ? su / k : 0;
@@ -189,13 +214,22 @@ function gripOf(img, file, cell) {
  * A swing raises it back and cuts down through the facing, then settles.
  */
 function drawHeld(ctx, held, e, anim, elapsed, now) {
-  const { img, file, cell } = held;
+  const { img, file, cell, bow } = held;
   const hand = chibiHand(e);
-  const fist = chibiFist(e, anim, elapsed);
+  const pose = bow ? BOW_POSE[chibiRow(e)] : null;
+  let fist = chibiFist(e, anim, elapsed);
+  if (pose?.at) {
+    // out in front: the far hand, riding the same bob as the near one
+    const idle = chibiFist(e, 'idle', 0);
+    const at = chibiFrameToScreen(e, pose.at[0], pose.at[1]);
+    fist = { ...fist, x: at.x, y: at.y + (fist.y - idle.y) };
+    // loosing an arrow nudges the bow forward and back
+    if (anim === 'shoot') fist.x += hand.side * Math.sin(Math.min(1, elapsed / 220) * Math.PI) * 1.5;
+  }
   const walking = anim === 'walk';
-  const swing = anim === 'slash' || anim === 'thrust';
+  const swing = !bow && (anim === 'slash' || anim === 'thrust');
   // the art's blades point up at 45 degrees; `angle` turns from there
-  const rest = Math.PI / 4 - hand.rest;
+  const rest = Math.PI / 4 - (pose?.rest ?? hand.rest);
   let angle = rest + (walking ? Math.sin(now / 124) * 0.06 : 0);
   if (swing) {
     // wind up, cut, recover: from rest up and back over the shoulder, down
@@ -205,8 +239,8 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
       : k < 0.6 ? -1.2 + ((k - 0.25) / 0.35) * 2.3
         : 1.1 + ((k - 0.6) / 0.4) * (rest - 1.1);
   }
-  const grip = gripOf(img, file, cell);
-  const len = HELD_LEN * (e.sprite?.scale ?? 1);
+  const grip = gripOf(img, file, cell, bow);
+  const len = (bow ? BOW_LEN : HELD_LEN) * (e.sprite?.scale ?? 1);
   const k = len / grip.len;                       // screen pixels per cell
   ctx.save();
   if (e.inv) ctx.globalAlpha = 0.35;
@@ -924,7 +958,8 @@ export class Renderer {
             ctx.translate(e.x, e.y); ctx.scale(1 / Math.sqrt(b), b); ctx.translate(-e.x, -e.y);
           }
           const held = chibi ? heldArt(e) : null;
-          const over = held && chibiHand(e).over;
+          // a bow held out in front goes on after the body, with no fist over it
+          const over = held && (held.bow ? !!BOW_POSE[chibiRow(e)].at : chibiHand(e).over);
           if (held && !over) drawHeld(ctx, held, e, anim, elapsed, now);
           const body = {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
@@ -934,7 +969,8 @@ export class Renderer {
             flash: hurt,
           };
           drawCharacter(ctx, layers, body);
-          if (over) {
+          if (over && held.bow) drawHeld(ctx, held, e, anim, elapsed, now);
+          else if (over) {
             // across the body the sword goes on top, and the fist back over its grip
             drawHeld(ctx, held, e, anim, elapsed, now);
             const f = chibiFist(e, anim, elapsed);

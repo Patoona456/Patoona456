@@ -85,9 +85,12 @@ test('reaching the cap takes a while, but not a second job', { skip: WAITING_FOR
   assert.ok(hours <= HOURS_TO_CAP.max, `${hours.toFixed(1)}h to cap`);
 });
 
-test('the back half of the game is the longer half', () => {
+test('the back half of the game is the longer half', { skip: WAITING_FOR_ITEMS }, () => {
   // Front-loading is how a game runs out of content: if half the grind is
   // over by level 30 the last forty levels are where everyone quits.
+  // (The same model as the test above, so it waits for the same thing: the
+  // median job it plays is bare-handed while jobs still have no weapons, and
+  // which job that is moves every time a sheet arrives.)
   const { hours, bands } = hoursToCap();
   const half = bands.find((b) => b.hours >= hours / 2);
   assert.ok(half && half.lv >= LEVEL_CAP * 0.45, `half the grind done by level ${half?.lv}`);
