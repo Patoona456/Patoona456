@@ -41,29 +41,75 @@ function heldArt(e) {
 }
 
 /**
- * A weapon from the icon sheets, in a chibi's hand. The art is drawn tip up
- * and to the right with the hilt at the lower left, so the hilt goes in the
- * hand and the picture is mirrored when the body faces left. A swing sweeps
- * it through an arc around the hand.
+ * Where the weapon hand is on the chibi sheet, per facing (DIR8 order), in
+ * frame pixels of the 128 x 192 walk frame: the fist's centre, which side
+ * the blade leans to, and whether the arm is in front of the body or hidden
+ * behind it. Measured off assets/chibi/body/hero_brown.png.
+ */
+const CHIBI_HAND = [
+  { x: 92, y: 143, side: 1, front: true },    // down
+  { x: 34, y: 138, side: -1, front: true },   // down-left
+  { x: 60, y: 147, side: -1, front: true },   // left
+  { x: 43, y: 138, side: -1, front: false },  // up-left
+  { x: 92, y: 140, side: 1, front: false },   // up
+  { x: 88, y: 136, side: 1, front: false },   // up-right
+  { x: 86, y: 131, side: 1, front: true },    // right
+  { x: 91, y: 138, side: 1, front: true },    // down-right
+];
+const CHIBI_FRAME = { w: 128, anchor: 184, scale: 0.27 };
+/** How long a one-handed blade reads on a ~47px chibi: about half its height. */
+const HELD_SIZE = 16;
+
+/** The hand for this facing (so the draw order can ask before the body goes on). */
+export function chibiHand(e) { return CHIBI_HAND[((e.d ?? 0) % 8 + 8) % 8]; }
+
+/**
+ * A weapon from the icon sheets, in a chibi's hand. The art is drawn with the
+ * tip to the upper right and the hilt at the lower left, so the grip goes in
+ * the fist and the picture is mirrored when the blade should lean left. At
+ * rest it is held up and a little forward; a swing raises it back and cuts
+ * down through the facing, then settles.
  */
 function drawHeld(ctx, held, e, anim, elapsed, now) {
   const { img, file, cell } = held;
   const cols = ATLAS_COLS[file] ?? 8;
   const size = img.naturalWidth / cols;
-  const [vx] = vecOf(e.d ?? 0);
-  const side = vx < -0.2 ? -1 : 1;
-  const hx = e.x + side * 8, hy = e.y - 14 + Math.sin(now / 320 + e.x) * 0.6;
+  const hand = chibiHand(e);
+  const sc = (e.sprite?.scale ?? 1) * CHIBI_FRAME.scale;
+  const walking = anim === 'walk';
+  const bob = walking ? Math.sin(now / 62) * 0.8 : Math.sin(now / 420 + e.x) * 0.35;
+  const hx = e.x + (hand.x - CHIBI_FRAME.w / 2) * sc;
+  const hy = e.y + (hand.y - CHIBI_FRAME.anchor) * sc + bob;
   const swing = anim === 'slash' || anim === 'thrust';
-  const k = swing ? Math.min(1, elapsed / 260) : 0;
-  const angle = swing ? (-1.1 + 1.9 * Math.sin(k * Math.PI / 2)) : -0.15;
-  const w = 26;
+  let angle = -0.45 + (walking ? Math.sin(now / 124) * 0.08 : 0);
+  if (swing) {
+    // wind up, cut, recover: 0..0.25 up, 0.25..0.6 down through, then back
+    const k = Math.min(1, elapsed / 300);
+    angle = k < 0.25 ? -0.45 - (k / 0.25) * 0.75
+      : k < 0.6 ? -1.2 + ((k - 0.25) / 0.35) * 2.3
+        : 1.1 - ((k - 0.6) / 0.4) * 1.55;
+  }
+  const w = HELD_SIZE * (e.sprite?.scale ?? 1);
   ctx.save();
   if (e.inv) ctx.globalAlpha = 0.35;
   ctx.translate(hx, hy);
-  ctx.scale(side, 1);
+  ctx.scale(hand.side, 1);
+  if (swing && angle > -1.2 && elapsed < 190) {
+    // the cut leaves a thin trail behind the tip
+    const tip = w * 0.95, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;
+    const g = ctx.createLinearGradient(Math.cos(from) * tip, Math.sin(from) * tip, Math.cos(to) * tip, Math.sin(to) * tip);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(1, 'rgba(255,250,230,0.75)');
+    ctx.strokeStyle = g;
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(0, 0, tip, from, to);
+    ctx.stroke();
+  }
   ctx.rotate(angle);
-  // the hilt sits at the lower-left of the cell: put it in the hand
-  ctx.drawImage(img, (cell % cols) * size, Math.floor(cell / cols) * size, size, size, -w * 0.18, -w * 0.82, w, w);
+  // the grip sits a fifth of the way in from the lower-left corner
+  ctx.drawImage(img, (cell % cols) * size, Math.floor(cell / cols) * size, size, size, -w * 0.24, -w * 0.76, w, w);
   ctx.restore();
 }
 /** Columns per icon atlas, where it is not the usual eight. */
@@ -725,7 +771,7 @@ export class Renderer {
           drawBehind(ctx, worn, dress);
           // the chibi body has no weapon layer: its weapon is the item's own art, held
           const held = chibi ? heldArt(e) : null;
-          const backTurned = held && vecOf(e.d ?? 0)[1] < -0.3;
+          const backTurned = held && !chibiHand(e).front;
           if (held && backTurned) drawHeld(ctx, held, e, anim, elapsed, now);
           drawCharacter(ctx, layers, {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
