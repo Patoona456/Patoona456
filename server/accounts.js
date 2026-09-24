@@ -120,9 +120,9 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     map: mapId, x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32,
     savePoint: { map: mapId, x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32 },
     aurum: 500,                   // a deliberately thin starting purse
-    // a few bottles to start with; gear waits on its own sheet
-    inventory: [{ id: 'hp_potion_s', qty: 5 }],
-    equipment: {},
+    // a practice sword in hand and a few bottles; armour waits on its sheet
+    inventory: [{ id: 'wooden_sword', qty: 1, refine: 0, dur: 120 }, { id: 'hp_potion_s', qty: 5 }],
+    equipment: { weapon: 0 },
     skills: {},
     hotbar: ['first_aid', null, null, null, null, null],
     quests: {},

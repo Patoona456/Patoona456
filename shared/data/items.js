@@ -248,6 +248,43 @@ export const SCROLLS = {
 };
 Object.assign(ITEMS, SCROLLS);
 
+/* ================= SWORDS (assets/ui/source/sword_sheet.png) =================
+   The swordsman's starter ladder: one plain sword every five levels, Lv.1 to
+   Lv.120 (the last three wait for the level cap to reach them). These are
+   the common floor that the rare, epic and legendary sheets drop on top of,
+   so the curve is gentle - ATK = 15 + 2.6 x level^0.8, a slightly quicker
+   swing as the tiers climb, and +1 STR every twenty levels - and the price
+   climbs faster than the ATK so an upgrade is always a decision. */
+const SWORD = (art, o) => W({ art: 'swords#' + art, wclass: 'sword', range: 46, rarity: 'common',
+  weight: 40 + Math.round(o.level * 0.6), ...o });
+export const SWORDS = {
+  wooden_sword: SWORD(0, { id: 'wooden_sword', name: 'Wooden Sword', nameTh: 'ดาบไม้ฝึกหัด', level: 1, atk: 18, delay: 0.88, value: 340, desc: 'ดาบไม้สำหรับซ้อม เบาและปลอดภัย แต่ฟันได้จริง' }),
+  iron_shortsword: SWORD(1, { id: 'iron_shortsword', name: 'Iron Shortsword', nameTh: 'ดาบเหล็กสั้น', level: 5, atk: 24, delay: 0.88, value: 830 }),
+  steel_sword: SWORD(2, { id: 'steel_sword', name: 'Steel Sword', nameTh: 'ดาบเหล็กกล้า', level: 10, atk: 31, delay: 0.87, value: 1890 }),
+  squire_sword: SWORD(3, { id: 'squire_sword', name: 'Squire Sword', nameTh: 'ดาบผู้ฝึกตน', level: 15, atk: 38, delay: 0.87, value: 3350 }),
+  guard_sword: SWORD(4, { id: 'guard_sword', name: 'Guardsman Sword', nameTh: 'ดาบทหารยาม', level: 20, atk: 44, delay: 0.87, value: 5130, stats: { str: 1 } }),
+  knight_sword: SWORD(5, { id: 'knight_sword', name: 'Knight Sword', nameTh: 'ดาบอัศวิน', level: 25, atk: 49, delay: 0.86, value: 7200, stats: { str: 1 } }),
+  azure_sword: SWORD(6, { id: 'azure_sword', name: 'Azure Sword', nameTh: 'ดาบครามใส', level: 30, atk: 55, delay: 0.86, value: 9540, stats: { str: 1 } }),
+  sapphire_sword: SWORD(7, { id: 'sapphire_sword', name: 'Sapphire Sword', nameTh: 'ดาบไพลิน', level: 35, atk: 60, delay: 0.86, value: 12120, stats: { str: 1 } }),
+  griffin_sword: SWORD(8, { id: 'griffin_sword', name: 'Griffin Sword', nameTh: 'ดาบกริฟฟิน', level: 40, atk: 65, delay: 0.85, value: 14930, stats: { str: 2 } }),
+  veteran_sword: SWORD(9, { id: 'veteran_sword', name: 'Veteran Sword', nameTh: 'ดาบทหารผ่านศึก', level: 45, atk: 70, delay: 0.85, value: 17970, stats: { str: 2 } }),
+  thornguard_sword: SWORD(10, { id: 'thornguard_sword', name: 'Thornguard Sword', nameTh: 'ดาบด้ามหนาม', level: 50, atk: 74, delay: 0.85, value: 21210, stats: { str: 2 } }),
+  crescent_sword: SWORD(11, { id: 'crescent_sword', name: 'Crescent Sword', nameTh: 'ดาบจันทร์เสี้ยว', level: 55, atk: 79, delay: 0.84, value: 24660, stats: { str: 2 } }),
+  royal_sword: SWORD(12, { id: 'royal_sword', name: 'Royal Guard Sword', nameTh: 'ดาบองครักษ์', level: 60, atk: 84, delay: 0.84, value: 28300, stats: { str: 3 } }),
+  serrated_sword: SWORD(13, { id: 'serrated_sword', name: 'Serrated Sword', nameTh: 'ดาบฟันเลื่อย', level: 65, atk: 88, delay: 0.84, value: 32120, stats: { str: 3 } }),
+  warden_sword: SWORD(14, { id: 'warden_sword', name: 'Warden Sword', nameTh: 'ดาบผู้พิทักษ์', level: 70, atk: 93, delay: 0.83, value: 36130, stats: { str: 3 } }),
+  stormguard_sword: SWORD(15, { id: 'stormguard_sword', name: 'Stormguard Sword', nameTh: 'ดาบพายุคราม', level: 75, atk: 97, delay: 0.83, value: 40310, stats: { str: 3 } }),
+  dragonbone_sword: SWORD(16, { id: 'dragonbone_sword', name: 'Dragonbone Sword', nameTh: 'ดาบกระดูกมังกร', level: 80, atk: 102, delay: 0.83, value: 44660, stats: { str: 4 } }),
+  sovereign_sword: SWORD(17, { id: 'sovereign_sword', name: 'Sovereign Sword', nameTh: 'ดาบจักรพรรดิเงิน', level: 85, atk: 106, delay: 0.82, value: 49180, stats: { str: 4 } }),
+  bloodedge_sword: SWORD(18, { id: 'bloodedge_sword', name: 'Bloodedge Sword', nameTh: 'ดาบคมโลหิต', level: 90, atk: 110, delay: 0.82, value: 53860, stats: { str: 4 } }),
+  crimson_sword: SWORD(19, { id: 'crimson_sword', name: 'Crimson Sword', nameTh: 'ดาบชาด', level: 95, atk: 114, delay: 0.82, value: 58700, stats: { str: 4 } }),
+  ruby_warsword: SWORD(20, { id: 'ruby_warsword', name: 'Ruby Warsword', nameTh: 'ดาบทับทิมศึก', level: 100, atk: 119, delay: 0.81, value: 63700, stats: { str: 5 } }),
+  sunflare_sword: SWORD(21, { id: 'sunflare_sword', name: 'Sunflare Sword', nameTh: 'ดาบสุริยะ', level: 105, atk: 123, delay: 0.81, value: 68840, stats: { str: 5 } }),
+  dawnking_sword: SWORD(22, { id: 'dawnking_sword', name: 'Dawnking Sword', nameTh: 'ดาบราชันอรุณ', level: 110, atk: 127, delay: 0.81, value: 74140, stats: { str: 5 } }),
+  phoenix_sword: SWORD(23, { id: 'phoenix_sword', name: 'Phoenix Sword', nameTh: 'ดาบวิหคเพลิง', level: 120, atk: 135, delay: 0.8, value: 85170, stats: { str: 6 } }),
+};
+Object.assign(ITEMS, SWORDS);
+
 /** Items that game systems use by role, not by drop table. */
 export const KEY_ITEMS = {
   refineStone: 'runed_whetstone',   // spent on every refine attempt

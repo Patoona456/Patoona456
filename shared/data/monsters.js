@@ -1,3 +1,4 @@
+import { SWORDS } from './items.js';
 // Bestiary.
 //
 // sprite.kind:
@@ -475,6 +476,7 @@ export const MONSTERS = {
  * element, and the wards, tickets and maps from bosses.
  */
 const BAND = (lv) => (lv < 20 ? 's' : lv < 40 ? 'm' : lv < 58 ? 'l' : 'xl');
+const SWORD_LADDER = Object.values(SWORDS).sort((a, b) => a.level - b.level);
 const ITEM_BOOK = { fire: 'book_fire', ice: 'book_ice', wind: 'book_wind', lightning: 'book_lightning',
   earth: 'book_earth', dark: 'book_dark', holy: 'book_holy' };
 const RESIST_OF = { fire: 'fire_resist', ice: 'ice_resist', lightning: 'lightning_resist', wind: 'wind_resist',
@@ -514,6 +516,9 @@ export function potionDrops(m) {
   if (m.level >= 20) out.push({ id: 'treasure_map', chance: 0.002 }, { id: 'refine_luck_3', chance: 0.0015 });
   if (m.level >= 40) out.push({ id: 'guard_down', chance: 0.0008 }, { id: 'scroll_resurrect', chance: 0.001 });
   if (m.element && m.element !== 'neutral' && ITEM_BOOK[m.element]) out.push({ id: ITEM_BOOK[m.element], chance: 0.003 });
+  // the starter sword of its band: the best one a character this level can hold
+  const sword = SWORD_LADDER.filter((w) => w.level <= m.level).pop();
+  if (sword) out.push({ id: sword.id, chance: 0.004 });
   if (m.level >= 20) {
     out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },
       { id: 'item_find', chance: 0.003 }, { id: 'curse_potion', chance: 0.004 });

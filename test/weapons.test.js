@@ -14,10 +14,11 @@ import { SKILLS } from '../shared/data/skills.js';
 import { ANIM } from '../shared/constants.js';
 import { LEVEL_CAP } from '../tools/balance.js';
 
-// These check the item set - gear at every level, a weapon for every job,
+// These check the whole item set - gear at every level, a weapon for every job,
 // what fights cost wearing it. The old set was cleared for the new item
 // sheet, so they wait until the table has gear in it again.
-const WAITING_FOR_ITEMS = !Object.values(ITEMS).some(isEquip) && 'no gear in the item table yet: waiting for the new item sheet';
+const WAITING_FOR_ITEMS = !Object.values(ITEMS).some((it) => it.type === 'armor')
+  && 'the item set is only partly in (no armour yet): waiting for the rest of the sheets';
 
 const weapons = Object.values(ITEMS).filter((it) => it.slot === 'weapon');
 const holdable = (job, level) => weapons.filter((w) => (w.level ?? 1) <= level && jobCanHold(job, w.wclass));

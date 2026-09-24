@@ -769,3 +769,69 @@ for r, (top, bottom) in enumerate(SCROLL_ROWS):
         atlas[r * POTION_CELL:(r + 1) * POTION_CELL, c * POTION_CELL:(c + 1) * POTION_CELL] = strip([piece], POTION_CELL)
 save('scrolls', atlas)
 print('scroll sheet done')
+
+
+# ============================================================================
+# Weapon sheets: one class, one ladder of starter weapons, one atlas each.
+# The first is the swordsman's (assets/ui/source/sword_sheet.png): twenty-four
+# swords, Lv.1 to Lv.120, six to a row, each with a "Lv." plate under its
+# hilt. The plates are painted out before the cut, and the swords go into
+# assets/ui/swords.webp (6 x 4 cells) in the sheet's order.
+# ============================================================================
+def outline_cut(img, box, dark=30, close=5):
+    """For art drawn with a black outline on a haze: the outline is the
+    edge. Fill in from the corners; whatever the fill cannot reach is the
+    piece, outline included. The haze's own shadow never gets inside."""
+    x0, y0, x1, y1 = box
+    sub = img[y0:y1, x0:x1]
+    lum = cv2.cvtColor(sub, cv2.COLOR_BGR2GRAY)
+    line = (lum < dark).astype(np.uint8) * 255
+    line = cv2.morphologyEx(line, cv2.MORPH_CLOSE, np.ones((close, close), np.uint8))
+    h, w = line.shape
+    reach = line.copy()
+    ff = np.zeros((h + 2, w + 2), np.uint8)
+    for seed in [(0, 0), (w - 1, 0), (0, h - 1), (w - 1, h - 1)]:
+        if reach[seed[1], seed[0]] == 0:
+            cv2.floodFill(reach, ff, seed, 128)
+    inside = (reach != 128).astype(np.uint8)
+    n, lab, st, _ = cv2.connectedComponentsWithStats(inside)
+    if n > 1:
+        inside = (lab == 1 + np.argmax(st[1:, 4])).astype(np.uint8)
+    a = cv2.GaussianBlur(inside * 255, (3, 3), 0)
+    rgba = cv2.cvtColor(sub, cv2.COLOR_BGR2RGBA)
+    rgba[:, :, 3] = a
+    return trim(rgba)
+
+
+def weapon_sheet(src, out, cols, rows, cell_w, plate_y, plate_x=(86, 226), cell=96):
+    img = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src))
+    mask = np.zeros(img.shape[:2], np.uint8)
+    for (y0, y1) in plate_y:
+        for c in range(cols):
+            cv2.rectangle(mask, (c * cell_w + plate_x[0], y0), (c * cell_w + plate_x[1], y1), 255, -1)
+    clean = cv2.inpaint(img, mask, 9, cv2.INPAINT_TELEA)
+    atlas = np.zeros((cell * len(rows), cell * cols, 4), np.uint8)
+    for r, (top, bottom) in enumerate(rows):
+        for c in range(cols):
+            box = (c * cell_w + 4, top, (c + 1) * cell_w - 2, bottom)
+            # an outline with a gap lets the fill in and leaves a sliver, so
+            # close the line harder until the piece is whole; GrabCut (which
+            # keeps some shadow) is the last resort
+            loose = grab((box[0] + 8, box[1], box[2] - 4, box[3]), pad=2, img=clean)[0]
+            want = 0.6 * (loose[:, :, 3] > 128).sum()
+            piece = loose
+            for close in (5, 9, 13, 17):
+                # the smallest fill that is still whole is the one without shadow
+                cuts = [outline_cut(clean, box, dark=d, close=close) for d in (30, 22)]
+                cuts = [x for x in cuts if (x[:, :, 3] > 128).sum() >= want]
+                if cuts:
+                    piece = min(cuts, key=lambda x: (x[:, :, 3] > 128).sum())
+                    break
+            atlas[r * cell:(r + 1) * cell, c * cell:(c + 1) * cell] = strip([piece], cell)
+    save(out, atlas)
+
+
+weapon_sheet('sword_sheet.png', 'swords', cols=6, cell_w=256,
+             rows=[(18, 252), (262, 500), (498, 738), (736, 990)],
+             plate_y=[(210, 254), (457, 502), (693, 737), (940, 990)])
+print('sword sheet done')

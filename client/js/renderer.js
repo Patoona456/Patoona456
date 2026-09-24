@@ -32,6 +32,43 @@ const RETICLE_CELLS = ['lock', 'pick', 'ally'];
 const BOOTH_W = 88;            // world px: a little under three tiles
 const BOOTH_COUNTER = 0.52;    // where the counter top sits, as a share of the art's height
 
+/** The atlas cell a player's weapon is painted in, if its item has one. */
+function heldArt(e) {
+  const [file, cell] = (ITEMS[e.eq?.weapon]?.art ?? '').split('#');
+  if (cell == null) return null;
+  const img = uiImage(file);
+  return img.naturalWidth ? { img, file, cell: +cell } : null;
+}
+
+/**
+ * A weapon from the icon sheets, in a chibi's hand. The art is drawn tip up
+ * and to the right with the hilt at the lower left, so the hilt goes in the
+ * hand and the picture is mirrored when the body faces left. A swing sweeps
+ * it through an arc around the hand.
+ */
+function drawHeld(ctx, held, e, anim, elapsed, now) {
+  const { img, file, cell } = held;
+  const cols = ATLAS_COLS[file] ?? 8;
+  const size = img.naturalWidth / cols;
+  const [vx] = vecOf(e.d ?? 0);
+  const side = vx < -0.2 ? -1 : 1;
+  const hx = e.x + side * 8, hy = e.y - 14 + Math.sin(now / 320 + e.x) * 0.6;
+  const swing = anim === 'slash' || anim === 'thrust';
+  const k = swing ? Math.min(1, elapsed / 260) : 0;
+  const angle = swing ? (-1.1 + 1.9 * Math.sin(k * Math.PI / 2)) : -0.15;
+  const w = 26;
+  ctx.save();
+  if (e.inv) ctx.globalAlpha = 0.35;
+  ctx.translate(hx, hy);
+  ctx.scale(side, 1);
+  ctx.rotate(angle);
+  // the hilt sits at the lower-left of the cell: put it in the hand
+  ctx.drawImage(img, (cell % cols) * size, Math.floor(cell / cols) * size, size, size, -w * 0.18, -w * 0.82, w, w);
+  ctx.restore();
+}
+/** Columns per icon atlas, where it is not the usual eight. */
+const ATLAS_COLS = { swords: 6 };
+
 /** Draw the booth around a stall keeper: 'back' is all of it, 'front' just the counter. */
 function drawBooth(ctx, e, art, part) {
   const img = art.stall;
@@ -68,7 +105,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls']) uiImage(name);
+  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls', 'swords']) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
@@ -561,9 +598,9 @@ export class Renderer {
       const atlas = cell != null && file ? uiImage(file) : null;
       if (isAurum) { ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
       else if (atlas?.naturalWidth) {
-        const size = atlas.naturalWidth / 8, i = +cell;
+        const cols = ATLAS_COLS[file] ?? 8, size = atlas.naturalWidth / cols, i = +cell;
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
-        ctx.drawImage(atlas, (i % 8) * size, Math.floor(i / 8) * size, size, size, -9, -12, 18, 18);
+        ctx.drawImage(atlas, (i % cols) * size, Math.floor(i / cols) * size, size, size, -9, -12, 18, 18);
       } else { ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8); }
       ctx.restore();
     }
@@ -686,6 +723,10 @@ export class Renderer {
           const booth = e.k === 'p' && (state.stalls ?? []).some((sg) => sg.id === e.id) ? STALL_ART : null;
           if (booth) drawBooth(ctx, e, booth, 'back');
           drawBehind(ctx, worn, dress);
+          // the chibi body has no weapon layer: its weapon is the item's own art, held
+          const held = chibi ? heldArt(e) : null;
+          const backTurned = held && vecOf(e.d ?? 0)[1] < -0.3;
+          if (held && backTurned) drawHeld(ctx, held, e, anim, elapsed, now);
           drawCharacter(ctx, layers, {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
             scale,
@@ -693,6 +734,7 @@ export class Renderer {
             tint: e.sprite?.tint ?? null,
             flash: hurt,
           });
+          if (held && !backTurned) drawHeld(ctx, held, e, anim, elapsed, now);
           drawInFront(ctx, worn, dress);
           if (booth) drawBooth(ctx, e, booth, 'front');
           if (e.k === 'p') this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);

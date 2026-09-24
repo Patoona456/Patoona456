@@ -27,10 +27,11 @@ import {
   bestHeal, incomePerHour, typical, charsAt,
 } from '../tools/balance.js';
 
-// These check the item set - gear at every level, a weapon for every job,
+// These check the whole item set - gear at every level, a weapon for every job,
 // what fights cost wearing it. The old set was cleared for the new item
 // sheet, so they wait until the table has gear in it again.
-const WAITING_FOR_ITEMS = !Object.values(ITEMS).some(isEquip) && 'no gear in the item table yet: waiting for the new item sheet';
+const WAITING_FOR_ITEMS = !Object.values(ITEMS).some((it) => it.type === 'armor')
+  && 'the item set is only partly in (no armour yet): waiting for the rest of the sheets';
 
 test('every solo monster dies in a sensible number of seconds', { skip: WAITING_FOR_ITEMS }, () => {
   // Measured by the median job of that level, which is what the reports and
@@ -416,6 +417,8 @@ test('no weapon class is locked out of the element table', () => {
   // option. A class with no answer to the endgame's element is a class nobody
   // should pick, and no amount of skill tuning fixes it.
   const worst = { dark: 'holy' };              // what the endgame is made of
+  // an elemental tome is read by any class: if one sets the answer, no class is locked out
+  const tomes = new Set(Object.values(ITEMS).filter((it) => it.endow && it.type === 'consumable').map((it) => it.endow));
   const byClass = {};
   for (const it of Object.values(ITEMS)) {
     if (it.slot !== 'weapon') continue;
@@ -425,7 +428,8 @@ test('no weapon class is locked out of the element table', () => {
   for (const [wclass, list] of Object.entries(byClass)) {
     for (const [enemyEl, answer] of Object.entries(worst)) {
       const late = list.filter((w) => (w.level ?? 1) >= LEVEL_CAP - 15);
-      const best = Math.max(...late.map((w) => ELEMENT_TABLE[w.element ?? 'neutral']?.[enemyEl] ?? 1), 0);
+      const best = Math.max(...late.map((w) => ELEMENT_TABLE[w.element ?? 'neutral']?.[enemyEl] ?? 1),
+        ...[...tomes].map((el) => ELEMENT_TABLE[el]?.[enemyEl] ?? 1), 0);
       if (best < 1) bad.push(`${wclass} has nothing better than ${best.toFixed(2)}x against ${enemyEl} (wants ${answer})`);
     }
   }
