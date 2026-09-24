@@ -29,9 +29,6 @@ export function begin(zone, caster, skillId, opts = {}) {
   if (caster.kind === 'player') {
     if (caster.sp < spCost) return { error: 'SP ไม่พอ' };
     if (!weaponAllows(sk.weapon, caster.weaponClass)) return { error: 'อาวุธไม่ถูกประเภท' };
-    if (sk.ammo && caster.weaponClass === 'bow' && (caster.findAmmo()?.qty ?? 0) < sk.ammo) {
-      return { error: 'ลูกธนูไม่พอ' };
-    }
     // a reagent the item table does not have (yet) is not asked for
     if (sk.reagent && ITEMS[sk.reagent] && caster.countItem(sk.reagent) < 1) {
       return { error: `ต้องใช้ ${ITEMS[sk.reagent]?.nameTh ?? sk.reagent}` };
@@ -82,7 +79,8 @@ export function resolve(zone, caster, payload) {
   if (caster.kind === 'player') {
     if (caster.sp < spCost) return { error: 'SP ไม่พอ' };
     caster.sp -= spCost;
-    if (sk.ammo && caster.weaponClass === 'bow') caster.consumeAmmo(sk.ammo);
+    // arrows are a bonus, not a price: spent if carried, never required
+    if (sk.ammo && caster.weaponClass === 'bow') caster.consumeAmmo(Math.min(sk.ammo, caster.findAmmo()?.qty ?? 0));
     if (sk.reagent && ITEMS[sk.reagent]) caster.removeItemById(sk.reagent, 1);
   }
   caster.cooldowns ??= {};

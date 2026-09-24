@@ -96,7 +96,8 @@ export class Player {
   /* ---------------- stats ---------------- */
   equippedItem(slot) {
     const ref = this.record.equipment[slot];
-    if (!ref) return null;
+    // an index, and 0 is a real one: a new character's starter sword is there
+    if (ref == null) return null;
     const stack = this.record.inventory[ref];
     if (!stack) return null;
     const def = ITEMS[stack.id];
@@ -336,6 +337,7 @@ export class Player {
   }
 
   consumeAmmo(n = 1) {
+    if (n <= 0) return false;
     const st = this.findAmmo();
     if (!st || st.qty < n) return false;
     const idx = this.inventory.indexOf(st);

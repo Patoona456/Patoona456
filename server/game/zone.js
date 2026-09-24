@@ -611,10 +611,10 @@ export class Zone {
             p.nextAttackAt = t + delay * 1000;
             p.dir = dirTo(p, target);
             startSwing(p, swingAnim(p.weaponClass), t, delay * 1000);
-            if (p.weaponClass === 'bow' && !p.consumeAmmo(1)) {
-              p.conn?.send({ t: 'error', text: 'ลูกธนูหมด' });
-              p.attacking = false;
-            } else {
+            // a bow shoots whether or not there are arrows in the bag: arrows,
+            // when there are any, are spent for their bonus, never required
+            if (p.weaponClass === 'bow') p.consumeAmmo(1);
+            {
               const cloak = p.statuses.find((s) => s.breakOnAttack);
               if (cloak) { p.statuses.splice(p.statuses.indexOf(cloak), 1); p.recompute(); }
               basicAttack(this, p, target);
