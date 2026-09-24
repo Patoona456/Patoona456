@@ -116,6 +116,18 @@ export const SHOPS = {
       { id: 'vip_pass', stock: 99, restock: 60, price: 6 },
       { id: 'book_royal', stock: 99, restock: 60, price: 12 },
       { id: 'scroll_daily_reset', stock: 99, restock: 60, price: 3 },
+      // rare swords past the last hunting ground's level: the ticket counter is the only door
+      { id: 'sword_rare_72', stock: 99, restock: 60, price: 4 },
+      { id: 'sword_rare_77', stock: 99, restock: 60, price: 5 },
+      { id: 'sword_rare_82', stock: 99, restock: 60, price: 6 },
+      { id: 'sword_rare_87', stock: 99, restock: 60, price: 7 },
+      { id: 'sword_rare_91', stock: 99, restock: 60, price: 8 },
+      { id: 'sword_rare_96', stock: 99, restock: 60, price: 8 },
+      { id: 'sword_rare_101', stock: 99, restock: 60, price: 9 },
+      { id: 'sword_rare_106', stock: 99, restock: 60, price: 10 },
+      { id: 'sword_rare_110', stock: 99, restock: 60, price: 11 },
+      { id: 'sword_rare_115', stock: 99, restock: 60, price: 12 },
+      { id: 'sword_rare_120', stock: 99, restock: 60, price: 12 },
     ],
   },
 };

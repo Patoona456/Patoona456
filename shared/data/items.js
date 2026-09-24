@@ -285,6 +285,45 @@ export const SWORDS = {
 };
 Object.assign(ITEMS, SWORDS);
 
+/* ============ RARE SWORDS (assets/ui/source/sword_rare_sheet.png) ============
+   Twenty-six rare swords. The sheet's plates read Lv.45-70, one level apart
+   (and one number twice); the ladder is meant to run the whole game, so the
+   swords keep the sheet's order - plainest first - and are spread evenly
+   from Lv.1 to Lv.120. A rare sword is the common sword of its level plus a
+   fifth more ATK, a faster swing, crit and STR/AGI; the ones drawn with frost
+   on the blade are ice. They drop, and are never on a smith's shelf. */
+const RARE_SWORD = (art, o) => W({ art: 'swords_rare#' + art, wclass: 'sword', range: 47, rarity: 'rare',
+  weight: 42 + Math.round(o.level * 0.6), ...o });
+export const RARE_SWORDS = {
+  sword_rare_1: RARE_SWORD(0, { id: 'sword_rare_1', name: 'Azure Warblade', nameTh: 'ดาบนักรบคราม', level: 1, atk: 21, delay: 0.86, value: 1020, crit: 2, stats: { str: 1 } }),
+  sword_rare_6: RARE_SWORD(1, { id: 'sword_rare_6', name: 'Skycrescent Sword', nameTh: 'ดาบเสี้ยวฟ้า', level: 6, atk: 31, delay: 0.86, value: 3010, crit: 2, stats: { str: 1 } }),
+  sword_rare_11: RARE_SWORD(2, { id: 'sword_rare_11', name: 'Icegleam Sword', nameTh: 'ดาบประกายน้ำแข็ง', level: 11, atk: 39, delay: 0.85, value: 6460, crit: 2, stats: { str: 1 } }),
+  sword_rare_15: RARE_SWORD(3, { id: 'sword_rare_15', name: 'Sapphire Glint', nameTh: 'ดาบประกายไพลิน', level: 15, atk: 45, delay: 0.85, value: 10040, crit: 2, stats: { str: 1 } }),
+  sword_rare_20: RARE_SWORD(4, { id: 'sword_rare_20', name: 'Azurewing Sword', nameTh: 'ดาบปีกคราม', level: 20, atk: 52, delay: 0.85, value: 15380, crit: 2, stats: { str: 1 } }),
+  sword_rare_25: RARE_SWORD(5, { id: 'sword_rare_25', name: 'Goldwing Azure', nameTh: 'ดาบปีกทองคราม', level: 25, atk: 59, delay: 0.84, value: 21600, crit: 2, stats: { str: 1 } }),
+  sword_rare_30: RARE_SWORD(6, { id: 'sword_rare_30', name: 'Palace Blade', nameTh: 'ดาบทหารราชวัง', level: 30, atk: 65, delay: 0.84, value: 28610, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_rare_34: RARE_SWORD(7, { id: 'sword_rare_34', name: 'Azure Warsword', nameTh: 'ดาบครามศึก', level: 34, atk: 70, delay: 0.84, value: 34750, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_rare_39: RARE_SWORD(8, { id: 'sword_rare_39', name: 'Skyscale Sword', nameTh: 'ดาบเกล็ดฟ้า', level: 39, atk: 76, delay: 0.83, value: 43060, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_rare_44: RARE_SWORD(9, { id: 'sword_rare_44', name: 'Azurefang', nameTh: 'ดาบเขี้ยวคราม', level: 44, atk: 82, delay: 0.83, value: 52030, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_rare_49: RARE_SWORD(10, { id: 'sword_rare_49', name: 'Frostcrystal Sword', nameTh: 'ดาบผลึกเหมันต์', level: 49, atk: 88, delay: 0.83, value: 61640, crit: 3, stats: { str: 3, agi: 1 }, element: 'ice' }),
+  sword_rare_53: RARE_SWORD(11, { id: 'sword_rare_53', name: 'Bluemoon Sword', nameTh: 'ดาบจันทร์น้ำเงิน', level: 53, atk: 93, delay: 0.82, value: 69770, crit: 3, stats: { str: 3, agi: 1 } }),
+  sword_rare_58: RARE_SWORD(12, { id: 'sword_rare_58', name: 'Skyhost Sword', nameTh: 'ดาบกองทัพฟ้า', level: 58, atk: 98, delay: 0.82, value: 80450, crit: 3, stats: { str: 3, agi: 1 } }),
+  sword_rare_63: RARE_SWORD(13, { id: 'sword_rare_63', name: 'Blue Knight Sword', nameTh: 'ดาบอัศวินน้ำเงิน', level: 63, atk: 104, delay: 0.82, value: 91710, crit: 4, stats: { str: 4, agi: 2 } }),
+  sword_rare_68: RARE_SWORD(14, { id: 'sword_rare_68', name: 'Skyguard Sword', nameTh: 'ดาบองครักษ์ฟ้า', level: 68, atk: 109, delay: 0.81, value: 103510, crit: 4, stats: { str: 4, agi: 2 } }),
+  sword_rare_72: RARE_SWORD(15, { id: 'sword_rare_72', name: 'Silverwing Sword', nameTh: 'ดาบปีกเงิน', level: 72, atk: 114, delay: 0.81, value: 113340, crit: 4, stats: { str: 4, agi: 2 } }),
+  sword_rare_77: RARE_SWORD(16, { id: 'sword_rare_77', name: 'Azure Heaven', nameTh: 'ดาบนภาคราม', level: 77, atk: 119, delay: 0.81, value: 126090, crit: 4, stats: { str: 5, agi: 2 } }),
+  sword_rare_82: RARE_SWORD(17, { id: 'sword_rare_82', name: 'Azure Crown', nameTh: 'ดาบราชคราม', level: 82, atk: 124, delay: 0.81, value: 139350, crit: 4, stats: { str: 5, agi: 2 } }),
+  sword_rare_87: RARE_SWORD(18, { id: 'sword_rare_87', name: 'Skygold Sword', nameTh: 'ดาบทองนภา', level: 87, atk: 129, delay: 0.8, value: 153100, crit: 4, stats: { str: 5, agi: 2 } }),
+  sword_rare_91: RARE_SWORD(19, { id: 'sword_rare_91', name: 'Tidelord Sword', nameTh: 'ดาบจ้าวสมุทร', level: 91, atk: 133, delay: 0.8, value: 164450, crit: 5, stats: { str: 6, agi: 3 } }),
+  sword_rare_96: RARE_SWORD(20, { id: 'sword_rare_96', name: 'Wintergale', nameTh: 'ดาบลมหนาว', level: 96, atk: 138, delay: 0.8, value: 179060, crit: 5, stats: { str: 6, agi: 3 }, element: 'ice' }),
+  sword_rare_101: RARE_SWORD(21, { id: 'sword_rare_101', name: 'Roaring Snow', nameTh: 'ดาบหิมะคำราม', level: 101, atk: 143, delay: 0.79, value: 194140, crit: 5, stats: { str: 6, agi: 3 }, element: 'ice' }),
+  sword_rare_106: RARE_SWORD(22, { id: 'sword_rare_106', name: 'Glacier Sword', nameTh: 'ดาบธารน้ำแข็ง', level: 106, atk: 148, delay: 0.79, value: 209670, crit: 5, stats: { str: 7, agi: 3 }, element: 'ice' }),
+  sword_rare_110: RARE_SWORD(23, { id: 'sword_rare_110', name: 'Blizzard Sword', nameTh: 'ดาบพายุหิมะ', level: 110, atk: 152, delay: 0.79, value: 222420, crit: 5, stats: { str: 7, agi: 3 }, element: 'ice' }),
+  sword_rare_115: RARE_SWORD(24, { id: 'sword_rare_115', name: 'Rimescale Sword', nameTh: 'ดาบเกล็ดน้ำค้างแข็ง', level: 115, atk: 157, delay: 0.78, value: 238750, crit: 5, stats: { str: 7, agi: 3 }, element: 'ice' }),
+  sword_rare_120: RARE_SWORD(25, { id: 'sword_rare_120', name: 'Frost Sovereign', nameTh: 'ดาบราชันเหมันต์', level: 120, atk: 162, delay: 0.78, value: 255510, crit: 6, stats: { str: 8, agi: 4 }, element: 'ice' }),
+};
+Object.assign(ITEMS, RARE_SWORDS);
+
 /** Items that game systems use by role, not by drop table. */
 export const KEY_ITEMS = {
   refineStone: 'runed_whetstone',   // spent on every refine attempt

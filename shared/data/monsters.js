@@ -1,4 +1,4 @@
-import { SWORDS } from './items.js';
+import { SWORDS, RARE_SWORDS } from './items.js';
 // Bestiary.
 //
 // sprite.kind:
@@ -477,6 +477,8 @@ export const MONSTERS = {
  */
 const BAND = (lv) => (lv < 20 ? 's' : lv < 40 ? 'm' : lv < 58 ? 'l' : 'xl');
 const SWORD_LADDER = Object.values(SWORDS).sort((a, b) => a.level - b.level);
+const RARE_LADDER = Object.values(RARE_SWORDS).sort((a, b) => a.level - b.level);
+const bandOf = (ladder, lv) => ladder.filter((w) => w.level <= lv).pop();
 const ITEM_BOOK = { fire: 'book_fire', ice: 'book_ice', wind: 'book_wind', lightning: 'book_lightning',
   earth: 'book_earth', dark: 'book_dark', holy: 'book_holy' };
 const RESIST_OF = { fire: 'fire_resist', ice: 'ice_resist', lightning: 'lightning_resist', wind: 'wind_resist',
@@ -502,7 +504,8 @@ export function potionDrops(m) {
       { id: 'treasure_map', chance: 0.4 },
       { id: 'book_royal', chance: 0.05 },
       { id: 'boss_ticket', chance: 0.03 },
-    ];
+      { id: bandOf(RARE_LADDER, m.level)?.id, chance: 0.35 },
+    ].filter((d) => d.id);
   }
   const out = [
     { id: 'hp_potion_' + BAND(m.level), chance: 0.05 },
@@ -517,8 +520,10 @@ export function potionDrops(m) {
   if (m.level >= 40) out.push({ id: 'guard_down', chance: 0.0008 }, { id: 'scroll_resurrect', chance: 0.001 });
   if (m.element && m.element !== 'neutral' && ITEM_BOOK[m.element]) out.push({ id: ITEM_BOOK[m.element], chance: 0.003 });
   // the starter sword of its band: the best one a character this level can hold
-  const sword = SWORD_LADDER.filter((w) => w.level <= m.level).pop();
+  const sword = bandOf(SWORD_LADDER, m.level);
   if (sword) out.push({ id: sword.id, chance: 0.004 });
+  const rare = bandOf(RARE_LADDER, m.level);         // a rare sword is a real find
+  if (rare) out.push({ id: rare.id, chance: 0.0012 });
   if (m.level >= 20) {
     out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },
       { id: 'item_find', chance: 0.003 }, { id: 'curse_potion', chance: 0.004 });

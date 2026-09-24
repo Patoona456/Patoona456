@@ -108,8 +108,24 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
     ctx.stroke();
   }
   ctx.rotate(angle);
+  // refine and element light the blade itself: the tier's colour leaned
+  // toward the element, breathing, brighter in the swing
+  const tier = glowTier(e.wr);
+  const el = ITEMS[e.eq?.weapon]?.element;
+  const elemental = el && el !== 'neutral' ? elLook(el).main : null;
+  const rgb = tier ? (elemental ? mixRgb(tier.color, elemental, 0.55) : tier.color) : elemental;
+  const sx = (cell % cols) * size, sy = Math.floor(cell / cols) * size;
+  if (rgb) {
+    const pulse = 0.7 + 0.3 * Math.sin(now / 480 + e.x * 0.05);
+    const power = (tier ? 0.45 + tier.aura * 0.35 : 0.35) * pulse * (swing ? 1.4 : 1);
+    ctx.save();
+    ctx.shadowColor = `rgba(${rgb.join(',')},${Math.min(1, power).toFixed(2)})`;
+    ctx.shadowBlur = 4 + (tier?.aura ?? 0.5) * 6;
+    ctx.drawImage(img, sx, sy, size, size, -w * 0.24, -w * 0.76, w, w);
+    ctx.restore();
+  }
   // the grip sits a fifth of the way in from the lower-left corner
-  ctx.drawImage(img, (cell % cols) * size, Math.floor(cell / cols) * size, size, size, -w * 0.24, -w * 0.76, w, w);
+  ctx.drawImage(img, sx, sy, size, size, -w * 0.24, -w * 0.76, w, w);
   ctx.restore();
 }
 /** Columns per icon atlas, where it is not the usual eight. */
@@ -151,7 +167,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls', 'swords']) uiImage(name);
+  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls', 'swords', 'swords_rare']) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
@@ -805,6 +821,9 @@ export class Renderer {
    */
   drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now) {
     if (e.inv) return;
+    // a chibi holds its weapon as a picture, which carries its own glow (drawHeld);
+    // lighting the body's layers here would light the whole body
+    if (e.look?.style === 'chibi') return;
     const tier = glowTier(e.wr);
     const el = ITEMS[e.eq?.weapon]?.element;
     const elemental = el && el !== 'neutral' ? el : null;

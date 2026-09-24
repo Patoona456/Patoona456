@@ -835,3 +835,50 @@ weapon_sheet('sword_sheet.png', 'swords', cols=6, cell_w=256,
              rows=[(18, 252), (262, 500), (498, 738), (736, 990)],
              plate_y=[(210, 254), (457, 502), (693, 737), (940, 990)])
 print('sword sheet done')
+
+
+# Rare swords (assets/ui/source/sword_rare_sheet.png): twenty-six on a painted
+# checkerboard, their "Lv." plates in a loose grid. The plates are found by
+# colour, painted out, and every sword is the blob just up and left of its
+# plate. Order is the sheet's reading order, the order of the plates.
+def plated_sheet(src, out, cols=8, cell=96, title=(0, 0, 380, 140)):
+    img = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src))
+    b, g, r = [img[:, :, i].astype(int) for i in range(3)]
+    lum = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(int)
+    navy = ((b - r > 25) & (lum < 90)).astype(np.uint8)
+    n, lab, st, _ = cv2.connectedComponentsWithStats(navy)
+    plates = [st[i][:4] for i in range(1, n) if st[i, 2] > 80 and 20 < st[i, 3] < 50]
+    plates.sort(key=lambda p: (p[1] // 100, p[0]))
+    # the painted checkerboard is light and grey: anything darker or coloured is ink
+    ink = ((lum < 200) | (img.max(2).astype(int) - img.min(2) > 14)).astype(np.uint8)
+    for (x, y, w, h) in plates:
+        ink[y - 7:y + h + 7, x - 7:x + w + 7] = 0
+    x0, y0, x1, y1 = title
+    ink[y0:y1, x0:x1] = 0
+    ink = cv2.morphologyEx(ink, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(ink)
+    rows = (len(plates) + cols - 1) // cols
+    atlas = np.zeros((cell * rows, cell * cols, 4), np.uint8)
+    for k, (x, y, w, h) in enumerate(plates):
+        # the biggest blob whose box reaches the plate's left end from above
+        best, area = 0, 0
+        for i in range(1, n):
+            bx, by, bw, bh, a = st[i]
+            if a > area and bx < x + 20 and bx + bw > x - 20 and by + bh > y - 30 and by < y:
+                best, area = i, a
+        bx, by, bw, bh, _ = st[best]
+        m = (lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8) * 255
+        # fill the holes: flood the outside from a border that is surely empty
+        ff = cv2.copyMakeBorder(m, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
+        cv2.floodFill(ff, np.zeros((bh + 4, bw + 4), np.uint8), (0, 0), 255)
+        m = m | cv2.bitwise_not(ff[1:-1, 1:-1])
+        rgba = cv2.cvtColor(img[by:by + bh, bx:bx + bw], cv2.COLOR_BGR2RGBA)
+        rgba[:, :, 3] = cv2.GaussianBlur(m, (3, 3), 0)
+        piece = trim(rgba)
+        rr, cc = divmod(k, cols)
+        atlas[rr * cell:(rr + 1) * cell, cc * cell:(cc + 1) * cell] = strip([piece], cell)
+    save(out, atlas)
+    return len(plates)
+
+
+print('rare swords', plated_sheet('sword_rare_sheet.png', 'swords_rare'))
