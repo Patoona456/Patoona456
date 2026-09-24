@@ -51,6 +51,7 @@ function paintArt(canvas, name) {
     const w = canvas.width, h = canvas.height;
     g.clearRect(0, 0, w, h);
     g.imageSmoothingEnabled = true;
+    g.imageSmoothingQuality = 'high';
     if (cellId != null && ATLAS[file]) {
       const cols = ATLAS[file].cols, cell = img.naturalWidth / cols, i = +cellId;
       g.drawImage(img, (i % cols) * cell, Math.floor(i / cols) * cell, cell, cell, w * 0.03, h * 0.03, w * 0.94, h * 0.94);
@@ -547,10 +548,13 @@ export function skillIconKind(id) {
 /* ============================ rendering ============================ */
 function render(kind, rarity, size) {
   const c = document.createElement('canvas');
-  c.width = c.height = size * 2;      // drawn at 2x for crisp edges on retina
+  // drawn at the screen's own density (at least 2x, at most 3x) so painted
+  // art stays sharp on phones as well as on desktop retina
+  const k = Math.min(3, Math.max(2, Math.ceil(globalThis.devicePixelRatio ?? 2)));
+  c.width = c.height = size * k;
   c.style.width = c.style.height = size + 'px';
   const g = c.getContext('2d');
-  g.setTransform((size * 2) / 32, 0, 0, (size * 2) / 32, 0, 0);
+  g.setTransform((size * k) / 32, 0, 0, (size * k) / 32, 0, 0);
   if (rarity && RARITY[rarity] && rarity !== 'common') {
     const grad = g.createRadialGradient(16, 16, 2, 16, 16, 17);
     grad.addColorStop(0, RARITY[rarity] + '55');

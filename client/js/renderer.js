@@ -92,6 +92,9 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const w = HELD_SIZE * (e.sprite?.scale ?? 1);
   ctx.save();
   if (e.inv) ctx.globalAlpha = 0.35;
+  // a 160px picture shrunk to a hand's width: the cheap filter turns it to mush
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.translate(hx, hy);
   ctx.scale(hand.side, 1);
   if (swing && angle > -1.2 && elapsed < 190) {
@@ -661,6 +664,8 @@ export class Renderer {
       if (isAurum) { ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
       else if (atlas?.naturalWidth) {
         const cols = ATLAS_COLS[file] ?? 8, size = atlas.naturalWidth / cols, i = +cell;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
         ctx.drawImage(atlas, (i % cols) * size, Math.floor(i / cols) * size, size, size, -9, -12, 18, 18);
       } else { ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8); }

@@ -52,11 +52,11 @@ def trim(rgba):
     return rgba[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
 
 
-def save(name, rgba, scale=1.0):
+def save(name, rgba, scale=1.0, quality=92):
     im = Image.fromarray(rgba)
     if scale != 1.0:
         im = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
-    im.save(os.path.join(OUT, name + '.webp'), 'WEBP', quality=92, method=6)
+    im.save(os.path.join(OUT, name + '.webp'), 'WEBP', quality=quality, method=6)
 
 
 def erase_text(img, box, thresh=150):
@@ -683,7 +683,15 @@ def strip(pieces, cell):
         h, w = p.shape[:2]
         k = min(cell / w, cell / h, 1)
         if k < 1:
-            p = cv2.resize(p, (max(1, round(w * k)), max(1, round(h * k))), interpolation=cv2.INTER_AREA)
+            # shrink premultiplied, or the colour hidden under clear pixels
+            # (the sheet's background) bleeds into the edge as a halo
+            a = p[:, :, 3:4].astype(np.float32) / 255
+            pm = np.dstack([p[:, :, :3].astype(np.float32) * a, a * 255])
+            size = (max(1, round(w * k)), max(1, round(h * k)))
+            pm = cv2.resize(pm, size, interpolation=cv2.INTER_AREA)
+            al = np.clip(pm[:, :, 3:4] / 255, 1e-6, 1)
+            rgb = np.clip(pm[:, :, :3] / al, 0, 255)
+            p = np.dstack([rgb, pm[:, :, 3:4]]).astype(np.uint8)
             h, w = p.shape[:2]
         y, x = (cell - h) // 2, i * cell + (cell - w) // 2
         out[y:y + h, x:x + w] = p
@@ -803,7 +811,7 @@ def outline_cut(img, box, dark=30, close=5):
     return trim(rgba)
 
 
-def weapon_sheet(src, out, cols, rows, cell_w, plate_y, plate_x=(86, 226), cell=96):
+def weapon_sheet(src, out, cols, rows, cell_w, plate_y, plate_x=(86, 226), cell=160):
     img = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src))
     mask = np.zeros(img.shape[:2], np.uint8)
     for (y0, y1) in plate_y:
@@ -828,7 +836,7 @@ def weapon_sheet(src, out, cols, rows, cell_w, plate_y, plate_x=(86, 226), cell=
                     piece = min(cuts, key=lambda x: (x[:, :, 3] > 128).sum())
                     break
             atlas[r * cell:(r + 1) * cell, c * cell:(c + 1) * cell] = strip([piece], cell)
-    save(out, atlas)
+    save(out, atlas, quality=96)
 
 
 weapon_sheet('sword_sheet.png', 'swords', cols=6, cell_w=256,
@@ -841,7 +849,7 @@ print('sword sheet done')
 # checkerboard, their "Lv." plates in a loose grid. The plates are found by
 # colour, painted out, and every sword is the blob just up and left of its
 # plate. Order is the sheet's reading order, the order of the plates.
-def plated_sheet(src, out, cols=8, cell=96, title=(0, 0, 380, 140)):
+def plated_sheet(src, out, cols=8, cell=160, title=(0, 0, 380, 140)):
     img = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src))
     b, g, r = [img[:, :, i].astype(int) for i in range(3)]
     lum = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(int)
@@ -880,12 +888,15 @@ def plated_sheet(src, out, cols=8, cell=96, title=(0, 0, 380, 140)):
         ff = cv2.copyMakeBorder(m, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
         cv2.floodFill(ff, np.zeros((bh + 4, bw + 4), np.uint8), (0, 0), 255)
         m = m | cv2.bitwise_not(ff[1:-1, 1:-1])
+        # a crisp edge: the outermost pixel is half checkerboard, so it goes,
+        # and the edge that is left is antialiased by one pixel only
+        m = cv2.erode(m, np.ones((3, 3), np.uint8))
         rgba = cv2.cvtColor(img[by:by + bh, bx:bx + bw], cv2.COLOR_BGR2RGBA)
-        rgba[:, :, 3] = cv2.GaussianBlur(m, (3, 3), 0)
+        rgba[:, :, 3] = cv2.GaussianBlur(m, (3, 3), 0.6)
         piece = trim(rgba)
         rr, cc = divmod(k, cols)
         atlas[rr * cell:(rr + 1) * cell, cc * cell:(cc + 1) * cell] = strip([piece], cell)
-    save(out, atlas)
+    save(out, atlas, quality=96)
     return len(plates)
 
 
