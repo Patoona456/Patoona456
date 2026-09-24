@@ -216,6 +216,22 @@ test('the chibi body sheet is the grid its layout says', async () => {
     + `${CHIBI_WALK.frame.w * CHIBI_WALK.cols}x${CHIBI_WALK.frame.h * CHIBI_WALK.rows}`);
 });
 
+test('chibi hair is a layer on the body\'s grid, and bald means none', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { CHIBI_WALK, fits } = await import('../shared/sheets.js');
+  const { CHIBI_HEADS, CHIBI_FISTS } = await import('../shared/data/chibi.js');
+  for (const hairColor of ['black', 'brown', 'blonde', 'white']) {
+    const url = urlOf(playerLayers({ style: 'chibi', hairColor }).hair);
+    const png = readFileSync(onDisk(url));
+    assert.ok(fits(CHIBI_WALK, png.readUInt32BE(16), png.readUInt32BE(20)), `${url} is off the body's grid`);
+  }
+  assert.equal(playerLayers({ style: 'chibi', chibiHair: 'bald' }).hair, undefined);
+  for (const table of [CHIBI_HEADS, CHIBI_FISTS]) {
+    assert.equal(table.length, CHIBI_WALK.dirRows);
+    for (const row of table) assert.equal(row.length, CHIBI_WALK.anims.walk.frames);
+  }
+});
+
 test('in every town, each keeper and each way out can be walked to from the spawn', () => {
   for (const m of Object.values(MAPS)) {
     if (m.kind !== 'town') continue;

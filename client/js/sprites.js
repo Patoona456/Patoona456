@@ -104,16 +104,18 @@ export const CHIBI_ORDER = [
   'back', 'armor', 'belt', 'head', 'face', 'neck', 'weapon', 'offhand', 'accessory',
 ];
 
-/** The chibi walk body and the outfit pieces cut to its grid. The cape
- *  hangs behind a body facing the camera and over one facing away, so it is
- *  two sheets, one either side of the body. */
-const CHIBI_WALK_ORDER = ['cape_under', 'body', 'bottom', 'boots', 'top', 'belt', 'gloves', 'cape_over'];
+/** The chibi walk body and the pieces cut to its grid. Hair goes over the
+ *  body and a hat over the hair. The cape hangs behind a body facing the
+ *  camera and over one facing away, so it is two sheets, one either side. */
+const CHIBI_WALK_ORDER = ['cape_under', 'body', 'bottom', 'boots', 'top', 'belt', 'gloves', 'hair', 'head', 'cape_over'];
 const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_WALK_ORDER };
 export function orderFor(layout) { return ORDERS[layout?.id] ?? ORDER; }
 
 const CHIBI_BASE = '/assets/chibi';
 /** The chibi bodies that exist; a look naming anything else gets the first. */
-export const CHIBI_BODIES = ['hero_brown'];
+export const CHIBI_BODIES = ['base_male'];
+/** Chibi hair: one cut so far, in the four colours the creator offers. */
+export const CHIBI_HAIR_COLOURS = ['black', 'brown', 'blonde', 'white'];
 export function chibiUrl(key) {
   const url = `${CHIBI_BASE}/body/${CHIBI_BODIES.includes(key) ? key : CHIBI_BODIES[0]}.png`;
   declareLayout(url, 'chibi_walk');
@@ -126,6 +128,11 @@ export function playerLayers(look, equipment = {}) {
   // different size and would float off the body.
   if (look?.style === 'chibi') {
     const layers = { body: chibiUrl(look.chibi) };
+    if (look.chibiHair !== 'bald') {
+      const colour = CHIBI_HAIR_COLOURS.includes(look.hairColor) ? look.hairColor : 'brown';
+      layers.hair = `${CHIBI_BASE}/hair/spiky_${colour}.png`;
+      declareLayout(layers.hair, 'chibi_walk');
+    }
     for (const itemId of Object.values(equipment)) {
       const c = ITEMS[itemId]?.chibi;
       if (!c) continue;                 // LPC-only art would not fit this body

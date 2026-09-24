@@ -16,6 +16,7 @@ import { Weather } from './weather.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
+import { CHIBI_FISTS } from '../../shared/data/chibi.js';
 
 const uiImages = new Map();
 /** One of the painted HUD words (miss, critical, levelup), loaded once. */
@@ -42,40 +43,40 @@ function heldArt(e) {
 }
 
 /**
- * Where the weapon fist is on the chibi sheet, per facing (DIR8 order) and per
- * walk frame, in frame pixels of the 128 x 192 walk frame; which side the
- * blade leans to; and whether the fist is over the body (the side views,
- * where the arm crosses the torso) or beside it. Beside the body the sword
- * goes on first and the body's own fist covers the grip; over it, the sword
- * goes on last and the fist is painted back on top. Tracked off
- * assets/chibi/body/hero_brown.png.
+ * How the weapon fist holds its blade in each of the chibi's four rows
+ * (down, left, up, right): which side it leans to at rest, which side it cuts
+ * toward, and whether the fist is over the body. In the side views the near
+ * arm crosses the torso, so the sword goes on after the body and the fist is
+ * painted back over its grip; elsewhere the sword goes on first and the
+ * body's own fist covers the grip. At rest a side-view blade leans back over
+ * the shoulder, clear of the body, and swings forward to cut. Where the fist
+ * is, frame by frame, is measured off the art (shared/data/chibi.js).
  */
-const CHIBI_HAND = [
-  { at: [[92, 145], [91, 145], [91, 145], [90, 145]], side: 1, over: false },  // down
-  { at: [[37, 140], [35, 139], [37, 139], [39, 140]], side: -1, over: false }, // down-left
-  { at: [[63, 146], [65, 146], [68, 146], [66, 146]], side: -1, over: true },  // left
-  { at: [[84, 139], [88, 137], [81, 140], [82, 136]], side: 1, over: false },  // up-left
-  { at: [[95, 143], [95, 143], [93, 142], [94, 143]], side: 1, over: false },  // up
-  { at: [[45, 140], [46, 141], [37, 137], [42, 141]], side: -1, over: false }, // up-right
-  { at: [[90, 132], [83, 132], [92, 132], [76, 141]], side: 1, over: true },   // right
-  { at: [[94, 139], [94, 138], [96, 138], [93, 138]], side: 1, over: false },  // down-right
+const CHIBI_GRIP = [
+  { side: 1, cut: 1, over: false },    // down
+  { side: 1, cut: -1, over: true },    // left
+  { side: 1, cut: 1, over: false },    // up
+  { side: -1, cut: 1, over: true },    // right
 ];
-const CHIBI_FRAME = { w: 128, anchor: 184, scale: 0.27 };
 /** Pommel to tip, in screen pixels, on a ~47px chibi: well under half its height. */
 const HELD_LEN = 19;
 /** The fist's radius in frame pixels, for painting it back over the grip. */
-const FIST_R = 6.5;
+const FIST_R = 8;
 
-/** The hand for this facing (so the draw order can ask before the body goes on). */
-export function chibiHand(e) { return CHIBI_HAND[((e.d ?? 0) % 8 + 8) % 8]; }
+/** The chibi row for this facing: the layout folds the eight onto four. */
+function chibiRow(e) { return CHIBI_WALK.dirMap[((e.d ?? 0) % 8 + 8) % 8]; }
+
+/** The grip for this facing (so the draw order can ask before the body goes on). */
+export function chibiHand(e) { return CHIBI_GRIP[chibiRow(e)]; }
 
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
-  const hand = chibiHand(e);
+  const row = chibiRow(e);
   const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed) : 0;
-  const [fx, fy] = hand.at[col] ?? hand.at[0];
-  const sc = (e.sprite?.scale ?? 1) * CHIBI_FRAME.scale;
-  return { x: e.x + (fx - CHIBI_FRAME.w / 2) * sc, y: e.y + (fy - CHIBI_FRAME.anchor) * sc, r: FIST_R * sc };
+  const [fx, fy] = CHIBI_FISTS[row][col] ?? CHIBI_FISTS[row][0];
+  const { w, h } = CHIBI_WALK.frame;
+  const sc = (e.sprite?.scale ?? 1) * CHIBI_WALK.drawScale;
+  return { x: e.x + (fx - w / 2) * sc, y: e.y + (fy - CHIBI_WALK.anchor * h) * sc, r: FIST_R * sc };
 }
 
 /**
@@ -182,7 +183,7 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.translate(fist.x, fist.y);
-  ctx.scale(hand.side, 1);
+  ctx.scale(swing ? hand.cut : hand.side, 1);
   if (swing && angle > -1.2 && elapsed < 190) {
     // the cut leaves a thin trail behind the tip
     const tip = len * 0.85, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;

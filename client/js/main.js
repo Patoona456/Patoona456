@@ -925,7 +925,7 @@ class Game {
   }
 
   showCharCreate() {
-    const look = { style: 'chibi', gender: 'male', body: 'light', hair: 'plain', hairColor: 'brown', eyes: 'brown' };
+    const look = { style: 'chibi', gender: 'male', body: 'light', hair: 'plain', chibiHair: 'spiky', hairColor: 'brown', eyes: 'brown' };
     const stats = { ...STARTING_STATS };
     // dir is one of the eight (shared/facing.js DIR8): 0 faces the camera
     const view = { dir: 0, anim: 'walk', spin: true };
@@ -948,7 +948,8 @@ class Game {
           <div class="field lpc-only"><label>เพศ</label><div class="opts" id="o-gender"></div></div>
           <div class="field lpc-only"><label>ผิว</label><div class="opts" id="o-body"></div></div>
           <div class="field lpc-only"><label>ทรงผม</label><div class="opts" id="o-hair"></div></div>
-          <div class="field lpc-only"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
+          <div class="field chibi-only"><label>ทรงผม</label><div class="opts" id="o-chibiHair"></div></div>
+          <div class="field"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
           <div class="field lpc-only"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
           <div class="field"><label>เมืองเริ่มต้น</label><div class="opts" id="o-start"></div></div>
           <hr>
@@ -990,6 +991,7 @@ class Game {
       gender: [['male', 'ชาย'], ['female', 'หญิง']],
       body: [['light', 'ขาว'], ['tanned', 'แทน'], ['dark', 'เข้ม'], ['darkelf', 'ดาร์กเอลฟ์']],
       hair: [['plain', 'เรียบ'], ['messy', 'ยุ่ง'], ['long', 'ยาว'], ['ponytail', 'หางม้า']],
+      chibiHair: [['spiky', 'ผมชี้'], ['bald', 'หัวโล้น']],
       hairColor: [['black', 'ดำ'], ['brown', 'น้ำตาล'], ['blonde', 'ทอง'], ['white', 'ขาว']],
       eyes: [['blue', 'ฟ้า'], ['brown', 'น้ำตาล'], ['green', 'เขียว'], ['red', 'แดง']],
     };
@@ -1009,12 +1011,14 @@ class Game {
         box.append(b);
       }
     }
-    // the chibi set is one drawn body with no gear art yet, so the LPC-only
-    // choices would change nothing on it
+    // the chibi is one drawn body with its hair as a layer over it, so the
+    // LPC skin, eye and hairstyle choices would change nothing on it
     const markStyle = () => {
       const chibi = look.style === 'chibi';
       body.querySelectorAll('.lpc-only').forEach((el) => { el.hidden = chibi; });
-      $('#style-hint').textContent = chibi ? 'มีหน้าตาเดียว ยังไม่แสดงชุดเกราะ/อาวุธบนตัว' : 'ชุดที่ใส่เห็นบนตัว';
+      body.querySelectorAll('.chibi-only').forEach((el) => { el.hidden = !chibi; });
+      body.querySelector('#o-hairColor').parentElement.hidden = chibi && look.chibiHair === 'bald';
+      $('#style-hint').textContent = chibi ? 'ผมกับหมวกเป็นเลเยอร์แยก เปลี่ยนได้' : 'ชุดที่ใส่เห็นบนตัว';
     };
     markLook();
     markStyle();

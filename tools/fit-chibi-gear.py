@@ -1,6 +1,6 @@
 import sys, cv2, numpy as np, os
 S = sys.argv[1]; OUT = sys.argv[2]
-BODY = '/home/user/Patoona456/assets/chibi/body/hero_brown.png'
+BODY = '/home/user/Patoona456/assets/chibi/source/hero_brown_grid.png'
 FW, FH = 128, 192
 sheet = cv2.imread(f'{S}/gear/sheet.png', cv2.IMREAD_UNCHANGED)
 BANDS = {'top': (33, 105), 'bottom': (147, 220), 'boots': (267, 332), 'gloves': (376, 446), 'belt': (495, 552), 'cape': (596, 684)}

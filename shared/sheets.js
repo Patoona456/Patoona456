@@ -94,25 +94,29 @@ export const CHIBI_ALIASES = {
 CHIBI8.aliases = CHIBI_ALIASES;
 
 /**
- * The chibi walk board (assets/chibi/body), as cut by tools/slice-chibi.py:
- * four walk frames across, eight facings down in DIR8 order. It is drawn at
- * source resolution and shrunk on the way to the screen, so it stays sharp
- * when the camera zooms in. There is only a walk: every other action falls
- * back to idle, and the renderer lunges the body for attacks instead.
+ * The chibi base (assets/chibi/body/base_male.png), as cut by
+ * tools/slice-base.py: eight walk frames across, four facings down (down,
+ * left, up, right). A diagonal shows the side it leans to, so walking
+ * down-left reads as walking left. The body is bald and in its shorts: hair,
+ * hats and clothes are layers on the same grid. It is drawn at source
+ * resolution and shrunk on the way to the screen, so it stays sharp when the
+ * camera zooms in. There is only a walk: every other action falls back to
+ * the standing frame, and the renderer lunges the body for attacks instead.
  */
 export const CHIBI_WALK = {
   id: 'chibi_walk',
   aliases: {},
   frame: { w: 128, h: 192 },
-  cols: 4,
-  rows: 8,
+  cols: 8,
+  rows: 4,
   anchor: 184 / 192,
-  drawScale: 0.27,   // ~47px tall, the height of an LPC NPC
-  dirRows: 8,
-  dirMap: null,
+  drawScale: 0.36,   // ~50px from crown to heel, level with the town NPCs
+  dirRows: 4,
+  //       down  dl  left  ul  up  ur  right  dr
+  dirMap: [0,    1,  1,    1,  2,  3,  3,     3],
   anims: {
     idle: { row: 0, frames: 1, fps: 1 },
-    walk: { row: 0, frames: 4, fps: 8 },
+    walk: { row: 0, frames: 8, fps: 11 },
   },
 };
 

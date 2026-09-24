@@ -77,7 +77,7 @@ export function nameTaken(name) {
   return Object.values(db.characters).some((c) => c.name.toLowerCase() === lower);
 }
 
-export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes, style, stats, startMap }) {
+export function createCharacter(acc, { name, gender, body, hair, chibiHair, hairColor, eyes, style, stats, startMap }) {
   if (acc.chars.length >= MAX_CHARS) return { error: `สร้างได้สูงสุด ${MAX_CHARS} ตัวละคร` };
   name = String(name ?? '').trim();
   if (!NAME_RE.test(name)) return { error: 'ชื่อตัวละครต้องยาว 3-16 ตัว' };
@@ -92,7 +92,11 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     eyes: ['blue', 'brown', 'green', 'red'].includes(eyes) ? eyes : 'brown',
   };
   // 'chibi' draws the character from assets/chibi instead of the LPC layers
-  if (style === 'chibi') { look.style = 'chibi'; look.chibi = 'hero_brown'; }
+  if (style === 'chibi') {
+    look.style = 'chibi';
+    look.chibi = 'base_male';
+    look.chibiHair = chibiHair === 'bald' ? 'bald' : 'spiky';
+  }
 
   // Optional custom start spread; must total the same 30 points.
   const base = { ...STARTING_STATS };
