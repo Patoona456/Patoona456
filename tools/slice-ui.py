@@ -849,13 +849,21 @@ def plated_sheet(src, out, cols=8, cell=96, title=(0, 0, 380, 140)):
     n, lab, st, _ = cv2.connectedComponentsWithStats(navy)
     plates = [st[i][:4] for i in range(1, n) if st[i, 2] > 80 and 20 < st[i, 3] < 50]
     plates.sort(key=lambda p: (p[1] // 100, p[0]))
-    # the painted checkerboard is light and grey: anything darker or coloured is ink
-    ink = ((lum < 200) | (img.max(2).astype(int) - img.min(2) > 14)).astype(np.uint8)
+    # The painted checkerboard is light and grey. The swords' glow is light
+    # too, with only a little colour, so both count as background: ink is
+    # what is darker than the glow or strongly coloured. The blades' white
+    # highlights fall out as well, but they sit inside the black outline
+    # and come back when the holes are filled.
+    ink = ((lum < 165) | (img.max(2).astype(int) - img.min(2) > 62)).astype(np.uint8)
     for (x, y, w, h) in plates:
         ink[y - 7:y + h + 7, x - 7:x + w + 7] = 0
     x0, y0, x1, y1 = title
     ink[y0:y1, x0:x1] = 0
+    img = img.copy()
+    for (x, y, w, h) in plates:
+        img[y - 7:y + h + 7, x - 7:x + w + 7] = 245      # plates become background
     ink = cv2.morphologyEx(ink, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    ink = cv2.morphologyEx(ink, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))   # lone glow specks
     n, lab, st, _ = cv2.connectedComponentsWithStats(ink)
     rows = (len(plates) + cols - 1) // cols
     atlas = np.zeros((cell * rows, cell * cols, 4), np.uint8)
