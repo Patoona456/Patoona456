@@ -252,7 +252,7 @@ export class Conn {
       }
       // the shrine from anywhere (the top bar), as well as from its keeper
       case 'gacha': {
-        if (m.action === 'draw') return this.gachaDraw(m.times | 0 || 1, 'ศาลรุ่งอรุณ');
+        if (m.action === 'draw') return this.gachaDraw(m.times | 0 || 1, 'ศาลรุ่งอรุณ', !!m.free);
         if (m.action === 'claim') return this.gachaClaim('ศาลรุ่งอรุณ');
         return this.send({ t: OP.SHOP, mode: 'gacha', name: 'ศาลรุ่งอรุณ', ...Econ.shardShop(p) });
       }
@@ -466,9 +466,9 @@ export class Conn {
   }
 
   /** NPC services require standing next to the right NPC. */
-  gachaDraw(times, name) {
+  gachaDraw(times, name, free = false) {
     const p = this.player;
-    const r = Econ.gachaDraw(this.world, p, times);
+    const r = Econ.gachaDraw(this.world, p, times, { free });
     if (r.error) return this.error(r.error);
     this.send({ t: 'gachaResult', results: r.results, pity: r.pity, points: r.points });
     // UR and LR are news: everyone sees the name and what came out

@@ -221,14 +221,17 @@ export const GACHA = {
 };
 const GRADE_RANK = { R: 0, SR: 1, SSR: 2, UR: 3, LR: 4 };
 
-export function gachaDraw(world, p, times = 1) {
-  const n = Math.max(1, Math.min(10, times | 0));
-  const cost = GACHA.cost * n;
+export function gachaDraw(world, p, times = 1, { free = false } = {}) {
+  // the free draw is one single draw a day, on the house
+  const n = free ? 1 : Math.max(1, Math.min(10, times | 0));
+  const cost = free ? 0 : GACHA.cost * n;
   const pool = GACHA.pool.filter((o) => ITEMS[o.id]);
   if (!pool.length || !hasKeyItem('gachaShard')) return { error: 'ศาลรุ่งอรุณยังไม่เปิด — รอไอเทมชุดใหม่' };
+  if (free && p.record.gachaFreeDay === today()) return { error: 'สุ่มฟรีวันนี้ไปแล้ว พรุ่งนี้มาใหม่นะ' };
   if (p.countItem(KEY_ITEMS.gachaShard) < cost) return { error: `ต้องใช้เศษรุ่งอรุณ ${cost} ชิ้น` };
   if (p.inventory.length + n >= 100) return { error: 'กระเป๋าเต็ม' };
-  p.removeItemById(KEY_ITEMS.gachaShard, cost);
+  if (cost) p.removeItemById(KEY_ITEMS.gachaShard, cost);
+  if (free) p.record.gachaFreeDay = today();
 
   const r = p.record;
   r.gachaPity = r.gachaPity ?? 0;
@@ -303,6 +306,7 @@ export function shardShop(p) {
     open: hasKeyItem('gachaShard') && GACHA.pool.some((o) => ITEMS[o.id]),
     pity: GACHA.pity - (r.gachaPity ?? 0),
     pityMax: GACHA.pity,
+    freeReady: r.gachaFreeDay !== today(),
     points: r.gachaPoints ?? 0,
     pointsMax: GACHA.pointsMax,
     milestones: GACHA.milestones.map((m) => ({ ...m, claimed: (r.gachaClaimed ?? []).includes(m.at) })),

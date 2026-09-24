@@ -143,6 +143,17 @@ test('the guaranteed draw, when it fires, is never common', () => {
   assert.ok(fired > 0, 'the guarantee never fired in 400 draws, so it is untested');
 });
 
+test('the free draw is one draw a day, costs nothing, and cannot be a ten-draw', () => {
+  const p = character({ items: [] });
+  assert.ok(Econ.shardShop(p).freeReady, 'a fresh character has no free draw waiting');
+  const r = Econ.gachaDraw(world, p, 10, { free: true });
+  assert.ok(r.ok, r.error);
+  assert.equal(r.results.length, 1, 'a free draw paid out more than one roll');
+  assert.equal(r.spent, 0);
+  assert.equal(Econ.shardShop(p).freeReady, false);
+  assert.ok(Econ.gachaDraw(world, p, 1, { free: true }).error, 'the free draw came twice in one day');
+});
+
 test('an empty purse of shards draws nothing', () => {
   const p = character({ items: [{ id: SHARD, qty: Econ.GACHA.cost * 2 - 1 }] });
   assert.ok(Econ.gachaDraw(world, p, 2).error, 'it drew twice on the price of one and a bit');

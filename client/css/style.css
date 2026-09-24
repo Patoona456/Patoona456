@@ -2296,3 +2296,149 @@ body.landscape-ui #panels .bag-search, body.landscape-ui #panels .bag-sortbtn { 
 body.landscape-ui #panels .bag-grid { grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); }
 body.landscape-ui #panels .bag-btn { width: 76px; height: 32px; }
 body.landscape-ui #panels .bag-expand { width: 120px; height: 42px; }
+
+/* ============ gacha (Gacha HUD sheet; pieces come from the gacha atlas) ============ */
+.win.window:has(.gx) { width: min(1040px, 96vw); }
+.gx { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.gx-left { display: grid; gap: 6px; justify-items: center; }
+.gx-menu { display: grid; gap: 5px; max-height: 470px; overflow-y: auto; padding: 2px; scrollbar-width: thin; }
+.gx-menu .ga { position: relative; border: none; padding: 0; cursor: pointer; }
+.gx-menu .ga.on { filter: drop-shadow(0 0 6px rgba(255, 210, 110, .9)); }
+.gx-menu .ga.soon { filter: grayscale(.75) brightness(.6); cursor: default; }
+.gx-soon {
+  position: absolute; right: 8px; top: 6px; padding: 1px 7px; border-radius: 8px; font-size: 10px; font-weight: 700;
+  background: rgba(10, 12, 20, .85); color: #d7deea; border: 1px solid rgba(255, 255, 255, .2);
+}
+.gx-main { display: grid; gap: 8px; min-width: 0; }
+.gx-wallet {
+  justify-self: end; display: flex; align-items: center; gap: 6px; padding: 2px 14px 2px 6px; border-radius: 999px;
+  background: linear-gradient(180deg, #232a36, #11151c); border: 2px solid #b58a3c; font-size: 13px;
+}
+.gx-stage { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.gx-bannerbox { position: relative; --s: .6; width: calc(532px * var(--s)); height: calc(256px * var(--s)); }
+.gx-bannerbox .gx-art {
+  position: absolute; left: calc(26px * var(--s)); top: calc(40px * var(--s)); right: calc(26px * var(--s)); bottom: calc(32px * var(--s));
+  width: calc(100% - 52px * var(--s)); height: calc(100% - 72px * var(--s)); object-fit: cover; border-radius: 6px;
+}
+.gx-bannerbox .ga { position: absolute; inset: 0; }
+.gx-ratebox { position: relative; --s: .6; width: calc(420px * var(--s)); height: calc(252px * var(--s)); }
+.gx-ratebox > .ga { position: absolute; inset: 0; pointer-events: none; }
+.gx-ups {
+  position: absolute; left: calc(36px * var(--s)); right: calc(36px * var(--s)); top: calc(72px * var(--s)); bottom: calc(32px * var(--s));
+  display: flex; flex-wrap: wrap; gap: 6px; align-content: center; justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(120, 60, 200, .45), rgba(20, 16, 40, .9)); border-radius: 6px;
+}
+.gx-up { display: grid; justify-items: center; gap: 0; }
+.gx-up > .ga:first-child { --s: .4 !important; }
+.gx-up > .ga:last-child { --s: .24 !important; margin-top: -4px; }
+.gx-up > .ga:first-child, .shrine-odd > .ga[class*="ga-r_"] { display: grid; place-items: center; }
+.gx-detail { position: relative; }
+.gx-detail-body {
+  position: absolute; left: 10%; right: 8%; top: 25%; bottom: 8%; display: grid; align-content: start; gap: 3px;
+  font-size: 9.5px; color: #dfe6f2; line-height: 1.3;
+}
+.gx-detail { --s: .75 !important; }
+.gx-rates { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 6px; margin-top: 3px; font-weight: 700; }
+.gx-gauges { display: flex; gap: 10px; flex-wrap: wrap; }
+.gx-gauge .ga { position: relative; }
+.gx-gauge .gx-fill {
+  position: absolute; top: 24%; height: 52%; border-radius: 6px; width: calc(var(--p) * .756); left: 13.8%;
+  background: linear-gradient(180deg, #e08bff, #a52de0 60%, #7a14b8); box-shadow: 0 0 6px rgba(200, 90, 255, .6);
+}
+.gx-gauge .ga-gauge_ssr .gx-fill { left: 31.2%; width: calc(var(--p) * .593); background: linear-gradient(180deg, #ffe38a, #f2a91e 60%, #c9760a); box-shadow: 0 0 6px rgba(255, 190, 60, .6); }
+.gx-gauge .gx-gtext {
+  position: absolute; top: 50%; transform: translateY(-50%); left: 13.8%; width: 75.6%; text-align: center;
+  font-size: 12px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px #000;
+}
+.gx-gauge .ga-gauge_ssr .gx-gtext { left: 31.2%; width: 59.3%; }
+.gx-draws { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gx-pull { border: none; padding: 0; cursor: pointer; transition: transform .08s, filter .15s; }
+.gx-pull:not(:disabled):hover { filter: brightness(1.12); }
+.gx-pull:not(:disabled):active { transform: translateY(2px) scale(.98); }
+.gx-pull:disabled { filter: grayscale(.85) brightness(.55); cursor: not-allowed; }
+.gx-side { display: grid; gap: 4px; margin-left: auto; }
+.gx-side .ga { border: none; padding: 0; cursor: pointer; }
+.gx-side .ga.on { filter: brightness(1.35) drop-shadow(0 0 4px rgba(120, 200, 255, .8)); }
+.gx-side .ga-skip.on::after {
+  content: "✓"; position: absolute; left: 11%; top: 50%; transform: translateY(-52%); color: #7cf07c; font-weight: 900; font-size: 15px;
+}
+.gx-side .ga-skip { position: relative; }
+.gx-below { max-height: 240px; overflow-y: auto; }
+.shrine-odd .ga, .g-log .ga { flex: none; }
+
+/* the draw */
+.gx-stage-fx .gx-portal { z-index: 0; position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); animation: gxPortal 1.1s ease-out both; pointer-events: none; }
+.gx-stage-fx .gx-ring { position: absolute; left: 50%; top: 70%; transform: translate(-50%, -50%); opacity: .85; animation: gxPortal 1.1s ease-out .2s both; pointer-events: none; }
+@keyframes gxPortal { from { opacity: 0; transform: translate(-50%, -50%) scale(.3); } 60% { opacity: 1; } to { opacity: .85; transform: translate(-50%, -50%) scale(1); } }
+.gx-stage-fx .gx-cards { z-index: 1; }
+.gx-stage-fx .gacha-foot { position: relative; z-index: 1; }
+.gx-reveal {
+  padding: 18px 10px 14px; border-radius: 18px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(40, 16, 70, .96), rgba(8, 6, 16, .94) 70%);
+  box-shadow: 0 0 40px rgba(170, 90, 255, .55);
+}
+.gx-card { display: grid; justify-items: center; gap: 2px; background: none; border: none; }
+.gx-card .gx-cframe { display: grid; place-items: center; position: relative; }
+.gx-card .gx-cframe .qty { position: absolute; right: 12%; bottom: 10%; font-weight: 800; text-shadow: 0 0 3px #000, 0 1px 0 #000; }
+.gx-reveal { display: grid; justify-items: center; align-content: center; gap: 8px; }
+.gx-reveal .gx-rv-frame { display: grid; place-items: center; }
+.gx-reveal .rv-name { font-size: 18px; font-weight: 800; text-shadow: 0 2px 4px #000; }
+.gx-notice { display: flex; align-items: center; gap: 8px; }
+.gx-notice-text { font-size: 13px; }
+
+body.landscape-ui .gx { grid-template-columns: 1fr; }
+body.landscape-ui .gx-left { display: none; }
+body.landscape-ui .gx-bannerbox, body.landscape-ui .gx-ratebox,
+body.landscape-ui .gx-bannerbox > .ga, body.landscape-ui .gx-ratebox > .ga { --s: .45 !important; }
+body.landscape-ui .gx-detail { display: none; }
+body.landscape-ui .gx-draws .ga, body.landscape-ui .gx-gauges .ga { --s: .5 !important; }
+
+/* gacha atlas: generated by tools/slice-gacha.py - do not edit by hand */
+.ga { display: block; flex: none; background: url(../../assets/ui/gacha_atlas.webp) no-repeat; width: calc(var(--w) * var(--s, .5) * 1px); height: calc(var(--h) * var(--s, .5) * 1px); background-size: calc(1100 * var(--s, .5) * 1px) calc(1273 * var(--s, .5) * 1px); background-position: calc(var(--x) * var(--s, .5) * -1px) calc(var(--y) * var(--s, .5) * -1px); }
+.ga-ann_LR { --x: 704; --y: 754; --w: 385; --h: 93; }
+.ga-ann_SSR { --x: 332; --y: 754; --w: 370; --h: 93; }
+.ga-ann_UR { --x: 632; --y: 649; --w: 354; --h: 95; }
+.ga-ann_item { --x: 0; --y: 1034; --w: 319; --h: 82; }
+.ga-banner0 { --x: 204; --y: 649; --w: 330; --h: 98; }
+.ga-banner1 { --x: 0; --y: 754; --w: 330; --h: 94; }
+.ga-banner2 { --x: 0; --y: 944; --w: 330; --h: 88; }
+.ga-banner3 { --x: 332; --y: 850; --w: 330; --h: 89; }
+.ga-banner4 { --x: 332; --y: 944; --w: 330; --h: 87; }
+.ga-banner5 { --x: 664; --y: 944; --w: 330; --h: 85; }
+.ga-banner6 { --x: 0; --y: 850; --w: 330; --h: 92; }
+.ga-congrats { --x: 664; --y: 850; --w: 299; --h: 89; }
+.ga-detail { --x: 0; --y: 0; --w: 198; --h: 272; }
+.ga-draw1 { --x: 569; --y: 528; --w: 228; --h: 103; }
+.ga-draw10 { --x: 799; --y: 528; --w: 231; --h: 103; }
+.ga-drawfree { --x: 110; --y: 528; --w: 252; --h: 109; }
+.ga-frame { --x: 200; --y: 0; --w: 532; --h: 256; }
+.ga-g_LR { --x: 109; --y: 1118; --w: 118; --h: 55; }
+.ga-g_R { --x: 0; --y: 1177; --w: 99; --h: 52; }
+.ga-g_SR { --x: 101; --y: 1177; --w: 96; --h: 52; }
+.ga-g_SSR { --x: 707; --y: 1118; --w: 97; --h: 53; }
+.ga-g_UR { --x: 229; --y: 1118; --w: 101; --h: 54; }
+.ga-gauge_pity { --x: 362; --y: 1177; --w: 550; --h: 42; }
+.ga-gauge_ssr { --x: 0; --y: 1231; --w: 398; --h: 42; }
+.ga-history { --x: 952; --y: 1118; --w: 135; --h: 52; }
+.ga-portal { --x: 422; --y: 274; --w: 196; --h: 171; }
+.ga-r_LR { --x: 364; --y: 528; --w: 102; --h: 107; }
+.ga-r_R { --x: 536; --y: 649; --w: 94; --h: 96; }
+.ga-r_SR { --x: 104; --y: 649; --w: 98; --h: 101; }
+.ga-r_SSR { --x: 0; --y: 649; --w: 102; --h: 103; }
+.ga-r_UR { --x: 468; --y: 528; --w: 99; --h: 106; }
+.ga-r_X { --x: 0; --y: 528; --w: 108; --h: 119; }
+.ga-rates { --x: 806; --y: 1118; --w: 144; --h: 52; }
+.ga-rateup { --x: 0; --y: 274; --w: 420; --h: 252; }
+.ga-ring_blue { --x: 443; --y: 1118; --w: 127; --h: 54; }
+.ga-ring_gold { --x: 484; --y: 1034; --w: 118; --h: 68; }
+.ga-ring_pink { --x: 199; --y: 1177; --w: 109; --h: 51; }
+.ga-skip { --x: 572; --y: 1118; --w: 133; --h: 53; }
+.ga-t_guarantee { --x: 321; --y: 1034; --w: 161; --h: 69; }
+.ga-t_limited { --x: 604; --y: 1034; --w: 138; --h: 59; }
+.ga-t_new { --x: 744; --y: 1034; --w: 120; --h: 58; }
+.ga-t_pickup { --x: 332; --y: 1118; --w: 109; --h: 54; }
+.ga-t_rateup { --x: 0; --y: 1118; --w: 107; --h: 57; }
+.ga-tag_rateup { --x: 866; --y: 1034; --w: 158; --h: 57; }
+.ga-ticket { --x: 310; --y: 1177; --w: 50; --h: 44; }
+.ga-title { --x: 620; --y: 274; --w: 407; --h: 128; }
+/* end gacha atlas */
