@@ -4,6 +4,8 @@ All of it is supplied by the project owner (not LPC, and not covered by the LPC
 licences in `assets/lpc/`).
 
 - `source/base_male.png`: the bald base board, 8 walk frames x 4 facings.
+- `source/base_shoot.png`: the bow shot, 10 frames x 4 facings, appended
+  after the standing column (columns 9-18) at the walk board's scale.
   `tools/slice-base.py` cuts it to `body/base_male.png` (128x192 frames,
   8 across, rows down/left/up/right), fits the hair layers in `hair/`, and
   writes the head and fist positions to `shared/data/chibi.js`.

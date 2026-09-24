@@ -412,7 +412,7 @@ def place(dst, piece, x0, y0):
 
 
 def hair_sheet(heads, pieces, colour):
-    sheet = np.zeros((CELL_H * 4, CELL_W * (WALK_FRAMES + 1), 4), np.uint8)
+    sheet = np.zeros((CELL_H * 4, CELL_W * len(heads[0]), 4), np.uint8)
     for r, row in enumerate(heads):
         fit = HAIR_FIT[r]
         base = recolour(pieces[r], HAIR_COLOURS[colour])
@@ -448,15 +448,109 @@ def write_table(heads, fists):
         fp.write('];\n')
 
 
+# ---- the bow shot -----------------------------------------------------------
+# assets/chibi/source/base_shoot.png: ten frames of drawing and loosing a bow,
+# in the same four rows, already cut out. It is drawn a little bigger than the
+# walk board, so each row is scaled to the walk's own head width, set on the
+# same baseline, and appended after the standing column (columns 9-18).
+SHOOT_SRC = os.path.join(ROOT, 'assets/chibi/source/base_shoot.png')
+SHOOT_FRAMES = 10
+# which way the bow arm reaches in each row, as seen on screen: the character's
+# left hand holds the bow (the board's red anchor), which is the viewer's right
+# facing the camera and away, and the leading hand in profile
+BOW_REACH = [1, -1, 1, 1]
+
+
+def shoot_frames():
+    raw = cv2.imread(SHOOT_SRC, cv2.IMREAD_UNCHANGED)
+    rgba = cv2.cvtColor(raw, cv2.COLOR_BGRA2RGBA)
+    n, lab, st, _ = cv2.connectedComponentsWithStats((raw[:, :, 3] > 128).astype(np.uint8))
+    # the figures: tall pieces of a figure's size, not the legend or the labels
+    figs = [i for i in range(1, n) if 150 < st[i, 3] < 200 and 80 < st[i, 2] < 130 and st[i, 0] > 100 and st[i, 0] < 1320]
+    rows = {}
+    for i in figs:
+        rows.setdefault(int(st[i, 1] // 200), []).append(i)
+    out = []
+    for key in sorted(rows):
+        ids = sorted(rows[key], key=lambda i: st[i, 0])
+        assert len(ids) == SHOOT_FRAMES, (key, len(ids))
+        row = []
+        for i in ids:
+            x, y, w, h = st[i, :4]
+            piece = rgba[y:y + h, x:x + w].copy()
+            piece[:, :, 3] = np.where(lab[y:y + h, x:x + w] == i, piece[:, :, 3], 0)
+            row.append(piece)
+        out.append(row)
+    assert len(out) == 4
+    return out
+
+
+def scaled(piece, k):
+    im = Image.fromarray(piece)
+    return np.asarray(im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS))
+
+
+def bow_hand(cell, r, head, relaxed=False):
+    """The bow fist: the furthest point of the figure toward the bow side,
+    between the neck and the hip, pulled back to the middle of the fist."""
+    a = cell[:, :, 3] > 128
+    # from the neck to a little below the waistband: the legs spread wide in
+    # this pose and would otherwise pass for the reaching hand
+    sm = shorts_mask(cell)
+    rows_ = np.nonzero(sm.sum(1) > 15)[0]
+    rows_ = rows_[rows_ > head['neck'] + 10]           # (grey in the eyes is not shorts)
+    waist = int(rows_.min()) if len(rows_) else head['neck'] + 24
+    # at ease (the first and last frames) the fist hangs by the waistband;
+    # drawing, the arm is up at the shoulder, well above it
+    band = np.zeros_like(a)
+    # (facing the camera the bow is always below the chin: start at the neck)
+    top = head['neck'] - (4 if relaxed or r == 0 else 16)
+    band[top:waist + 10 if relaxed else waist - 4] = True
+    ys, xs = np.nonzero(a & band)
+    d = BOW_REACH[r]
+    # furthest out, and of two points about as far out the lower one: a fist
+    # hangs below the shoulder it belongs to
+    score = d * xs + 0.35 * ys
+    i = int(np.argmax(score))
+    tx, ty = xs[i], ys[i]
+    near = (np.abs(xs - tx) <= 7) & (np.abs(ys - ty) <= 9)
+    return [int(round(tx - d * 6)), int(round(ys[near].mean()))]
+
+
+def main_shoot(heads_walk):
+    frames = shoot_frames()
+    cells, heads, fists = [], [], []
+    for r, row in enumerate(frames):
+        k = heads_walk[r][-1]['w'] / head_of(row[0][:, :, 3])['w']
+        rc, rh, rf = [], [], []
+        for piece in row:
+            cell = register(scaled(piece, k))
+            h = head_of(cell[:, :, 3])
+            rc.append(cell)
+            rh.append({'cx': h['cx'], 'top': h['top'], 'w': h['w'], 'neck': h['neck']})
+            rf.append(bow_hand(cell, r, h, relaxed=len(rf) in (0, SHOOT_FRAMES - 1)))
+        cells.append(rc); heads.append(rh); fists.append(rf)
+    return cells, heads, fists
+
+
 if __name__ == '__main__':
     import sys
     sheet, heads, bases = main()
+    s_cells, s_heads, s_fists = main_shoot(heads)
+    wide = np.zeros((CELL_H * 4, CELL_W * (WALK_FRAMES + 1 + SHOOT_FRAMES), 4), np.uint8)
+    wide[:, :sheet.shape[1]] = sheet
+    for r in range(4):
+        for c, cell in enumerate(s_cells[r]):
+            x = (WALK_FRAMES + 1 + c) * CELL_W
+            wide[r * CELL_H:(r + 1) * CELL_H, x:x + CELL_W] = cell
+        heads[r] = heads[r] + s_heads[r]
+    sheet = wide
     pieces = old_hair()
     os.makedirs(os.path.join(ROOT, 'assets/chibi/hair'), exist_ok=True)
     Image.fromarray(sheet).save(os.path.join(ROOT, 'assets/chibi/body/base_male.png'), optimize=True)
     for colour in HAIR_COLOURS:
         Image.fromarray(hair_sheet(heads, pieces, colour)).save(os.path.join(ROOT, f'assets/chibi/hair/spiky_{colour}.png'), optimize=True)
-    fists = fists_of(bases)
+    fists = [w + sh for w, sh in zip(fists_of(bases), s_fists)]
     write_table(heads, fists)
     print('wrote base_male, hair x', len(HAIR_COLOURS), 'and shared/data/chibi.js')
     for row in fists: print(row)

@@ -84,6 +84,8 @@ const BOW_POSE = [
   { rest: 1.4, side: 1 },     // up
   { rest: 1.45, side: -1 },   // right
 ];
+/** Which way a bow's limb faces while shooting, per row (the target's side). */
+const SHOOT_SIDE = [1, -1, 1, 1];
 /** Tip to tip, in screen pixels: a bow stands taller in the hand than a sword. */
 const BOW_LEN = 23;
 /** Pommel to tip, in screen pixels, on a ~50px chibi: under half its height. */
@@ -100,7 +102,9 @@ export function chibiHand(e) { return CHIBI_GRIP[chibiRow(e)]; }
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
   const row = chibiRow(e);
-  const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed) : CHIBI_WALK.anims.idle.start;
+  const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed)
+    : anim === 'shoot' ? CHIBI_WALK.anims.shoot.start + frameAt(CHIBI_WALK, 'shoot', elapsed, false)
+      : CHIBI_WALK.anims.idle.start;
   const [fx, fy] = CHIBI_FISTS[row][col] ?? CHIBI_FISTS[row][0];
   const { w, h } = CHIBI_WALK.frame;
   const sc = (e.sprite?.scale ?? 1) * CHIBI_WALK.drawScale;
@@ -211,12 +215,14 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const hand = chibiHand(e);
   const pose = bow ? BOW_POSE[chibiRow(e)] : null;
   const fist = chibiFist(e, anim, elapsed);
-  // loosing an arrow nudges the bow in the hand
-  if (bow && anim === 'shoot') fist.y -= Math.sin(Math.min(1, elapsed / 220) * Math.PI) * 1.2;
+  // shooting, the bow stands up in the reaching hand with its limb toward
+  // the target: in profile that is ahead, the other way from walking
+  const shooting = bow && anim === 'shoot';
+  const side = shooting ? SHOOT_SIDE[chibiRow(e)] : pose?.side;
   const walking = anim === 'walk';
   const swing = !bow && (anim === 'slash' || anim === 'thrust');
   // the art's blades point up at 45 degrees; `angle` turns from there
-  const rest = Math.PI / 4 - (pose?.rest ?? hand.rest);
+  const rest = Math.PI / 4 - (shooting ? Math.PI / 2 : pose?.rest ?? hand.rest);
   let angle = rest + (walking ? Math.sin(now / 124) * 0.06 : 0);
   if (swing) {
     // wind up, cut, recover: from rest up and back over the shoulder, down
@@ -235,7 +241,7 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.translate(fist.x, fist.y);
-  ctx.scale(pose ? pose.side : swing ? hand.cut : hand.side, 1);
+  ctx.scale(pose ? side : swing ? hand.cut : hand.side, 1);
   if (swing && angle > -1.2 && elapsed < 190) {
     // the cut leaves a thin trail behind the tip
     const tip = len * 0.85, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;
@@ -869,7 +875,8 @@ export class Renderer {
         e._lx = e.x; e._ly = e.y;
         if (anim === 'walk') elapsed = (e._stride / (CHIBI_STRIDE * (e.sprite?.scale ?? 1))) * CHIBI_CYCLE_MS;
       }
-      if (chibi && (anim === 'slash' || anim === 'thrust' || anim === 'shoot' || anim === 'spellcast')) {
+      // (a bow shot has frames of its own, drawn from the shooting board)
+      if (chibi && (anim === 'slash' || anim === 'thrust' || anim === 'spellcast')) {
         const k = Math.min(1, elapsed / 260);
         const [vx, vy] = vecOf(e.d ?? 0);
         const reach = Math.sin(k * Math.PI) * (anim === 'spellcast' ? 2 : 6);
