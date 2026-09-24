@@ -321,6 +321,43 @@ export const RARE_SWORDS = {
 };
 Object.assign(ITEMS, RARE_SWORDS);
 
+/* ============ EPIC SWORDS (assets/ui/source/swords_epic.png) ============
+   Twenty-three epic swords, Lv.45 to Lv.70. The board's own level plates are
+   misnumbered (two 52s, two 63s, two 69s, a 63 between 57 and 58), so the
+   ladder follows the board's order, left to right and down, which is also
+   the order the art grows in. An epic sword is the common sword of its level
+   plus two fifths more ATK (a rare one is a fifth), a faster swing, more crit
+   and STR/AGI/DEX. Found only: rarer than rare on the field, a bigger share
+   of a boss's pouch. */
+const EPIC_SWORD = (art, o) => W({ art: 'swords_epic#' + art, wclass: 'sword', range: 47, rarity: 'epic',
+  weight: 46 + Math.round(o.level * 0.6), ...o });
+export const EPIC_SWORDS = {
+  sword_epic_45: EPIC_SWORD(0, { id: 'sword_epic_45', name: 'Amethyst Edge', nameTh: 'ดาบคมอเมทิสต์', level: 45, atk: 98, delay: 0.8, value: 88200, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_46: EPIC_SWORD(1, { id: 'sword_epic_46', name: 'Violet Oath', nameTh: 'ดาบคำสัตย์ม่วง', level: 46, atk: 99, delay: 0.8, value: 91080, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_47: EPIC_SWORD(2, { id: 'sword_epic_47', name: 'Duskfang', nameTh: 'ดาบเขี้ยวสนธยา', level: 47, atk: 100, delay: 0.8, value: 94000, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_48: EPIC_SWORD(3, { id: 'sword_epic_48', name: 'Nightbloom', nameTh: 'ดาบบุปผาราตรี', level: 48, atk: 102, delay: 0.8, value: 97920, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_50: EPIC_SWORD(4, { id: 'sword_epic_50', name: 'Voidguard', nameTh: 'ดาบองครักษ์ห้วงมืด', level: 50, atk: 104, delay: 0.8, value: 104000, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_51: EPIC_SWORD(5, { id: 'sword_epic_51', name: 'Twilight Warden', nameTh: 'ดาบผู้พิทักษ์สนธยา', level: 51, atk: 106, delay: 0.8, value: 108120, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_52: EPIC_SWORD(6, { id: 'sword_epic_52', name: 'Mystic Talon', nameTh: 'ดาบกรงเล็บมนตรา', level: 52, atk: 107, delay: 0.79, value: 111280, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_53: EPIC_SWORD(7, { id: 'sword_epic_53', name: 'Umbral Crest', nameTh: 'ดาบตราเงามืด', level: 53, atk: 108, delay: 0.79, value: 114480, crit: 4, stats: { str: 5, agi: 2, dex: 1 } }),
+  sword_epic_54: EPIC_SWORD(8, { id: 'sword_epic_54', name: 'Amethyst Reaver', nameTh: 'ดาบอเมทิสต์ผลาญ', level: 54, atk: 110, delay: 0.79, value: 118800, crit: 4, stats: { str: 5, agi: 2, dex: 1 } }),
+  sword_epic_55: EPIC_SWORD(9, { id: 'sword_epic_55', name: 'Shadeborn Blade', nameTh: 'ดาบกำเนิดเงา', level: 55, atk: 111, delay: 0.79, value: 122100, crit: 5, stats: { str: 5, agi: 3, dex: 1 } }),
+  sword_epic_56: EPIC_SWORD(10, { id: 'sword_epic_56', name: 'Eclipse Thorn', nameTh: 'ดาบหนามสุริยคราส', level: 56, atk: 112, delay: 0.79, value: 125440, crit: 5, stats: { str: 5, agi: 3, dex: 1 } }),
+  sword_epic_58: EPIC_SWORD(11, { id: 'sword_epic_58', name: 'Violet Tempest', nameTh: 'ดาบพายุม่วง', level: 58, atk: 115, delay: 0.79, value: 133400, crit: 5, stats: { str: 5, agi: 3, dex: 2 } }),
+  sword_epic_59: EPIC_SWORD(12, { id: 'sword_epic_59', name: 'Abyssal Wing', nameTh: 'ดาบปีกห้วงลึก', level: 59, atk: 116, delay: 0.79, value: 136880, crit: 5, stats: { str: 5, agi: 3, dex: 2 } }),
+  sword_epic_60: EPIC_SWORD(13, { id: 'sword_epic_60', name: 'Dusk Sovereign', nameTh: 'ดาบราชันย์สนธยา', level: 60, atk: 117, delay: 0.79, value: 140400, crit: 5, stats: { str: 5, agi: 3, dex: 2 } }),
+  sword_epic_61: EPIC_SWORD(14, { id: 'sword_epic_61', name: 'Nether Spire', nameTh: 'ดาบยอดแหลมนรก', level: 61, atk: 119, delay: 0.79, value: 145180, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
+  sword_epic_62: EPIC_SWORD(15, { id: 'sword_epic_62', name: 'Starless Fang', nameTh: 'ดาบเขี้ยวไร้ดาว', level: 62, atk: 120, delay: 0.79, value: 148800, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
+  sword_epic_63: EPIC_SWORD(16, { id: 'sword_epic_63', name: 'Wraithcrown', nameTh: 'ดาบมงกุฎวิญญาณ', level: 63, atk: 121, delay: 0.79, value: 152460, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
+  sword_epic_64: EPIC_SWORD(17, { id: 'sword_epic_64', name: 'Amethyst Dragonfang', nameTh: 'ดาบเขี้ยวมังกรอเมทิสต์', level: 64, atk: 122, delay: 0.78, value: 156160, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
+  sword_epic_65: EPIC_SWORD(18, { id: 'sword_epic_65', name: 'Void Reaper', nameTh: 'ดาบเคียวห้วงมืด', level: 65, atk: 124, delay: 0.78, value: 161200, crit: 6, stats: { str: 6, agi: 4, dex: 2 } }),
+  sword_epic_67: EPIC_SWORD(19, { id: 'sword_epic_67', name: 'Eventide Lord', nameTh: 'ดาบจ้าวรัตติกาล', level: 67, atk: 126, delay: 0.78, value: 168840, crit: 6, stats: { str: 6, agi: 4, dex: 2 } }),
+  sword_epic_68: EPIC_SWORD(20, { id: 'sword_epic_68', name: 'Phantom Monarch', nameTh: 'ดาบกษัตริย์ภูต', level: 68, atk: 127, delay: 0.78, value: 172720, crit: 6, stats: { str: 6, agi: 4, dex: 2 } }),
+  sword_epic_69: EPIC_SWORD(21, { id: 'sword_epic_69', name: 'Abyss Emperor', nameTh: 'ดาบจักรพรรดิห้วงลึก', level: 69, atk: 129, delay: 0.78, value: 178020, crit: 6, stats: { str: 7, agi: 4, dex: 3 } }),
+  sword_epic_70: EPIC_SWORD(22, { id: 'sword_epic_70', name: 'Celestial Amethyst', nameTh: 'ดาบอเมทิสต์สวรรค์', level: 70, atk: 130, delay: 0.78, value: 182000, crit: 6, stats: { str: 7, agi: 4, dex: 3 } }),
+};
+Object.assign(ITEMS, EPIC_SWORDS);
+
 /** Items that game systems use by role, not by drop table. */
 export const KEY_ITEMS = {
   refineStone: 'runed_whetstone',   // spent on every refine attempt

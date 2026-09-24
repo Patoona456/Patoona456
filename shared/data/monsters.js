@@ -1,4 +1,4 @@
-import { SWORDS, RARE_SWORDS } from './items.js';
+import { SWORDS, RARE_SWORDS, EPIC_SWORDS } from './items.js';
 // Bestiary.
 //
 // sprite.kind:
@@ -478,7 +478,10 @@ export const MONSTERS = {
 const BAND = (lv) => (lv < 20 ? 's' : lv < 40 ? 'm' : lv < 58 ? 'l' : 'xl');
 const SWORD_LADDER = Object.values(SWORDS).sort((a, b) => a.level - b.level);
 const RARE_LADDER = Object.values(RARE_SWORDS).sort((a, b) => a.level - b.level);
+const EPIC_LADDER = Object.values(EPIC_SWORDS).sort((a, b) => a.level - b.level);
 const bandOf = (ladder, lv) => ladder.filter((w) => w.level <= lv).pop();
+/** The epic swords a monster of this level may carry: the band's own and the ones just around it. */
+const epicsNear = (lv) => EPIC_LADDER.filter((w) => w.level <= lv + 3 && w.level > lv - 6);
 const ITEM_BOOK = { fire: 'book_fire', ice: 'book_ice', wind: 'book_wind', lightning: 'book_lightning',
   earth: 'book_earth', dark: 'book_dark', holy: 'book_holy' };
 const RESIST_OF = { fire: 'fire_resist', ice: 'ice_resist', lightning: 'lightning_resist', wind: 'wind_resist',
@@ -505,6 +508,7 @@ export function potionDrops(m) {
       { id: 'book_royal', chance: 0.05 },
       { id: 'boss_ticket', chance: 0.03 },
       { id: bandOf(RARE_LADDER, m.level)?.id, chance: 0.35 },
+      ...epicsNear(m.level).map((e, _, all) => ({ id: e.id, chance: 0.1 / all.length })),
     ].filter((d) => d.id);
   }
   const out = [
@@ -524,6 +528,9 @@ export function potionDrops(m) {
   if (sword) out.push({ id: sword.id, chance: 0.004 });
   const rare = bandOf(RARE_LADDER, m.level);         // a rare sword is a real find
   if (rare) out.push({ id: rare.id, chance: 0.0012 });
+  // an epic one, a story to tell: any of those a few levels either side of
+  // it, since the epic ladder is finer than the monster list
+  for (const e of epicsNear(m.level)) out.push({ id: e.id, chance: 0.0003 / epicsNear(m.level).length });
   if (m.level >= 20) {
     out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },
       { id: 'item_find', chance: 0.003 }, { id: 'curse_potion', chance: 0.004 });

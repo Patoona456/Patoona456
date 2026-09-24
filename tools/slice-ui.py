@@ -852,12 +852,17 @@ print('sword sheet done')
 # each sword, so it is modelled - shrink the sheet hard, median it, grow it
 # back, and the thin swords vanish while the gradient and glows stay - and a
 # sword is whatever differs from it. Out: assets/ui/swords_rare.webp.
-def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90):
-    img = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src))
+def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90, plate='navy'):
+    raw = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src), cv2.IMREAD_UNCHANGED)
+    img = raw[:, :, :3]
+    # a board that comes already cut out (the epic one) says where the art is
+    # itself; measuring against the painted board is only for those that don't
+    matte = raw[:, :, 3].astype(np.float32) if raw.shape[2] == 4 and raw[:, :, 3].min() < 16 else None
     b, g, r = [img[:, :, i].astype(int) for i in range(3)]
     lum = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(int)
-    navy = ((b - r > 25) & (lum < 90)).astype(np.uint8)
-    n, lab, st, _ = cv2.connectedComponentsWithStats(navy)
+    # the level plates: navy on the rare sheet, near-black violet on the epic one
+    ink = (b - r > 25) & (lum < 90) if plate == 'navy' else (lum < 70) & (b - g > 20)
+    n, lab, st, _ = cv2.connectedComponentsWithStats(ink.astype(np.uint8))
     plates = [st[i][:4] for i in range(1, n) if st[i, 2] > 70 and 18 < st[i, 3] < 50]
     plates.sort(key=lambda p: (p[1] // 100, p[0]))
     mask = np.zeros(img.shape[:2], np.uint8)
@@ -867,6 +872,9 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90):
     small = cv2.resize(clean, (clean.shape[1] // 8, clean.shape[0] // 8), interpolation=cv2.INTER_AREA)
     bg = cv2.resize(cv2.medianBlur(small, 9), (clean.shape[1], clean.shape[0]), interpolation=cv2.INTER_CUBIC)
     d = np.abs(clean.astype(int) - bg.astype(int)).sum(2).astype(np.float32)
+    if matte is not None:
+        d = matte                       # 0..255: lo/hi below become alpha thresholds
+        lo, hi = 128, 250
     solid = (d > lo).astype(np.uint8)
     solid = cv2.morphologyEx(solid, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
     n, lab, st, _ = cv2.connectedComponentsWithStats(solid)
@@ -877,7 +885,8 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90):
         best, area = 0, 0
         for i in range(1, n):
             bx, by, bw, bh, a = st[i]
-            if a > area and bx < x + w and bx + bw > x and by + bh > y - 40 and by < y:
+            # ...and ends at the plate, not a taller sword from the row below
+            if a > area and bx < x + w and bx + bw > x and y - 40 < by + bh < y + h + 8 and by < y:
                 best, area = i, a
         bx, by, bw, bh, _ = st[best]
         m = (lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8) * 255
@@ -885,9 +894,14 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90):
         cv2.floodFill(ff, np.zeros((bh + 4, bw + 4), np.uint8), (0, 0), 255)
         m = m | cv2.bitwise_not(ff[1:-1, 1:-1])
         # solid inside, and a soft rim where the difference fades out
-        rim = np.clip((d[by:by + bh, bx:bx + bw] - lo) / (hi - lo), 0, 1)
+        rim = (np.clip((d[by:by + bh, bx:bx + bw] - lo) / (hi - lo), 0, 1) if matte is None
+               else matte[by:by + bh, bx:bx + bw] / 255)
         inner = cv2.erode(m, np.ones((3, 3), np.uint8)) > 0
         alpha = np.where(inner, 1.0, rim * (m > 0))
+        if matte is not None:
+            # the matte's own gaps between the spikes are real: keep them open
+            own = cv2.dilate((lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8), np.ones((5, 5), np.uint8))
+            alpha = rim * own
         rgba = cv2.cvtColor(img[by:by + bh, bx:bx + bw], cv2.COLOR_BGR2RGBA)
         rgba[:, :, 3] = (alpha * 255).astype(np.uint8)
         rr, cc = divmod(k, cols)
@@ -897,3 +911,6 @@ def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90):
 
 
 print('rare swords', plated_weapons('sword_rare_sheet.png', 'swords_rare'))
+# Epic, Lv.45-70: 23 swords on a violet board; several plates are misnumbered,
+# so the order on the board is the order of the ladder (shared/data/items.js)
+print('epic swords', plated_weapons('swords_epic.png', 'swords_epic', plate='violet'))
