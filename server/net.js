@@ -266,7 +266,7 @@ export class Conn {
         this.sendInventory();
       });
       case OP.REFINE: return this.guardNpc(['smith'], () => {
-        const r = Econ.refine(this.world, p, m.index | 0, !!m.oil);
+        const r = Econ.refine(this.world, p, m.index | 0, { guard: !!(m.guard ?? m.oil), luck: typeof m.luck === 'string' ? m.luck : null });
         if (r.error) return this.error(r.error);
         this.sendInventory();
         this.send({ t: OP.SELF, self: p.selfState() });
@@ -410,7 +410,7 @@ export class Conn {
         const r = Econ.warpService(this.world, p, m.to);
         if (r.error) return this.error(r.error);
         this.world.warpPlayer(p, r.route.to, r.route.at[0] * TILE, r.route.at[1] * TILE);
-        this.notice(`วาร์ปไป ${r.route.label} -${r.route.price} ออรัม`);
+        this.notice(r.ticket ? `วาร์ปไป ${r.route.label} ด้วย${ITEMS[r.ticket].nameTh}` : `วาร์ปไป ${r.route.label} -${r.route.price} ออรัม`);
         return this.sendInventory();
       }
       default: return this.error('คำสั่งไม่รู้จัก: ' + m.t);
@@ -436,9 +436,9 @@ export class Conn {
     const def = ITEMS[st.id];
     if (!def) return this.error('ไอเทมไม่ถูกต้อง');
     if (def.box) {
-      const r = Econ.openBox(p, idx);
+      const r = Econ.openBox(p, idx, this.world);
       if (r.error) return this.error(r.error);
-      const got = ITEMS[r.got.id];
+      const got = r.got.id === '__aurum' ? { nameTh: 'ออรัม' } : ITEMS[r.got.id];
       this.notice(`เปิด${def.nameTh} ได้ ${got?.nameTh ?? r.got.id} x${r.got.qty}`, r.rarity === 'common' ? 'info' : 'good');
       this.send({ t: 'boxOpened', box: def.id, got: r.got, rarity: r.rarity });
       return this.sendInventory();

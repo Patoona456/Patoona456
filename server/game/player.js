@@ -195,7 +195,8 @@ export class Player {
     const m = { atkPct: 0, matkPct: 0, defPct: 0, speedPct: 0, dmgTakenPct: 0, reflectPct: 0,
       lifestealPct: 0, spRegenPct: 0, hpRegenPct: 0, castPct: 0, spCostPct: 0, minHpGuard: 0,
       invisible: 0, statusRes: 0, strFlat: 0, intFlat: 0, dexFlat: 0, agiFlat: 0, vitFlat: 0, lukFlat: 0,
-      fleePct: 0, critFlat: 0, expPct: 0, dropPct: 0, rareDropPct: 0, aurumPct: 0, summonStatPct: 0 };
+      fleePct: 0, critFlat: 0, expPct: 0, dropPct: 0, rareDropPct: 0, aurumPct: 0, summonStatPct: 0,
+      maxHpPct: 0, maxSpPct: 0, potionPct: 0 };
     for (const s of this.statuses) {
       if (!s.mods) continue;
       for (const [k, v] of Object.entries(s.mods)) m[k] = (m[k] ?? 0) + v;
@@ -212,7 +213,11 @@ export class Player {
     gear.agi += bm.agiFlat; gear.vit += bm.vitFlat; gear.luk += bm.lukFlat;
 
     const d = deriveStats(this.record, job, gear);
-    if (gear.hpPct) d.maxHp = Math.floor(d.maxHp * (1 + gear.hpPct / 100));
+    if (gear.hpPct || bm.maxHpPct) d.maxHp = Math.floor(d.maxHp * (1 + ((gear.hpPct ?? 0) + bm.maxHpPct) / 100));
+    if (bm.maxSpPct) d.maxSp = Math.floor(d.maxSp * (1 + bm.maxSpPct / 100));
+    // an elemental tome sets the weapon's element while it lasts
+    const endow = this.statuses.find((s) => s.endow);
+    if (endow) this.weaponElement = endow.endow;
     d.atk = Math.floor(d.atk * (1 + bm.atkPct / 100));
     d.matk = Math.floor(d.matk * (1 + bm.matkPct / 100));
     d.def = Math.floor(d.def * (1 + bm.defPct / 100));

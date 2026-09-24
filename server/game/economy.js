@@ -156,7 +156,7 @@ function rollTable(table) {
 const qtyOf = (q) => (Array.isArray(q) ? q[0] + Math.floor(Math.random() * (q[1] - q[0] + 1)) : (q ?? 1));
 
 /** Open a box item in the player's bag. */
-export function openBox(p, index) {
+export function openBox(p, index, world = null) {
   const st = p.inventory[index];
   if (!st) return { error: 'ไม่พบไอเทม' };
   const def = ITEMS[st.id];
@@ -166,7 +166,10 @@ export function openBox(p, index) {
   const roll = rollTable(def.opens);
   const qty = qtyOf(roll.qty);
   p.removeItemAt(index, 1);
-  p.addItem(roll.id, qty);
+  if (roll.id === '__aurum') {                   // a treasure map can pay in coin
+    p.record.aurum += qty;
+    if (world) mint(world, qty, 'box');
+  } else p.addItem(roll.id, qty);
   markDirty();
   return { ok: true, box: st.id, got: { id: roll.id, qty }, rarity: ITEMS[roll.id]?.rarity ?? 'common' };
 }
@@ -181,23 +184,37 @@ export function openBox(p, index) {
  * it survives logging out.
  */
 export const GACHA = {
-  cost: 2,                       // gacha shards (KEY_ITEMS.gachaShard) per draw
+  cost: 1,                       // shrine tickets (KEY_ITEMS.gachaShard) per draw
   pity: 10,                      // draws until a guaranteed SSR or better
   // Five grades, named the way the shrine window shows them. `tier` is
   // what the pity counts: anything SSR and up resets it.
-  // Filled from the new item sheet: { id, qty: n | [lo, hi], weight, grade }.
-  // Until then the shrine stays shut (see gachaDraw).
+  // What the shrine pays, from the potion and scroll sheets. Nothing here is
+  // stronger than what a boss drops; the rare end is refine luck and wards.
   pool: [
+    { id: 'hp_potion_m', qty: [3, 6], weight: 16, grade: 'R' },
+    { id: 'mp_potion_m', qty: [3, 6], weight: 12, grade: 'R' },
+    { id: 'refine_luck_1', qty: [1, 3], weight: 16, grade: 'R' },
+    { id: 'scroll_fly', qty: [5, 10], weight: 10, grade: 'R' },
+    { id: 'refine_luck_3', qty: 1, weight: 10, grade: 'SR' },
+    { id: 'guard_down', qty: 1, weight: 8, grade: 'SR' },
+    { id: 'scroll_exp', qty: 1, weight: 6, grade: 'SR' },
+    { id: 'treasure_map', qty: 1, weight: 6, grade: 'SR' },
+    { id: 'refine_luck_5', qty: 1, weight: 5, grade: 'SSR' },
+    { id: 'guard_break', qty: 1, weight: 4, grade: 'SSR' },
+    { id: 'vip_pass', qty: 1, weight: 3, grade: 'UR' },
+    { id: 'book_royal', qty: 1, weight: 2, grade: 'UR' },
+    { id: 'boss_ticket', qty: 1, weight: 0.8, grade: 'LR' },
+    { id: 'gacha_ticket_rare', qty: 1, weight: 0.2, grade: 'LR' },
   ].map((o) => ({ ...o, tier: o.grade === 'LR' ? 'legendary' : ['SSR', 'UR'].includes(o.grade) ? 'rare' : 'common' })),
   // Every draw is a point; points unlock a chest at each milestone, and the
   // track starts over after the last one. Small things - the shrine is a
   // sink, and the track only softens a long unlucky run.
   pointsMax: 200,
   milestones: [
-    { at: 50, items: [] },
-    { at: 100, items: [] },
-    { at: 150, items: [] },
-    { at: 200, items: [] },
+    { at: 50, items: [{ id: 'refine_luck_3', qty: 2 }] },
+    { at: 100, items: [{ id: 'guard_down', qty: 2 }] },
+    { at: 150, items: [{ id: 'guard_break', qty: 1 }] },
+    { at: 200, items: [{ id: 'book_royal', qty: 1 }] },
   ],
 };
 const GRADE_RANK = { R: 0, SR: 1, SSR: 2, UR: 3, LR: 4 };
@@ -243,6 +260,16 @@ export function gachaDraw(world, p, times = 1) {
     ...(r.gachaLog ?? [])].slice(0, 20);
   markDirty();
   return { ok: true, results, spent: cost, pity: GACHA.pity - r.gachaPity, points: r.gachaPoints };
+}
+
+/** A draw paid for by a special ticket: one roll, SR and up, no pity counted. */
+export function gachaFreeRoll(p, floor = 'rare') {
+  const pool = GACHA.pool.filter((o) => ITEMS[o.id] && (floor !== 'rare' || GRADE_RANK[o.grade] >= 1));
+  const roll = rollTable(pool);
+  const qty = qtyOf(roll.qty);
+  p.addItem(roll.id, qty);
+  markDirty();
+  return { id: roll.id, qty, grade: roll.grade };
 }
 
 /** Claim every milestone reached; after the last one the track restarts. */
@@ -320,7 +347,15 @@ export function socket(world, p, gearIndex, cardIndex) {
   return { ok: true, gear: gear.id, card: card.id, used: gear.cards.length, max };
 }
 
-export function refine(world, p, index, useOil) {
+/**
+ * One refine attempt. `opts.guard` spends the ward that fits the band (the
+ * anti-drop ward from +5 to +7, the anti-break ward from +8), falling back
+ * to the old all-purpose oil if it exists; `opts.luck` names a refine scroll
+ * whose points are added to this attempt's odds. Both are spent only where
+ * they can matter, and a boolean `opts` is the old "use oil" flag.
+ */
+export function refine(world, p, index, opts = {}) {
+  if (typeof opts === 'boolean') opts = { guard: opts };
   const st = p.inventory[index];
   if (!st) return { error: 'ไม่พบไอเทม' };
   const def = ITEMS[st.id];
@@ -331,19 +366,28 @@ export function refine(world, p, index, useOil) {
   const cost = refineCost(def.value, lvl);
   if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost.toLocaleString()} ออรัม` };
   const stones = refineStones(lvl);
-  if (p.countItem(KEY_ITEMS.refineStone) < stones) return { error: `ต้องใช้หินลับรูน ${stones} ก้อน` };
+  if (p.countItem(KEY_ITEMS.refineStone) < stones) {
+    return { error: `ต้องใช้${ITEMS[KEY_ITEMS.refineStone]?.nameTh ?? 'หินตีบวก'} ${stones} ก้อน` };
+  }
   const risk = refineRisk(lvl);
-  // oil only matters where a failure costs something; never burn it for nothing
-  const oil = useOil && (risk.onFail === 'down' || risk.onFail === 'break');
-  if (oil && p.countItem(KEY_ITEMS.refineOil) < 1) return { error: 'ไม่มีน้ำมันศักดิ์สิทธิ์' };
+  const guardId = opts.guard ? refineGuardFor(p, risk.onFail) : null;
+  if (opts.guard && (risk.onFail === 'down' || risk.onFail === 'break') && !guardId) {
+    return { error: risk.onFail === 'break' ? 'ไม่มียันต์กันแตก' : 'ไม่มียันต์กันลดขั้น' };
+  }
+  const chance0 = refineChance(lvl);
+  const luckDef = opts.luck ? ITEMS[opts.luck] : null;
+  if (opts.luck && (!luckDef?.refineLuck || p.countItem(opts.luck) < 1)) return { error: 'ไม่มียันต์ตีบวกนั้น' };
+  const luck = luckDef && chance0 < 1 ? luckDef.refineLuck : 0;
 
   p.record.aurum -= cost;
   burn(world, cost, 'refine');
   if (stones) p.removeItemById(KEY_ITEMS.refineStone, stones);
-  if (oil) p.removeItemById(KEY_ITEMS.refineOil, 1);
+  if (guardId) p.removeItemById(guardId, 1);
+  if (luck) p.removeItemById(opts.luck, 1);
 
-  const base = { ok: true, id: st.id, from: lvl, cost, stones, oil };
-  if (Math.random() < refineChance(lvl)) {
+  const oil = !!guardId;
+  const base = { ok: true, id: st.id, from: lvl, cost, stones, oil, guard: guardId, luck };
+  if (Math.random() < Math.min(1, chance0 + luck)) {
     st.refine = lvl + 1;
     p.recompute();
     markDirty();
@@ -363,6 +407,14 @@ export function refine(world, p, index, useOil) {
   p.recompute();
   markDirty();
   return { ...base, success: false, result: 'down', refine: st.refine };
+}
+
+/** The ward `p` would spend against this kind of failure, if any. */
+export function refineGuardFor(p, onFail) {
+  if (onFail !== 'down' && onFail !== 'break') return null;
+  const ward = Object.values(ITEMS).find((d) => d.refineGuard === onFail && p.countItem(d.id) > 0);
+  if (ward) return ward.id;
+  return ITEMS[KEY_ITEMS.refineOil] && p.countItem(KEY_ITEMS.refineOil) > 0 ? KEY_ITEMS.refineOil : null;
 }
 
 /** Move one item's refine onto another of its kind (see transferFee). */
@@ -572,6 +624,13 @@ export function warpService(world, p, to) {
   if (!route) return { error: 'ไม่มีปลายทางนี้' };
   if (route.to === p.record.map) return { error: 'อยู่ที่นี่แล้ว' };
   if (route.needVisit && !(p.record.visited ?? []).includes(route.to)) return { error: 'ต้องเคยเดินไปถึงพื้นที่นี้ก่อน จึงจะวาร์ปได้' };
+  // a travel ticket in the bag pays the fare instead
+  const ticket = Object.values(ITEMS).find((d) => d.warpTicket && p.countItem(d.id) > 0);
+  if (ticket) {
+    p.removeItemById(ticket.id, 1);
+    markDirty();
+    return { ok: true, route, ticket: ticket.id };
+  }
   if (p.record.aurum < route.price) return { error: `ค่าเดินทาง ${route.price} ออรัม` };
   p.record.aurum -= route.price;
   burn(world, route.price, 'travel');

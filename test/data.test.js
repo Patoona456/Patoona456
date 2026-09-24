@@ -35,7 +35,8 @@ test('every item id matches the key it is filed under', () => {
 test('every box opens into items that exist', () => {
   for (const def of Object.values(ITEMS)) {
     for (const row of def.opens ?? []) {
-      assert.ok(ITEMS[row.id], `${def.id} can open into the unknown item ${row.id}`);
+      // '__aurum' is coin, paid straight into the purse
+      assert.ok(row.id === '__aurum' || ITEMS[row.id], `${def.id} can open into the unknown item ${row.id}`);
       assert.ok(row.weight > 0, `${def.id} -> ${row.id} has no weight`);
     }
   }

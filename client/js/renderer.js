@@ -68,7 +68,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['miss', 'critical', 'levelup', 'potions']) uiImage(name);
+  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls']) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);

@@ -749,3 +749,23 @@ for r, (top, cap, xs) in enumerate(POTION_ROWS):
         atlas[r * POTION_CELL:(r + 1) * POTION_CELL, c * POTION_CELL:(c + 1) * POTION_CELL] = strip([bottle], POTION_CELL)
 save('potions', atlas)
 print('potion sheet done')
+
+
+# ============================================================================
+# Twelfth sheet: scrolls, spell books & tickets (assets/ui/source/scroll_sheet.png)
+# ============================================================================
+# Forty-eight pieces, eight to a row, no captions. One atlas again -
+# assets/ui/scrolls.webp, 8 x 6 cells - in reading order ('scrolls#12').
+sc = cv2.imread(os.path.join(ROOT, 'assets/ui/source/scroll_sheet.png'))
+SCROLL_ROWS = [(14, 186), (188, 350), (356, 522), (524, 704), (700, 872), (864, 1020)]
+SCROLL_XS = (110, 292, 482, 668, 860, 1058, 1246, 1432)
+atlas = np.zeros((POTION_CELL * 6, POTION_CELL * 8, 4), np.uint8)
+for r, (top, bottom) in enumerate(SCROLL_ROWS):
+    for c, cx in enumerate(SCROLL_XS):
+        if (r, c) == (1, 2):         # red on red: GrabCut keeps only the paper
+            piece = lift(sc, (cx - 88, top + 12, cx + 88, bottom), ring=14, thresh=46)
+        else:
+            piece = grab((cx - 90, top, cx + 90, bottom), pad=2, img=sc)[0]
+        atlas[r * POTION_CELL:(r + 1) * POTION_CELL, c * POTION_CELL:(c + 1) * POTION_CELL] = strip([piece], POTION_CELL)
+save('scrolls', atlas)
+print('scroll sheet done')

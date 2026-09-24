@@ -7,7 +7,9 @@ import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as Econ from '../server/game/economy.js';
-import { ITEMS, RECIPES } from '../shared/data/items.js';
+import { ITEMS, RECIPES, KEY_ITEMS } from '../shared/data/items.js';
+
+const SHARD = KEY_ITEMS.gachaShard;      // what the shrine and its counter are paid in
 import { MONSTERS } from '../shared/data/monsters.js';
 import { SHOPS } from '../shared/data/npcs.js';
 import { Player } from '../server/game/player.js';
@@ -52,12 +54,12 @@ test('you cannot buy what you cannot afford', () => {
 });
 
 test('the shard counter charges in shards, not coin', () => {
-  const p = character({ aurum: 10_000_000, items: [{ id: 'shard_dawn', qty: 40 }] });
+  const p = character({ aurum: 10_000_000, items: [{ id: SHARD, qty: 40 }] });
   const before = p.record.aurum;
   const r = Econ.buy(world, p, 'dawn', 'wings_feather', 1);
   assert.ok(r.ok, r.error);
   assert.equal(p.record.aurum, before, 'it charged aurum for a shard-priced item');
-  assert.equal(p.countItem('shard_dawn'), 40 - SHOPS.dawn.stock.find((l) => l.id === 'wings_feather').price);
+  assert.equal(p.countItem(SHARD), 40 - SHOPS.dawn.stock.find((l) => l.id === 'wings_feather').price);
   assert.equal(p.countItem('wings_feather'), 1);
 });
 
@@ -104,20 +106,20 @@ test('something that is not a box cannot be opened', () => {
 /* ------------------------------------------------------------ the shrine */
 
 test('the shrine costs shards and pays the pity it promises', () => {
-  const p = character({ items: [{ id: 'shard_dawn', qty: 400 }] });
-  const before = p.countItem('shard_dawn');
+  const p = character({ items: [{ id: SHARD, qty: 400 }] });
+  const before = p.countItem(SHARD);
   const r = Econ.gachaDraw(world, p, 1);
   assert.ok(r.ok, r.error);
-  assert.equal(p.countItem('shard_dawn'), before - Econ.GACHA.cost);
+  assert.equal(p.countItem(SHARD), before - Econ.GACHA.cost);
 
   // The promise is not "a guarantee every ten draws" - a natural rare resets
   // the counter, so the guarantee may never need to fire. The promise is that
   // you are never more than `pity` draws from a rare. That is what to assert.
-  const p2 = character({ items: [{ id: 'shard_dawn', qty: 999 }] });
+  const p2 = character({ items: [{ id: SHARD, qty: 999 }] });
   let streak = 0, worst = 0;
   for (let i = 0; i < 200; i++) {
     // keep the bag and the purse out of the way of the thing under test
-    p2.record.inventory = [{ id: 'shard_dawn', qty: 999 }];
+    p2.record.inventory = [{ id: SHARD, qty: 999 }];
     const res = Econ.gachaDraw(world, p2, 1);
     assert.ok(res.ok, res.error);
     const row = res.results[0];
@@ -129,10 +131,10 @@ test('the shrine costs shards and pays the pity it promises', () => {
 });
 
 test('the guaranteed draw, when it fires, is never common', () => {
-  const p = character({ items: [{ id: 'shard_dawn', qty: 999 }] });
+  const p = character({ items: [{ id: SHARD, qty: 999 }] });
   let fired = 0;
   for (let i = 0; i < 400; i++) {
-    p.record.inventory = [{ id: 'shard_dawn', qty: 999 }];
+    p.record.inventory = [{ id: SHARD, qty: 999 }];
     const row = Econ.gachaDraw(world, p, 1).results[0];
     if (!row.guaranteed) continue;
     fired++;
@@ -142,8 +144,9 @@ test('the guaranteed draw, when it fires, is never common', () => {
 });
 
 test('an empty purse of shards draws nothing', () => {
-  const p = character({ items: [{ id: 'shard_dawn', qty: 1 }] });
-  assert.ok(Econ.gachaDraw(world, p, 1).error, 'it drew on one shard when the price is two');
+  const p = character({ items: [{ id: SHARD, qty: Econ.GACHA.cost * 2 - 1 }] });
+  assert.ok(Econ.gachaDraw(world, p, 2).error, 'it drew twice on the price of one and a bit');
+  assert.equal(p.countItem(SHARD), Econ.GACHA.cost * 2 - 1, 'a refused draw took the tickets anyway');
 });
 
 test('everything the shrine can roll can also simply be bought', () => {
@@ -282,7 +285,7 @@ test('a ten-draw always holds an SR or better, and draws fill the point track', 
   const real = Math.random;
   Math.random = () => 0.001;                     // every roll the commonest thing
   try {
-    const p = character({ items: [{ id: 'shard_dawn', qty: 40 }] });
+    const p = character({ items: [{ id: SHARD, qty: 40 }] });
     const r = Econ.gachaDraw(world, p, 10);
     assert.ok(r.ok, r.error);
     assert.ok(r.results.some((x) => ['SR', 'SSR', 'UR', 'LR'].includes(x.grade)), 'a ten-draw came up all R');

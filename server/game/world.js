@@ -138,12 +138,26 @@ export class World {
   partyGate(p, mapId) {
     const need = MAPS[mapId]?.party ?? 0;
     if (!need) return null;
+    // a Reliquary pass opens the door for one trip, party or not
+    const pass = (p.inventory ?? []).findIndex((st) => ITEMS[st.id]?.dungeonPass);
+    if (pass >= 0 && !this.partyHere(p, need)) {
+      const name = ITEMS[p.inventory[pass].id].nameTh;
+      p.removeItemAt(pass, 1);
+      p.conn?.send({ t: 'notice', kind: 'good', text: `ใช้${name} — ประตูเปิดให้` });
+      return null;
+    }
     if (!p.party) return `ประตูนี้เปิดให้เฉพาะปาร์ตี้ ${need} คนขึ้นไป — หาเพื่อนก่อน`;
     const here = [...(p.zone?.players.values() ?? [])]
       .filter((o) => o.party === p.party && o.alive).length;
 
     if (here < need) return `ต้องมีเพื่อนร่วมปาร์ตี้อยู่ด้วยกันอย่างน้อย ${need} คน (ตอนนี้ ${here})`;
     return null;
+  }
+
+  /** Whether enough of `p`'s party stands here to open a party door. */
+  partyHere(p, need) {
+    if (!p.party) return false;
+    return [...(p.zone?.players.values() ?? [])].filter((o) => o.party === p.party && o.alive).length >= need;
   }
 
   warpPlayer(p, mapId, x, y) {

@@ -470,8 +470,13 @@ export const MONSTERS = {
  *   * a rare shot at the growth bottles (EXP, drops, full restore) past
  *     level 20;
  * and bosses pay the bottles nobody sells: revives, resets, rare-drop luck.
+ * The scroll sheet rides the same tables: fly scrolls and +1% refine
+ * scrolls from anything, the element's own tome from monsters of that
+ * element, and the wards, tickets and maps from bosses.
  */
 const BAND = (lv) => (lv < 20 ? 's' : lv < 40 ? 'm' : lv < 58 ? 'l' : 'xl');
+const ITEM_BOOK = { fire: 'book_fire', ice: 'book_ice', wind: 'book_wind', lightning: 'book_lightning',
+  earth: 'book_earth', dark: 'book_dark', holy: 'book_holy' };
 const RESIST_OF = { fire: 'fire_resist', ice: 'ice_resist', lightning: 'lightning_resist', wind: 'wind_resist',
   earth: 'earth_resist', dark: 'dark_resist', holy: 'holy_resist' };
 export function potionDrops(m) {
@@ -487,6 +492,14 @@ export function potionDrops(m) {
       { id: 'rare_drop_up', chance: 0.25 },
       { id: 'skill_reset', chance: 0.08 },
       { id: 'stat_reset', chance: 0.08 },
+      { id: 'refine_luck_3', chance: 0.8, qty: [1, 2] },
+      { id: 'refine_luck_5', chance: 0.3 },
+      { id: 'guard_down', chance: 0.4 },
+      { id: 'guard_break', chance: 0.15 },
+      { id: 'gacha_ticket', chance: 0.6, qty: [1, 3] },
+      { id: 'treasure_map', chance: 0.4 },
+      { id: 'book_royal', chance: 0.05 },
+      { id: 'boss_ticket', chance: 0.03 },
     ];
   }
   const out = [
@@ -495,6 +508,12 @@ export function potionDrops(m) {
   ];
   if (RESIST_OF[m.element]) out.push({ id: RESIST_OF[m.element], chance: 0.012 });
   if (m.level < 15) out.push({ id: 'heal_potion', chance: 0.02 });
+  // scrolls: the everyday ones often, the refine luck and the tickets rarely
+  out.push({ id: 'scroll_fly', chance: 0.02 }, { id: 'refine_luck_1', chance: 0.006 },
+    { id: 'scroll_mystery', chance: 0.004 }, { id: 'gacha_ticket', chance: 0.0015 });
+  if (m.level >= 20) out.push({ id: 'treasure_map', chance: 0.002 }, { id: 'refine_luck_3', chance: 0.0015 });
+  if (m.level >= 40) out.push({ id: 'guard_down', chance: 0.0008 }, { id: 'scroll_resurrect', chance: 0.001 });
+  if (m.element && m.element !== 'neutral' && ITEM_BOOK[m.element]) out.push({ id: ITEM_BOOK[m.element], chance: 0.003 });
   if (m.level >= 20) {
     out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },
       { id: 'item_find', chance: 0.003 }, { id: 'curse_potion', chance: 0.004 });

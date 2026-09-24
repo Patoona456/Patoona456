@@ -2429,7 +2429,12 @@ export class UI {
     bench.append(rows);
 
     // the odds, and what a failure costs here
-    const chance = Math.round(refineChance(lvl) * 100);
+    // a refine scroll adds its points to the odds of each attempt it is spent on
+    const count = (id) => inv.filter((x) => x.id === id).reduce((a, x) => a + (x.qty ?? 1), 0);
+    const lucks = Object.values(ITEMS).filter((d) => d.refineLuck && count(d.id) > 0).sort((a, b) => a.refineLuck - b.refineLuck);
+    if (this.forgeLuck && !count(this.forgeLuck)) this.forgeLuck = '';
+    const luck = refineChance(lvl) < 1 ? ITEMS[this.forgeLuck]?.refineLuck ?? 0 : 0;
+    const chance = Math.min(100, Math.round((refineChance(lvl) + luck) * 100));
     const risk = refineRisk(lvl);
     const odds = el('div', 'forge-odds');
     const shield = el('div', `forge-chance ${chance >= 95 ? 'green' : chance >= 50 ? 'gold' : 'red'}`);
@@ -2446,9 +2451,13 @@ export class UI {
     // what it costs, and what is in the bag to pay with
     const have = (id) => inv.filter((x) => x.id === id).reduce((a, x) => a + (x.qty ?? 1), 0);
     const cost = refineCost(def.value ?? 0, lvl);
-    const stones = refineStones(lvl), hasStones = have(KEY_ITEMS.refineStone), oils = have(KEY_ITEMS.refineOil);
+    const stones = refineStones(lvl), hasStones = have(KEY_ITEMS.refineStone);
     const stoneName = ITEMS[KEY_ITEMS.refineStone]?.nameTh ?? 'หินตีบวก';
-    const oilName = ITEMS[KEY_ITEMS.refineOil]?.nameTh ?? 'น้ำมันกันแตก';
+    // the ward for this band: anti-drop from +5, anti-break from +8 (old oil if it exists)
+    const ward = Object.values(ITEMS).find((d) => d.refineGuard === risk.onFail && have(d.id) > 0)
+      ?? Object.values(ITEMS).find((d) => d.refineGuard === risk.onFail) ?? ITEMS[KEY_ITEMS.refineOil];
+    const oils = ward ? have(ward.id) : 0;
+    const oilName = ward?.nameTh ?? 'ยันต์ป้องกัน';
     const aurum = this.game.inventory?.aurum ?? 0;
     const mats = el('div', 'forge-mats');
     const mat = (pic, label, text, ok) => {
@@ -2471,7 +2480,19 @@ export class UI {
       oilBox.checked = !!this.forgeOil && oils > 0;
       oilBox.disabled = oils < 1;
       oilBox.addEventListener('change', () => { this.forgeOil = oilBox.checked; });
-      lab.append(oilBox, el('span', '', `ใช้น้ำมันศักดิ์สิทธิ์ ป้องกัน${risk.onFail === 'break' ? 'ของแตก' : 'การลดระดับ'} (เหลือ ${fmt(oils)})`));
+      lab.append(oilBox, el('span', '', `ใช้${esc(oilName)} ป้องกัน${risk.onFail === 'break' ? 'ของแตก' : 'การลดระดับ'} (เหลือ ${fmt(oils)})`));
+      opts.append(lab);
+    }
+    if (lucks.length && refineChance(lvl) < 1) {
+      const lab = el('label', 'forge-check');
+      const pick = el('select');
+      for (const [v, t] of [['', 'ไม่ใช้ยันต์ตีบวก'], ...lucks.map((d) => [d.id, `${d.nameTh} (มี ${fmt(count(d.id))})`])]) {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = t; o.selected = v === (this.forgeLuck ?? '');
+        pick.append(o);
+      }
+      pick.addEventListener('change', () => { this.forgeLuck = pick.value; this.openRefine(); });
+      lab.append(el('span', '', 'เพิ่มโอกาส'), pick);
       opts.append(lab);
     }
     // keep going until a target, stopping at the first thing that is not a success
@@ -2492,10 +2513,10 @@ export class UI {
     const go = this.sheetBtn('fb-enhance', 'เสริมพลัง', () => {
       const useOil = !!oilBox?.checked;
       const goal = Number(target.value);
-      const start = () => { this.forgeRun = { index: it.i, goal, oil: useOil }; this.forgeAttempt(); };
+      const start = () => { this.forgeRun = { index: it.i, goal, oil: useOil, luck: this.forgeLuck || null }; this.forgeAttempt(); };
       // breaking is permanent: say so before, not after
       if (risk.onFail === 'break' && !useOil) {
-        return this.forgeConfirm(`ถ้าล้มเหลว <b>${esc(it.name)} +${lvl}</b> จะแตกสลายหายไปถาวร<br>โอกาสสำเร็จ ${chance}% · ยืนยันตีบวกโดยไม่ใช้น้ำมันศักดิ์สิทธิ์?`, start);
+        return this.forgeConfirm(`ถ้าล้มเหลว <b>${esc(it.name)} +${lvl}</b> จะแตกสลายหายไปถาวร<br>โอกาสสำเร็จ ${chance}% · ยืนยันตีบวกโดยไม่ใช้ยันต์กันแตก?`, start);
       }
       start();
     });
@@ -2608,7 +2629,10 @@ export class UI {
     const run = this.forgeRun;
     if (!run) return;
     this.game.audio?.play('forge');
-    this.game.net.send({ t: 'refine', index: run.index, oil: run.oil });
+    // a luck scroll that has run out is simply not asked for any more
+    const left = (this.game.inventory?.items ?? []).some((x) => x.id === run.luck);
+    if (!left) run.luck = null;
+    this.game.net.send({ t: 'refine', index: run.index, guard: run.oil, luck: run.luck });
     clearTimeout(this._forgeT);
     this._forgeT = setTimeout(() => { if (this.forgeRun === run) { this.forgeRun = null; this.openRefine(); } }, 4000);
   }
@@ -2645,7 +2669,7 @@ export class UI {
       : m.result === 'success' ? `<b>+${m.from}</b> <i>▶</i> <b class="up">+${m.to}</b>`
       : m.result === 'down' ? `<b>+${m.from}</b> <i>▶</i> <b class="down">+${m.to}</b>`
       : m.result === 'destroyed' ? `<b class="down">${esc(name)} แตกสลาย</b>`
-      : m.protected ? 'น้ำมันศักดิ์สิทธิ์ปกป้องไว้ · อุปกรณ์ไม่เปลี่ยนแปลง' : 'อุปกรณ์ไม่เปลี่ยนแปลง'));
+      : m.protected ? 'ยันต์ป้องกันไว้ · อุปกรณ์ไม่เปลี่ยนแปลง' : 'อุปกรณ์ไม่เปลี่ยนแปลง'));
     box.addEventListener('click', () => box.remove());
     document.body.append(box);
     this.game.audio?.play(m.result === 'success' || m.result === 'transfer' ? 'levelup' : 'bad');

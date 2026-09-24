@@ -121,11 +121,138 @@ export const POTIONS = {
 };
 Object.assign(ITEMS, POTIONS);
 
+/* ============ SCROLLS, BOOKS & TICKETS (assets/ui/source/scroll_sheet.png) ============
+   Forty-eight pieces, in the sheet's reading order ('scrolls#n').
+
+   Scrolls go places and last long: a scroll buff is weaker than the potion
+   of the same kind and runs for half an hour, so the two stack as a
+   "background plus burst". Refine scrolls are spent at the smith, not
+   read: +1/+3/+5 add that many percentage points to one attempt - worth
+   little at +5, a great deal at +13 where the odds are six in a hundred -
+   and the two wards turn one failure into nothing. Books are read, not
+   kept: each is a long buff, the elemental ones set your weapon's element.
+   Tickets are the shrine's currency and a handful of passes. */
+const S = (art, o) => C({ art: 'scrolls#' + art, rarity: 'common', cooldown: 3, level: 1, weight: 1, ...o });
+const BOOK = (art, el, nameTh, name) => S(art, {
+  id: 'book_' + el, name, nameTh, level: 15, value: 1500, rarity: 'uncommon', cooldown: 10, weight: 2,
+  endow: el, ...buff(10 * MIN, {}, '📖'),
+  desc: `อาวุธกลายเป็นธาตุ${nameTh.replace('ตำราธาตุ', '')} นาน 10 นาที`,
+});
+export const SCROLLS = {
+  scroll_fly: S(0, { id: 'scroll_fly', name: 'Fly Scroll', nameTh: 'ม้วนเคลื่อนย้ายสุ่ม', randomTeleport: true, value: 60,
+    desc: 'ย้ายไปจุดสุ่มในแผนที่เดียวกัน (ใช้ในดันเจียนและสนามรบไม่ได้)' }),
+  scroll_capital: S(1, { id: 'scroll_capital', name: 'Capital Warp', nameTh: 'ม้วนวาร์ปเมืองหลวง', warpTo: 'emberhold', value: 700, cooldown: 60,
+    desc: 'วาร์ปไปเอมเบอร์โฮลด์ทันที' }),
+  scroll_return: S(2, { id: 'scroll_return', name: 'Return Scroll', nameTh: 'ม้วนกลับบ้าน', warp: 'save', value: 500, cooldown: 60,
+    desc: 'กลับจุดบันทึกล่าสุด' }),
+  treasure_map: S(3, { id: 'treasure_map', name: 'Treasure Map', nameTh: 'แผนที่สมบัติ', value: 2500, rarity: 'uncommon', box: true,
+    opens: [
+      { id: '__aurum', qty: [800, 4000], weight: 50 }, { id: 'hp_potion_m', qty: [3, 6], weight: 14 },
+      { id: 'refine_luck_1', qty: [1, 3], weight: 14 }, { id: 'refine_luck_3', qty: 1, weight: 8 },
+      { id: 'scroll_exp', qty: 1, weight: 6 }, { id: 'gacha_ticket', qty: 1, weight: 6 }, { id: 'guard_down', qty: 1, weight: 2 },
+    ],
+    desc: 'ขุดตามแผนที่ — ได้ออรัมหรือของมีค่าอย่างใดอย่างหนึ่ง' }),
+  scroll_summon: S(4, { id: 'scroll_summon', name: 'Summoning Scroll', nameTh: 'ม้วนเรียกอสูร', summonMonster: true, level: 10, value: 400, cooldown: 30,
+    desc: 'เรียกมอนสเตอร์ของพื้นที่นี้ออกมาหนึ่งตัว (ใช้ได้เฉพาะทุ่งล่า) — ฆ่าได้ EXP และของตามปกติ' }),
+  scroll_resurrect: S(5, { id: 'scroll_resurrect', name: 'Resurrection Scroll', nameTh: 'ม้วนชุบชีวิต', reviveOther: 0.3, value: 3000,
+    rarity: 'rare', cooldown: 20, desc: 'ชุบเพื่อนที่ล้มอยู่ใกล้ตัว (ในระยะ 5 ช่อง) ให้ลุกพร้อม HP 30%' }),
+  scroll_beast: S(6, { id: 'scroll_beast', name: 'Beast Call', nameTh: 'ม้วนเรียกสัตว์คู่ใจ', summonPet: { id: 'companion_wolf', levelPct: 90, secs: 180 },
+    level: 5, value: 800, cooldown: 60, desc: 'เรียกหมาป่าคู่ใจมาช่วยสู้ 3 นาที' }),
+  scroll_voyage: S(7, { id: 'scroll_voyage', name: 'Voyage Scroll', nameTh: 'ม้วนเดินเรือ', warpTo: 'millhaven', value: 900, cooldown: 60,
+    desc: 'ล่องเรือไปท่ามิลเฮเวนทันที' }),
+
+  scroll_exp: S(8, { id: 'scroll_exp', name: 'EXP Scroll', nameTh: 'ม้วนเพิ่ม EXP', value: 3000, rarity: 'rare', cooldown: 10,
+    ...buff(60 * MIN, { expPct: 25 }, '📜'), desc: 'EXP +25% นาน 1 ชั่วโมง (ใช้ร่วมกับยา EXP ได้)' }),
+  scroll_gold: S(9, { id: 'scroll_gold', name: 'Fortune Scroll', nameTh: 'ม้วนโชคลาภ', value: 2500, rarity: 'uncommon', cooldown: 10,
+    ...buff(60 * MIN, { aurumPct: 30 }, '📜'), desc: 'ออรัมจากมอนสเตอร์ +30% นาน 1 ชั่วโมง' }),
+  scroll_atk: S(10, { id: 'scroll_atk', name: 'Might Scroll', nameTh: 'ม้วนพลังโจมตี', level: 10, value: 900, cooldown: 10,
+    ...buff(30 * MIN, { atkPct: 6, matkPct: 6 }, '📜'), desc: 'ATK/MATK +6% นาน 30 นาที' }),
+  scroll_def: S(11, { id: 'scroll_def', name: 'Guard Scroll', nameTh: 'ม้วนป้องกัน', level: 10, value: 900, cooldown: 10,
+    ...buff(30 * MIN, { defPct: 8 }, '📜'), desc: 'DEF +8% นาน 30 นาที' }),
+  scroll_speed: S(12, { id: 'scroll_speed', name: 'Swift Scroll', nameTh: 'ม้วนเร่งฝีเท้า', value: 700, cooldown: 10,
+    ...buff(30 * MIN, { speedPct: 10 }, '📜'), desc: 'เดินเร็วขึ้น 10% นาน 30 นาที' }),
+  scroll_vitality: S(13, { id: 'scroll_vitality', name: 'Vitality Scroll', nameTh: 'ม้วนพลังชีวิต', level: 10, value: 1100, cooldown: 10,
+    ...buff(30 * MIN, { maxHpPct: 10 }, '📜'), desc: 'HP สูงสุด +10% นาน 30 นาที' }),
+  scroll_spirit: S(14, { id: 'scroll_spirit', name: 'Spirit Scroll', nameTh: 'ม้วนพลังเวท', level: 10, value: 1100, cooldown: 10,
+    ...buff(30 * MIN, { maxSpPct: 15 }, '📜'), desc: 'SP สูงสุด +15% นาน 30 นาที' }),
+  scroll_blessing: S(15, { id: 'scroll_blessing', name: 'Blessing Scroll', nameTh: 'ม้วนพร', level: 15, value: 1500, rarity: 'uncommon', cooldown: 10,
+    ...buff(30 * MIN, { strFlat: 2, agiFlat: 2, vitFlat: 2, intFlat: 2, dexFlat: 2, lukFlat: 2 }, '📜'), desc: 'สเตตัสทุกตัว +2 นาน 30 นาที' }),
+
+  refine_luck_1: S(16, { id: 'refine_luck_1', name: 'Refine Scroll +1%', nameTh: 'ยันต์ตีบวก +1%', refineLuck: 0.01, value: 500,
+    desc: 'ใช้ที่ช่างตีเหล็ก: เพิ่มโอกาสตีบวกสำเร็จ 1% ต่อครั้ง' }),
+  refine_luck_3: S(17, { id: 'refine_luck_3', name: 'Refine Scroll +3%', nameTh: 'ยันต์ตีบวก +3%', refineLuck: 0.03, value: 2500, rarity: 'uncommon',
+    desc: 'ใช้ที่ช่างตีเหล็ก: เพิ่มโอกาสตีบวกสำเร็จ 3% ต่อครั้ง' }),
+  refine_luck_5: S(18, { id: 'refine_luck_5', name: 'Refine Scroll +5%', nameTh: 'ยันต์ตีบวก +5%', refineLuck: 0.05, value: 8000, rarity: 'rare',
+    desc: 'ใช้ที่ช่างตีเหล็ก: เพิ่มโอกาสตีบวกสำเร็จ 5% ต่อครั้ง' }),
+  guard_break: S(19, { id: 'guard_break', name: 'Anti-Break Ward', nameTh: 'ยันต์กันแตก', refineGuard: 'break', value: 12000, rarity: 'rare',
+    desc: 'ใช้ที่ช่างตีเหล็ก (ช่วง +8 ขึ้นไป): ตีพลาดแล้วของไม่แตก ระดับคงเดิม' }),
+  guard_down: S(20, { id: 'guard_down', name: 'Anti-Drop Ward', nameTh: 'ยันต์กันลดขั้น', refineGuard: 'down', value: 4000, rarity: 'uncommon',
+    desc: 'ใช้ที่ช่างตีเหล็ก (ช่วง +5 ถึง +7): ตีพลาดแล้วระดับไม่ลด' }),
+  scroll_daily_reset: S(21, { id: 'scroll_daily_reset', name: 'Renewal Scroll', nameTh: 'ม้วนรีเซ็ตเควสต์รายวัน', dailyReset: true, value: 5000,
+    rarity: 'rare', cooldown: 0, desc: 'เควสต์รายวันที่ส่งไปแล้วรับใหม่ได้ทันที' }),
+  scroll_identify: S(22, { id: 'scroll_identify', name: 'Identify Scroll', nameTh: 'ม้วนส่องศัตรู', identify: true, value: 150, cooldown: 2,
+    desc: 'อ่านข้อมูลมอนสเตอร์ที่เลือกไว้: ธาตุ เผ่า ขนาด และของที่ดรอปพร้อมโอกาส' }),
+  scroll_mystery: S(23, { id: 'scroll_mystery', name: 'Mystery Scroll', nameTh: 'ม้วนปริศนา', value: 1200, rarity: 'uncommon', box: true,
+    opens: [
+      { id: 'scroll_atk', qty: 1, weight: 14 }, { id: 'scroll_def', qty: 1, weight: 14 }, { id: 'scroll_speed', qty: 1, weight: 12 },
+      { id: 'scroll_fly', qty: [3, 6], weight: 14 }, { id: 'refine_luck_1', qty: 1, weight: 14 }, { id: 'scroll_gold', qty: 1, weight: 8 },
+      { id: 'scroll_exp', qty: 1, weight: 6 }, { id: 'refine_luck_3', qty: 1, weight: 6 }, { id: 'gacha_ticket', qty: 1, weight: 6 },
+      { id: 'treasure_map', qty: 1, weight: 5 }, { id: 'refine_luck_5', qty: 1, weight: 1 },
+    ],
+    desc: 'ม้วนผนึกไว้ — แกะแล้วได้ม้วนหรือยันต์สุ่มหนึ่งอย่าง' }),
+
+  book_fire: BOOK(24, 'fire', 'ตำราธาตุไฟ', 'Tome of Fire'),
+  book_ice: BOOK(25, 'ice', 'ตำราธาตุน้ำแข็ง', 'Tome of Ice'),
+  book_wind: BOOK(26, 'wind', 'ตำราธาตุลม', 'Tome of Wind'),
+  book_lightning: BOOK(27, 'lightning', 'ตำราธาตุสายฟ้า', 'Tome of Lightning'),
+  book_moon: S(28, { id: 'book_moon', name: 'Tome of Night', nameTh: 'ตำรารัตติกาล', level: 20, value: 2200, rarity: 'uncommon', cooldown: 10, weight: 2,
+    ...buff(30 * MIN, { castPct: 15, spCostPct: -15 }, '📖'), desc: 'ร่ายเร็วขึ้น 15% และใช้ SP น้อยลง 15% นาน 30 นาที' }),
+  book_holy: BOOK(29, 'holy', 'ตำราธาตุแสง', 'Tome of Light'),
+  book_dark: BOOK(30, 'dark', 'ตำราธาตุมืด', 'Tome of Shadow'),
+  book_earth: BOOK(31, 'earth', 'ตำราธาตุดิน', 'Tome of Earth'),
+
+  book_beast: S(32, { id: 'book_beast', name: 'Beastmaster Tome', nameTh: 'ตำรานักฝึกสัตว์', level: 15, value: 1800, rarity: 'uncommon', cooldown: 10, weight: 2,
+    ...buff(60 * MIN, { summonStatPct: 20 }, '📖'), desc: 'สัตว์ที่อัญเชิญแข็งแกร่งขึ้น 20% นาน 1 ชั่วโมง' }),
+  book_party: S(33, { id: 'book_party', name: 'Leader\'s Tome', nameTh: 'ตำราผู้นำ', level: 15, value: 3000, rarity: 'rare', cooldown: 60, weight: 2,
+    party: true, ...buff(30 * MIN, { expPct: 10 }, '📖'), desc: 'ปาร์ตี้ที่อยู่ใกล้ได้ EXP +10% นาน 30 นาที' }),
+  book_combat: S(34, { id: 'book_combat', name: 'Warrior\'s Tome', nameTh: 'ตำรายุทธ์', level: 15, value: 2000, rarity: 'uncommon', cooldown: 10, weight: 2,
+    ...buff(30 * MIN, { atkPct: 5, critFlat: 5 }, '📖'), desc: 'ATK +5% และคริติคอล +5 นาน 30 นาที' }),
+  book_alchemy: S(35, { id: 'book_alchemy', name: 'Alchemist\'s Tome', nameTh: 'ตำรานักปรุงยา', level: 10, value: 1600, rarity: 'uncommon', cooldown: 10, weight: 2,
+    ...buff(60 * MIN, { potionPct: 30 }, '📖'), desc: 'ยาฟื้น HP/SP ได้ผลมากขึ้น 30% นาน 1 ชั่วโมง' }),
+  book_arcane: S(36, { id: 'book_arcane', name: 'Arcane Tome', nameTh: 'ตำรามนตรา', level: 15, value: 2000, rarity: 'uncommon', cooldown: 10, weight: 2,
+    ...buff(30 * MIN, { matkPct: 12 }, '📖'), desc: 'MATK +12% นาน 30 นาที' }),
+  book_windstep: S(37, { id: 'book_windstep', name: 'Windstep Tome', nameTh: 'ตำราฝีเท้าลม', level: 15, value: 2000, rarity: 'uncommon', cooldown: 10, weight: 2,
+    ...buff(30 * MIN, { speedPct: 12, fleePct: 12 }, '📖'), desc: 'เดินเร็วขึ้น 12% และ FLEE +12% นาน 30 นาที' }),
+  book_royal: S(38, { id: 'book_royal', name: 'Royal Tome', nameTh: 'ตำราราชันย์', level: 20, value: 20000, rarity: 'epic', cooldown: 10, weight: 2,
+    ...buff(60 * MIN, { strFlat: 3, agiFlat: 3, vitFlat: 3, intFlat: 3, dexFlat: 3, lukFlat: 3, expPct: 10 }, '👑'),
+    desc: 'สเตตัสทุกตัว +3 และ EXP +10% นาน 1 ชั่วโมง' }),
+  scroll_party_blessing: S(39, { id: 'scroll_party_blessing', name: 'Party Blessing', nameTh: 'ม้วนอวยพรหมู่', level: 10, value: 1400, rarity: 'uncommon', cooldown: 60,
+    party: true, ...buff(10 * MIN, { hpRegenPct: 60, defPct: 5 }, '🌸'), desc: 'ปาร์ตี้ที่อยู่ใกล้ฟื้น HP เร็วขึ้น 60% และ DEF +5% นาน 10 นาที' }),
+
+  scroll_save: S(40, { id: 'scroll_save', name: 'Waypoint Scroll', nameTh: 'ม้วนบันทึกจุด', setSave: true, value: 400, cooldown: 10,
+    desc: 'ตั้งจุดบันทึกตรงที่ยืนอยู่ (ใช้ในดันเจียนและสนามรบไม่ได้)' }),
+  gacha_ticket: S(41, { id: 'gacha_ticket', name: 'Shrine Ticket', nameTh: 'ตั๋วสุ่มศาลรุ่งอรุณ', value: 3000, rarity: 'rare',
+    desc: 'ใช้สุ่มที่ศาลรุ่งอรุณ 1 ครั้ง หรือแลกของที่ร้านแลกตั๋ว' }),
+  gacha_ticket_rare: S(42, { id: 'gacha_ticket_rare', name: 'Radiant Ticket', nameTh: 'ตั๋วสุ่มพิเศษ', gachaRoll: 'rare', value: 15000, rarity: 'epic', cooldown: 0,
+    desc: 'ฉีกแล้วสุ่มจากรางวัลระดับ SR ขึ้นไปของศาลทันที' }),
+  vip_pass: S(43, { id: 'vip_pass', name: 'Royal Pass', nameTh: 'บัตรราชา', value: 12000, rarity: 'epic', cooldown: 10,
+    ...buff(60 * MIN, { expPct: 20, dropPct: 20, aurumPct: 20 }, '👑'), desc: 'EXP ดรอป และออรัม +20% นาน 1 ชั่วโมง' }),
+  warp_ticket: S(44, { id: 'warp_ticket', name: 'Travel Ticket', nameTh: 'ตั๋วเดินทาง', warpTicket: true, value: 600,
+    desc: 'ยื่นให้ผู้ดูแลวาร์ปแทนค่าเดินทางได้หนึ่งเที่ยว ไปที่ไหนก็ได้' }),
+  boss_ticket: S(45, { id: 'boss_ticket', name: 'Challenge Writ', nameTh: 'บัตรท้าบอส', lockoutReset: true, value: 30000, rarity: 'epic', cooldown: 0,
+    desc: 'ล้างการรับรางวัลบอสประจำสัปดาห์ของคุณ — ตีบอสรับรางวัลได้อีกรอบ' }),
+  arena_ticket: S(46, { id: 'arena_ticket', name: 'Arena Pass', nameTh: 'บัตรสนามรบ', warpTo: 'ashen_lists', level: 40, value: 500, cooldown: 60,
+    desc: 'พาไปลานประลองเถ้า (เขต PvP) ทันที' }),
+  dungeon_pass: S(47, { id: 'dungeon_pass', name: 'Reliquary Pass', nameTh: 'บัตรผ่านประตูหีบศพ', dungeonPass: true, level: 60, value: 8000, rarity: 'rare',
+    desc: 'ผ่านประตูหีบศพได้แม้ไม่มีปาร์ตี้ครบ (ใช้แล้วหาย) — ข้างในยังโหดเท่าเดิม' }),
+};
+Object.assign(ITEMS, SCROLLS);
+
 /** Items that game systems use by role, not by drop table. */
 export const KEY_ITEMS = {
   refineStone: 'runed_whetstone',   // spent on every refine attempt
-  refineOil: 'blessing_oil',        // keeps a failed refine from breaking
-  gachaShard: 'shard_dawn',         // what a shrine draw costs
+  refineOil: 'blessing_oil',        // the old all-purpose ward, if it ever returns
+  gachaShard: 'gacha_ticket',       // what a shrine draw costs
   reviveReagent: null,              // the priest's revive costs SP alone
 };
 /** Whether a role item exists in this build of the item table. */

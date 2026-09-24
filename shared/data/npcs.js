@@ -16,12 +16,23 @@ export const SHOPS = {
       { id: 'antidote', stock: 20, restock: 300 },
       { id: 'speed_potion', stock: 10, restock: 600 },
       { id: 'teleport_potion', stock: 10, restock: 600 },
+      { id: 'scroll_fly', stock: 60, restock: 300 },
+      { id: 'scroll_return', stock: 20, restock: 600 },
+      { id: 'scroll_capital', stock: 10, restock: 600 },
+      { id: 'scroll_voyage', stock: 10, restock: 600 },
+      { id: 'scroll_save', stock: 10, restock: 600 },
+      { id: 'scroll_identify', stock: 30, restock: 300 },
+      { id: 'warp_ticket', stock: 10, restock: 900 },
     ],
   },
   smith: {
     id: 'smith', name: 'โรงตีเหล็กบอร์ก',
     buysAnything: true, services: ['refine', 'socket', 'repair', 'craft'],
-    stock: [],
+    stock: [
+      { id: 'refine_luck_1', stock: 30, restock: 600 },
+      { id: 'refine_luck_3', stock: 6, restock: 1800 },
+      { id: 'guard_down', stock: 3, restock: 3600 },
+    ],
   },
   // Paid for in Dawn Shards, not coin: the sure-thing counterpart to the
   // shrine's gamble. Anything the gacha can roll can also simply be bought
@@ -63,11 +74,25 @@ export const SHOPS = {
       { id: 'rage_potion', stock: 4, restock: 1200 },
       { id: 'stealth_potion', stock: 3, restock: 1200 },
       { id: 'revive_potion', stock: 2, restock: 3600 },
+      { id: 'scroll_atk', stock: 8, restock: 900 },
+      { id: 'scroll_def', stock: 8, restock: 900 },
+      { id: 'scroll_speed', stock: 8, restock: 900 },
+      { id: 'scroll_vitality', stock: 6, restock: 900 },
+      { id: 'scroll_spirit', stock: 6, restock: 900 },
     ],
   },
   dawn: {
-    id: 'dawn', name: 'ร้านแลกเศษรุ่งอรุณ', currency: KEY_ITEMS.gachaShard,
-    stock: [],
+    id: 'dawn', name: 'ร้านแลกตั๋วศาลรุ่งอรุณ', currency: KEY_ITEMS.gachaShard,
+    stock: [
+      { id: 'refine_luck_3', stock: 99, restock: 60, price: 2 },
+      { id: 'guard_down', stock: 99, restock: 60, price: 3 },
+      { id: 'refine_luck_5', stock: 99, restock: 60, price: 5 },
+      { id: 'guard_break', stock: 99, restock: 60, price: 8 },
+      { id: 'scroll_exp', stock: 99, restock: 60, price: 2 },
+      { id: 'vip_pass', stock: 99, restock: 60, price: 6 },
+      { id: 'book_royal', stock: 99, restock: 60, price: 12 },
+      { id: 'scroll_daily_reset', stock: 99, restock: 60, price: 3 },
+    ],
   },
 };
 
@@ -130,7 +155,7 @@ export const NPC_DIALOG = {
     greet: 'เศษรุ่งอรุณในมือเจ้า… อยากรู้ไหมว่ามันจะกลายเป็นอะไร?',
     options: [
       { label: 'เสี่ยงทายที่ศาล', action: 'gacha' },
-      { label: 'ร้านแลกเศษรุ่งอรุณ', action: 'shop', shop: 'dawn' },
+      { label: 'ร้านแลกตั๋วศาลรุ่งอรุณ', action: 'shop', shop: 'dawn' },
     ],
   },
 };

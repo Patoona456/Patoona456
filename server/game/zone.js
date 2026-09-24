@@ -382,7 +382,10 @@ export class Zone {
     if (e.kind === 'monster') {
       e.deadUntil = now() + (e.def.respawn ?? 20) * 1000;
       if (e.summon) this.entities.delete(e.id);
-      else this.awardKill(e, killer);
+      else {
+        this.awardKill(e, killer);
+        if (e.oneShot) this.entities.delete(e.id);     // called by a scroll: no respawn
+      }
     } else if (e.kind === 'player') {
       e.statuses = [];
       e.targetId = null;
