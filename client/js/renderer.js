@@ -15,6 +15,7 @@ import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from
 import { Weather } from './weather.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
+import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 
 const uiImages = new Map();
 /** One of the painted HUD words (miss, critical, levelup), loaded once. */
@@ -41,65 +42,150 @@ function heldArt(e) {
 }
 
 /**
- * Where the weapon hand is on the chibi sheet, per facing (DIR8 order), in
- * frame pixels of the 128 x 192 walk frame: the fist's centre, which side
- * the blade leans to, and whether the arm is in front of the body or hidden
- * behind it. Measured off assets/chibi/body/hero_brown.png.
+ * Where the weapon fist is on the chibi sheet, per facing (DIR8 order) and per
+ * walk frame, in frame pixels of the 128 x 192 walk frame; which side the
+ * blade leans to; and whether the fist is over the body (the side views,
+ * where the arm crosses the torso) or beside it. Beside the body the sword
+ * goes on first and the body's own fist covers the grip; over it, the sword
+ * goes on last and the fist is painted back on top. Tracked off
+ * assets/chibi/body/hero_brown.png.
  */
 const CHIBI_HAND = [
-  { x: 92, y: 143, side: 1, front: true },    // down
-  { x: 34, y: 138, side: -1, front: true },   // down-left
-  { x: 60, y: 147, side: -1, front: true },   // left
-  { x: 43, y: 138, side: -1, front: false },  // up-left
-  { x: 92, y: 140, side: 1, front: false },   // up
-  { x: 88, y: 136, side: 1, front: false },   // up-right
-  { x: 86, y: 131, side: 1, front: true },    // right
-  { x: 91, y: 138, side: 1, front: true },    // down-right
+  { at: [[92, 145], [91, 145], [91, 145], [90, 145]], side: 1, over: false },  // down
+  { at: [[37, 140], [35, 139], [37, 139], [39, 140]], side: -1, over: false }, // down-left
+  { at: [[63, 146], [65, 146], [68, 146], [66, 146]], side: -1, over: true },  // left
+  { at: [[84, 139], [88, 137], [81, 140], [82, 136]], side: 1, over: false },  // up-left
+  { at: [[95, 143], [95, 143], [93, 142], [94, 143]], side: 1, over: false },  // up
+  { at: [[45, 140], [46, 141], [37, 137], [42, 141]], side: -1, over: false }, // up-right
+  { at: [[90, 132], [83, 132], [92, 132], [76, 141]], side: 1, over: true },   // right
+  { at: [[94, 139], [94, 138], [96, 138], [93, 138]], side: 1, over: false },  // down-right
 ];
 const CHIBI_FRAME = { w: 128, anchor: 184, scale: 0.27 };
-/** How long a one-handed blade reads on a ~47px chibi: about half its height. */
-const HELD_SIZE = 16;
+/** Pommel to tip, in screen pixels, on a ~47px chibi: well under half its height. */
+const HELD_LEN = 19;
+/** The fist's radius in frame pixels, for painting it back over the grip. */
+const FIST_R = 6.5;
 
 /** The hand for this facing (so the draw order can ask before the body goes on). */
 export function chibiHand(e) { return CHIBI_HAND[((e.d ?? 0) % 8 + 8) % 8]; }
 
+/** The fist's centre on screen, following the arm through the walk. */
+function chibiFist(e, anim, elapsed) {
+  const hand = chibiHand(e);
+  const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed) : 0;
+  const [fx, fy] = hand.at[col] ?? hand.at[0];
+  const sc = (e.sprite?.scale ?? 1) * CHIBI_FRAME.scale;
+  return { x: e.x + (fx - CHIBI_FRAME.w / 2) * sc, y: e.y + (fy - CHIBI_FRAME.anchor) * sc, r: FIST_R * sc };
+}
+
 /**
- * A weapon from the icon sheets, in a chibi's hand. The art is drawn with the
- * tip to the upper right and the hilt at the lower left, so the grip goes in
- * the fist and the picture is mirrored when the blade should lean left. At
- * rest it is held up and a little forward; a swing raises it back and cuts
- * down through the facing, then settles.
+ * Where to hold a picture from the sheets: every sword is drawn a little
+ * differently (longer, shorter, not quite on the diagonal, not centred in its
+ * cell), so a fixed spot in the cell puts the fist on the guard of one and
+ * beside the pommel of the next. This reads the picture once: its long axis,
+ * which end is the tip, where the guard is (the widest part of the lower
+ * half), and the middle of the grip between guard and pommel. All in cell
+ * units, so it is the same at any atlas size.
+ */
+const GRIPS = new Map();
+const GRIP_FALLBACK = { x: 0.24, y: 0.76, angle: -Math.PI / 4, len: 1.2 };
+function gripOf(img, file, cell, cols, size) {
+  const key = `${file}#${cell}`;
+  if (GRIPS.has(key)) return GRIPS.get(key);
+  let g = GRIP_FALLBACK;
+  try {
+    const n = 96;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = n;
+    const c = cv.getContext('2d', { willReadFrequently: true });
+    c.drawImage(img, (cell % cols) * size, Math.floor(cell / cols) * size, size, size, 0, 0, n, n);
+    const px = c.getImageData(0, 0, n, n).data;
+    const xs = [], ys = [];
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) if (px[(y * n + x) * 4 + 3] > 128) { xs.push(x + 0.5); ys.push(y + 0.5); }
+    }
+    if (xs.length > 40) {
+      const m = xs.length;
+      let mx = 0, my = 0;
+      for (let i = 0; i < m; i++) { mx += xs[i]; my += ys[i]; }
+      mx /= m; my /= m;
+      let cxx = 0, cyy = 0, cxy = 0;
+      for (let i = 0; i < m; i++) {
+        const dx = xs[i] - mx, dy = ys[i] - my;
+        cxx += dx * dx; cyy += dy * dy; cxy += dx * dy;
+      }
+      const th = 0.5 * Math.atan2(2 * cxy, cxx - cyy);
+      let ax = Math.cos(th), ay = Math.sin(th);
+      if (ax - ay < 0) { ax = -ax; ay = -ay; }       // the tip is up and to the right
+      const t = new Float32Array(m), u = new Float32Array(m);
+      let tmin = Infinity, tmax = -Infinity;
+      for (let i = 0; i < m; i++) {
+        const dx = xs[i] - mx, dy = ys[i] - my;
+        t[i] = dx * ax + dy * ay; u[i] = -dx * ay + dy * ax;
+        if (t[i] < tmin) tmin = t[i];
+        if (t[i] > tmax) tmax = t[i];
+      }
+      const len = tmax - tmin;
+      // how wide the picture is at each step along the axis
+      const bins = Math.ceil(len) + 1;
+      const lo = new Float32Array(bins).fill(Infinity), hi = new Float32Array(bins).fill(-Infinity);
+      for (let i = 0; i < m; i++) {
+        const b = Math.floor(t[i] - tmin);
+        if (u[i] < lo[b]) lo[b] = u[i];
+        if (u[i] > hi[b]) hi[b] = u[i];
+      }
+      let guard = Math.round(len * 0.2), widest = -1;
+      for (let b = Math.round(len * 0.08); b <= Math.round(len * 0.42); b++) {
+        const wdt = hi[b] - lo[b];
+        if (wdt > widest + 0.5) { widest = wdt; guard = b; }
+      }
+      const tg = Math.max(2, guard * 0.55);
+      let su = 0, k = 0;
+      for (let i = 0; i < m; i++) if (Math.abs(t[i] - tmin - tg) <= 1.5) { su += u[i]; k++; }
+      const ug = k ? su / k : 0;
+      const at = tmin + tg;
+      g = { x: (mx + at * ax - ug * ay) / n, y: (my + at * ay + ug * ax) / n, angle: Math.atan2(ay, ax), len: len / n };
+    }
+  } catch { /* an unreadable picture keeps the old guess */ }
+  GRIPS.set(key, g);
+  return g;
+}
+
+/**
+ * A weapon from the icon sheets, in a chibi's fist. The picture is turned so
+ * its own grip sits in the fist and its blade leans up and outward, the same
+ * length whatever the sheet drew; mirrored when the blade should lean left.
+ * A swing raises it back and cuts down through the facing, then settles.
  */
 function drawHeld(ctx, held, e, anim, elapsed, now) {
   const { img, file, cell } = held;
   const cols = ATLAS_COLS[file] ?? 8;
   const size = img.naturalWidth / cols;
   const hand = chibiHand(e);
-  const sc = (e.sprite?.scale ?? 1) * CHIBI_FRAME.scale;
+  const fist = chibiFist(e, anim, elapsed);
   const walking = anim === 'walk';
-  const bob = walking ? Math.sin(now / 62) * 0.8 : Math.sin(now / 420 + e.x) * 0.35;
-  const hx = e.x + (hand.x - CHIBI_FRAME.w / 2) * sc;
-  const hy = e.y + (hand.y - CHIBI_FRAME.anchor) * sc + bob;
   const swing = anim === 'slash' || anim === 'thrust';
-  let angle = -0.45 + (walking ? Math.sin(now / 124) * 0.08 : 0);
+  let angle = -0.4 + (walking ? Math.sin(now / 124) * 0.06 : 0);
   if (swing) {
     // wind up, cut, recover: 0..0.25 up, 0.25..0.6 down through, then back
     const k = Math.min(1, elapsed / 300);
-    angle = k < 0.25 ? -0.45 - (k / 0.25) * 0.75
+    angle = k < 0.25 ? -0.4 - (k / 0.25) * 0.8
       : k < 0.6 ? -1.2 + ((k - 0.25) / 0.35) * 2.3
-        : 1.1 - ((k - 0.6) / 0.4) * 1.55;
+        : 1.1 - ((k - 0.6) / 0.4) * 1.5;
   }
-  const w = HELD_SIZE * (e.sprite?.scale ?? 1);
+  const grip = gripOf(img, file, cell, cols, size);
+  const len = HELD_LEN * (e.sprite?.scale ?? 1);
+  const k = len / grip.len;                       // screen pixels per cell
   ctx.save();
   if (e.inv) ctx.globalAlpha = 0.35;
   // a 160px picture shrunk to a hand's width: the cheap filter turns it to mush
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.translate(hx, hy);
+  ctx.translate(fist.x, fist.y);
   ctx.scale(hand.side, 1);
   if (swing && angle > -1.2 && elapsed < 190) {
     // the cut leaves a thin trail behind the tip
-    const tip = w * 0.95, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;
+    const tip = len * 0.85, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;
     const g = ctx.createLinearGradient(Math.cos(from) * tip, Math.sin(from) * tip, Math.cos(to) * tip, Math.sin(to) * tip);
     g.addColorStop(0, 'rgba(255,255,255,0)');
     g.addColorStop(1, 'rgba(255,250,230,0.75)');
@@ -110,7 +196,8 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
     ctx.arc(0, 0, tip, from, to);
     ctx.stroke();
   }
-  ctx.rotate(angle);
+  // turn the picture's own axis onto the held angle, about its grip
+  ctx.rotate(-Math.PI / 4 + angle - grip.angle);
   // refine and element light the blade itself: the tier's colour leaned
   // toward the element, breathing, brighter in the swing
   const tier = glowTier(e.wr);
@@ -118,17 +205,17 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const elemental = el && el !== 'neutral' ? elLook(el).main : null;
   const rgb = tier ? (elemental ? mixRgb(tier.color, elemental, 0.55) : tier.color) : elemental;
   const sx = (cell % cols) * size, sy = Math.floor(cell / cols) * size;
+  const dx = -grip.x * k, dy = -grip.y * k;
   if (rgb) {
     const pulse = 0.7 + 0.3 * Math.sin(now / 480 + e.x * 0.05);
     const power = (tier ? 0.45 + tier.aura * 0.35 : 0.35) * pulse * (swing ? 1.4 : 1);
     ctx.save();
     ctx.shadowColor = `rgba(${rgb.join(',')},${Math.min(1, power).toFixed(2)})`;
     ctx.shadowBlur = 4 + (tier?.aura ?? 0.5) * 6;
-    ctx.drawImage(img, sx, sy, size, size, -w * 0.24, -w * 0.76, w, w);
+    ctx.drawImage(img, sx, sy, size, size, dx, dy, k, k);
     ctx.restore();
   }
-  // the grip sits a fifth of the way in from the lower-left corner
-  ctx.drawImage(img, sx, sy, size, size, -w * 0.24, -w * 0.76, w, w);
+  ctx.drawImage(img, sx, sy, size, size, dx, dy, k, k);
   ctx.restore();
 }
 /** Columns per icon atlas, where it is not the usual eight. */
@@ -792,16 +879,27 @@ export class Renderer {
           drawBehind(ctx, worn, dress);
           // the chibi body has no weapon layer: its weapon is the item's own art, held
           const held = chibi ? heldArt(e) : null;
-          const backTurned = held && !chibiHand(e).front;
-          if (held && backTurned) drawHeld(ctx, held, e, anim, elapsed, now);
-          drawCharacter(ctx, layers, {
+          const over = held && chibiHand(e).over;
+          if (held && !over) drawHeld(ctx, held, e, anim, elapsed, now);
+          const body = {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
             scale,
             alpha: e.inv ? 0.35 : 1,
             tint: e.sprite?.tint ?? null,
             flash: hurt,
-          });
-          if (held && !backTurned) drawHeld(ctx, held, e, anim, elapsed, now);
+          };
+          drawCharacter(ctx, layers, body);
+          if (over) {
+            // across the body the sword goes on top, and the fist back over its grip
+            drawHeld(ctx, held, e, anim, elapsed, now);
+            const f = chibiFist(e, anim, elapsed);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.clip();
+            drawCharacter(ctx, layers, body);
+            ctx.restore();
+          }
           drawInFront(ctx, worn, dress);
           if (booth) drawBooth(ctx, e, booth, 'front');
           if (e.k === 'p') this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
