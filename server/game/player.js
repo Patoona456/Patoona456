@@ -257,7 +257,7 @@ export class Player {
   addItem(id, qty = 1, extra = null) {
     const def = ITEMS[id];
     if (!def || qty <= 0) return false;
-    if (this.weight() + (def.weight ?? 1) * qty > this.weightCap * 1.5) return false;
+    if (!extra?.force && this.weight() + (def.weight ?? 1) * qty > this.weightCap * 1.5) return false;
     const maxStack = def.stack ?? 1;
 
     if (maxStack > 1) {
@@ -504,7 +504,7 @@ export class Player {
   selfState() {
     const r = this.record;
     return {
-      id: this.id, charId: r.id, name: r.name, look: r.look, job: r.job,
+      id: this.id, charId: r.id, name: r.name, look: r.look, job: r.job, admin: !!this.admin,
       level: r.level, jobLevel: r.jobLevel, exp: r.exp, jobExp: r.jobExp,
       expNext: baseExpToNext(r.level), jobExpNext: jobExpToNext(r.jobLevel),
       statPoints: r.statPoints, skillPoints: r.skillPoints,

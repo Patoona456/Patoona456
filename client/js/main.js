@@ -14,6 +14,7 @@ import { rgba as elRgba, triple as elTriple } from '../../shared/elements.js';
 import { SKILLS } from '../../shared/data/skills.js';
 import { JOBS, STARTING_STATS } from '../../shared/data/jobs.js';
 import { deriveStats } from '../../shared/formulas.js';
+import { AdminPanel } from './admin.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -155,6 +156,7 @@ class Game {
     });
     n.on('self', (m) => {
       this.self = m.self;
+      (this.admin ??= new AdminPanel(this)).sync(this.self);
       this.state.myId = m.self.id;
       if (!this.inWorld) this.enterWorld();
       this.ui.renderHotbar(this.self);

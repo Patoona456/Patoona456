@@ -13,6 +13,7 @@ import * as Trade from './game/trade.js';
 import * as Quests from './game/quests.js';
 import { ITEMS, RECIPES } from '../shared/data/items.js';
 import { useConsumable } from './game/consumables.js';
+import { isAdmin, tokenOk, gmCommand } from './game/gm.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
 import { MAPS } from '../shared/data/maps.js';
@@ -125,6 +126,7 @@ export class Conn {
     const record = db.characters[String(m.id)];
     if (!record) return this.error('ข้อมูลตัวละครเสียหาย');
     this.player = new Player(record, this);
+    this.player.admin = isAdmin(this.account);
     this.world.addPlayer(this.player);
     this.sendInventory();
     this.send(Party.state(this.world, this.player));
@@ -394,6 +396,16 @@ export class Conn {
         this.sendInventory();
         return this.send({ t: OP.SELF, self: p.selfState() });
       }
+      // the game master's tools, for admin accounts only (server/game/gm.js)
+      case 'gm': {
+        if (!p.admin || !isAdmin(this.account)) return this.error('เฉพาะผู้ดูแลเท่านั้น');
+        const r = gmCommand(this.world, p, m);
+        if (r.error) return this.error(r.error);
+        p.recompute();
+        this.sendInventory();
+        this.send({ t: OP.SELF, self: p.selfState() });
+        return r.notice ? this.notice(r.notice, 'good') : undefined;
+      }
       case OP.PARTY: return this.partyCmd(m);
       case OP.FRIEND: return this.friendCmd(m);
       case OP.GUILD: return this.guildCmd(m);
@@ -454,6 +466,19 @@ export class Conn {
     const p = this.player;
     const text = String(m.text ?? '').slice(0, 200).trim();
     if (!text) return;
+    // "/admin <token>" makes this account a game master; "/admin off" undoes it
+    const adm = text.match(/^\/admin(?:\s+(\S+))?$/i);
+    if (adm) {
+      if (adm[1] === 'off') {
+        if (this.account) { this.account.admin = false; markDirty(); }
+        p.admin = isAdmin(this.account);
+      } else if (tokenOk(adm[1])) {
+        this.account.admin = true; markDirty();
+        p.admin = true;
+      } else return this.error('รหัสผู้ดูแลไม่ถูกต้อง');
+      this.send({ t: OP.SELF, self: p.selfState() });
+      return this.notice(p.admin ? 'เปิดโหมดผู้ดูแลแล้ว' : 'ปิดโหมดผู้ดูแลแล้ว', 'good');
+    }
     // an escape hatch anyone can reach, in case scenery ever traps a character
     if (text === '/stuck' || text === '/unstuck') {
       const r = this.world.unstick(p);

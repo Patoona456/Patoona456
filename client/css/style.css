@@ -1805,3 +1805,39 @@ body.landscape-ui .banner b { font-size: 16px; }
 body.landscape-ui .banner span { font-size: 11px; }
 body.landscape-ui .banner.victory .vic { width: 200px; }
 body.landscape-ui #combo { top: auto; right: auto; left: 250px; bottom: 150px; }
+
+/* ============================ admin panel ============================ */
+#gm-toggle {
+  position: fixed; left: 10px; top: 96px; z-index: 46; width: 38px; height: 38px;
+  border-radius: 10px; font-size: 18px; background: var(--panel-solid); border: 1px solid var(--edge);
+}
+#gm-panel {
+  position: fixed; z-index: 47; left: 56px; top: 70px; width: min(560px, calc(100vw - 72px));
+  max-height: calc(100vh - 90px); display: flex; flex-direction: column; padding: 0; overflow: hidden;
+}
+#gm-panel > header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--edge-soft); }
+#gm-panel > header h2 { margin: 0; font-size: 14px; }
+#gm-panel .close { background: none; border: none; font-size: 20px; color: var(--text); }
+.gm-tabs { display: flex; gap: 6px; padding: 8px 12px 0; }
+.gm-tabs button { padding: 5px 12px; border-radius: 8px; background: none; border: 1px solid var(--edge-soft); color: var(--muted); }
+.gm-tabs button.sel { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.gm-body { padding: 10px 12px 12px; overflow: auto; display: grid; gap: 8px; }
+.gm-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.gm-filters input { flex: 1 1 160px; min-width: 0; }
+.gm-filters input, .gm-filters select, .gm-give input, .gm-give select, .gm-rows input {
+  background: var(--panel-solid); color: var(--text); border: 1px solid var(--edge-soft); border-radius: 7px; padding: 5px 8px;
+}
+.gm-count { font-size: 11px; color: var(--muted); }
+.gm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; max-height: 44vh; overflow: auto; }
+.gm-item {
+  display: grid; justify-items: center; gap: 2px; padding: 5px 3px; border-radius: 8px;
+  background: rgba(0, 0, 0, .25); border: 1px solid var(--edge-soft); color: var(--text); font-size: 10px; line-height: 1.2;
+}
+.gm-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gm-item.sel { outline: 2px solid var(--accent); }
+.gm-give { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--edge-soft); padding-top: 8px; }
+.gm-give input { width: 72px; }
+.gm-pick { display: flex; align-items: center; gap: 6px; flex: 1 1 160px; font-size: 12px; color: var(--muted); }
+.gm-rows { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gm-rows input { width: 120px; }
+.gm-warps { display: flex; flex-wrap: wrap; gap: 6px; }

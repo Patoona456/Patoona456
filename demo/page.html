@@ -27,22 +27,6 @@
 #demo-play:disabled { opacity: .6; }
 #demo-intro .fine { color: var(--muted); font-size: 11px; margin: 16px 0 0; line-height: 1.9; }
 
-#demo-bar { position: fixed; left: 10px; top: 96px; z-index: 46; display: grid; gap: 6px; justify-items: start; }
-#demo-toggle {
-  width: 38px; height: 38px; border-radius: 10px; font-size: 18px;
-  background: var(--panel); border: 1px solid var(--line);
-}
-#demo-tools {
-  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 10px; max-width: min(320px, 82vw);
-}
-#demo-tools p { margin: 0 0 8px; font-size: 11px; color: var(--muted); line-height: 1.5; }
-.demo-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
-.demo-row button {
-  font-size: 11px; padding: 5px 9px; border-radius: 7px;
-  background: #1d2433; border: 1px solid var(--line); color: var(--ink);
-}
-.demo-row button:hover { background: #26304a; }
 </style>
 
 <!--BODY-->
@@ -61,7 +45,7 @@
       <dt>เมนู</dt><dd>C ตัวละคร · I กระเป๋า · K สกิล · J ภารกิจ · F1 วิธีเล่น</dd>
     </dl>
     <button id="demo-play" type="button">เล่นเลย</button>
-    <p class="fine">ตัวละครถูกเก็บไว้ในเบราว์เซอร์นี้เท่านั้น · ปุ่ม 🧪 มุมซ้ายคือแผงทดสอบสำหรับวาร์ปข้ามโซนและปลุกพลัง ·
+    <p class="fine">ตัวละครถูกเก็บไว้ในเบราว์เซอร์นี้เท่านั้น ·
       งานศิลป์: Universal LPC Spritesheet (CC-BY-SA 3.0 / GPL 3.0)</p>
   </div>
 </div>
@@ -69,8 +53,9 @@
 <script>
   document.body.dataset.ui = "ember";
   // The server half of this page was written for Node; these two globals are
-  // all it needs from that environment.
-  globalThis.process = globalThis.process ?? { env: { EMBERFALL_DEV: '1' } };
+  // all it needs from that environment. There are no dev shortcuts here: an
+  // account becomes a game master by typing "/admin <token>" in chat.
+  globalThis.process = globalThis.process ?? { env: { EMBERFALL_ADMIN_TOKEN: 'emberfall-gm' } };
   globalThis.Buffer = globalThis.Buffer ?? {
     from(value) {
       if (typeof value !== 'string') return Uint8Array.from(value);
