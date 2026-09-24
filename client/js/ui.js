@@ -67,11 +67,13 @@ export class UI {
     for (const b of document.querySelectorAll('#menu-buttons button')) {
       b.addEventListener('click', () => this.toggle(b.dataset.panel));
     }
+    $('#minimap')?.addEventListener('click', () => this.toggle('worldmap'));
     $('#mm-in')?.addEventListener('click', () => this.zoomMinimap(1));
     $('#mm-out')?.addEventListener('click', () => this.zoomMinimap(-1));
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
       const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade', KeyV: 'stall' };
+      if (e.code === 'KeyN') { e.preventDefault(); this.toggle('worldmap'); }
       if (e.code === 'KeyF') { this.socialTab = 'friends'; this.game.net.send({ t: 'friend', cmd: 'state' }); }
       if (e.code === 'KeyP') this.socialTab = 'party';
       if (e.code === 'KeyF') { e.preventDefault(); this.toggle('party'); }
@@ -459,6 +461,7 @@ export class UI {
         this.wantQuests = true;
         this.game.net.send({ t: 'quest', cmd: 'list' });
         return this.openQuests(this.lastQuests ?? []);
+      case 'worldmap': return this.openWorldMap();
       case 'party':
         this.game.net.send({ t: 'party', cmd: 'state' });
         return this.openParty(this.lastParty);
@@ -2564,18 +2567,90 @@ export class UI {
     return this.panel('shop', 'คราฟต์', wrap);
   }
 
-  openWarp(d) {
-    const wrap = el('div', 'grid');
-    wrap.append(el('div', 'muted', 'ค่าเดินทางเป็นบ่อดูดออรัม — เดินเองฟรีเสมอ'));
-    for (const r of d.routes ?? WARP_ROUTES) {
-      const row = el('div', 'row');
-      row.innerHTML = `<span>${esc(r.label)}</span>`;
-      const b = el('button', 'btn primary', `${fmt(r.price)} AU`);
-      b.addEventListener('click', () => this.game.net.send({ t: 'warp', to: r.to }));
-      row.append(b);
-      wrap.append(row);
+  openWarp() {
+    return this.openWorldMap();
+  }
+
+  /**
+   * The world map: the painted continent with each of our areas laid over
+   * one of its places, what lives there, and - from a town - fast travel to
+   * anywhere already walked to once.
+   */
+  openWorldMap() {
+    const self = this.game.self ?? {};
+    const here = this.game.zone?.id;
+    const visited = new Set(self.visited ?? []);
+    const route = (id) => WARP_ROUTES.find((r) => r.to === id);
+    const sel = this.wmSel ?? here ?? 'emberhold';
+    const wrap = el('div', 'wmap');
+
+    const board = el('div', 'wm-board');
+    const art = el('img', 'wm-art'); art.src = `${UI_BASE}/worldmap.webp`; art.alt = '';
+    board.append(art);
+    for (const s of WORLD_SPOTS) {
+      const m = MAPS[s.id];
+      if (!m) continue;
+      const spot = el('button', 'wm-spot' + (s.id === sel ? ' sel' : '') + (s.id === here ? ' here' : ''));
+      spot.style.left = `${(s.x / 780) * 100}%`;
+      spot.style.top = `${(s.y / 485) * 100}%`;
+      const lr = m.levelRange ? `Lv. ${m.levelRange[0]} - ${m.levelRange[1]}` : m.safe ? 'เมืองปลอดภัย' : '';
+      spot.append(el('b', '', esc(m.nameTh ?? m.name)), el('span', '', lr));
+      spot.addEventListener('click', () => { this.wmSel = s.id; this.openWorldMap(); });
+      board.append(spot);
+      if (s.id === here) {
+        const me = el('img', 'wm-me'); me.src = `${UI_BASE}/pin_me.webp`; me.alt = 'คุณอยู่ที่นี่';
+        me.style.left = spot.style.left; me.style.top = `calc(${spot.style.top} - 50px)`;
+        board.append(me);
+      }
     }
-    return this.panel('shop', 'บริการเดินทาง', wrap);
+    wrap.append(board);
+
+    // the chosen area, and the travel list
+    const side = el('div', 'wm-side');
+    const m = MAPS[sel];
+    const spot = WORLD_SPOTS.find((s) => s.id === sel);
+    const info = el('div', 'g-card wm-info');
+    const thumb = el('img', 'wm-thumb'); thumb.src = `${UI_BASE}/area_${spot?.art ?? 'kingdom'}.webp`; thumb.alt = '';
+    const facts = el('div', 'wm-facts');
+    const kindTh = { town: 'เมือง', field: 'พื้นที่ทั่วไป', cave: 'ถ้ำ / ดันเจียนเดี่ยว', dungeon: 'ดันเจียนปาร์ตี้', boss: 'ห้องบอส' }[m?.kind] ?? 'ลานประลอง';
+    const mobs = [...new Set((m?.spawns ?? []).map((sp) => sp.mob))].map((id) => MONSTERS[id]?.nameTh ?? id);
+    facts.append(el('b', '', esc(m?.nameTh ?? sel)),
+      el('div', 'muted', m?.levelRange ? `Lv. ${m.levelRange[0]} - ${m.levelRange[1]}` : 'ทุกเลเวล'),
+      el('div', '', `ประเภท: ${kindTh}`),
+      el('div', '', `มอนสเตอร์: ${mobs.length ? esc(mobs.slice(0, 4).join(', ')) : 'ไม่มี'}`));
+    const chip = el('img', 'wm-chip'); chip.src = `${UI_BASE}/area_${m?.safe ? 'open' : 'danger'}.webp`; chip.alt = m?.safe ? 'ปลอดภัย' : 'อันตราย';
+    facts.append(chip);
+    info.append(thumb, facts);
+    const r = route(sel);
+    const inTown = !!this.game.zone?.safe;
+    const why = sel === here ? 'คุณอยู่ที่นี่แล้ว'
+      : !r ? (m?.party ? `เข้าทางประตูเท่านั้น · ต้องมีปาร์ตี้ ${m.party} คนขึ้นไป` : 'เข้าได้ทางประตูเท่านั้น')
+      : r.needVisit && !visited.has(sel) ? 'ต้องเดินไปถึงพื้นที่นี้ด้วยตัวเองก่อน'
+      : !inTown ? 'วาร์ปได้เฉพาะตอนอยู่ในเมือง' : null;
+    const go = el('button', 'btn primary wm-go', r ? `วาร์ปทันที · ${fmt(r.price)} ออรัม` : 'วาร์ปไม่ได้');
+    go.disabled = !!why;
+    go.addEventListener('click', () => { this.game.net.send({ t: 'warp', to: sel }); this.close('worldmap'); });
+    info.append(go);
+    if (why) info.append(el('div', 'muted wm-why', `🔒 ${why}`));
+    side.append(info);
+
+    const list = el('div', 'g-card');
+    list.append(el('div', 'g-sub', 'จุดวาร์ป'));
+    for (const rt of WARP_ROUTES) {
+      const locked = rt.needVisit && !visited.has(rt.to);
+      const row = el('button', 'wm-row' + (rt.to === sel ? ' sel' : '') + (locked ? ' locked' : ''));
+      const sp = WORLD_SPOTS.find((s) => s.id === rt.to);
+      const t = el('img'); t.src = `${UI_BASE}/area_${sp?.art ?? 'kingdom'}.webp`; t.alt = '';
+      const mm = MAPS[rt.to];
+      row.append(t, el('div', '', `<b>${esc(rt.label)}</b><br><span class="muted">${mm?.levelRange ? `Lv. ${mm.levelRange[0]} - ${mm.levelRange[1]}` : 'เมือง'}</span>`),
+        el('span', 'num', locked ? '🔒' : `<i class="cur coin"></i> ${fmt(rt.price)}`));
+      row.addEventListener('click', () => { this.wmSel = rt.to; this.openWorldMap(); });
+      list.append(row);
+    }
+    list.append(el('div', 'muted', 'เดินเองฟรีเสมอ · ค่าวาร์ปคือบ่อดูดออรัม'));
+    side.append(list);
+    wrap.append(side);
+    return this.panel('worldmap', 'แผนที่โลก', wrap);
   }
 
   openStorage(d) {
@@ -3263,6 +3338,18 @@ export function loadTheme() {
 }
 
 /* ---------------- helpers ---------------- */
+/** Where each of our areas sits on the painted continent (map pixels, 780x485). */
+const WORLD_SPOTS = [
+  { id: 'emberhold', x: 395, y: 292, art: 'kingdom' },
+  { id: 'greenmire', x: 100, y: 267, art: 'forest' },
+  { id: 'millhaven', x: 666, y: 315, art: 'harbor' },
+  { id: 'ashfen', x: 170, y: 413, art: 'desert' },
+  { id: 'gravebound', x: 557, y: 418, art: 'shadow' },
+  { id: 'orcwatch', x: 405, y: 110, art: 'volcano' },
+  { id: 'frostvault', x: 168, y: 118, art: 'snow' },
+  { id: 'ravenholm', x: 670, y: 175, art: 'sky' },
+];
+
 const GRADE_TH = { R: 'ธรรมดา', SR: 'หายาก', SSR: 'หายากมาก', UR: 'ยอดเยี่ยม', LR: 'ตำนาน' };
 
 const RISK_TH = { safe: 'ปลอดภัย', recommended: 'แนะนำ', risky: 'เสี่ยง', danger: 'อันตราย' };

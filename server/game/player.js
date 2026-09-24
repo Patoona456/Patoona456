@@ -466,7 +466,7 @@ export class Player {
       derived: this.derived, hp: this.hp, sp: this.sp, maxHp: this.maxHp, maxSp: this.maxSp,
       aurum: r.aurum, weight: this.weight(), weightCap: this.weightCap,
       map: r.map, x: this.x, y: this.y, skills: r.skills, hotbar: r.hotbar,
-      equipment: r.equipment, quests: r.quests,
+      equipment: r.equipment, quests: r.quests, visited: r.visited ?? [],
       statuses: this.statuses.map((s) => ({ type: s.type, key: s.key, until: s.until, icon: s.icon, beneficial: !!s.beneficial })),
       cooldowns: this.cooldowns,
       jobInfo: { id: r.job, name: JOBS[r.job]?.name, nameTh: JOBS[r.job]?.nameTh, weapons: JOBS[r.job]?.weapons, next: JOBS[r.job]?.next },

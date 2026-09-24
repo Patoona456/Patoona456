@@ -313,3 +313,14 @@ test('milestone chests pay once, and the track restarts after the last', () => {
   assert.equal(p.record.gachaPoints, 0);
   assert.deepEqual(p.record.gachaClaimed, []);
 });
+
+test('fast travel to a field needs a first visit on foot; towns do not', () => {
+  const p = character({ items: [] });
+  p.record.map = 'emberhold';
+  p.record.visited = ['emberhold'];
+  assert.match(Econ.warpService(world, p, 'orcwatch').error ?? '', /เคยเดินไป/);
+  assert.ok(Econ.warpService(world, p, 'millhaven').ok, 'a town was locked');
+  p.record.visited.push('orcwatch');
+  assert.ok(Econ.warpService(world, p, 'orcwatch').ok);
+  assert.ok(Econ.warpService(world, p, 'emberhold').error, 'warped to where you already are');
+});

@@ -164,12 +164,19 @@ export const NPC_DIALOG = {
 };
 
 /** Warp destinations sold by the warp NPC. Travel is a real Aurum sink. */
+// Fast travel. Towns are open to everyone; a field or cave only once you
+// have walked into it yourself (`needVisit`), so the map is still learned on
+// foot the first time. Dungeons and the boss room are never on the list -
+// their doors are the point.
 export const WARP_ROUTES = [
-  { to: 'greenmire', at: [40, 6], price: 150, label: 'ทุ่งกรีนไมร์' },
-  { to: 'ashfen', at: [8, 32], price: 400, label: 'หนองเถ้า' },
-  { to: 'gravebound', at: [30, 6], price: 900, label: 'สุสานกราฟบาวด์' },
-  { to: 'orcwatch', at: [8, 8], price: 1800, label: 'สันเขาออร์ควอช' },
-  { to: 'frostvault', at: [14, 14], price: 3200, label: 'ห้องนิรภัยเยือกแข็ง' },
+  { to: 'emberhold', at: [30, 23], price: 100, label: 'เอมเบอร์โฮลด์', kind: 'town' },
+  { to: 'millhaven', at: [40, 32], price: 300, label: 'มิลเฮเวน', kind: 'town' },
+  { to: 'ravenholm', at: [44, 36], price: 1200, label: 'เรเวนโฮล์ม', kind: 'town' },
+  { to: 'greenmire', at: [40, 6], price: 150, label: 'ทุ่งกรีนไมร์', kind: 'field', needVisit: true },
+  { to: 'ashfen', at: [8, 32], price: 400, label: 'หนองเถ้า', kind: 'field', needVisit: true },
+  { to: 'gravebound', at: [30, 6], price: 900, label: 'สุสานกราฟบาวด์', kind: 'field', needVisit: true },
+  { to: 'orcwatch', at: [8, 8], price: 1800, label: 'สันเขาออร์ควอช', kind: 'field', needVisit: true },
+  { to: 'frostvault', at: [14, 14], price: 3200, label: 'ห้องนิรภัยเยือกแข็ง', kind: 'field', needVisit: true },
 ];
 
 export const HEAL_PRICE_PER_LEVEL = 18;

@@ -391,11 +391,18 @@ export class Conn {
       // the quest log is readable anywhere; only turn-ins need an NPC
 
       case OP.QUEST: return this.questCmd(m);
-      case OP.WARP: return this.guardNpc(['warp'], () => {
+      case OP.WARP: {
+        // at the traveller, or from the world map while standing in a town
+        const npc = this.openNpc ? p.zone.entities.get(this.openNpc) : null;
+        const atWarper = npc?.role === 'warp' && dist(p, npc) <= 96;
+        if (!atWarper && !p.zone?.def?.safe) return this.error('วาร์ปจากแผนที่โลกได้เฉพาะตอนอยู่ในเมือง — หรือคุยกับนักเดินทาง');
+        if (!p.alive) return this.error('ตายอยู่ วาร์ปไม่ได้');
         const r = Econ.warpService(this.world, p, m.to);
         if (r.error) return this.error(r.error);
         this.world.warpPlayer(p, r.route.to, r.route.at[0] * TILE, r.route.at[1] * TILE);
-      });
+        this.notice(`วาร์ปไป ${r.route.label} -${r.route.price} ออรัม`);
+        return this.sendInventory();
+      }
       default: return this.error('คำสั่งไม่รู้จัก: ' + m.t);
     }
   }

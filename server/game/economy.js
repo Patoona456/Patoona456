@@ -572,6 +572,8 @@ export function healService(world, p) {
 export function warpService(world, p, to) {
   const route = WARP_ROUTES.find((r) => r.to === to);
   if (!route) return { error: 'ไม่มีปลายทางนี้' };
+  if (route.to === p.record.map) return { error: 'อยู่ที่นี่แล้ว' };
+  if (route.needVisit && !(p.record.visited ?? []).includes(route.to)) return { error: 'ต้องเคยเดินไปถึงพื้นที่นี้ก่อน จึงจะวาร์ปได้' };
   if (p.record.aurum < route.price) return { error: `ค่าเดินทาง ${route.price} ออรัม` };
   p.record.aurum -= route.price;
   burn(world, route.price, 'travel');

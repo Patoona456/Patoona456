@@ -12,6 +12,12 @@ import * as Guild from './guild.js';
 import * as Siege from './siege.js';
 import * as Stall from './stall.js';
 
+/** Remember every map a character has set foot in: fast travel needs it. */
+function visit(p, mapId) {
+  const v = (p.record.visited ??= []);
+  if (!v.includes(mapId)) { v.push(mapId); markDirty(); }
+}
+
 export class World {
   constructor() {
     this.zones = new Map();
@@ -75,6 +81,7 @@ export class World {
       markDirty();
     }
     zone.addPlayer(p);
+    visit(p, zone.id);
     p.conn.send(zone.zonePayload());
     p.conn.send({ t: 'self', self: p.selfState() });
     this.broadcastChat({ ch: 'system', text: `${p.name} เข้าสู่โลก` });
@@ -135,6 +142,7 @@ export class World {
     // server must forget what it told it too, or names and looks never resend
     p.seenIdentity = null;
     target.addPlayer(p);
+    visit(p, mapId);
     // turning up to the siege while it is open is one of the guild's weekly goals
     if (mapId === Siege.SIEGE_MAP && Siege.status().open) Guild.progress(this, Guild.of(p), 'war', 1);
     if (target.def.safe) p.record.savePoint = { map: mapId, x: p.x, y: p.y };

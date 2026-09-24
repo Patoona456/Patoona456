@@ -628,3 +628,40 @@ def reveal_card(img, box):
 
 save('gacha_reveal', reveal_card(gg, (20, 392, 500, 676)))
 print('gacha sheet done')
+
+
+# ============================================================================
+# Ninth sheet: world map & travel (assets/ui/source/worldmap_sheet.png)
+# ============================================================================
+wm = cv2.imread(os.path.join(ROOT, 'assets/ui/source/worldmap_sheet.png'))
+# the painted continent, with its pins and name plates painted out so the
+# game can place its own
+# the painted continent as it is; the game lays its own plates exactly over
+# the painted ones (their positions are in client/js/ui.js WORLD_SPOTS)
+land = wm[90:575, 40:820].copy()
+# the painted zoom buttons on its left edge do nothing here: paint them out
+zm = np.zeros(land.shape[:2], np.uint8)
+cv2.rectangle(zm, (0, 336), (62, 485), 255, -1)
+land = cv2.inpaint(land, zm, 9, cv2.INPAINT_TELEA)
+Image.fromarray(cv2.cvtColor(land, cv2.COLOR_BGR2RGB)).save(os.path.join(OUT, 'worldmap.webp'), 'WEBP', quality=88)
+
+# area thumbnails (their captions left behind)
+for i, k in enumerate(['kingdom', 'forest', 'desert', 'harbor', 'snow', 'volcano', 'shadow', 'sky']):
+    x = 32 + i * 130
+    art = cv2.cvtColor(wm[607:668, x:x + 120], cv2.COLOR_BGR2RGB)
+    Image.fromarray(art).save(os.path.join(OUT, 'area_' + k + '.webp'), 'WEBP', quality=90)
+
+# map pins and markers
+for k, (x, y) in {'pin_me': (988, 770), 'pin_goal': (1060, 770), 'pin_quest': (1127, 770), 'pin_npc': (1190, 770),
+                  'pin_boss': (1250, 770), 'pin_warp': (1413, 770), 'pin_town': (1477, 770),
+                  'pin_shop': (989, 838), 'pin_smith': (1127, 838), 'pin_field': (1337, 838),
+                  'pin_dungeon': (1408, 838), 'pin_harbor': (1477, 838)}.items():
+    save(k, grab((x - 22, y - 24, x + 22, y + 22), pad=3, img=wm)[0])
+for k, (x, y) in {'wx_day': (975, 955), 'wx_night': (1020, 955), 'wx_rain': (1063, 955), 'wx_snow': (1106, 955),
+                  'wx_wind': (1147, 955), 'wx_fog': (1190, 955)}.items():
+    save(k, grab((x - 18, y - 18, x + 18, y + 18), pad=3, img=wm)[0])
+for k, b in {'area_open': (688, 758, 804, 804), 'area_danger': (688, 815, 804, 861)}.items():
+    save(k, rounded(wm, b, r=6))
+save('area_locked_glyph', grab((850, 778, 882, 812), pad=3, img=wm)[0])
+save('wm_warp_btn', rounded(wm, (1432, 131, 1510, 172), r=6))
+print('world map sheet done')
