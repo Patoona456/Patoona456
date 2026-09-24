@@ -17,6 +17,7 @@ import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 import { CHIBI_FISTS } from '../../shared/data/chibi.js';
+import { atlasFile, atlasRect, ATLAS_FILES } from '../../shared/atlas.js';
 
 const uiImages = new Map();
 /** One of the painted HUD words (miss, critical, levelup), loaded once. */
@@ -38,7 +39,7 @@ const BOOTH_COUNTER = 0.52;    // where the counter top sits, as a share of the 
 function heldArt(e) {
   const [file, cell] = (ITEMS[e.eq?.weapon]?.art ?? '').split('#');
   if (cell == null) return null;
-  const img = uiImage(file);
+  const img = uiImage(atlasFile(file));
   return img.naturalWidth ? { img, file, cell: +cell } : null;
 }
 
@@ -98,7 +99,7 @@ function chibiFist(e, anim, elapsed) {
  */
 const GRIPS = new Map();
 const GRIP_FALLBACK = { x: 0.24, y: 0.76, angle: -Math.PI / 4, len: 1.2 };
-function gripOf(img, file, cell, cols, size) {
+function gripOf(img, file, cell) {
   const key = `${file}#${cell}`;
   if (GRIPS.has(key)) return GRIPS.get(key);
   let g = GRIP_FALLBACK;
@@ -107,7 +108,8 @@ function gripOf(img, file, cell, cols, size) {
     const cv = document.createElement('canvas');
     cv.width = cv.height = n;
     const c = cv.getContext('2d', { willReadFrequently: true });
-    c.drawImage(img, (cell % cols) * size, Math.floor(cell / cols) * size, size, size, 0, 0, n, n);
+    const { sx, sy, size } = atlasRect(file, cell, img.naturalWidth);
+    c.drawImage(img, sx, sy, size, size, 0, 0, n, n);
     const px = c.getImageData(0, 0, n, n).data;
     const xs = [], ys = [];
     for (let y = 0; y < n; y++) {
@@ -186,8 +188,6 @@ function gripOf(img, file, cell, cols, size) {
  */
 function drawHeld(ctx, held, e, anim, elapsed, now) {
   const { img, file, cell } = held;
-  const cols = ATLAS_COLS[file] ?? 8;
-  const size = img.naturalWidth / cols;
   const hand = chibiHand(e);
   const fist = chibiFist(e, anim, elapsed);
   const walking = anim === 'walk';
@@ -200,7 +200,7 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
       : k < 0.6 ? -1.2 + ((k - 0.25) / 0.35) * 2.3
         : 1.1 - ((k - 0.6) / 0.4) * 1.5;
   }
-  const grip = gripOf(img, file, cell, cols, size);
+  const grip = gripOf(img, file, cell);
   const len = HELD_LEN * (e.sprite?.scale ?? 1);
   const k = len / grip.len;                       // screen pixels per cell
   ctx.save();
@@ -231,7 +231,7 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const el = ITEMS[e.eq?.weapon]?.element;
   const elemental = el && el !== 'neutral' ? elLook(el).main : null;
   const rgb = tier ? (elemental ? mixRgb(tier.color, elemental, 0.55) : tier.color) : elemental;
-  const sx = (cell % cols) * size, sy = Math.floor(cell / cols) * size;
+  const { sx, sy, size } = atlasRect(file, cell, img.naturalWidth);
   const dx = -grip.x * k, dy = -grip.y * k;
   if (rgb) {
     const pulse = 0.7 + 0.3 * Math.sin(now / 480 + e.x * 0.05);
@@ -245,8 +245,6 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   ctx.drawImage(img, sx, sy, size, size, dx, dy, k, k);
   ctx.restore();
 }
-/** Columns per icon atlas, where it is not the usual eight. */
-const ATLAS_COLS = { swords: 6 };
 
 /** Draw the booth around a stall keeper: 'back' is all of it, 'front' just the counter. */
 function drawBooth(ctx, e, art, part) {
@@ -284,7 +282,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['miss', 'critical', 'levelup', 'potions', 'scrolls', 'swords', 'swords_rare', 'swords_epic', 'swords_legendary', 'swords_mythic']) uiImage(name);
+  for (const name of ['miss', 'critical', 'levelup', ...ATLAS_FILES]) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
@@ -774,14 +772,14 @@ export class Renderer {
       ctx.lineWidth = 1;
       // an item with painted art lies there as itself: 'potions#12' is a cell of an atlas
       const [file, cell] = (def?.art ?? '').split('#');
-      const atlas = cell != null && file ? uiImage(file) : null;
+      const atlas = cell != null && file ? uiImage(atlasFile(file)) : null;
       if (isAurum) { ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
       else if (atlas?.naturalWidth) {
-        const cols = ATLAS_COLS[file] ?? 8, size = atlas.naturalWidth / cols, i = +cell;
+        const { sx, sy, size } = atlasRect(file, cell, atlas.naturalWidth);
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
-        ctx.drawImage(atlas, (i % cols) * size, Math.floor(i / cols) * size, size, size, -9, -12, 18, 18);
+        ctx.drawImage(atlas, sx, sy, size, size, -9, -12, 18, 18);
       } else { ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8); }
       ctx.restore();
     }

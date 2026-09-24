@@ -5,6 +5,7 @@
 // keeps the download small and lets a new item pick up an icon for free.
 import { ITEMS } from '../../shared/data/items.js';
 import { SKILLS } from '../../shared/data/skills.js';
+import { ATLASES, atlasFile, atlasRect } from '../../shared/atlas.js';
 
 export const RARITY = {
   common: '#cfd8dc', uncommon: '#66bb6a', rare: '#42a5f5',
@@ -37,13 +38,12 @@ function artImage(name) {
   }
   return img;
 }
-/** Atlases: many icons in one file, as equal square cells, `cols` across. */
-const ATLAS = { potions: { cols: 8 }, scrolls: { cols: 8 }, swords: { cols: 6 }, swords_rare: { cols: 8 }, swords_epic: { cols: 8 }, swords_legendary: { cols: 8 }, swords_mythic: { cols: 8 } };
+// Atlases (many icons in one file) are described in shared/atlas.js.
 /** Paint the sheet art over a canvas now, or as soon as it has loaded. */
 function paintArt(canvas, name) {
   // 'potions#12' is cell 12 of the potions atlas
   const [file, cellId] = name.split('#');
-  const img = artImage(file);
+  const img = artImage(cellId != null && ATLASES[file] ? atlasFile(file) : file);
   const square = name.startsWith('skill_');
   const draw = () => {
     if (!img.naturalWidth) return;
@@ -52,9 +52,9 @@ function paintArt(canvas, name) {
     g.clearRect(0, 0, w, h);
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'high';
-    if (cellId != null && ATLAS[file]) {
-      const cols = ATLAS[file].cols, cell = img.naturalWidth / cols, i = +cellId;
-      g.drawImage(img, (i % cols) * cell, Math.floor(i / cols) * cell, cell, cell, w * 0.03, h * 0.03, w * 0.94, h * 0.94);
+    if (cellId != null && ATLASES[file]) {
+      const { sx, sy, size } = atlasRect(file, cellId, img.naturalWidth);
+      g.drawImage(img, sx, sy, size, size, w * 0.03, h * 0.03, w * 0.94, h * 0.94);
       return;
     }
     if (square) { g.drawImage(img, 0, 0, w, h); return; }

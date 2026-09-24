@@ -985,3 +985,37 @@ print('legendary swords', plated_weapons('swords_legendary.png', 'swords_legenda
 # end of the third row has none, and there is no Lv.65 plate); the checks
 # are painted in, not transparent
 print('mythic swords', plated_weapons('swords_mythic.png', 'swords_mythic', plate='black', orphans=True))
+
+
+# ---- the five sword grades share one file ------------------------------------
+# weapons.webp: a grid 8 cells across, each grade starting on a row of its own
+# and keeping its own column count. shared/atlas.js ATLASES says the same; the
+# individual atlases are removed once merged, since the demo counts files.
+WEAPON_SHEETS = [('swords', 6, 24), ('swords_rare', 8, 25), ('swords_epic', 8, 23),
+                 ('swords_legendary', 8, 25), ('swords_mythic', 8, 26)]
+
+
+def merge_weapons(cell=160, merged_cols=8):
+    rows = sum((n + c - 1) // c for _, c, n in WEAPON_SHEETS)
+    out = Image.new('RGBA', (merged_cols * cell, rows * cell), (0, 0, 0, 0))
+    row = 0
+    for name, cols, count in WEAPON_SHEETS:
+        src = Image.open(os.path.join(OUT, name + '.webp')).convert('RGBA')
+        size = src.width // cols
+        for i in range(count):
+            r, c = divmod(i, cols)
+            piece = src.crop((c * size, r * size, (c + 1) * size, (r + 1) * size))
+            if size != cell:
+                piece = piece.resize((cell, cell), Image.LANCZOS)
+            out.paste(piece, (c * cell, (row + r) * cell))
+        print(f'  {name}: rows {row}-{row + (count + cols - 1) // cols - 1}')
+        row += (count + cols - 1) // cols
+    # lossless: the grades were already encoded once, and a second lossy pass
+    # would soften them
+    out.save(os.path.join(OUT, 'weapons.webp'), 'WEBP', lossless=True, method=6)
+    for name, _, _ in WEAPON_SHEETS:
+        os.remove(os.path.join(OUT, name + '.webp'))
+
+
+merge_weapons()
+print('weapons merged')
