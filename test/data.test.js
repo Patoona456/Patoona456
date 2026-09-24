@@ -228,7 +228,7 @@ test('chibi hair is a layer on the body\'s grid, and bald means none', async () 
   assert.equal(playerLayers({ style: 'chibi', chibiHair: 'bald' }).hair, undefined);
   for (const table of [CHIBI_HEADS, CHIBI_FISTS]) {
     assert.equal(table.length, CHIBI_WALK.dirRows);
-    for (const row of table) assert.equal(row.length, CHIBI_WALK.anims.walk.frames);
+    for (const row of table) assert.equal(row.length, CHIBI_WALK.cols);
   }
 });
 

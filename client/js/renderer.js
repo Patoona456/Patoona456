@@ -80,7 +80,7 @@ export function chibiHand(e) { return CHIBI_GRIP[chibiRow(e)]; }
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
   const row = chibiRow(e);
-  const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed) : 0;
+  const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed) : CHIBI_WALK.anims.idle.start;
   const [fx, fy] = CHIBI_FISTS[row][col] ?? CHIBI_FISTS[row][0];
   const { w, h } = CHIBI_WALK.frame;
   const sc = (e.sprite?.scale ?? 1) * CHIBI_WALK.drawScale;

@@ -95,8 +95,8 @@ CHIBI8.aliases = CHIBI_ALIASES;
 
 /**
  * The chibi base (assets/chibi/body/base_male.png), as cut by
- * tools/slice-base.py: eight walk frames across, four facings down (down,
- * left, up, right). A diagonal shows the side it leans to, so walking
+ * tools/slice-base.py: eight walk frames and a standing frame across, four
+ * facings down (down, left, up, right). A diagonal shows the side it leans to, so walking
  * down-left reads as walking left. The body is bald and in its shorts: hair,
  * hats and clothes are layers on the same grid. It is drawn at source
  * resolution and shrunk on the way to the screen, so it stays sharp when the
@@ -107,7 +107,7 @@ export const CHIBI_WALK = {
   id: 'chibi_walk',
   aliases: {},
   frame: { w: 128, h: 192 },
-  cols: 8,
+  cols: 9,
   rows: 4,
   anchor: 184 / 192,
   drawScale: 0.36,   // ~50px from crown to heel, level with the town NPCs
@@ -115,7 +115,7 @@ export const CHIBI_WALK = {
   //       down  dl  left  ul  up  ur  right  dr
   dirMap: [0,    1,  1,    1,  2,  3,  3,     3],
   anims: {
-    idle: { row: 0, frames: 1, fps: 1 },
+    idle: { row: 0, frames: 1, fps: 1, start: 8 },   // both feet down, after the steps
     walk: { row: 0, frames: 8, fps: 11 },
   },
 };
@@ -186,7 +186,8 @@ export function rowAt(layout, animName, dir) {
 
 /** Where a frame sits inside the sheet, in pixels. */
 export function frameRect(layout, animName, dir, elapsedMs, looping = true) {
-  const col = frameAt(layout, animName, elapsedMs, looping);
+  // `start` lets an animation begin part-way along its row
+  const col = (animOf(layout, animName).start ?? 0) + frameAt(layout, animName, elapsedMs, looping);
   const row = rowAt(layout, animName, dir);
   return { sx: col * layout.frame.w, sy: row * layout.frame.h, sw: layout.frame.w, sh: layout.frame.h };
 }
