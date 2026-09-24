@@ -168,6 +168,7 @@ class Game {
     n.on('inventory', (m) => {
       const before = this.inventory;
       this.inventory = m;
+      this.ui.noteSeen(m, false);            // the first bag of the session is the NEW baseline
       if (this.inWorld && before) {
         const count = (inv) => (inv.items ?? []).reduce((a, it) => a + (it.qty ?? 1), 0);
         if (m.aurum > (before.aurum ?? 0)) this.audio.play('coin');

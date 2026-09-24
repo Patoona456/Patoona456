@@ -16,6 +16,11 @@ let seq = 0;
  * old item set was cleared for a new one - and keep the equipment slots
  * pointing at the rows they pointed at before.
  */
+/** Bag expansion: each step carries this much more, bought with aurum. */
+export const BAG_STEP = 300;
+export const BAG_MAX = 10;
+export const bagCost = (level) => 20000 * (level + 1);
+
 export function purgeUnknownItems(record) {
   const keep = (st) => st && ITEMS[st.id];
   const inv = record.inventory ?? [];
@@ -187,7 +192,8 @@ export class Player {
       if (m.maxHpPct) g.hpPct = (g.hpPct ?? 0) + val(m.maxHpPct, lvl);
     }
 
-    g.weightCap = 2000 + (this.record.str + g.str) * 30 + this.record.level * 10 + weightCapBonus;
+    g.weightCap = 2000 + (this.record.str + g.str) * 30 + this.record.level * 10 + weightCapBonus
+      + (this.record.bagLevel ?? 0) * BAG_STEP;
     return g;
   }
 

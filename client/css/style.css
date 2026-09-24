@@ -2152,3 +2152,95 @@ body[data-ui="ember"] #panels .shrine-pull {
 }
 body[data-ui="ember"] #panels .shrine-pull.one { border-image-source: url(../../assets/ui/h2_b_blue.webp); color: #fff; text-shadow: 0 1px 2px #000; }
 body[data-ui="ember"] #panels .shrine-pull:disabled { filter: grayscale(.7) brightness(.75); }
+
+/* ============ the bag (inventory components sheet) ============ */
+#panels .inv-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+#panels .inv-tab {
+  flex: 1 1 0; min-width: 64px; padding: 4px 10px; font-size: 12px; font-weight: 700; color: #cfd8e6;
+  border: 7px solid transparent; border-image: url(../../assets/ui/h2_inv_tab.webp) 16 20 fill / 7px 10px stretch;
+  background: none; cursor: pointer; text-shadow: 0 1px 2px #000;
+}
+#panels .inv-tab.on { border-image-source: url(../../assets/ui/h2_inv_tab_sel.webp); color: #fff; }
+#panels .inv-tab:hover:not(.on) { filter: brightness(1.2); }
+#panels .inv-tools { display: flex; gap: 6px; align-items: stretch; }
+#panels .inv-sort {
+  flex: none; width: 150px; padding: 0 26px 0 12px; text-align: left; font-size: 12px; font-weight: 700; color: #e9eef6;
+  background: url(../../assets/ui/h2_inv_sort.webp) center / 100% 100% no-repeat; border: none; min-height: 34px;
+  cursor: pointer; text-shadow: 0 1px 2px #000; white-space: nowrap;
+}
+#panels .inv-search {
+  flex: 1; position: relative; display: block; min-height: 34px;
+  background: url(../../assets/ui/h2_inv_search.webp) center / 100% 100% no-repeat;
+}
+#panels .inv-search input {
+  position: absolute; left: 19%; right: 16%; top: 22%; bottom: 22%; width: auto;
+  background: none; border: none; outline: none; color: #eef3fa; font: inherit; font-size: 12px; padding: 0 4px;
+}
+#panels .inv-search input::placeholder { color: #8894a6; }
+#panels .inv-clear { position: absolute; right: 3%; top: 15%; bottom: 15%; width: 12%; background: none; border: none; cursor: pointer; }
+
+/* slots: the sheet's dark tile, its rim in the item's rarity colour */
+body[data-ui="ember"] #panels .inv-slot {
+  position: relative; border: 8px solid transparent; background: none; box-shadow: none;
+  border-image: url(../../assets/ui/h2_inv_slot.webp) 12 fill / 8px stretch;
+}
+body[data-ui="ember"] #panels .inv-slot.rarity-common { border-image-source: url(../../assets/ui/h2_inv_slot_common.webp); }
+body[data-ui="ember"] #panels .inv-slot.rarity-uncommon { border-image-source: url(../../assets/ui/h2_inv_slot_uncommon.webp); }
+body[data-ui="ember"] #panels .inv-slot.rarity-rare { border-image-source: url(../../assets/ui/h2_inv_slot_rare.webp); box-shadow: inset 0 0 10px rgba(66, 165, 245, .3); }
+body[data-ui="ember"] #panels .inv-slot.rarity-epic { border-image-source: url(../../assets/ui/h2_inv_slot_epic.webp); box-shadow: inset 0 0 10px rgba(171, 71, 188, .35); }
+body[data-ui="ember"] #panels .inv-slot.rarity-legendary { border-image-source: url(../../assets/ui/h2_inv_slot_legendary.webp); box-shadow: inset 0 0 12px rgba(255, 167, 38, .38); }
+body[data-ui="ember"] #panels .inv-slot.rarity-mythic { border-image-source: url(../../assets/ui/h2_inv_slot_mythic.webp); box-shadow: inset 0 0 14px rgba(255, 77, 94, .45); }
+body[data-ui="ember"] #panels .inv-slot.empty { opacity: .55; }
+body[data-ui="ember"] #panels .inv-slot.sel { box-shadow: 0 0 0 2px #ffd26a, 0 0 12px rgba(255, 196, 80, .75); }
+body[data-ui="ember"] #panels .inv-slot .qty {
+  right: -4px; bottom: -6px; font-size: 11px; font-weight: 800; color: #fff;
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 -1px #000, 0 1px #000, 0 0 3px #000;
+}
+#panels .inv-slot .badge-equip, #panels .inv-slot .badge-lock, #panels .inv-slot .badge-new {
+  position: absolute; pointer-events: none; background: center / contain no-repeat; z-index: 2;
+}
+#panels .inv-slot .badge-equip { left: -7px; top: -7px; width: 16px; height: 16px; background-image: url(../../assets/ui/h2_inv_check.webp); }
+#panels .inv-slot .badge-lock { right: -6px; top: -7px; width: 13px; height: 16px; background-image: url(../../assets/ui/h2_inv_lock.webp); filter: drop-shadow(0 1px 1px #000); }
+#panels .inv-slot .badge-new { left: -8px; bottom: -8px; width: 28px; height: 17px; background-image: url(../../assets/ui/h2_inv_new.webp); }
+#panels .inv-slot .worn { display: none; }
+
+/* footer: purse, weight bar, and the gold "expand" button */
+#panels .inv-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+#panels .inv-purse { display: flex; align-items: center; gap: 5px; }
+#panels .inv-purse .cur.coin { width: 18px; height: 18px; background: url(../../assets/ui/h2_coin.webp) center / contain no-repeat; display: inline-block; }
+#panels .inv-weight { flex: 1; min-width: 140px; position: relative; display: flex; align-items: center; gap: 6px; }
+#panels .inv-weight .bag { width: 22px; height: 22px; flex: none; background: url(../../assets/ui/h2_m_bag.webp) center / contain no-repeat; }
+#panels .inv-weight em {
+  position: absolute; left: 28px; right: 0; bottom: -4px; height: 4px; border-radius: 2px; background: #1a1e26;
+  box-shadow: inset 0 0 0 1px rgba(181, 138, 60, .4);
+}
+#panels .inv-weight em::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 2px; background: linear-gradient(90deg, #3fae4a, #9ad84a); }
+#panels .inv-weight.heavy em::after { background: linear-gradient(90deg, #e2572e, #ff8a3a); }
+#panels .inv-expand, #panels .ibtn {
+  border: 7px solid transparent; border-image: url(../../assets/ui/h2_inv_b_ok.webp) 14 18 fill / 7px 9px stretch;
+  background: none; color: #3a2204; font-weight: 800; font-size: 12px; padding: 1px 8px; cursor: pointer;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .45); min-height: 32px;
+}
+#panels .inv-expand:disabled { filter: grayscale(.8) brightness(.7); cursor: default; }
+
+/* Use / Sell / Drop / Lock are painted with their words: show the picture */
+#panels .inv-actions { gap: 6px; }
+#panels .ibtn { min-width: 76px; }
+#panels .ibtn.ib-use, #panels .ibtn.ib-sell, #panels .ibtn.ib-drop, #panels .ibtn.ib-lock {
+  border: none; border-image: none; font-size: 0; color: transparent; width: 84px; height: 44px;
+  background: center / 100% 100% no-repeat;
+}
+#panels .ibtn.ib-use { background-image: url(../../assets/ui/h2_inv_use.webp); }
+#panels .ibtn.ib-sell { background-image: url(../../assets/ui/h2_inv_sell.webp); }
+#panels .ibtn.ib-drop { background-image: url(../../assets/ui/h2_inv_drop.webp); }
+#panels .ibtn.ib-lock { background-image: url(../../assets/ui/h2_inv_lockbtn.webp); width: 100px; }
+#panels .ibtn.ib-plain, #panels .ibtn.ib-unlock { border-image-source: url(../../assets/ui/h2_inv_b_confirm.webp); color: #fff; text-shadow: 0 1px 2px #000; }
+#panels .ibtn:disabled { filter: grayscale(.85) brightness(.6); cursor: not-allowed; }
+#panels .ibtn:not(:disabled):hover { filter: brightness(1.12); }
+#panels .ibtn:not(:disabled):active { transform: translateY(1px); }
+body.landscape-ui #panels .inv-sort { width: 120px; font-size: 11px; }
+body.landscape-ui #panels .ibtn.ib-use, body.landscape-ui #panels .ibtn.ib-sell,
+body.landscape-ui #panels .ibtn.ib-drop { width: 70px; height: 36px; }
+body.landscape-ui #panels .ibtn.ib-lock { width: 84px; height: 36px; }
+body[data-ui="ember"] #panels .inv-grid .inv-slot { overflow: visible; }
+body[data-ui="ember"] #panels .inv-grid .inv-slot.sel { outline: 2px solid #ffd26a; outline-offset: 1px; box-shadow: 0 0 12px rgba(255, 196, 80, .8); }

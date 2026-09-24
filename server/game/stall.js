@@ -77,6 +77,7 @@ export function openStall(zone, p, title, offers) {
     const st = p.inventory[index];
     if (!st) return { error: 'ไม่พบไอเทมในช่องที่เลือก' };
     if (Object.values(p.record.equipment).includes(index)) return { error: 'ถอดอุปกรณ์ก่อนขาย' };
+    if (st.locked) return { error: 'ไอเทมถูกล็อกอยู่ ปลดล็อกก่อน' };
     const qty = Math.max(1, Math.min(st.qty ?? 1, o.qty | 0 || 1));
     const price = Math.floor(o.price);
     if (!(price > 0) || price > 1e9) return { error: 'ราคาไม่ถูกต้อง' };

@@ -5,6 +5,7 @@ import { npcSellPrice, marketTax, refineChance, refineCost, refineRisk, refineSt
 import { MAX_REFINE } from '../../shared/refineglow.js';
 import { STARTING_STATS } from '../../shared/data/jobs.js';
 import { db, markDirty } from '../persistence.js';
+import { BAG_MAX, bagCost } from './player.js';
 
 const today = () => Math.floor(Date.now() / 86400000);
 
@@ -81,6 +82,7 @@ export function sell(world, p, index, qty) {
   const def = ITEMS[st.id];
   if (!def) return { error: 'ไอเทมไม่ถูกต้อง' };
   if (Object.values(p.record.equipment).includes(index)) return { error: 'ถอดอุปกรณ์ก่อนขาย' };
+  if (st.locked) return { error: 'ไอเทมถูกล็อกอยู่ ปลดล็อกก่อน' };
   qty = Math.max(1, Math.min(st.qty ?? 1, Math.floor(qty) || 1));
 
   if (p.record.salesDay !== today()) { p.record.salesDay = today(); p.record.npcSales = {}; }
@@ -540,6 +542,7 @@ export function marketPost(world, p, index, qty, price) {
   const st = p.inventory[index];
   if (!st) return { error: 'ไม่พบไอเทม' };
   if (Object.values(p.record.equipment).includes(index)) return { error: 'ถอดอุปกรณ์ก่อนขาย' };
+  if (st.locked) return { error: 'ไอเทมถูกล็อกอยู่ ปลดล็อกก่อน' };
   qty = Math.max(1, Math.min(st.qty ?? 1, Math.floor(qty) || 1));
   price = Math.floor(price);
   if (!(price > 0) || price > 1e9) return { error: 'ราคาไม่ถูกต้อง' };
@@ -669,4 +672,17 @@ export function resetSkills(world, p, { free = false } = {}) {
   p.recompute();
   markDirty();
   return { ok: true, refund: pts };
+}
+
+/** Buy the next bag step: more carrying weight, paid in aurum (a sink). */
+export function expandBag(world, p) {
+  const level = p.record.bagLevel ?? 0;
+  if (level >= BAG_MAX) return { error: 'ขยายกระเป๋าเต็มแล้ว' };
+  const cost = bagCost(level);
+  if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost.toLocaleString()} ออรัม` };
+  p.record.aurum -= cost;
+  burn(world, cost, 'bag-expand');
+  p.record.bagLevel = level + 1;
+  p.recompute();
+  return { ok: true, level: level + 1, cost };
 }

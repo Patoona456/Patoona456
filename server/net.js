@@ -2,7 +2,7 @@
 import { OP, PROTOCOL_VERSION, GAME_NAME, TILE } from '../shared/constants.js';
 import { register, login, charsOf, createCharacter, deleteCharacter } from './accounts.js';
 import { db, markDirty } from './persistence.js';
-import { Player } from './game/player.js';
+import { Player, BAG_MAX, BAG_STEP, bagCost } from './game/player.js';
 import * as Skills from './game/skills.js';
 import * as Econ from './game/economy.js';
 import * as Stall from './game/stall.js';
@@ -199,6 +199,7 @@ export class Conn {
         const st = p.inventory[m.index | 0];
         if (!st) return this.error('ไม่พบไอเทม');
         if (Object.values(p.record.equipment).includes(m.index | 0)) return this.error('ถอดอุปกรณ์ก่อน');
+        if (st.locked) return this.error('ไอเทมถูกล็อกอยู่ ปลดล็อกก่อน');
         const qty = Math.max(1, Math.min(st.qty ?? 1, m.qty | 0 || 1));
         zone.dropItem(p.x, p.y, st.id, qty, [p.id], st);
         p.removeItemAt(m.index | 0, qty);
@@ -233,6 +234,21 @@ export class Conn {
         }
         markDirty();
         return this.send({ t: OP.SELF, self: p.selfState() });
+      }
+      // a locked stack cannot be dropped, sold, listed or traded away
+      case 'lockItem': {
+        const st = p.inventory[m.index | 0];
+        if (!st) return this.error('ไม่พบไอเทม');
+        if (st.locked) delete st.locked;
+        else st.locked = true;
+        markDirty();
+        return this.sendInventory();
+      }
+      case 'expandBag': {
+        const r = Econ.expandBag(this.world, p);
+        if (r.error) return this.error(r.error);
+        this.notice(`ขยายกระเป๋าเป็นขั้น ${r.level} (-${r.cost.toLocaleString()} ออรัม)`, 'good');
+        return this.sendInventory();
       }
       // the shrine from anywhere (the top bar), as well as from its keeper
       case 'gacha': {
@@ -812,9 +828,11 @@ export class Conn {
           level: def.level, desc: def.desc, stats: def.stats, atk: def.atk, matk: def.matk,
           def: def.def, mdef: def.mdef, wclass: def.wclass,
           equipped: Object.entries(p.record.equipment).find(([, idx]) => idx === i)?.[0] ?? null,
+          locked: !!st.locked,
         };
       }),
       aurum: p.record.aurum, weight: p.weight(), weightCap: p.weightCap,
+      bag: { level: p.record.bagLevel ?? 0, max: BAG_MAX, step: BAG_STEP, cost: bagCost(p.record.bagLevel ?? 0) },
       equipment: p.record.equipment,
     });
     this.send({ t: OP.SELF, self: p.selfState() });

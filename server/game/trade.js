@@ -113,6 +113,7 @@ export function offer(p, index, qty) {
   const def = ITEMS[st.id];
   if (!def) return { error: 'ไม่พบไอเทม' };
   if (def.bound || def.noTrade) return { error: 'ไอเทมนี้เทรดไม่ได้' };
+  if (st.locked) return { error: 'ไอเทมถูกล็อกอยู่ ปลดล็อกก่อน' };
   if (Object.values(p.record.equipment).includes(index | 0)) return { error: 'ถอดอุปกรณ์ออกก่อนจึงจะเทรดได้' };
 
   const want = Math.max(1, Math.min(st.qty ?? 1, qty | 0 || 1));
