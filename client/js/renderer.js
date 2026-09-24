@@ -58,6 +58,14 @@ const CHIBI_GRIP = [
   { side: 1, cut: 1, over: false },    // up
   { side: -1, cut: 1, over: true },    // right
 ];
+/**
+ * How far a chibi travels over one walk cycle, in screen pixels at scale 1.
+ * The drawn stride is shorter, but a cadence that matched it exactly reads
+ * as frantic at running speed; this lands on ~12 frames a second at base
+ * speed and the feet barely slide.
+ */
+const CHIBI_STRIDE = 72;
+const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
 /** Pommel to tip, in screen pixels, on a ~47px chibi: well under half its height. */
 const HELD_LEN = 19;
 /** The fist's radius in frame pixels, for painting it back over the grip. */
@@ -795,7 +803,7 @@ export class Renderer {
       const anim = e.a ?? 'idle';
       // a weapon faster than its animation plays the swing quicker, rather
       // than looping half of it
-      const elapsed = (now - (e._animStart ?? now)) * (e.as ?? 1);
+      let elapsed = (now - (e._animStart ?? now)) * (e.as ?? 1);
       const hurt = e._hurtUntil && e._hurtUntil > now ? (e._hurtUntil - now) / 200 : 0;
 
       // reeling from a blow: a short shove away from whoever landed it
@@ -811,6 +819,14 @@ export class Renderer {
       }
       // the chibi sheet has only a walk, so a swing is a hop toward the target
       const chibi = e.k === 'p' && e.look?.style === 'chibi';
+      // a chibi's walk is paced by the ground it covers, not the clock, so
+      // its feet keep up with it at any speed instead of skating
+      if (chibi) {
+        const moved = e._lx == null ? 0 : Math.hypot(e.x - e._lx, e.y - e._ly);
+        if (moved < 48) e._stride = (e._stride ?? 0) + moved;   // a warp is not a step
+        e._lx = e.x; e._ly = e.y;
+        if (anim === 'walk') elapsed = (e._stride / (CHIBI_STRIDE * (e.sprite?.scale ?? 1))) * CHIBI_CYCLE_MS;
+      }
       if (chibi && (anim === 'slash' || anim === 'thrust' || anim === 'shoot' || anim === 'spellcast')) {
         const k = Math.min(1, elapsed / 260);
         const [vx, vy] = vecOf(e.d ?? 0);
@@ -879,6 +895,13 @@ export class Renderer {
           if (booth) drawBooth(ctx, e, booth, 'back');
           drawBehind(ctx, worn, dress);
           // the chibi body has no weapon layer: its weapon is the item's own art, held
+          // standing, a chibi breathes: a slow rise and fall from the feet up
+          const breathe = chibi && anim === 'idle' && !e.inv;
+          if (breathe) {
+            const b = 1 + Math.sin(now / 640 + (e.id.charCodeAt(1) ?? 0)) * 0.012;
+            ctx.save();
+            ctx.translate(e.x, e.y); ctx.scale(1 / Math.sqrt(b), b); ctx.translate(-e.x, -e.y);
+          }
           const held = chibi ? heldArt(e) : null;
           const over = held && chibiHand(e).over;
           if (held && !over) drawHeld(ctx, held, e, anim, elapsed, now);
@@ -901,6 +924,7 @@ export class Renderer {
             drawCharacter(ctx, layers, body);
             ctx.restore();
           }
+          if (breathe) ctx.restore();
           drawInFront(ctx, worn, dress);
           if (booth) drawBooth(ctx, e, booth, 'front');
           if (e.k === 'p') this.drawWeaponGlow(ctx, e, layers, anim, elapsed, scale, now);
