@@ -131,7 +131,7 @@ body[data-ui="ember"] {
 body[data-ui="ember"] .panel,
 body[data-ui="ember"] .win {
   border: 14px solid transparent;
-  border-image: url(../../assets/ui/frame.webp) 28 fill / 14px stretch;
+  border-image: url(../../assets/ui/h2_window.webp) 32 fill / 14px stretch;
   background: none;
   padding: max(1px, calc(var(--pad) - 9px));
   box-shadow: none;
@@ -1942,3 +1942,213 @@ body.touch:not(.landscape-ui) #actionbar { bottom: calc(290px + var(--safe-b)); 
 .opts .auto { min-width: 58px; }
 .opts .auto.on { background: #3f7a2c; border-color: #7ccf55; color: #eaffd9; }
 .sk-hint { font-size: 11px; color: var(--muted); padding: 2px 0 6px; }
+
+/* =====================================================================
+   HUD v2 - the master-sheet look (assets/ui/h2_*, cut by tools/slice-hud2.py).
+   Selectors lead with #hud / #touch so they outrank the older theme rules.
+   ===================================================================== */
+
+/* --- who you are: round portrait ring with HP / MP / EXP tracks ------ */
+body[data-ui="ember"] #hud #vitals {
+  --v: .62;
+  width: calc(480px * var(--v)); height: calc(216px * var(--v));
+  padding: 0; border: none; border-image: none; box-shadow: none; display: block;
+  background: url(../../assets/ui/h2_vitals.webp) 0 0 / 100% 100% no-repeat;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .55));
+}
+#hud #vitals > .corner { display: none; }
+body[data-ui="ember"] #hud #vitals .portrait {
+  position: absolute; margin: 0; border: none; z-index: -1;
+  left: calc(17px * var(--v)); top: calc(48px * var(--v));
+  width: calc(116px * var(--v)); height: calc(116px * var(--v));
+  border-radius: 50%; overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, #4a5068, #161925 72%);
+}
+body[data-ui="ember"] #hud #vitals .portrait::after { display: none; }
+#hud #vitals .portrait canvas { width: 100%; height: 100%; border-radius: 50%; }
+body[data-ui="ember"] #hud #vitals > .lv {
+  position: absolute; left: calc(146px * var(--v)); top: calc(43px * var(--v));
+  width: calc(72px * var(--v)); height: calc(25px * var(--v));
+  display: grid; place-items: center; transform: none; padding: 0; border: none; background: none;
+  font-size: calc(30px * var(--v)); font-weight: 800; color: #fbe3a0; line-height: 1;
+  text-shadow: 0 1px 0 #000, 0 0 4px rgba(0, 0, 0, .8);
+}
+body[data-ui="ember"] #hud #vitals > .lv.num { white-space: nowrap; display: flex; align-items: baseline; justify-content: center; }
+#hud #vitals > .lv::before { content: "Lv."; font-size: .7em; margin-right: 2px; }
+#hud #vitals .stack { display: block; position: static; }
+#hud #vitals .name {
+  position: absolute; left: calc(230px * var(--v)); top: calc(30px * var(--v)); right: 0;
+  display: flex; gap: 6px; align-items: baseline; white-space: nowrap; overflow: hidden;
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 1px #000, 0 -1px #000;
+}
+#hud #vitals .name b { font-size: calc(22px * var(--v)); color: #fff; }
+#hud #vitals .name span { font-size: calc(18px * var(--v)); color: #f2d48a; }
+body[data-ui="ember"] #hud #vitals .bar {
+  position: absolute; left: calc(192px * var(--v)); width: calc(254px * var(--v));
+  height: calc(21px * var(--v)); border: none; background: none; box-shadow: none;
+  border-radius: 0 calc(10px * var(--v)) calc(10px * var(--v)) 0; overflow: hidden;
+}
+#hud #vitals .bar::before { display: none; }
+#hud #vitals .bar.hp { top: calc(79px * var(--v)); }
+#hud #vitals .bar.sp { top: calc(114px * var(--v)); }
+#hud #vitals .bar.exp { top: calc(147px * var(--v)); height: calc(12px * var(--v)); width: calc(250px * var(--v)); }
+#hud #vitals .bar.hp i { background: linear-gradient(180deg, #ff6b62 0%, #e3261f 45%, #9e0f12 100%); }
+#hud #vitals .bar.sp i { background: linear-gradient(180deg, #6fd0ff 0%, #1f8fe6 45%, #0b56a8 100%); }
+#hud #vitals .bar.exp i { background: linear-gradient(180deg, #8af06a 0%, #37b52a 50%, #1c7a18 100%); }
+body[data-ui="ember"] #hud #vitals .bar span {
+  font-size: calc(19px * var(--v)); line-height: calc(21px * var(--v)); text-align: right; padding-right: 10%;
+}
+body[data-ui="ember"] #hud #vitals .bar.exp span { font-size: calc(14px * var(--v)); line-height: calc(12px * var(--v)); }
+#hud #vitals .cp-row {
+  position: absolute; left: calc(150px * var(--v)); top: calc(170px * var(--v)); right: 0;
+  justify-content: flex-start; gap: 10px; font-size: calc(17px * var(--v));
+  text-shadow: -1px 0 #000, 1px 0 #000, 0 1px #000, 0 -1px #000;
+}
+
+/* --- the wallet: dark pills with a gold rim ----------------------------- */
+body[data-ui="ember"] #hud .pill {
+  background: linear-gradient(180deg, #232a36, #11151c); border: 2px solid #b58a3c;
+  padding: 2px 14px 2px 2px; border-radius: 999px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 2px 6px rgba(0, 0, 0, .5);
+  font-size: 13px;
+}
+body[data-ui="ember"] #hud .pill i { width: 24px; height: 24px; }
+body[data-ui="ember"] #hud .pill i.coin { background-image: url(../../assets/ui/h2_coin.webp); }
+body[data-ui="ember"] #hud .pill i.shard { background-image: url(../../assets/ui/h2_gem_pink.webp); }
+body[data-ui="ember"] #hud #currencies { left: calc(8px + 480px * .62 + 10px); }
+
+/* --- the round map ------------------------------------------------------ */
+body[data-ui="ember"] #hud .map-card {
+  --k: .6; width: calc(276px * var(--k)); height: calc(345px * var(--k));
+}
+body[data-ui="ember"] #hud .map-card::after {
+  width: calc(276px * var(--k)); height: calc(345px * var(--k));
+  background-image: url(../../assets/ui/h2_minimap.webp);
+}
+body[data-ui="ember"] #hud #minimap {
+  left: calc(20px * var(--k)); top: calc(34px * var(--k));
+  width: calc(234px * var(--k)); height: calc(234px * var(--k));
+}
+body[data-ui="ember"] #hud .map-head { left: calc(62px * var(--k)); width: calc(152px * var(--k)); top: calc(266px * var(--k)); }
+body[data-ui="ember"] #hud .map-foot { left: calc(62px * var(--k)); width: calc(152px * var(--k)); top: calc(266px * var(--k) + 13px); }
+body[data-ui="ember"] #hud .map-time {
+  left: 0; right: auto; bottom: auto; top: calc(92px * var(--k)); width: calc(94px * var(--k));
+  text-align: center; font-size: 9px;
+}
+body[data-ui="ember"] #hud .mm-btn { width: calc(42px * var(--k)); height: calc(42px * var(--k)); }
+body[data-ui="ember"] #hud #mm-in { left: calc(220px * var(--k)); top: calc(174px * var(--k)); }
+body[data-ui="ember"] #hud #mm-out { left: calc(207px * var(--k)); top: calc(226px * var(--k)); }
+
+/* --- the icon row along the top ---------------------------------------- */
+body[data-ui="ember"] #hud #topbar .tb {
+  background: none; border: none; box-shadow: none; width: 52px; padding: 0; gap: 0;
+}
+body[data-ui="ember"] #hud #topbar .tb i { width: 44px; height: 42px; }
+body[data-ui="ember"] #hud #topbar .tb span {
+  margin-top: -4px; padding: 0 6px; border-radius: 7px; background: rgba(12, 14, 20, .92);
+  border: 1px solid rgba(181, 138, 60, .55); color: #f4ecdc; font-size: 10px; line-height: 15px;
+}
+
+/* --- the menu rail: dark panel, painted icons -------------------------- */
+body[data-ui="ember"] #hud #menu-buttons {
+  border: 12px solid transparent; border-image: url(../../assets/ui/h2_window.webp) 32 fill / 12px stretch;
+  padding: 0 1px;
+}
+body[data-ui="ember"] #hud #menu-buttons .btn::before { width: 38px; height: 34px; }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="character"]::before { background-image: url(../../assets/ui/h2_m_character.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="inventory"]::before { background-image: url(../../assets/ui/h2_m_bag.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="skills"]::before { background-image: url(../../assets/ui/h2_m_skills.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="quests"]::before { background-image: url(../../assets/ui/h2_m_quests.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="party"]::before { background-image: url(../../assets/ui/h2_m_party.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="guild"]::before { background-image: url(../../assets/ui/h2_m_guild.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="stall"]::before { background-image: url(../../assets/ui/h2_m_stall.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="settings"]::before { background-image: url(../../assets/ui/h2_m_settings.webp); }
+body[data-ui="ember"] #hud #menu-buttons #menu-more::before {
+  content: ""; font-size: 0; background: url(../../assets/ui/h2_m_more.webp) center / contain no-repeat;
+}
+
+/* --- windows: the gold-cornered dark frame, blue title plate, red close - */
+body[data-ui="ember"] #panels .win.window {
+  border: 16px solid transparent; border-image: url(../../assets/ui/h2_window.webp) 32 fill / 16px stretch;
+}
+body[data-ui="ember"] #panels .win.window > header { background: #1b1d22; border-bottom: 1px solid rgba(181, 138, 60, .35); padding: 4px 6px 8px; }
+body[data-ui="ember"] #panels .win.window > header h2 {
+  border: solid transparent; border-width: 6px 18px; border-image: url(../../assets/ui/h2_title.webp) 12 24 fill / 6px 18px stretch;
+  padding: 1px 6px; color: #fff; font-size: 15px; text-shadow: 0 1px 2px #000;
+}
+body[data-ui="ember"] #panels .win.window .close { width: 30px; height: 30px; background-image: url(../../assets/ui/h2_close.webp); }
+body[data-ui="ember"] #panels .btn.primary:not([class*="qb-"]):not([class*="sbtn-"]):not([class*="pb-"]):not([class*="gb-"]):not([class*="fb-"]) {
+  border: 6px solid transparent; border-image: url(../../assets/ui/h2_b_gold.webp) 10 12 fill / 6px 8px stretch;
+  background: none; color: #3a2204; text-shadow: 0 1px 0 rgba(255, 255, 255, .4); box-shadow: none; padding: 1px 8px;
+}
+body[data-ui="ember"] #panels .btn.danger:not([class*="qb-"]):not([class*="sbtn-"]):not([class*="pb-"]):not([class*="gb-"]):not([class*="fb-"]) {
+  border: 6px solid transparent; border-image: url(../../assets/ui/h2_b_red.webp) 10 12 fill / 6px 8px stretch;
+  background: none; color: #fff; box-shadow: none; padding: 1px 8px;
+}
+body[data-ui="ember"] #panels .qlog-tab, body[data-ui="ember"] #hud #chat-tabs .tab {
+  border: 5px solid transparent; border-image: url(../../assets/ui/h2_tab_off.webp) 10 12 fill / 5px 8px stretch;
+  background: none; color: #d8e0ea;
+}
+body[data-ui="ember"] #panels .qlog-tab.on, body[data-ui="ember"] #hud #chat-tabs .tab.on {
+  border-image-source: url(../../assets/ui/h2_tab_on.webp); color: #3a2204; text-shadow: none;
+}
+body[data-ui="ember"] #hud #chat-tabs .tab { border-width: 3px 6px; border-image-width: 3px 6px; padding: 0 4px; }
+
+/* --- bottom bar (desktop): slots in the sheet's dark tiles ------------- */
+body[data-ui="ember"] #hud #hotbar .slot {
+  border: 8px solid transparent; border-image: url(../../assets/ui/h2_slot.webp) 16 fill / 8px stretch;
+}
+body[data-ui="ember"] #hud #btn-auto {
+  font-size: 0; color: transparent; border: none; background: url(../../assets/ui/h2_btn_auto.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] #hud #btn-auto::after { bottom: -10px; }
+body[data-ui="ember"] #hud #btn-cycle {
+  border: none; background: url(../../assets/ui/h2_btn_cycle.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] #hud #btn-cycle svg { display: none; }
+
+/* --- touch: the sheet's stick, gold rings, the big sword ---------------- */
+body[data-ui="ember"] #touch #stick {
+  border: none; border-radius: 50%; background: url(../../assets/ui/h2_joy_base.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] #touch #stick-knob { background-image: url(../../assets/ui/h2_joy_knob.webp); }
+body[data-ui="ember"] #touch .tbtn {
+  border: none; background: url(../../assets/ui/h2_ring.webp) center / contain no-repeat,
+    radial-gradient(circle, rgba(20, 22, 30, .88) 58%, transparent 60%);
+}
+body[data-ui="ember"] #touch .tbtn.big {
+  font-size: 0; color: transparent; background: url(../../assets/ui/h2_btn_attack.webp) center / contain no-repeat;
+}
+body[data-ui="ember"] #touch .tbtn[data-action="interact"] {
+  background: url(../../assets/ui/h2_ring.webp) center / contain no-repeat,
+    radial-gradient(circle, rgba(20, 22, 30, .88) 58%, transparent 60%);
+}
+body[data-ui="ember"] #touch .tbtn.sk canvas.icon { width: 64%; height: 64%; border-radius: 50%; }
+body[data-ui="ember"] #touch .tbtn.sk .key {
+  left: 4%; bottom: 2%; transform: none; width: 15px; height: 15px; border-radius: 50%;
+  background: #15171d; border: 1.5px solid #c9a052; color: #f7e3b0; font-size: 9px; line-height: 12px; text-align: center;
+}
+body[data-ui="ember"] #touch .tbtn.down { filter: brightness(1.3); transform: scale(.94); }
+body[data-ui="ember"] #touch #btn-target { border: none; background: url(../../assets/ui/h2_btn_target.webp) center / contain no-repeat; font-size: 0; }
+
+/* phones on their side: the same pieces, smaller */
+body.landscape-ui[data-ui="ember"] #hud #vitals { --v: .48; top: 6px; left: 6px; }
+body.landscape-ui[data-ui="ember"] #hud #currencies { left: calc(6px + 480px * .48 + 6px); top: 6px; }
+body.landscape-ui[data-ui="ember"] #hud #expstrip { top: calc(12px + 216px * .48); left: 8px; width: calc(480px * .48 - 12px); grid-template-columns: auto 1fr; }
+body.landscape-ui[data-ui="ember"] #hud .map-card { --k: .4; }
+body.landscape-ui[data-ui="ember"] #hud #topbar .tb { width: 40px; }
+body.landscape-ui[data-ui="ember"] #hud #topbar .tb i { width: 32px; height: 30px; }
+body.landscape-ui[data-ui="ember"] #hud #topbar .tb span { font-size: 8px; line-height: 12px; padding: 0 3px; }
+body.landscape-ui[data-ui="ember"] #hud #menu-buttons { border-width: 8px; border-image-width: 8px; top: calc(12px + 345px * .4); }
+body.landscape-ui[data-ui="ember"] #hud #menu-buttons .btn::before { width: 30px; height: 27px; }
+@media (max-width: 860px) {
+  body[data-ui="ember"] #hud #vitals { --v: .5; }
+  body[data-ui="ember"] #hud #currencies { left: calc(8px + 480px * .5 + 8px); }
+}
+
+/* the shrine's two pull buttons wear the sheet's gold plate */
+body[data-ui="ember"] #panels .shrine-pull {
+  border: 8px solid transparent; border-image: url(../../assets/ui/h2_b_gold.webp) 12 14 fill / 8px 10px stretch;
+  background: none; color: #3a2204; text-shadow: 0 1px 0 rgba(255, 255, 255, .45);
+}
+body[data-ui="ember"] #panels .shrine-pull.one { border-image-source: url(../../assets/ui/h2_b_blue.webp); color: #fff; text-shadow: 0 1px 2px #000; }
+body[data-ui="ember"] #panels .shrine-pull:disabled { filter: grayscale(.7) brightness(.75); }

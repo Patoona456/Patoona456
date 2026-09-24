@@ -233,7 +233,7 @@ class Game {
       this.ui.tradeState(m);
     });
     n.on('questTrack', (m) => { this.ui.renderQuestTrack(m.quests); this.updateQuestMarks(); });
-    n.on('questClear', () => this.ui.stamp('quest_complete'));
+    n.on('questClear', () => this.ui.stamp('h2_fx_questclear'));
     n.on('buyback', (m) => this.ui.setBuyback(m.items));
     n.on('refineResult', (m) => this.ui.onRefineResult(m));
     n.on('died', (m) => this.onDied(m));
@@ -322,11 +322,11 @@ class Game {
         }
         break;
       case 'miss':
-        if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 20, { img: 'miss' }); this.audio.play('miss', at); }
+        if (at) { r.floater('พลาด', at.x, at.y, '#c8d2e0', 20, { img: 'h2_fx_miss' }); this.audio.play('miss', at); }
         break;
       case 'levelup':
         if (ent) r.ascend(ent, { mine: ev.id === this.state.myId });
-        if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 44, { vx: 0, img: 'levelup' });
+        if (at) r.floater('LEVEL UP!', at.x, at.y - 10, '#ffd166', 44, { vx: 0, img: 'h2_fx_levelup' });
         if (ev.id === this.state.myId) {
           this.ui.toast(`เลเวลอัพ! Lv.${ev.level} / Job ${ev.jobLevel}`, 'good');
           this.net.send({ t: 'quest', cmd: 'list' });   // new work may have opened up

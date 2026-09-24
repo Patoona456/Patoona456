@@ -20,11 +20,13 @@
   <!-- top left: who you are -->
   <div class="panel" id="vitals">
     <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-    <div class="portrait" id="portrait"><span class="lv num" id="me-level">1</span></div>
+    <div class="portrait" id="portrait"></div>
+    <span class="lv num" id="me-level">1</span>
     <div class="stack">
       <div class="name"><b id="me-name">-</b><span id="me-job" class="muted label"></span></div>
       <div class="bar hp"><i id="bar-hp"></i><span id="txt-hp" class="num"></span></div>
       <div class="bar sp"><i id="bar-sp"></i><span id="txt-sp" class="num"></span></div>
+      <div class="bar exp"><i id="bar-exp"></i><span id="txt-exp" class="num"></span></div>
       <div class="cp-row">
         <span class="cp" title="พลังรวม">CP <b id="me-cp" class="num">0</b></span>
         <span id="me-stats" class="muted num"></span>
@@ -42,10 +44,10 @@
   <div id="topright">
     <!-- the row every mobile game has along the top: draws, events, dailies -->
     <div id="topbar">
-      <button class="tb" data-top="gacha" title="กาชา"><i style="background-image:url(assets/ui/gem_red.webp)"></i><span>กาชา</span></button>
-      <button class="tb" data-top="event" title="กิจกรรม"><i style="background-image:url(assets/ui/qk_event.webp)"></i><span>กิจกรรม</span></button>
-      <button class="tb" data-top="daily" title="ภารกิจรายวัน"><i style="background-image:url(assets/ui/qk_daily.webp)"></i><span>รายวัน</span></button>
-      <button class="tb" data-top="worldmap" title="แผนที่โลก (N)"><i style="background-image:url(assets/ui/area_kingdom.webp)"></i><span>แผนที่</span></button>
+      <button class="tb" data-top="gacha" title="กาชา"><i style="background-image:url(assets/ui/h2_t_gacha.webp)"></i><span>กาชา</span></button>
+      <button class="tb" data-top="event" title="กิจกรรม"><i style="background-image:url(assets/ui/h2_t_event.webp)"></i><span>กิจกรรม</span></button>
+      <button class="tb" data-top="daily" title="ภารกิจรายวัน"><i style="background-image:url(assets/ui/h2_t_quest.webp)"></i><span>รายวัน</span></button>
+      <button class="tb" data-top="worldmap" title="แผนที่โลก (N)"><i style="background-image:url(assets/ui/h2_t_map.webp)"></i><span>แผนที่</span></button>
     </div>
     <div class="panel map-card">
       <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
@@ -133,8 +135,7 @@
 
   <!-- the strip along the very bottom -->
   <div id="expstrip">
-    <span class="lvtag" id="base-lv">Base Lv.1</span>
-    <div class="bar exp"><i id="bar-exp"></i><span id="txt-exp" class="num"></span></div>
+    <span class="lvtag" id="base-lv" hidden>Base Lv.1</span>
     <span class="lvtag" id="job-lv">Job Lv.1</span>
     <div class="bar jexp"><i id="bar-jexp"></i><span id="txt-jexp" class="num"></span></div>
   </div>
