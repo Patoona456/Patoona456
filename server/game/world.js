@@ -234,7 +234,7 @@ export class World {
           hp: p.hp, sp: p.sp, maxHp: p.maxHp, maxSp: p.maxSp, x: Math.round(p.x), y: Math.round(p.y),
           exp: p.record.exp, jobExp: p.record.jobExp, level: p.record.level, jobLevel: p.record.jobLevel,
           aurum: p.record.aurum, alive: p.alive, target: p.targetId, attacking: p.attacking,
-          cast: p.cast ? { skill: p.cast.skillId, until: p.cast.until } : null,
+          cast: p.cast ? { skill: p.cast.skillId, until: p.cast.until, started: p.cast.startedAt } : null,
           cooldowns: p.cooldowns, weight: p.weight(), weightCap: p.weightCap,
           statuses: p.statuses.map((s) => ({ type: s.type, key: s.key, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),
         };

@@ -293,3 +293,14 @@ export function transferCompatible(a, b) {
 export function refineCost(refValue, level) {
   return Math.floor(refValue * 0.15 + 120 * Math.pow(1.35, level));
 }
+
+/**
+ * Getting up where you fell, instead of walking back from town. It costs
+ * aurum that scales with level, and only once every few minutes, so a priest
+ * in the party still matters and a wall you keep dying on stays a wall.
+ */
+export const REVIVE_HERE_COOLDOWN_MS = 5 * 60 * 1000;
+export const REVIVE_HERE_HP = 0.3;
+export function reviveHereCost(level) {
+  return Math.max(100, Math.round((level | 0) * 30));
+}

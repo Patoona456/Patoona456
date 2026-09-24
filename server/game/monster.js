@@ -77,6 +77,7 @@ export class Monster {
     return {
       n: this.name, def: this.defId, lv: this.level,
       boss: this.boss ? 1 : 0, sprite: this.def.sprite, sum: this.summon ? 1 : 0,
+      ...(this.def.phases ? { pht: this.def.phases } : {}),
     };
   }
 

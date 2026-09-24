@@ -48,12 +48,23 @@ function inside(zone, x, y, r) {
   return out;
 }
 
+/**
+ * Which phase a boss is in: its data lists the HP fractions where each new
+ * phase starts, and the client draws the same marks on the boss bar.
+ */
+export function phaseOf(m, pct = m.hp / m.maxHp) {
+  const marks = m.def.phases ?? [];
+  let phase = 1;
+  for (const at of marks) if (pct <= at) phase++;
+  return phase;
+}
+
 SCRIPTS.warden = (zone, m, t) => {
   const pct = m.hp / m.maxHp;
   const target = m.target ? zone.entities.get(m.target) : null;
 
   // ---- phase changes, announced so the room can react ----
-  const phase = pct > 0.66 ? 1 : pct > 0.3 ? 2 : 3;
+  const phase = phaseOf(m, pct);
   if (phase !== m.phase) {
     m.phase = phase;
     m.nextMechanicAt = t + 1200;
@@ -154,7 +165,7 @@ SCRIPTS.warden = (zone, m, t) => {
  */
 SCRIPTS.warlord = (zone, m, t) => {
   const pct = m.hp / m.maxHp;
-  const phase = pct > 0.66 ? 1 : pct > 0.3 ? 2 : 3;
+  const phase = phaseOf(m, pct);
   const living = () => [...zone.players.values()].filter((p) => p.alive && !statusMods(p).invisible);
 
   if (phase !== m.phase) {
@@ -272,7 +283,7 @@ SCRIPTS.warlord = (zone, m, t) => {
  */
 SCRIPTS.vhaal = (zone, m, t) => {
   const pct = m.hp / m.maxHp;
-  const phase = pct > 0.6 ? 1 : pct > 0.25 ? 2 : 3;
+  const phase = phaseOf(m, pct);
   const living = () => [...zone.players.values()].filter((p) => p.alive && !statusMods(p).invisible);
 
   if (phase !== m.phase) {

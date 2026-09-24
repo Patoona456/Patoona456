@@ -3,7 +3,7 @@ import { Net } from './net.js';
 import { vecOf } from '../../shared/facing.js';
 import { Input, bindTouchControls } from './input.js';
 import { Renderer, ZOOM_STEPS } from './renderer.js';
-import { UI, loadTheme, GIVER_ROLE, questKind } from './ui.js';
+import { UI, loadTheme, GIVER_ROLE, questKind, bossPhase } from './ui.js';
 import { Audio } from './audio.js';
 import { findPath, zoneRoute, warpTo, sourceOf, huntingGround, homeOf } from './autowalk.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
@@ -273,13 +273,16 @@ class Game {
       else { this.predicted.x += dx * 0.25; this.predicted.y += dy * 0.25; }
       this.state.targetId = m.you.target;
       this.attacking = !!m.you.attacking;   // server may stop us; re-send if still held
+      this.state.lockOn = this.attacking;
       this.ui.updateVitals(this.self, m.you);
       this.ui.updateStatuses(m.you.statuses);
       this.ui.updateCast(m.you.cast);
       this.ui.tickHotbar(m.you.cooldowns);
-      if (!m.you.alive) this.showDeath();
+      if (!m.you.alive) this.ui.showDeath(this.lastDeath ?? {});
+      else { this.lastDeath = null; this.ui.hideDeath(); }
     }
 
+    this.watchBosses();
     for (const ev of m.ev ?? []) this.onEvent(ev);
   }
 
@@ -296,6 +299,7 @@ class Game {
         r.floater(String(ev.v), at.x, at.y,
           onMe ? '#ff9a9a' : ev.crit ? elRgba(el, 'core', 1) : mine ? '#ffffff' : '#ffb3b3',
           ev.crit ? 17 : 12, { crit: ev.crit, digits: mine && !onMe });
+        if (mine && !onMe) this.ui.comboHit();
         if (ev.crit) r.floater('CRITICAL', at.x, at.y - 16, '#ff6a4a', 26, { vx: 0, crit: true, img: 'critical' });
         // the blow shoves the body, bursts in its own element, and a crit
         // holds the frame for a moment
@@ -341,14 +345,27 @@ class Game {
         r.warn(ev);
         this.audio.play('cast', { x: ev.x, y: ev.y }, { gain: 0.5 });
         break;
-      case 'boss':
+      case 'boss': {
         // the fight talks: phase changes and what to do about them
         this.ui.chat({ ch: 'system', text: ev.say });
-        this.ui.flash(ev.say);
+        const phase = ent ? bossPhase(ent) : 0;
+        const was = this.bossSeen?.get(ev.id);
+        if (ent && phase !== was && phase > 1) {
+          this.bossSeen?.set(ev.id, phase);
+          this.ui.banner('phase', `Phase ${phase} เปลี่ยน!!`, ev.say);
+        } else this.ui.banner('aoe', ev.say);
         break;
+      }
       case 'death':
         if (ent) r.death(ent, { el: ev.el, boss: !!ev.boss, me: ev.id === this.state.myId });
-        if (ev.id === this.state.myId) { this.audio.play('death'); this.showDeath(); }
+        if (ev.id === this.state.myId) { this.audio.play('death'); this.ui.showDeath(this.lastDeath ?? {}); }
+        else if (ev.boss && ent) {
+          this.bossSeen?.delete(ev.id);
+          const me = this.entities.get(this.state.myId);
+          if (me && this.state.you?.alive && Math.hypot(me.x - ent.x, me.y - ent.y) < 700) {
+            this.ui.banner('victory', `โค่น ${ent.n} แล้ว!!`, 'ตรวจดูของดรอปรอบตัว');
+          }
+        }
         else this.audio.play('die', at, ev.boss ? { gain: 1.4 } : undefined);
         break;
       default: break;
@@ -357,20 +374,24 @@ class Game {
 
   onDied(m) {
     this.audio.play('death');
-    this.ui.toast(`คุณตาย — เสีย EXP ${m.expLost}`, 'bad');
-    this.showDeath();
+    this.lastDeath = m;
+    this.ui.hideDeath();          // a screen opened by the death event lacks who did it
+    this.ui.showDeath(m);
   }
 
-  showDeath() {
-    if (this.ui.openPanels.has('death')) return;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = '<p>คุณล้มลง… กลับไปยังจุดบันทึกล่าสุด (เสีย EXP 5% ไม่เสียไอเทม)</p>';
-    const b = document.createElement('button');
-    b.className = 'btn primary';
-    b.textContent = 'ฟื้นคืนชีพที่เมือง';
-    b.addEventListener('click', () => { this.net.send({ t: 'respawn' }); this.ui.close('death'); });
-    wrap.append(b);
-    this.ui.panel('death', 'พ่ายแพ้', wrap);
+  /**
+   * Bosses announce themselves: a banner the first time one comes into view,
+   * another when the fight turns a phase, and Victory when it falls near you.
+   */
+  watchBosses() {
+    this.bossSeen ??= new Map();
+    for (const e of this.entities.values()) {
+      if (!e.boss || e.k !== 'm' || e.hp <= 0) continue;
+      if (!this.bossSeen.has(e.id)) {
+        this.bossSeen.set(e.id, bossPhase(e));
+        this.ui.banner('boss', 'BOSS', `${e.n} กำลังเข้าสู่สนาม!`);
+      }
+    }
   }
 
   /* ---------------- world loop ---------------- */
@@ -704,6 +725,7 @@ class Game {
     if (inp.consume('cancel')) {
       const justHandled = performance.now() - (this.ui.escHandledAt ?? -1e9) < 250;
       if (justHandled) { /* the UI already closed a panel for this press */ }
+      else if (this.state.you?.cast) this.net.send({ t: 'castCancel' });
       else if (this.ui.openPanels.size) this.ui.closeTop();
       else { this.state.targetId = null; this.net.send({ t: 'target', id: null }); }
     }

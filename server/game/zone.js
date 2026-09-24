@@ -5,11 +5,11 @@ import { ITEMS } from '../../shared/data/items.js';
 import { TILE, AOI_RADIUS, ANIM, LEVEL_AGGRO_GAP } from '../../shared/constants.js';
 import { Monster, dist, dist2, dirTo, LEASH } from './monster.js';
 import { applyDamage, healEntity, basicAttack, statusMods, addStatus } from './combat.js';
-import { mint } from './economy.js';
+import { mint, burn } from './economy.js';
 import * as Skills from './skills.js';
 import { tickBoss, resetBoss } from './boss.js';
 import { findPath, lineClear } from '../../shared/pathfind.js';
-import { expGapPenalty } from '../../shared/formulas.js';
+import { expGapPenalty, reviveHereCost, REVIVE_HERE_COOLDOWN_MS, REVIVE_HERE_HP } from '../../shared/formulas.js';
 import * as Stall from './stall.js';
 import { facing8 } from '../../shared/facing.js';
 import { swingAnim } from '../../shared/weapons.js';
@@ -391,9 +391,10 @@ export class Zone {
       // paying the winner anything at all would make two accounts feeding each
       // other the best income in the game. A duel settles nothing but the duel.
       const duel = killer?.kind === 'player' && this.canDuel(killer, e);
+      const by = this.killerCard(killer);
       if (duel) {
         this.pushEvent({ t: 'duel', winner: killer.id, loser: e.id });
-        e.conn?.send({ t: 'died', expLost: 0, duel: 1 });
+        e.conn?.send({ t: 'died', expLost: 0, duel: 1, by, here: this.reviveOffer(e) });
         killer.conn?.send({ t: 'duelWon', over: e.name });
         return;
       }
@@ -401,8 +402,55 @@ export class Zone {
       // losing gear on death would gut the player economy we are protecting.
       const lost = Math.floor(e.record.exp * 0.05);
       e.record.exp = Math.max(0, e.record.exp - lost);
-      e.conn?.send({ t: 'died', expLost: lost });
+      e.conn?.send({ t: 'died', expLost: lost, by, here: this.reviveOffer(e) });
     }
+  }
+
+  /** Who did it, for the death screen: a name, a level, and whether it was a boss. */
+  killerCard(killer) {
+    const k = killer?.owner ? this.players.get(killer.owner) ?? killer : killer;
+    if (!k) return null;
+    if (k.kind === 'player') return { n: k.name, lv: k.record?.level ?? 1, k: 'p' };
+    return { n: k.name, lv: k.level ?? 1, k: 'm', boss: k.boss ? 1 : 0, def: k.defId };
+  }
+
+  /**
+   * Why `p` cannot get up where they fell, or null if they can. Never in a
+   * zone where players fight each other, never beside a boss that is still
+   * fighting (that is what a priest is for), and once per cooldown.
+   */
+  reviveHereBlock(p, t = now()) {
+    if (p.alive) return 'ยังไม่ได้ล้ม';
+    if (this.def.pvp) return 'พื้นที่นี้ฟื้นที่เดิมไม่ได้';
+    if ((p.reviveHereAt ?? 0) > t) return 'cooldown';
+    for (const e of this.entities.values()) {
+      if (e.kind === 'monster' && e.boss && e.alive && e.target && dist2(e, p) < 900 * 900) return 'บอสยังสู้อยู่ใกล้ ๆ';
+    }
+    return null;
+  }
+
+  /** What the death screen offers for getting up here. */
+  reviveOffer(p, t = now()) {
+    const why = this.reviveHereBlock(p, t);
+    return {
+      cost: reviveHereCost(p.record.level), readyAt: p.reviveHereAt ?? 0,
+      ...(why && why !== 'cooldown' ? { no: why } : {}),
+    };
+  }
+
+  /** Pay and stand up where you fell. */
+  reviveHere(p, t = now()) {
+    const why = this.reviveHereBlock(p, t);
+    if (why === 'cooldown') return { error: `ฟื้นที่เดิมได้อีกครั้งใน ${Math.ceil((p.reviveHereAt - t) / 1000)} วินาที` };
+    if (why) return { error: why };
+    const cost = reviveHereCost(p.record.level);
+    if ((p.record.aurum ?? 0) < cost) return { error: `ต้องใช้ ${cost} ออรัม` };
+    p.record.aurum -= cost;
+    burn(this.world, cost, 'revive');
+    p.reviveHereAt = t + REVIVE_HERE_COOLDOWN_MS;
+    p.statuses = [];
+    this.revivePlayer(p, REVIVE_HERE_HP);
+    return { ok: true, cost };
   }
 
   awardKill(m, killer) {

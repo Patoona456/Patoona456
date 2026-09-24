@@ -144,6 +144,7 @@ export const OP = {
   TRADE: 'trade',
   WARP: 'warp',
   RESPAWN: 'respawn',
+  CAST_CANCEL: 'castCancel',
   QUEST: 'quest',
   PING: 'ping',
 

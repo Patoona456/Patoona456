@@ -93,14 +93,20 @@
   <div class="panel hidden" id="target-frame">
     <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
     <div class="row"><b id="tg-name"></b><span id="tg-lv" class="muted"></span></div>
-    <div class="bar hp small"><i id="tg-hp"></i></div>
-    <div id="tg-el" class="muted num"></div>
+    <div class="bar hp small" id="tg-bar"><i id="tg-hp"></i><em id="tg-ticks"></em></div>
+    <div class="tg-foot"><span id="tg-phase"></span><span id="tg-el" class="muted num"></span></div>
     <button class="btn hidden" id="tg-trade">ขอเทรด</button>
   </div>
 
   <div id="cast-bar" class="hidden">
-    <div class="bar cast"><i></i><span></span></div>
+    <span class="cb-ico"></span>
+    <div class="cb-body">
+      <div class="cb-top"><b class="cb-name"></b><span class="cb-time num"></span></div>
+      <div class="bar cast"><i></i></div>
+    </div>
+    <button class="cb-cancel" title="ยกเลิกการร่าย (Esc)">ยกเลิก</button>
   </div>
+  <div id="combo" class="hidden"><b>COMBO!</b><span class="num"></span></div>
   <div id="statuses"></div>
 
   <!-- bottom bar: skills, automation, quick items -->

@@ -275,15 +275,31 @@ export class UI {
     if (!ent) { f.classList.add('hidden'); return; }
     f.classList.remove('hidden');
     f.classList.toggle('boss', !!ent.boss);
+    f.classList.toggle('ally', ent.k !== 'm');
     $('#tg-name').textContent = ent.n;
     $('#tg-lv').textContent = ent.lv ? `Lv.${ent.lv}` : '';
-    $('#tg-hp').style.width = Math.max(0, (ent.hp / ent.mhp) * 100) + '%';
+    const pct = Math.max(0, ent.hp / ent.mhp);
+    $('#tg-hp').style.width = pct * 100 + '%';
     $('#tg-el').textContent = ent.k === 'm' ? `${fmt(ent.hp)} / ${fmt(ent.mhp)}` : '';
+    // a scripted boss shows where its phases turn, and which one it is in
+    const marks = ent.boss ? ent.pht ?? [] : [];
+    const ticks = $('#tg-ticks');
+    const key = marks.join(',');
+    if (ticks.dataset.key !== key) {
+      ticks.dataset.key = key;
+      ticks.innerHTML = '';
+      for (const at of marks) { const t = el('i'); t.style.left = at * 100 + '%'; ticks.append(t); }
+    }
+    const phase = bossPhase(ent);
+    const ph = $('#tg-phase');
+    ph.textContent = marks.length ? `Phase ${phase}/${marks.length + 1}` : '';
+    ph.className = marks.length ? 'ph' + phase : '';
   }
 
   updateStatuses(list) {
     const box = $('#statuses');
     box.innerHTML = '';
+    const t = Date.now();
     for (const s of list ?? []) {
       if (!s.icon) continue;
       const pic = STATUS_ART[s.key] ?? STATUS_ART[s.type];
@@ -294,19 +310,140 @@ export class UI {
         img.alt = s.icon;
         node.append(img);
       }
+      // how long it has left, the way the sheet counts it: 8s, 2m
+      const left = Math.ceil(((s.until ?? 0) - t) / 1000);
+      if (left > 0 && left < 3600) node.append(el('small', 'st-t num', left >= 60 ? `${Math.ceil(left / 60)}m` : `${left}s`));
+      node.title = STATUS_TH[s.key] ?? STATUS_TH[s.type] ?? '';
       box.append(node);
     }
   }
 
   updateCast(cast) {
     const bar = $('#cast-bar');
-    if (!cast) { bar.classList.add('hidden'); return; }
+    if (!cast) { bar.classList.add('hidden'); bar.dataset.skill = ''; return; }
     bar.classList.remove('hidden');
+    if (bar.dataset.skill !== cast.skill) {
+      bar.dataset.skill = cast.skill;
+      const ico = bar.querySelector('.cb-ico');
+      ico.innerHTML = '';
+      ico.append(skillIcon(cast.skill, { size: 30 }));
+      bar.querySelector('.cb-name').textContent = `กำลังร่าย ${SKILLS[cast.skill]?.nameTh ?? cast.skill}…`;
+      const sk = SKILLS[cast.skill];
+      bar.dataset.tone = sk?.element === 'fire' || sk?.element === 'shadow' ? 'red' : sk?.element === 'holy' ? 'gold' : 'blue';
+      if (!bar.dataset.wired) {
+        bar.dataset.wired = '1';
+        bar.querySelector('.cb-cancel').addEventListener('click', () => this.game.net.send({ t: 'castCancel' }));
+      }
+    }
     const total = cast.until - (cast.started ?? cast.until - 1000);
-    const left = cast.until - Date.now();
+    const left = Math.max(0, cast.until - Date.now());
     const pct = Math.max(0, Math.min(1, 1 - left / Math.max(1, total)));
     bar.querySelector('i').style.width = pct * 100 + '%';
-    bar.querySelector('span').textContent = SKILLS[cast.skill]?.nameTh ?? cast.skill;
+    bar.querySelector('.cb-time').textContent = `${((total - left) / 1000).toFixed(1)} / ${(total / 1000).toFixed(1)}`;
+  }
+
+  /**
+   * A banner across the top of the fight, in the sheet's plates: 'boss' (a
+   * boss has arrived), 'aoe' (move!), 'phase' (the fight has turned) and
+   * 'victory' (the boss is down).
+   */
+  banner(kind, title, sub = '') {
+    let box = $('#banners');
+    if (!box) { box = el('div'); box.id = 'banners'; document.body.append(box); }
+    // the same call twice in a row is one banner, held a little longer
+    const last = box.lastElementChild;
+    if (last && last.dataset.key === kind + title + sub) { last.dataset.until = Date.now() + 2600; return; }
+    const b = el('div', 'banner ' + kind);
+    b.dataset.key = kind + title + sub;
+    if (kind === 'victory') { const v = el('img', 'vic'); v.src = `${UI_BASE}/victory.webp`; v.alt = 'Victory'; b.append(v); }
+    b.append(el('b', '', title));
+    if (sub) b.append(el('span', '', sub));
+    box.append(b);
+    while (box.children.length > 2) box.firstElementChild.remove();
+    const hold = kind === 'victory' ? 4200 : 2600;
+    document.body.classList.add('bannering');
+    setTimeout(() => {
+      b.classList.add('out');
+      setTimeout(() => { b.remove(); if (!box.children.length) document.body.classList.remove('bannering'); }, 400);
+    }, hold);
+    if (kind === 'victory') this.game.audio?.play('levelup', null, { gain: 0.8 });
+    else this.game.audio?.play('warn', null, { gate: 0.3 });
+  }
+
+  /** Count my hits that land close together; the counter fades when they stop. */
+  comboHit() {
+    const t = performance.now();
+    this.combo = t - (this.comboAt ?? 0) < COMBO_GAP_MS ? (this.combo ?? 0) + 1 : 1;
+    this.comboAt = t;
+    const box = $('#combo');
+    if (!box) return;
+    clearTimeout(this._comboT);
+    this._comboT = setTimeout(() => box.classList.add('hidden'), COMBO_GAP_MS);
+    if (this.combo < 2) return;
+    box.classList.remove('hidden');
+    const tier = COMBO_TIERS.findLast((n) => this.combo >= n) ?? 2;
+    box.className = 'tier' + tier;
+    box.querySelector('span').textContent = this.combo;
+    if (COMBO_TIERS.includes(this.combo)) {
+      box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop');
+    }
+  }
+
+  /**
+   * The K.O. screen: who did it, what it cost, and the two ways back up -
+   * where you fell (a fee and a cooldown) or at your save point (free).
+   */
+  showDeath(info = {}) {
+    if ($('#death')) return;
+    const box = el('div');
+    box.id = 'death';
+    const ko = el('img', 'ko-art');
+    ko.src = `${UI_BASE}/ko_hero.webp`;
+    ko.alt = 'K.O.';
+    box.append(ko);
+    if (info.by) {
+      const card = el('div', 'killed' + (info.by.boss ? ' boss' : ''));
+      card.append(el('small', '', info.duel ? 'แพ้การดวลให้' : 'คุณถูกกำจัดโดย'));
+      card.append(el('b', '', info.by.n));
+      card.append(el('span', 'num', `Lv. ${info.by.lv}`));
+      box.append(card);
+    }
+    box.append(el('p', 'loss', info.duel ? 'การดวลไม่เสีย EXP'
+      : `เสีย EXP ${fmt(info.expLost ?? 0)} (5%) · ไม่เสียไอเทม`));
+
+    const row = el('div', 'choices');
+    const here = el('button', 'dz here');
+    const art = (name) => { const i = el('img'); i.src = `${UI_BASE}/${name}.webp`; i.alt = ''; return i; };
+    here.append(art('revive_wings'), el('span', '', 'ฟื้นที่นี่'), el('small', 'num'));
+    const town = el('button', 'dz town');
+    town.append(art('respawn_tomb'), el('span', '', 'กลับจุดบันทึก'), el('small', '', 'ฟรี · HP 30%'));
+    here.addEventListener('click', () => this.game.net.send({ t: 'respawn', here: 1 }));
+    town.addEventListener('click', () => this.game.net.send({ t: 'respawn' }));
+    row.append(here, town);
+    box.append(row);
+    box.append(el('p', 'hint', 'รอเพื่อนนักบวชชุบชีวิตได้ · กด E เพื่อกลับจุดบันทึก'));
+    document.body.append(box);
+    document.body.classList.add('dead');
+
+    const offer = info.here ?? {};
+    const tick = () => {
+      const wait = Math.ceil(((offer.readyAt ?? 0) - Date.now()) / 1000);
+      const note = here.querySelector('small');
+      here.disabled = !!offer.no || wait > 0;
+      note.textContent = offer.no ? offer.no
+        : wait > 0 ? `อีก ${Math.floor(wait / 60)}:${String(wait % 60).padStart(2, '0')}`
+          : `${fmt(offer.cost ?? 0)} ออรัม · HP 30%`;
+    };
+    tick();
+    this._deathT = setInterval(tick, 1000);
+  }
+
+  hideDeath() {
+    const box = $('#death');
+    if (!box) return;
+    clearInterval(this._deathT);
+    box.remove();
+    document.body.classList.remove('dead');
   }
 
   renderHotbar(self) {
@@ -3442,9 +3579,24 @@ const SHOP_CATS = [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ
 
 /** Status (by key, then by type) -> painted icon from the UI sheet. */
 const STATUS_ART = {
-  food: 'st_plus', buff: 'st_sword', shield: 'st_shield', poison: 'st_skull',
-  burn: 'st_fire', chill: 'st_frost', stun: 'st_bolt',
+  food: 'st_plus', buff: 'st_sword', shield: 'st_shield', poison: 'ail_poison',
+  burn: 'ail_burn', chill: 'ail_freeze', stun: 'ail_stun', root: 'ail_slow', debuff: 'ail_curse',
 };
+const STATUS_TH = {
+  food: 'อาหาร', buff: 'เสริมพลัง', shield: 'โล่', poison: 'พิษ', burn: 'ไฟลวก',
+  chill: 'เยือกแข็ง (ช้าลง)', stun: 'มึนงง (ขยับไม่ได้)', root: 'ถูกตรึง (เดินไม่ได้)', debuff: 'คำสาป (อ่อนแอลง)',
+};
+/** Hits further apart than this start a new combo. */
+const COMBO_GAP_MS = 2600;
+const COMBO_TIERS = [2, 5, 10, 20, 50, 100];
+
+/** Which phase a boss is in, from the HP marks its data lists (server/game/boss.js phaseOf). */
+export function bossPhase(ent) {
+  const pct = ent.hp / Math.max(1, ent.mhp);
+  let phase = 1;
+  for (const at of ent.pht ?? []) if (pct <= at) phase++;
+  return phase;
+}
 /** Empty paper-doll slots that have a grey outline on the sheet. */
 const GHOSTS = new Set(['head', 'torso', 'legs', 'hands', 'armor', 'weapon', 'offhand', 'accessory', 'scarf']);
 

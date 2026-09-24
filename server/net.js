@@ -220,7 +220,19 @@ export class Conn {
       case OP.CHAT: return this.doChat(m);
       case OP.RESPAWN: {
         if (p.alive) return;
+        if (m.here) {
+          const r = p.zone.reviveHere(p);
+          if (r.error) return this.notice(r.error, 'bad');
+          this.send({ t: OP.SELF, self: p.selfState() });
+          return this.notice(`ฟื้นคืนชีพที่เดิม (-${r.cost} ออรัม)`, 'good');
+        }
         this.world.respawn(p);
+        return;
+      }
+      case OP.CAST_CANCEL: {
+        // letting go of a long cast is a choice, not a penalty: no cooldown
+        // was started, so nothing is charged
+        if (p.cast) { p.cast = null; p.anim = 'idle'; }
         return;
       }
       case OP.NPC_INTERACT: return this.npcInteract(m);

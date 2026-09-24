@@ -83,7 +83,7 @@ for k, b in MENU.items():
 # ---- wallet, badges and big words ----
 for k, b in {
     'coin': (458, 17, 500, 58), 'gem_blue': (675, 18, 717, 56), 'gem_red': (866, 18, 905, 57),
-    'boss': (17, 842, 95, 893), 'levelup': (462, 826, 680, 906), 'questclear': (700, 813, 858, 898),
+    'levelup': (462, 826, 680, 906), 'questclear': (700, 813, 858, 898),
     'miss': (874, 828, 963, 882), 'critical': (980, 806, 1114, 880),
     'auto': (1004, 379, 1123, 501), 'knob': (959, 689, 1071, 798),
     'slot': (905, 276, 963, 335), 'on': (1234, 404, 1302, 454),
@@ -190,11 +190,9 @@ for k, (x0, y0, x1, y1) in {'stew': (1153, 169, 1202, 220), 'herb': (1273, 169, 
     clean = erase_text(inv, (x0 + 24, y0 + 30, x1 - 2, y1 - 2), thresh=185)
     save('item_' + k, grab((x0 + 7, y0 + 6, x1 - 7, y1 - 7), pad=3, img=clean)[0])
 
-# status icons
-for k, b in {'st_sword': (891, 873, 919, 902), 'st_shield': (921, 873, 949, 902), 'st_heart': (951, 873, 980, 902),
-             'st_plus': (982, 873, 1010, 902), 'st_wing': (1013, 873, 1042, 902), 'st_skull': (891, 906, 918, 936),
-             'st_sleep': (921, 906, 950, 936), 'st_fire': (952, 906, 980, 936), 'st_frost': (983, 906, 1011, 936),
-             'st_bolt': (1015, 906, 1042, 936)}.items():
+# status icons (the harmful ones come from the combat sheet: ail_*)
+for k, b in {'st_sword': (891, 873, 919, 902), 'st_shield': (921, 873, 949, 902),
+             'st_plus': (982, 873, 1010, 902)}.items():
     save(k, grab(b, pad=4, img=inv)[0])
 
 # gold digits 0-9: keep the lit glyph and a thin dark rim, drop the tile
@@ -329,7 +327,7 @@ save('stall', stall)
 print('stall', stall.shape[1], 'x', stall.shape[0])
 
 
-def lift(img, box, ring=36, thresh=38):
+def lift(img, box, ring=36, thresh=38, crop=True):
     """For pieces GrabCut loses against the backdrop (bronze on brown): paint
     the backdrop in from a ring around the box, blur it, and keep what differs."""
     x0, y0, x1, y1 = box
@@ -351,7 +349,7 @@ def lift(img, box, ring=36, thresh=38):
     a = np.minimum(a, cv2.dilate(keep, np.ones((3, 3), np.uint8)))
     rgba = cv2.cvtColor(big, cv2.COLOR_BGR2RGBA)
     rgba[:, :, 3] = a
-    return trim(rgba)
+    return trim(rgba) if crop else rgba[y0 - Y0:y1 - Y0, x0 - X0:x1 - X0]
 
 
 save('lantern', lift(shop, (1272, 925, 1338, 1016)))
@@ -665,3 +663,62 @@ for k, b in {'area_open': (688, 758, 804, 804), 'area_danger': (688, 815, 804, 8
 save('area_locked_glyph', grab((850, 778, 882, 812), pad=3, img=wm)[0])
 save('wm_warp_btn', rounded(wm, (1432, 131, 1510, 172), r=6))
 print('world map sheet done')
+
+
+# ============================================================================
+# Tenth sheet: combat, target & boss (assets/ui/source/combat_sheet*.png)
+# ============================================================================
+cb = cv2.imread(os.path.join(ROOT, 'assets/ui/source/combat_sheet.png'))
+cb2 = cv2.imread(os.path.join(ROOT, 'assets/ui/source/combat_sheet2.png'))
+
+# reticles drawn around the target: red = locked on (attacking), gold =
+# picked, blue = a friend
+def reticle(cx, cy, tint, r=50):
+    """The sheet's white strokes, re-lit with a clean neon glow of their own
+    colour: the haze they were painted on does not come along."""
+    tile = cb[cy - r:cy + r, cx - r:cx + r]
+    # a stroke is white - every channel high - while the glow and the haze
+    # are saturated, so the weakest channel tells them apart
+    white = tile.min(axis=2).astype(np.float32)
+    stroke = np.clip((white - 135) / 70, 0, 1)
+    yy, xx = np.mgrid[0:2 * r, 0:2 * r]
+    stroke *= np.clip((r - 2 - np.hypot(xx - r, yy - r)) / 4, 0, 1)
+    glow = np.clip(cv2.GaussianBlur(stroke, (0, 0), 2.6) * 3.4, 0, 1)
+    a = np.maximum(stroke, glow * 0.85)
+    col = np.array(tint, np.float32)
+    rgb = col * (1 - stroke[..., None]) + 255 * stroke[..., None]
+    rgba = np.dstack([rgb, a * 255]).astype(np.uint8)
+    return trim(rgba)
+
+
+for k, cx, tint in [('lock', 855, (255, 60, 50)), ('pick', 950, (255, 196, 40)), ('ally', 1043, (50, 150, 255))]:
+    save('reticle_' + k, reticle(cx, 250, tint))
+
+# the ailments the game actually has, art only (captions stay on the sheet)
+for k, cx in {'stun': 50, 'freeze': 107, 'slow': 282, 'curse': 341, 'poison': 402, 'burn': 464}.items():
+    art = cv2.cvtColor(cb[711:747, cx - 18:cx + 18], cv2.COLOR_BGR2RGBA)
+    save('ail_' + k, art)
+
+# warning plates, words painted out so the game writes its own
+def erase_red(img, box):
+    """Inpaint pink-red lettering (the BOSS / DANGER words) inside box."""
+    out = img.copy()
+    x0, y0, x1, y1 = box
+    region = out[y0:y1, x0:x1]
+    m = ((region[:, :, 2] > 165) | (region.min(axis=2) > 150)).astype(np.uint8) * 255
+    m = cv2.dilate(m, np.ones((7, 7), np.uint8))
+    out[y0:y1, x0:x1] = cv2.inpaint(region, m, 7, cv2.INPAINT_TELEA)
+    return out
+
+
+save('warn_boss', grab((1300, 410, 1512, 474), pad=4, img=erase_red(cb, (1376, 420, 1498, 468)))[0])
+for k, b, t in [('warn_aoe', (1300, 483, 1512, 535), (1360, 490, 1500, 528)),
+                ('warn_phase', (1305, 593, 1512, 647), (1365, 600, 1500, 640))]:
+    save(k, grab(b, pad=4, img=erase_text(cb, t, thresh=165))[0])
+
+save('boss_badge', grab((1262, 20, 1322, 84), pad=3, img=cb)[0])
+save('ko_hero', lift(cb, (6, 866, 184, 1016), ring=20, thresh=34))
+save('respawn_tomb', grab((712, 882, 866, 1006), pad=4, img=cb)[0])
+save('revive_wings', grab((22, 920, 300, 1004), pad=4, img=cb2)[0])
+save('victory', grab((1160, 848, 1392, 992), pad=4, img=cb2)[0])
+print('combat sheet done')
