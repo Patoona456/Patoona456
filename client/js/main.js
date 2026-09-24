@@ -653,14 +653,42 @@ class Game {
     }
     if (!this.attacking) { this.attacking = true; this.net.send({ t: 'attack', on: true, id: best.id }); }
 
-    // spend a ready skill, cheapest first so SP lasts
+    // spend a ready skill - only the ones the player allowed auto to use,
+    // in hotbar order, and a heal only when it is actually needed
+    if (now - (this.autoSkillAt ?? 0) < 700) return;
     const cds = you.cooldowns ?? {};
-    const ready = (this.self?.hotbar ?? [])
-      .map((id, i) => ({ id, i }))
-      .filter((x) => x.id && (cds[x.id] ?? 0) < Date.now() && SKILLS[x.id]?.kind !== 'passive');
-    if (ready.length && bestD <= (SKILLS[ready[0].id]?.range ?? 60) + 40) {
-      this.useHotbar(ready[Math.floor(Math.random() * ready.length)].i);
+    const hpPct = (you.hp ?? this.self?.hp ?? 1) / Math.max(1, you.maxHp ?? this.self?.maxHp ?? 1);
+    const pick = (this.self?.hotbar ?? []).map((id, i) => ({ id, i, sk: SKILLS[id] })).find((x) => {
+      if (!x.sk || x.sk.kind === 'passive' || (cds[x.id] ?? 0) >= Date.now()) return false;
+      if (!this.autoSkillOn(x.id)) return false;
+      if (x.sk.kind === 'heal') return hpPct < 0.5;
+      if (x.sk.target === 'enemy' || x.sk.target === 'point') return bestD <= (x.sk.range ?? 60) + 40;
+      return bestD <= reach + 60;          // self-centred bursts: only with a foe in reach
+    });
+    if (pick) { this.autoSkillAt = now; this.useHotbar(pick.i); }
+  }
+
+  /** May auto-battle cast this skill? Attacks yes, heals yes (below half HP),
+   *  buffs/dashes/revives no - unless the player flipped it in the skills window. */
+  autoSkillOn(id) {
+    const own = this.autoPrefs()[id];
+    if (own !== undefined) return own;
+    const kind = SKILLS[id]?.kind;
+    return !['buff', 'dash', 'revive', 'summon', 'passive'].includes(kind);
+  }
+
+  setAutoSkill(id, on) {
+    const prefs = this.autoPrefs();
+    prefs[id] = !!on;
+    try { localStorage.setItem('ef.autoSkills', JSON.stringify(prefs)); } catch { /* private mode */ }
+  }
+
+  autoPrefs() {
+    if (!this._autoPrefs) {
+      try { this._autoPrefs = JSON.parse(localStorage.getItem('ef.autoSkills') ?? '{}') ?? {}; }
+      catch { this._autoPrefs = {}; }
     }
+    return this._autoPrefs;
   }
 
   predictMovement(dt) {

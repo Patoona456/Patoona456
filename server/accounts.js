@@ -128,7 +128,7 @@ export function createCharacter(acc, { name, gender, body, hair, chibiHair, hair
     inventory: [{ id: 'wooden_sword', qty: 1, refine: 0, dur: 120 }, { id: 'hp_potion_s', qty: 5 }],
     equipment: { weapon: 0 },
     skills: {},
-    hotbar: ['first_aid', null, null, null, null, null],
+    hotbar: [null, null, null, null, null, 'first_aid'],   // 1-4 are for attacks
     quests: {},
     playtime: 0, created: Date.now(), lastSeen: Date.now(),
     npcSales: {},                 // itemId -> count sold today (price dampener)

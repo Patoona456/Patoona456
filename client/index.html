@@ -40,6 +40,13 @@
 
   <!-- top right: where you are -->
   <div id="topright">
+    <!-- the row every mobile game has along the top: draws, events, dailies -->
+    <div id="topbar">
+      <button class="tb" data-top="gacha" title="กาชา"><i style="background-image:url(assets/ui/gem_red.webp)"></i><span>กาชา</span></button>
+      <button class="tb" data-top="event" title="กิจกรรม"><i style="background-image:url(assets/ui/qk_event.webp)"></i><span>กิจกรรม</span></button>
+      <button class="tb" data-top="daily" title="ภารกิจรายวัน"><i style="background-image:url(assets/ui/qk_daily.webp)"></i><span>รายวัน</span></button>
+      <button class="tb" data-top="worldmap" title="แผนที่โลก (N)"><i style="background-image:url(assets/ui/area_kingdom.webp)"></i><span>แผนที่</span></button>
+    </div>
     <div class="panel map-card">
       <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
       <div class="map-head"><b id="zone-name">-</b><span id="zone-range" class="muted"></span></div>
@@ -75,17 +82,20 @@
     <button class="btn" data-panel="quests" title="ภารกิจ (J)">
       <svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg><span>ภารกิจ</span>
     </button>
-    <button class="btn" data-panel="party" title="ปาร์ตี้ (P)">
+    <button class="btn more" data-panel="party" title="ปาร์ตี้ (P)">
       <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3 20c1-3.4 3.4-5 6-5s5 1.6 6 5"/><path d="M15.5 20c.6-2.2 2-3.4 3.6-3.4 1.2 0 2.3.6 2.9 1.8"/></svg><span>ปาร์ตี้</span>
     </button>
-    <button class="btn" data-panel="guild" title="กิลด์ (G)">
+    <button class="btn more" data-panel="guild" title="กิลด์ (G)">
       <svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11z"/><path d="M9 20v-6h6v6"/><path d="M12 4V2"/></svg><span>กิลด์</span>
     </button>
-    <button class="btn" data-panel="stall" title="แผงขายของ (V)">
+    <button class="btn more" data-panel="stall" title="แผงขายของ (V)">
       <svg viewBox="0 0 24 24"><path d="M3 9l1.5-4h15L21 9"/><path d="M3 9h18v3a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z"/><path d="M5 13v7h14v-7"/></svg><span>แผงขาย</span>
     </button>
-    <button class="btn" data-panel="settings" title="ตั้งค่า (F1)">
+    <button class="btn more" data-panel="settings" title="ตั้งค่า (F1)">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.5M12 18.5V21M4.2 7.5l2.2 1.3M17.6 15.2l2.2 1.3M19.8 7.5l-2.2 1.3M6.4 15.2l-2.2 1.3"/></svg><span>ตั้งค่า</span>
+    </button>
+    <button class="btn" id="menu-more" title="เมนูเพิ่มเติม">
+      <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg><span>เพิ่มเติม</span>
     </button>
   </div>
 
@@ -134,10 +144,12 @@
 <div id="touch" class="hidden">
   <div id="stick"><div id="stick-knob"></div></div>
   <div id="buttons">
-    <button data-action="skill3" class="tbtn small">3</button>
-    <button data-action="skill4" class="tbtn small">4</button>
-    <button data-action="skill1" class="tbtn small">1</button>
-    <button data-action="skill2" class="tbtn small">2</button>
+    <button data-action="skill5" class="tbtn small sk">5</button>
+    <button data-action="skill6" class="tbtn small sk">6</button>
+    <button data-action="skill3" class="tbtn small sk">3</button>
+    <button data-action="skill4" class="tbtn small sk">4</button>
+    <button data-action="skill1" class="tbtn small sk">1</button>
+    <button data-action="skill2" class="tbtn small sk">2</button>
     <button data-action="interact" class="tbtn">✋</button>
     <button data-action="attack" class="tbtn big">⚔</button>
   </div>

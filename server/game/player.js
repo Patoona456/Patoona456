@@ -456,6 +456,14 @@ export class Player {
     if (r.skillPoints < 1) return { error: 'แต้มสกิลไม่พอ' };
     r.skillPoints--;
     r.skills[skillId] = cur + 1;
+    // a freshly learned skill drops into the first free hotbar slot so it is
+    // usable at once; the player can move or remove it from the skills window
+    if (!cur && sk.kind !== 'passive') {
+      const bar = r.hotbar ?? (r.hotbar = []);
+      while (bar.length < 6) bar.push(null);
+      const free = bar.indexOf(null);
+      if (!bar.includes(skillId) && free >= 0) bar[free] = skillId;
+    }
     markDirty();
     this.recompute();
     return { ok: true, level: cur + 1 };

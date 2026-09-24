@@ -15,6 +15,7 @@ import { ITEMS, RECIPES } from '../shared/data/items.js';
 import { useConsumable } from './game/consumables.js';
 import { isAdmin, tokenOk, gmCommand } from './game/gm.js';
 import { JOBS } from '../shared/data/jobs.js';
+import { SKILLS } from '../shared/data/skills.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
 import { MAPS } from '../shared/data/maps.js';
 import { dist } from './game/monster.js';
@@ -215,10 +216,29 @@ export class Conn {
         return this.send({ t: OP.SELF, self: p.selfState() });
       }
       case OP.SET_HOTBAR: {
-        const i = Math.max(0, Math.min(11, m.index | 0));
-        p.record.hotbar[i] = m.skill ?? null;
+        // a skill sits in one slot at a time; null (or the skill already
+        // there) empties the slot; only learned, usable skills go in
+        const i = Math.max(0, Math.min(5, m.index | 0));
+        const bar = p.record.hotbar ?? (p.record.hotbar = []);
+        while (bar.length < 6) bar.push(null);
+        const id = m.skill ?? null;
+        if (id !== null) {
+          const sk = SKILLS[id];
+          if (!sk || sk.kind === 'passive' || !(p.record.skills?.[id] > 0)) return this.error('ยังใช้สกิลนี้ไม่ได้');
+        }
+        if (id !== null && bar[i] === id) bar[i] = null;
+        else {
+          for (let k = 0; k < bar.length; k++) if (bar[k] === id && id !== null) bar[k] = null;
+          bar[i] = id;
+        }
         markDirty();
         return this.send({ t: OP.SELF, self: p.selfState() });
+      }
+      // the shrine from anywhere (the top bar), as well as from its keeper
+      case 'gacha': {
+        if (m.action === 'draw') return this.gachaDraw(m.times | 0 || 1, 'ศาลรุ่งอรุณ');
+        if (m.action === 'claim') return this.gachaClaim('ศาลรุ่งอรุณ');
+        return this.send({ t: OP.SHOP, mode: 'gacha', name: 'ศาลรุ่งอรุณ', ...Econ.shardShop(p) });
       }
       case OP.CHAT: return this.doChat(m);
       case OP.RESPAWN: {
@@ -430,6 +450,31 @@ export class Conn {
   }
 
   /** NPC services require standing next to the right NPC. */
+  gachaDraw(times, name) {
+    const p = this.player;
+    const r = Econ.gachaDraw(this.world, p, times);
+    if (r.error) return this.error(r.error);
+    this.send({ t: 'gachaResult', results: r.results, pity: r.pity, points: r.points });
+    // UR and LR are news: everyone sees the name and what came out
+    for (const x of r.results) {
+      if (x.grade !== 'UR' && x.grade !== 'LR') continue;
+      const packet = { t: 'worldNotice', who: p.name, id: x.id, grade: x.grade };
+      for (const o of this.world.players.values()) o.conn?.send(packet);
+      this.world.broadcastChat({ ch: 'system', text: `ยินดีด้วย! ${p.name} ได้รับ ${ITEMS[x.id]?.nameTh ?? x.id} (${x.grade}) จากศาลรุ่งอรุณ` });
+    }
+    this.sendInventory();
+    this.send({ t: OP.SHOP, mode: 'gacha', name, ...Econ.shardShop(p) });
+  }
+
+  gachaClaim(name) {
+    const p = this.player;
+    const r = Econ.gachaClaim(p);
+    if (r.error) return this.error(r.error);
+    this.notice(`รับรางวัลแต้มสะสม: ${r.got.map((i) => `${ITEMS[i.id]?.nameTh ?? i.id} x${i.qty}`).join(', ')}`, 'good');
+    this.sendInventory();
+    this.send({ t: OP.SHOP, mode: 'gacha', name, ...Econ.shardShop(p) });
+  }
+
   guardNpc(roles, fn) {
     const p = this.player;
     const npc = this.openNpc ? p.zone.entities.get(this.openNpc) : null;
@@ -563,27 +608,8 @@ export class Conn {
       }
       case 'warpMenu': return this.send({ t: OP.SHOP, mode: 'warp', routes: WARP_ROUTES, name: npc.name });
       case 'gacha': return this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
-      case 'gachaDraw': return this.guardNpc(['gacha'], () => {
-        const r = Econ.gachaDraw(this.world, p, m.times | 0 || 1);
-        if (r.error) return this.error(r.error);
-        this.send({ t: 'gachaResult', results: r.results, pity: r.pity, points: r.points });
-        // UR and LR are news: everyone sees the name and what came out
-        for (const x of r.results) {
-          if (x.grade !== 'UR' && x.grade !== 'LR') continue;
-          const packet = { t: 'worldNotice', who: p.name, id: x.id, grade: x.grade };
-          for (const o of this.world.players.values()) o.conn?.send(packet);
-          this.world.broadcastChat({ ch: 'system', text: `ยินดีด้วย! ${p.name} ได้รับ ${ITEMS[x.id]?.nameTh ?? x.id} (${x.grade}) จากศาลรุ่งอรุณ` });
-        }
-        this.sendInventory();
-        this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
-      });
-      case 'gachaClaim': return this.guardNpc(['gacha'], () => {
-        const r = Econ.gachaClaim(p);
-        if (r.error) return this.error(r.error);
-        this.notice(`รับรางวัลแต้มสะสม: ${r.got.map((i) => `${ITEMS[i.id]?.nameTh ?? i.id} x${i.qty}`).join(', ')}`, 'good');
-        this.sendInventory();
-        this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
-      });
+      case 'gachaDraw': return this.guardNpc(['gacha'], () => this.gachaDraw(m.times | 0 || 1, npc.name));
+      case 'gachaClaim': return this.guardNpc(['gacha'], () => this.gachaClaim(npc.name));
       case 'jobChange': {
         const r = p.changeJob(m.job);
         if (r.error) return this.error(r.error);

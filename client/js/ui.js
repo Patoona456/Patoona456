@@ -64,8 +64,15 @@ export class UI {
     }
     $('#quest-toggle')?.addEventListener('click', () => $('#quest-track').classList.toggle('collapsed'));
 
-    for (const b of document.querySelectorAll('#menu-buttons button')) {
-      b.addEventListener('click', () => this.toggle(b.dataset.panel));
+    for (const b of document.querySelectorAll('#menu-buttons button[data-panel]')) {
+      b.addEventListener('click', () => {
+        this.toggle(b.dataset.panel);
+        if (b.classList.contains('more')) $('#menu-buttons').classList.remove('open');
+      });
+    }
+    $('#menu-more')?.addEventListener('click', () => $('#menu-buttons').classList.toggle('open'));
+    for (const b of document.querySelectorAll('#topbar .tb')) {
+      b.addEventListener('click', () => this.topAction(b.dataset.top));
     }
     $('#minimap')?.addEventListener('click', () => this.toggle('worldmap'));
     $('#mm-in')?.addEventListener('click', () => this.zoomMinimap(1));
@@ -469,7 +476,19 @@ export class UI {
     document.body.classList.remove('dead');
   }
 
+  /** The icon row along the top: draws, events, dailies, the world map. */
+  topAction(what) {
+    if (what === 'gacha') return this.game.net.send({ t: 'gacha', action: 'open' });
+    if (what === 'worldmap') return this.toggle('worldmap');
+    if (what === 'event' || what === 'daily') {
+      this.questTab = what;
+      if (this.openPanels.has('quests')) return this.openQuests(this.lastQuests ?? []);
+      return this.open('quests');
+    }
+  }
+
   renderHotbar(self) {
+    this.renderTouchSkills(self);
     const bar = $('#hotbar');
     bar.innerHTML = '';
     (self.hotbar ?? []).forEach((skillId, i) => {
@@ -487,8 +506,35 @@ export class UI {
     this.hotbarSlots = [...bar.children];
   }
 
+  /** The phone's skill buttons wear the icon of whatever sits in that slot. */
+  renderTouchSkills(self) {
+    this.touchSkills = [];
+    for (const b of document.querySelectorAll('#buttons .tbtn.sk')) {
+      const i = Number(b.dataset.action.slice(5)) - 1;
+      const id = self.hotbar?.[i];
+      b.innerHTML = '';
+      b.classList.toggle('empty', !SKILLS[id]);
+      if (SKILLS[id]) b.append(skillIcon(id, { size: 28 }));
+      b.append(el('span', 'key', String(i + 1)));
+      b.title = SKILLS[id]?.nameTh ?? 'ว่าง — ใส่สกิลได้ที่หน้าต่างสกิล';
+      this.touchSkills[i] = b;
+    }
+  }
+
   tickHotbar(cooldowns) {
     if (!this.hotbarSlots) return;
+    for (const [i, b] of (this.touchSkills ?? []).entries()) {
+      if (!b) continue;
+      const id = this.game.self?.hotbar?.[i];
+      const until = cooldowns?.[id] ?? 0;
+      const left = (until - Date.now()) / 1000;
+      let cd = b.querySelector('.cd');
+      if (!id || left <= 0) { cd?.remove(); continue; }
+      if (!cd) { cd = el('div', 'cd'); b.append(cd); }
+      const total = Math.max(left, this._cdTotal?.[id] ?? left);
+      cd.textContent = Math.ceil(left);
+      cd.style.setProperty('--cd', `${Math.min(100, (left / Math.max(0.1, total)) * 100)}%`);
+    }
     const self = this.game.self;
     const now = Date.now();
     this.hotbarSlots.forEach((slot, i) => {
@@ -935,7 +981,8 @@ export class UI {
   /* ---------------- skills ---------------- */
   openSkills(self) {
     const wrap = el('div');
-    wrap.append(el('div', 'row', `<span>แต้มสกิลเหลือ <b>${self.skillPoints}</b></span><span class="muted">คลิกสกิลเพื่อใส่ในแถบลัด</span>`));
+    wrap.append(el('div', 'row', `<span>แต้มสกิลเหลือ <b>${self.skillPoints}</b></span><span class="muted">เลข 1-6 = ช่องบนแถบลัด · กดช่องเดิมซ้ำเพื่อเอาออก</span>`));
+    wrap.append(el('div', 'sk-hint', 'ปุ่ม “ออโต้” = ให้โหมดสู้อัตโนมัติใช้สกิลนี้เอง (สกิลรักษาจะใช้เมื่อเลือดต่ำกว่าครึ่ง)'));
     for (const id of self.available ?? []) {
       const sk = SKILLS[id];
       if (!sk) continue;
@@ -960,10 +1007,17 @@ export class UI {
       btns.append(up);
       if (lvl > 0 && sk.kind !== 'passive') {
         for (let i = 0; i < 6; i++) {
-          const b = el('button', 'opt', String(i + 1));
+          const here = self.hotbar?.[i] === id;
+          const b = el('button', 'opt' + (here ? ' on' : ''), String(i + 1));
+          b.title = here ? 'เอาออกจากช่องนี้' : `ใส่ในช่อง ${i + 1}`;
           b.addEventListener('click', () => this.game.net.send({ t: 'setHotbar', index: i, skill: id }));
           btns.append(b);
         }
+        const on = this.game.autoSkillOn(id);
+        const auto = el('button', 'opt auto' + (on ? ' on' : ''), on ? 'ออโต้ ✓' : 'ออโต้ ✕');
+        auto.title = 'ให้โหมดสู้อัตโนมัติใช้สกิลนี้หรือไม่';
+        auto.addEventListener('click', () => { this.game.setAutoSkill(id, !on); this.openSkills(this.game.self); });
+        btns.append(auto);
       }
       row.append(info, btns);
       wrap.append(row);
@@ -3112,7 +3166,7 @@ export class UI {
       b.disabled = d.have < d.cost * times || !!this.gachaBusy;
       b.addEventListener('click', () => {
         this.gachaBusy = true;
-        this.game.net.send({ t: 'npcAction', action: 'gachaDraw', times });
+        this.game.net.send({ t: 'gacha', action: 'draw', times });
         setTimeout(() => { this.gachaBusy = false; }, 3000);
       });
       pulls.append(b);
@@ -3166,7 +3220,7 @@ export class UI {
     track.append(chests);
     const claim = el('button', 'btn' + (due ? ' primary' : ''), 'รับรางวัลทั้งหมด');
     claim.disabled = !due;
-    claim.addEventListener('click', () => this.game.net.send({ t: 'npcAction', action: 'gachaClaim' }));
+    claim.addEventListener('click', () => this.game.net.send({ t: 'gacha', action: 'claim' }));
     track.append(claim);
     right.append(track);
 

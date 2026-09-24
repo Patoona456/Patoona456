@@ -46,6 +46,8 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
   await t.test('every menu panel opens without throwing', async () => {
     const { page, errors, ctx } = await join(browser);
     for (const panel of ['character', 'inventory', 'skills', 'quests', 'party', 'settings']) {
+      // the less-used panels fold away behind "more"
+      if (await page.locator(`#menu-buttons .btn.more[data-panel="${panel}"]`).count()) await page.click('#menu-more');
       await page.click(`#menu-buttons .btn[data-panel="${panel}"]`);
       await page.waitForSelector('.win.window', { timeout: 5000 });
       const titles = await page.locator('.win.window > header h2').allTextContents();
