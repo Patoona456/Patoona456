@@ -123,9 +123,27 @@ function gripOf(img, file, cell, cols, size) {
         const dx = xs[i] - mx, dy = ys[i] - my;
         cxx += dx * dx; cyy += dy * dy; cxy += dx * dy;
       }
-      const th = 0.5 * Math.atan2(2 * cxy, cxx - cyy);
-      let ax = Math.cos(th), ay = Math.sin(th);
-      if (ax - ay < 0) { ax = -ax; ay = -ay; }       // the tip is up and to the right
+      // the long axis runs pommel to tip: the sheets draw the pommel at the
+      // lower left and the tip at the upper right, so take the pixels furthest
+      // each way along that diagonal (wide guards and wings would pull a
+      // best-fit line off the blade)
+      const diag = new Float32Array(m);
+      for (let i = 0; i < m; i++) diag[i] = xs[i] - ys[i];
+      const sorted = Float32Array.from(diag).sort();
+      const pommelAt = sorted[Math.floor(m * 0.01)], tipAt = sorted[Math.ceil(m * 0.99) - 1];
+      let px = 0, py = 0, pn = 0, tx = 0, ty = 0, tn = 0;
+      for (let i = 0; i < m; i++) {
+        if (diag[i] <= pommelAt) { px += xs[i]; py += ys[i]; pn++; }
+        if (diag[i] >= tipAt) { tx += xs[i]; ty += ys[i]; tn++; }
+      }
+      let ax = tx / tn - px / pn, ay = ty / tn - py / pn;
+      const al = Math.hypot(ax, ay) || 1;
+      ax /= al; ay /= al;
+      if (!(ax - ay > 0)) {                                   // a picture drawn some other way
+        const th = 0.5 * Math.atan2(2 * cxy, cxx - cyy);
+        ax = Math.cos(th); ay = Math.sin(th);
+        if (ax - ay < 0) { ax = -ax; ay = -ay; }
+      }
       const t = new Float32Array(m), u = new Float32Array(m);
       let tmin = Infinity, tmax = -Infinity;
       for (let i = 0; i < m; i++) {
