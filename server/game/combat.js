@@ -51,7 +51,9 @@ export function applyDamage(zone, attacker, target, amount, opts = {}) {
   }
 
   // Aegis / stance style flat reduction
-  const taken = target.mods?.dmgTakenPct ?? 0;
+  // a player's statuses are already folded into mods; a monster's are not
+  let taken = target.mods?.dmgTakenPct ?? 0;
+  if (target.kind !== 'player') for (const s of target.statuses ?? []) taken += s.mods?.dmgTakenPct ?? 0;
   amount = Math.max(1, Math.floor(amount * (1 + taken / 100)));
 
   let remaining = amount;

@@ -22,7 +22,7 @@ export const QUESTS = {
     zone: 'greenmire',
     desc: 'ล่าสไลม์โคลน 10 ตัวในทุ่งกรีนไมร์',
     objectives: [{ type: 'kill', mob: 'mire_slime', count: 10 }],
-    rewards: { exp: 120, jobExp: 80, aurum: 300 },
+    rewards: { exp: 120, jobExp: 80, aurum: 300, items: [{ id: 'hp_potion_s', qty: 5 }] },
   },
   q_herbalist: {
     id: 'q_herbalist', name: 'ฝากซื้อสมุนไพร', giver: 'board', minLevel: 3,
@@ -48,14 +48,16 @@ export const QUESTS = {
     zone: 'ashfen',
     desc: 'ซากเถ้าตีเจ็บและไม่ถอย ล่ามันให้ได้ 20 ตัวเพื่อพิสูจน์ว่ายืนอยู่ได้',
     objectives: [{ type: 'kill', mob: 'husk', count: 20 }],
-    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1 },
+    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1,
+      items: [{ id: 'hp_potion_s', qty: 10 }, { id: 'mp_potion_s', qty: 5 }] },
   },
   q_trial_wayfarer: {
     id: 'q_trial_wayfarer', name: 'ไล่ให้ทัน', giver: 'trainer', minLevel: 10, path: 'wayfarer',
     zone: 'greenmire',
     desc: 'ดวงไฟเร่ร่อนลอยเร็วและหนีเก่ง ไล่ดับให้ได้ 15 ดวง',
     objectives: [{ type: 'kill', mob: 'ember_wisp', count: 15 }],
-    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1 },
+    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1,
+      items: [{ id: 'hp_potion_s', qty: 10 }, { id: 'mp_potion_s', qty: 5 }] },
   },
   q_trial_marksman: {
     id: 'q_trial_marksman', name: 'ยิงจากที่ไกล', giver: 'trainer', minLevel: 10, path: 'marksman',
@@ -65,7 +67,8 @@ export const QUESTS = {
       { type: 'kill', mob: 'mire_slime', count: 20 },
       { type: 'kill', mob: 'dusk_bat', count: 8 },
     ],
-    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1 },
+    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1,
+      items: [{ id: 'hp_potion_s', qty: 10 }, { id: 'mp_potion_s', qty: 5 }] },
   },
   q_trial_runecaster: {
     id: 'q_trial_runecaster', name: 'หมึกรูน', giver: 'trainer', minLevel: 10, path: 'runecaster',
@@ -75,7 +78,8 @@ export const QUESTS = {
       { type: 'kill', mob: 'ember_wisp', count: 12 },
       { type: 'kill', mob: 'thistle_sprite', count: 8 },
     ],
-    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1 },
+    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1,
+      items: [{ id: 'hp_potion_s', qty: 10 }, { id: 'mp_potion_s', qty: 5 }] },
   },
   q_trial_warden: {
     id: 'q_trial_warden', name: 'มือที่รักษา', giver: 'trainer', minLevel: 10, path: 'warden',
@@ -85,7 +89,8 @@ export const QUESTS = {
       { type: 'kill', mob: 'thistle_sprite', count: 12 },
       { type: 'kill', mob: 'bristle_boar', count: 10 },
     ],
-    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1 },
+    rewards: { exp: 900, jobExp: 700, aurum: 800, skillPoints: 1,
+      items: [{ id: 'hp_potion_s', qty: 10 }, { id: 'mp_potion_s', qty: 5 }] },
   },
   q_bandit_trouble: {
     id: 'q_bandit_trouble', name: 'ปัญหาโจร', giver: 'board', minLevel: 12,
@@ -249,14 +254,14 @@ export const QUESTS = {
     zone: 'orcwatch',
     desc: 'ปราบจอมทัพออร์ค กรูม',
     objectives: [{ type: 'kill', mob: 'orc_warlord', count: 1 }],
-    rewards: { exp: 40000, jobExp: 25000, aurum: 25000 },
+    rewards: { exp: 40000, jobExp: 25000, aurum: 25000, items: [{ id: 'exp_potion', qty: 1 }, { id: 'full_restore', qty: 1 }] },
   },
   q_vhaal: {
     id: 'q_vhaal', name: 'ราชันที่ไม่ยอมหลับ', giver: 'board', minLevel: 58, repeatable: 'weekly',
     zone: 'vhaal',
     desc: 'ปราบราชันโครงกระดูก วาล',
     objectives: [{ type: 'kill', mob: 'skeleton_king', count: 1 }],
-    rewards: { exp: 90000, jobExp: 60000, aurum: 60000 },
+    rewards: { exp: 90000, jobExp: 60000, aurum: 60000, items: [{ id: 'exp_potion', qty: 2 }, { id: 'revive_potion', qty: 1 }] },
   },
 
   /* ---------------- Lv60-70: the Sunken Reliquary line ----------------
@@ -302,7 +307,7 @@ export const QUESTS = {
     zone: 'reliquary3', repeatable: 'weekly',
     desc: 'ปราบผู้เฝ้าหีบศพที่ชั้นล่างสุด — ไปคนเดียวไม่ได้ และสัปดาห์หนึ่งได้รางวัลครั้งเดียว',
     objectives: [{ type: 'kill', mob: 'reliquary_warden', count: 1 }],
-    rewards: { exp: 110000, jobExp: 70000, aurum: 55000 },
+    rewards: { exp: 110000, jobExp: 70000, aurum: 55000, items: [{ id: 'rare_drop_up', qty: 1 }, { id: 'cooldown_reset', qty: 1 }] },
   },
   q_dawn_crown: {
     id: 'q_dawn_crown', name: 'มงกุฎที่ยังไม่มีเจ้าของ', giver: 'oracle', minLevel: 67,

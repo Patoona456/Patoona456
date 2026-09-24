@@ -12,6 +12,7 @@ import * as Guild from './game/guild.js';
 import * as Trade from './game/trade.js';
 import * as Quests from './game/quests.js';
 import { ITEMS, RECIPES } from '../shared/data/items.js';
+import { useConsumable } from './game/consumables.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
 import { MAPS } from '../shared/data/maps.js';
@@ -366,7 +367,7 @@ export class Conn {
         const kit = (m.items ?? []).filter((id) => ITEMS[id]);
         for (const id of kit) {
           if ((ITEMS[id]?.level ?? 1) > r.level) continue;      // only what this level may wear
-          p.addItem(id, ITEMS[id].stack > 1 ? 50 : 1);
+          p.addItem(id, ITEMS[id].stack > 1 ? 10 : 1);
         }
         for (const [i, st] of p.inventory.entries()) {
           const def = ITEMS[st.id];
@@ -442,28 +443,10 @@ export class Conn {
       this.send({ t: 'boxOpened', box: def.id, got: r.got, rarity: r.rarity });
       return this.sendInventory();
     }
-    if (def.type !== 'consumable') return this.error('ใช้ไอเทมนี้ไม่ได้');
-    if ((def.level ?? 1) > p.record.level) return this.error(`ต้องเลเวล ${def.level}`);
-    const cdKey = 'item:' + st.id;
-    if ((p.cooldowns[cdKey] ?? 0) > Date.now()) return this.error('ไอเทมยังคูลดาวน์');
-    p.cooldowns[cdKey] = Date.now() + (def.cooldown ?? 3) * 1000;
-
-    if (def.heal) p.hp = Math.min(p.maxHp, p.hp + def.heal);
-    if (def.healSp) p.sp = Math.min(p.maxSp, p.sp + def.healSp);
-    if (def.cleanse) p.statuses = p.statuses.filter((s) => !def.cleanse.includes(s.type));
-    if (def.regen) {
-      p.statuses.push({
-        key: 'food', type: 'buff', icon: '🍖', beneficial: true,
-        until: Date.now() + def.regen.duration * 1000,
-        mods: { hpRegenPct: (def.regen.hp ?? 0) * 6, spRegenPct: (def.regen.sp ?? 0) * 6 },
-      });
-      p.recompute();
-    }
-    if (def.warp === 'lastTown') {
-      const sp = p.record.savePoint;
-      this.world.warpPlayer(p, sp.map, sp.x, sp.y);
-    }
-    p.removeItemAt(idx, 1);
+    const r = useConsumable(this.world, p, idx);
+    if (r.error) return this.error(r.error);
+    if (r.notice) this.notice(r.notice, 'good');
+    this.send({ t: OP.SELF, self: p.selfState() });
     this.sendInventory();
   }
 

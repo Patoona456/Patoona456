@@ -194,7 +194,8 @@ export class Player {
   buffMods() {
     const m = { atkPct: 0, matkPct: 0, defPct: 0, speedPct: 0, dmgTakenPct: 0, reflectPct: 0,
       lifestealPct: 0, spRegenPct: 0, hpRegenPct: 0, castPct: 0, spCostPct: 0, minHpGuard: 0,
-      invisible: 0, statusRes: 0, strFlat: 0, intFlat: 0, dexFlat: 0, fleePct: 0 };
+      invisible: 0, statusRes: 0, strFlat: 0, intFlat: 0, dexFlat: 0, agiFlat: 0, vitFlat: 0, lukFlat: 0,
+      fleePct: 0, critFlat: 0, expPct: 0, dropPct: 0, rareDropPct: 0, aurumPct: 0, summonStatPct: 0 };
     for (const s of this.statuses) {
       if (!s.mods) continue;
       for (const [k, v] of Object.entries(s.mods)) m[k] = (m[k] ?? 0) + v;
@@ -208,6 +209,7 @@ export class Player {
     const gear = this.gearBonuses();
     const bm = this.buffMods();
     gear.str += bm.strFlat; gear.int += bm.intFlat; gear.dex += bm.dexFlat;
+    gear.agi += bm.agiFlat; gear.vit += bm.vitFlat; gear.luk += bm.lukFlat;
 
     const d = deriveStats(this.record, job, gear);
     if (gear.hpPct) d.maxHp = Math.floor(d.maxHp * (1 + gear.hpPct / 100));
@@ -217,6 +219,10 @@ export class Player {
     d.flee = Math.floor(d.flee * (1 + bm.fleePct / 100));
     d.moveSpeed = Math.max(40, d.moveSpeed * (1 + bm.speedPct / 100));
     d.castFactor = Math.max(0.15, d.castFactor * (1 - bm.castPct / 100));
+    d.crit += bm.critFlat;
+    // elemental resistance from potions, as a share of the damage: res_fire, res_all
+    d.resist = {};
+    for (const [k, v] of Object.entries(bm)) if (k.startsWith('res_') && v) d.resist[k.slice(4)] = v / 100;
     // the guild's passive skills, carried by every member
     for (const s of Guild.skillsOf(this.record)) {
       for (const [k, v] of Object.entries(s.pct ?? {})) if (d[k] != null) d[k] = Math.floor(d[k] * (1 + v / 100));

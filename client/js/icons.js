@@ -37,9 +37,13 @@ function artImage(name) {
   }
   return img;
 }
+/** Atlases: many icons in one file, as equal square cells, `cols` across. */
+const ATLAS = { potions: { cols: 8 } };
 /** Paint the sheet art over a canvas now, or as soon as it has loaded. */
 function paintArt(canvas, name) {
-  const img = artImage(name);
+  // 'potions#12' is cell 12 of the potions atlas
+  const [file, cellId] = name.split('#');
+  const img = artImage(file);
   const square = name.startsWith('skill_');
   const draw = () => {
     if (!img.naturalWidth) return;
@@ -47,6 +51,11 @@ function paintArt(canvas, name) {
     const w = canvas.width, h = canvas.height;
     g.clearRect(0, 0, w, h);
     g.imageSmoothingEnabled = true;
+    if (cellId != null && ATLAS[file]) {
+      const cols = ATLAS[file].cols, cell = img.naturalWidth / cols, i = +cellId;
+      g.drawImage(img, (i % cols) * cell, Math.floor(i / cols) * cell, cell, cell, w * 0.03, h * 0.03, w * 0.94, h * 0.94);
+      return;
+    }
     if (square) { g.drawImage(img, 0, 0, w, h); return; }
     const k = Math.min(w / img.naturalWidth, h / img.naturalHeight) * 0.94;
     const dw = img.naturalWidth * k, dh = img.naturalHeight * k;
@@ -567,5 +576,5 @@ export function icon(kind, { rarity = null, size = 32, art = null } = {}) {
   return copy;
 }
 
-export const itemIcon = (id, opts = {}) => icon(itemIconKind(id), { rarity: ITEMS[id]?.rarity, art: ITEM_ART[id], ...opts });
+export const itemIcon = (id, opts = {}) => icon(itemIconKind(id), { rarity: ITEMS[id]?.rarity, art: ITEM_ART[id] ?? ITEMS[id]?.art, ...opts });
 export const skillIcon = (id, opts = {}) => icon(skillIconKind(id), opts);

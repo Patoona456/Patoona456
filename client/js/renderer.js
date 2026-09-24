@@ -68,7 +68,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['miss', 'critical', 'levelup']) uiImage(name);
+  for (const name of ['miss', 'critical', 'levelup', 'potions']) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
@@ -556,8 +556,15 @@ export class Renderer {
       ctx.fillStyle = isAurum ? '#f2c14e' : (RARITY_COLORS[def?.rarity] ?? '#cfd8dc');
       ctx.strokeStyle = 'rgba(0,0,0,0.6)';
       ctx.lineWidth = 1;
+      // an item with painted art lies there as itself: 'potions#12' is a cell of an atlas
+      const [file, cell] = (def?.art ?? '').split('#');
+      const atlas = cell != null && file ? uiImage(file) : null;
       if (isAurum) { ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
-      else { ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8); }
+      else if (atlas?.naturalWidth) {
+        const size = atlas.naturalWidth / 8, i = +cell;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
+        ctx.drawImage(atlas, (i % 8) * size, Math.floor(i / 8) * size, size, size, -9, -12, 18, 18);
+      } else { ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8); }
       ctx.restore();
     }
   }

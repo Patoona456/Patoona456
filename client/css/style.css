@@ -688,6 +688,8 @@ body.bannering #zone-banner { opacity: 0 !important; }
 #death .dz small { font-size: 11px; opacity: .9; }
 #death .dz.here { background: linear-gradient(180deg, #f2a92a, #a85a08); border: 1px solid #ffd27a; }
 #death .dz.town { background: linear-gradient(180deg, #2f82e8, #164a9a); border: 1px solid #8cc4ff; }
+#death .dz.potion { background: linear-gradient(180deg, #5a4fb8, #2a216e); border: 1px solid #c8b8ff; }
+#death .dz.potion .icon { height: 60px; width: 60px; }
 #death .hint { margin: 2px 0 0; font-size: 11px; color: #bfa2a2; }
 body.dead #banners, body.dead #cast-bar, body.dead #combo { display: none; }
 @keyframes ko-drop { from { opacity: 0; transform: translateY(-30px) scale(1.2); } }

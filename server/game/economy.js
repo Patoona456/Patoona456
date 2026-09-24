@@ -579,10 +579,13 @@ export function warpService(world, p, to) {
   return { ok: true, route };
 }
 
-export function resetStats(world, p) {
-  if (p.record.aurum < RESET_STAT_PRICE) return { error: `ต้องใช้ ${RESET_STAT_PRICE} ออรัม` };
-  p.record.aurum -= RESET_STAT_PRICE;
-  burn(world, RESET_STAT_PRICE, 'reset-stats');
+/** A reset at the NPC costs aurum; one from a bottle (`free`) was paid for already. */
+export function resetStats(world, p, { free = false } = {}) {
+  if (!free) {
+    if (p.record.aurum < RESET_STAT_PRICE) return { error: `ต้องใช้ ${RESET_STAT_PRICE} ออรัม` };
+    p.record.aurum -= RESET_STAT_PRICE;
+    burn(world, RESET_STAT_PRICE, 'reset-stats');
+  }
   let refund = 0;
   for (const k of Object.keys(STARTING_STATS)) {
     for (let v = p.record[k]; v > STARTING_STATS[k]; v--) refund += Math.floor((v - 2) / 10) + 2;
@@ -594,10 +597,12 @@ export function resetStats(world, p) {
   return { ok: true, refund };
 }
 
-export function resetSkills(world, p) {
-  if (p.record.aurum < RESET_SKILL_PRICE) return { error: `ต้องใช้ ${RESET_SKILL_PRICE} ออรัม` };
-  p.record.aurum -= RESET_SKILL_PRICE;
-  burn(world, RESET_SKILL_PRICE, 'reset-skills');
+export function resetSkills(world, p, { free = false } = {}) {
+  if (!free) {
+    if (p.record.aurum < RESET_SKILL_PRICE) return { error: `ต้องใช้ ${RESET_SKILL_PRICE} ออรัม` };
+    p.record.aurum -= RESET_SKILL_PRICE;
+    burn(world, RESET_SKILL_PRICE, 'reset-skills');
+  }
   let pts = 0;
   for (const lvl of Object.values(p.record.skills)) pts += lvl;
   p.record.skills = {};

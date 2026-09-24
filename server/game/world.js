@@ -260,7 +260,7 @@ export class World {
           aurum: p.record.aurum, alive: p.alive, target: p.targetId, attacking: p.attacking,
           cast: p.cast ? { skill: p.cast.skillId, until: p.cast.until, started: p.cast.startedAt } : null,
           cooldowns: p.cooldowns, weight: p.weight(), weightCap: p.weightCap,
-          statuses: p.statuses.map((s) => ({ type: s.type, key: s.key, icon: s.icon, until: s.until, beneficial: !!s.beneficial })),
+          statuses: p.statuses.map((s) => ({ type: s.type, key: s.key, icon: s.icon, until: s.until, beneficial: !!s.beneficial, item: s.item })),
         };
         p.conn.send(snap);
         // party frames want live health, but a second's lag is fine

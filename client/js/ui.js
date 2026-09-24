@@ -305,7 +305,14 @@ export class UI {
       const pic = STATUS_ART[s.key] ?? STATUS_ART[s.type];
       const ail = AILMENTS.indexOf(s.key) >= 0 ? AILMENTS.indexOf(s.key) : AILMENTS.indexOf(s.type);
       const node = el('div', s.beneficial ? 'good' : 'bad', pic || ail >= 0 ? '' : s.icon);
-      if (ail >= 0) {
+      if (s.item && ITEMS[s.item]) {
+        // a bottle's effect wears the bottle
+        const ico = itemIcon(s.item, { size: 20 });
+        ico.classList.add('st-ico');
+        node.textContent = '';
+        node.append(ico);
+        node.title = ITEMS[s.item].nameTh;
+      } else if (ail >= 0) {
         // a cell of the combat sheet's ailment strip
         const ico = el('i', 'st-ico ail');
         ico.style.backgroundPosition = `${(ail / (AILMENTS.length - 1)) * 100}% 0`;
@@ -319,7 +326,7 @@ export class UI {
       // how long it has left, the way the sheet counts it: 8s, 2m
       const left = Math.ceil(((s.until ?? 0) - t) / 1000);
       if (left > 0 && left < 3600) node.append(el('small', 'st-t num', left >= 60 ? `${Math.ceil(left / 60)}m` : `${left}s`));
-      node.title = STATUS_TH[s.key] ?? STATUS_TH[s.type] ?? '';
+      node.title ||= STATUS_TH[s.key] ?? STATUS_TH[s.type] ?? '';
       box.append(node);
     }
   }
@@ -426,6 +433,16 @@ export class UI {
     here.addEventListener('click', () => this.game.net.send({ t: 'respawn', here: 1 }));
     town.addEventListener('click', () => this.game.net.send({ t: 'respawn' }));
     row.append(here, town);
+    // a revive potion in the bag is a third way up: free, no cooldown, half the bar
+    const bottles = (this.game.inventory?.items ?? []).filter((x) => ITEMS[x.id]?.revive);
+    if (bottles.length && !info.duel) {
+      const b = bottles[0];
+      const pot = el('button', 'dz potion');
+      const have = bottles.reduce((a, x) => a + (x.qty ?? 1), 0);
+      pot.append(itemIcon(b.id, { size: 52 }), el('span', '', `ใช้${ITEMS[b.id].nameTh}`), el('small', 'num', `มี ${have} · HP ${Math.round(ITEMS[b.id].revive * 100)}%`));
+      pot.addEventListener('click', () => this.game.net.send({ t: 'useItem', index: b.i }));
+      row.prepend(pot);
+    }
     box.append(row);
     box.append(el('p', 'hint', 'รอเพื่อนนักบวชชุบชีวิตได้ · กด E เพื่อกลับจุดบันทึก'));
     document.body.append(box);

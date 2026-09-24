@@ -473,6 +473,7 @@ export class Zone {
     for (const p of share) {
       let penalty = expGapPenalty(p.record.level, m.level);   // no power-levelling
       if (weekly && (p.record.lockouts?.[m.defId] ?? null) === weekly) penalty *= 0.25;
+      penalty *= 1 + (p.mods?.expPct ?? 0) / 100;          // an EXP potion
       p.gainExp(exp * penalty, jobExp * penalty, this);
       this.world.onKill(p, m);
     }
@@ -500,16 +501,20 @@ export class Zone {
       if (!ownerIds.length) return;         // everyone had already claimed it
     }
 
-    // drops
+    // drops: the luckiest bottle among the people who earned them counts
+    const looters = share.filter((p) => ownerIds.includes(p.id));
+    const best = (k) => Math.max(0, ...looters.map((p) => p.mods?.[k] ?? 0)) / 100;
+    const dropMul = 1 + best('dropPct'), rareMul = 1 + best('rareDropPct'), aurumMul = 1 + best('aurumPct');
     for (const d of m.def.drops ?? []) {
-      if (Math.random() > d.chance) continue;
+      const chance = Math.min(1, d.chance * dropMul * (d.chance < 0.05 ? rareMul : 1));
+      if (Math.random() > chance) continue;
       const qty = Array.isArray(d.qty) ? d.qty[0] + Math.floor(Math.random() * (d.qty[1] - d.qty[0] + 1)) : (d.qty ?? 1);
       this.dropItem(m.x, m.y, d.id, qty, ownerIds);
     }
     // aurum
     const au = m.def.aurum;
     if (au && Math.random() < au.chance) {
-      const amount = au.min + Math.floor(Math.random() * (au.max - au.min + 1));
+      const amount = Math.round((au.min + Math.floor(Math.random() * (au.max - au.min + 1))) * aurumMul);
       this.ground.push({
         uid: 'g' + Math.random().toString(36).slice(2, 9), id: '__aurum', qty: amount,
         x: m.x, y: m.y, owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS,

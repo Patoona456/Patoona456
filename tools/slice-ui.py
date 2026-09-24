@@ -722,3 +722,30 @@ save('respawn_tomb', grab((712, 882, 866, 1006), pad=4, img=cb)[0])
 save('revive_wings', grab((22, 920, 300, 1004), pad=4, img=cb2)[0])
 save('victory', grab((1160, 848, 1392, 992), pad=4, img=cb2)[0])
 print('combat sheet done')
+
+
+# ============================================================================
+# Eleventh sheet: potions & consumables (assets/ui/source/potion_sheet.png)
+# ============================================================================
+# Forty bottles, eight to a row, each over its caption. They go into one
+# atlas - assets/ui/potions.webp, 8 x 5 cells of POTION_CELL - in reading
+# order; shared/data/items.js names each item's cell ('potions#12').
+pt = cv2.imread(os.path.join(ROOT, 'assets/ui/source/potion_sheet.png'))
+POTION_CELL = 96
+POTION_ROWS = [  # (top, caption top, bottle centres left to right)
+    (12, 160, (105, 283, 480, 662, 877, 1057, 1240, 1422)),
+    (216, 364, (104, 286, 479, 666, 871, 1061, 1250, 1435)),
+    (410, 552, (108, 293, 486, 678, 873, 1065, 1250, 1438)),
+    (596, 757, (112, 290, 471, 657, 865, 1058, 1256, 1442)),
+    (796, 956, (108, 290, 485, 668, 868, 1049, 1240, 1435)),
+]
+atlas = np.zeros((POTION_CELL * 5, POTION_CELL * 8, 4), np.uint8)
+for r, (top, cap, xs) in enumerate(POTION_ROWS):
+    for c, cx in enumerate(xs):
+        # the all-resist ring reaches out; four blue bottles sit on blue haze
+        # that GrabCut would take along unless the box hugs them
+        left, right = {(2, 7): (92, 92), (3, 1): (58, 62), (4, 1): (58, 62), (3, 6): (62, 66), (4, 7): (56, 62)}.get((r, c), (80, 80))
+        bottle = grab((cx - left, top, cx + right, cap), pad=2, img=pt)[0]
+        atlas[r * POTION_CELL:(r + 1) * POTION_CELL, c * POTION_CELL:(c + 1) * POTION_CELL] = strip([bottle], POTION_CELL)
+save('potions', atlas)
+print('potion sheet done')

@@ -169,8 +169,10 @@ export function rollDamage(a, d, o = {}) {
   // gear cards: bonus vs size / race
   dmg *= 1 + (o.sizeBonus ?? 0) + (o.raceBonus ?? 0);
 
-  // element
-  dmg *= elementMultiplier(o.element ?? (magic ? a.element : a.weaponElement) ?? 'neutral', d.element ?? 'neutral');
+  // element, and whatever resistance the defender drank against it
+  const el = o.element ?? (magic ? a.element : a.weaponElement) ?? 'neutral';
+  dmg *= elementMultiplier(el, d.element ?? 'neutral');
+  if (d.resist) dmg *= 1 - Math.min(0.8, (d.resist[el] ?? 0) + (d.resist.all ?? 0));
 
   // crit (physical only, ignores hard def)
   let crit = false;

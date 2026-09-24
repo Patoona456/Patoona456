@@ -459,4 +459,49 @@ export const MONSTERS = {
   }),
 };
 
+/**
+ * What monsters drop until the gear sheets come back: potions, by level
+ * band. Every non-summon carries the same shape of table -
+ *
+ *   * the HP and MP bottle of its band, often enough to live off in a
+ *     long session but not so often that the shop stops mattering;
+ *   * the resist potion of its own element, so hunting fire things is how
+ *     you stock up against fire;
+ *   * a rare shot at the growth bottles (EXP, drops, full restore) past
+ *     level 20;
+ * and bosses pay the bottles nobody sells: revives, resets, rare-drop luck.
+ */
+const BAND = (lv) => (lv < 20 ? 's' : lv < 40 ? 'm' : lv < 58 ? 'l' : 'xl');
+const RESIST_OF = { fire: 'fire_resist', ice: 'ice_resist', lightning: 'lightning_resist', wind: 'wind_resist',
+  earth: 'earth_resist', dark: 'dark_resist', holy: 'holy_resist' };
+export function potionDrops(m) {
+  if (m.summon) return [];
+  if (m.boss) {
+    return [
+      { id: 'hp_potion_' + BAND(m.level), chance: 1, qty: [3, 6] },
+      { id: 'full_restore', chance: 0.6, qty: [1, 2] },
+      { id: 'revive_potion', chance: 0.5 },
+      { id: 'exp_potion', chance: 0.5 },
+      { id: 'all_resist', chance: 0.4 },
+      { id: 'cooldown_reset', chance: 0.3 },
+      { id: 'rare_drop_up', chance: 0.25 },
+      { id: 'skill_reset', chance: 0.08 },
+      { id: 'stat_reset', chance: 0.08 },
+    ];
+  }
+  const out = [
+    { id: 'hp_potion_' + BAND(m.level), chance: 0.05 },
+    { id: 'mp_potion_' + BAND(m.level), chance: 0.03 },
+  ];
+  if (RESIST_OF[m.element]) out.push({ id: RESIST_OF[m.element], chance: 0.012 });
+  if (m.level < 15) out.push({ id: 'heal_potion', chance: 0.02 });
+  if (m.level >= 20) {
+    out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },
+      { id: 'item_find', chance: 0.003 }, { id: 'curse_potion', chance: 0.004 });
+  }
+  if (m.level >= 30) out.push({ id: 'full_restore', chance: 0.0015 }, { id: 'revive_potion', chance: 0.001 });
+  return out;
+}
+for (const m of Object.values(MONSTERS)) if (!m.drops?.length) m.drops = potionDrops(m);
+
 export function monster(id) { return MONSTERS[id]; }
