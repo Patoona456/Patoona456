@@ -45,19 +45,21 @@ function heldArt(e) {
 
 /**
  * How the weapon fist holds its blade in each of the chibi's four rows
- * (down, left, up, right): which side it leans to at rest, which side it cuts
- * toward, and whether the fist is over the body. In the side views the near
- * arm crosses the torso, so the sword goes on after the body and the fist is
- * painted back over its grip; elsewhere the sword goes on first and the
- * body's own fist covers the grip. At rest a side-view blade leans back over
- * the shoulder, clear of the body, and swings forward to cut. Where the fist
- * is, frame by frame, is measured off the art (shared/data/chibi.js).
+ * (down, left, up, right): which side the blade points to at rest and which
+ * it cuts toward, how far it is tipped up from level at rest (radians), and
+ * whether the fist is over the body. Facing the camera or away, the blade
+ * stands up beside the body, leaning out. In the side views the visible arm
+ * hangs at the back, so the sword is carried the way a walking swordsman
+ * carries it: low at the hip, pointed ahead, the blade across the front of
+ * the body - drawn after the body, with the fist painted back over the grip.
+ * Where the fist is, frame by frame, is measured off the art
+ * (shared/data/chibi.js).
  */
 const CHIBI_GRIP = [
-  { side: 1, cut: 1, over: false },    // down
-  { side: 1, cut: -1, over: true },    // left
-  { side: 1, cut: 1, over: false },    // up
-  { side: -1, cut: 1, over: true },    // right
+  { side: 1, cut: 1, over: false, rest: 1.2 },     // down
+  { side: -1, cut: -1, over: true, rest: 0.6 },    // left
+  { side: 1, cut: 1, over: false, rest: 1.2 },     // up
+  { side: 1, cut: 1, over: true, rest: 0.6 },      // right
 ];
 /**
  * How far a chibi travels over one walk cycle, in screen pixels at scale 1.
@@ -67,8 +69,8 @@ const CHIBI_GRIP = [
  */
 const CHIBI_STRIDE = 72;
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
-/** Pommel to tip, in screen pixels, on a ~47px chibi: well under half its height. */
-const HELD_LEN = 19;
+/** Pommel to tip, in screen pixels, on a ~50px chibi: under half its height. */
+const HELD_LEN = 22;
 /** The fist's radius in frame pixels, for painting it back over the grip. */
 const FIST_R = 8;
 
@@ -192,13 +194,16 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const fist = chibiFist(e, anim, elapsed);
   const walking = anim === 'walk';
   const swing = anim === 'slash' || anim === 'thrust';
-  let angle = -0.4 + (walking ? Math.sin(now / 124) * 0.06 : 0);
+  // the art's blades point up at 45 degrees; `angle` turns from there
+  const rest = Math.PI / 4 - hand.rest;
+  let angle = rest + (walking ? Math.sin(now / 124) * 0.06 : 0);
   if (swing) {
-    // wind up, cut, recover: 0..0.25 up, 0.25..0.6 down through, then back
+    // wind up, cut, recover: from rest up and back over the shoulder, down
+    // through the facing, then back to rest - whichever way this facing rests
     const k = Math.min(1, elapsed / 300);
-    angle = k < 0.25 ? -0.4 - (k / 0.25) * 0.8
+    angle = k < 0.25 ? rest + (k / 0.25) * (-1.2 - rest)
       : k < 0.6 ? -1.2 + ((k - 0.25) / 0.35) * 2.3
-        : 1.1 - ((k - 0.6) / 0.4) * 1.5;
+        : 1.1 + ((k - 0.6) / 0.4) * (rest - 1.1);
   }
   const grip = gripOf(img, file, cell);
   const len = HELD_LEN * (e.sprite?.scale ?? 1);

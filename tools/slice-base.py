@@ -142,7 +142,10 @@ def split_legs(f, r):
     n, lab, st, _ = cv2.connectedComponentsWithStats(legs.astype(np.uint8))
     legs = np.isin(lab, [i for i in range(1, n) if st[i, 1] + st[i, 3] >= BASELINE - 4])
     # the dark rim along the shorts' hem is drawn on both, so the body keeps its edge
-    rim = cv2.dilate(shorts.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
+    # (only the dark rim: skin beside the shorts belongs to the legs, or it
+    # stays behind as a pale sliver when they move)
+    lum = f[:, :, :3].astype(int) @ np.array([3, 6, 1]) / 10
+    rim = (cv2.dilate(shorts.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0) & (lum < 110)
     body_m = a & (~legs | shorts | rim)
     if r in SIDE_ROWS:
         # the feet come apart well before the hip: grow each foot back up its leg
@@ -167,13 +170,23 @@ def split_legs(f, r):
     return piece(body_m), [piece(m) for m in sides]
 
 
-def extend_up(leg, hip, rows=10):
-    """Smear a leg's top edge up under the shorts, so turning it opens no gap."""
+def extend_up(leg, hip, shorts, rows=14):
+    """Smear a leg up from its own top edge, behind the shorts: its top sits
+    under their hem, so turning or lifting it must not open a gap there. Only
+    columns where the shorts come right down onto the leg; the rest of the
+    leg's outline is its real edge. (Drawn behind the body, the smear shows
+    only where a gap would have.)"""
     out = leg.copy()
-    top = out[hip:hip + 2]
-    for y in range(max(0, hip - rows), hip):
-        fill = (out[y, :, 3] == 0) & (top[:, :, 3].max(0) > 0)
-        out[y][fill] = top[0][fill] if top[0][fill].size else out[y][fill]
+    solid = out[:, :, 3] > 200
+    for x in range(out.shape[1]):
+        ys = np.nonzero(solid[:, x])[0]
+        if not len(ys):
+            continue
+        y0 = ys[0]
+        if not shorts[max(0, y0 - 4):y0 + 1, x].any():
+            continue
+        for y in range(max(0, min(y0, hip) - rows), y0):
+            out[y, x] = out[y0, x]
     return out
 
 
@@ -217,7 +230,6 @@ def walk_side(f, r):
     hip = HIP_Y[r]
     body, legs = split_legs(f, r)
     fwd = -1 if r == 1 else 1                         # which way is forward in x
-    legs = [extend_up(l, hip) for l in legs]
     # both legs hang from one hip joint, under the middle of the shorts
     sm = shorts_mask(f)
     ys, xs = np.nonzero(sm)
@@ -231,7 +243,8 @@ def walk_side(f, r):
     L = (front['len'] + back['len']) / 2
 
     # a leg shows below the hip, or behind the shorts; nowhere else
-    under = cv2.dilate(sm.astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
+    # (a little past the shorts' edge, so no hairline opens under the hem)
+    under = cv2.dilate(sm.astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
 
     def leg_at(theta, lift, dy, far):
         src = front if theta >= 0 else back
@@ -247,6 +260,8 @@ def walk_side(f, r):
         keep[hip + dy:] = True
         keep |= np.roll(under, dy, axis=0)
         img[~keep] = 0
+        # filled up behind the shorts after turning, so the fill stays behind them
+        img = extend_up(img, hip + dy, np.roll(sm, dy, axis=0))
         return shade(img, 0.9) if far else img
 
     frames, offs = [], []
@@ -271,7 +286,8 @@ def walk_front(f, r):
     """Eight steps and a stand facing the camera or away: the feet lift in turn."""
     hip = HIP_Y[r]
     body, (left, right) = split_legs(f, r)
-    left, right = extend_up(left, hip), extend_up(right, hip)
+    sm = shorts_mask(f)
+    left, right = extend_up(left, hip, sm), extend_up(right, hip, sm)
     frames, offs = [], []
     for k in range(WALK_FRAMES + 1):
         idle = k == IDLE_COL
