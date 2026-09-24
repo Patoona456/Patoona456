@@ -845,59 +845,55 @@ weapon_sheet('sword_sheet.png', 'swords', cols=6, cell_w=256,
 print('sword sheet done')
 
 
-# Rare swords (assets/ui/source/sword_rare_sheet.png): twenty-six on a painted
-# checkerboard, their "Lv." plates in a loose grid. The plates are found by
-# colour, painted out, and every sword is the blob just up and left of its
-# plate. Order is the sheet's reading order, the order of the plates.
-def plated_sheet(src, out, cols=8, cell=160, title=(0, 0, 380, 140)):
+# Rare swords (assets/ui/source/sword_rare_sheet.png): twenty-five, Lv.1 to
+# Lv.120 on the same five-level steps as the common ladder, each over a navy
+# "Lv." plate. The plates are found by colour (they also give the order) and
+# painted out. The backdrop is a smooth gradient with a soft glow behind
+# each sword, so it is modelled - shrink the sheet hard, median it, grow it
+# back, and the thin swords vanish while the gradient and glows stay - and a
+# sword is whatever differs from it. Out: assets/ui/swords_rare.webp.
+def plated_weapons(src, out, cols=8, cell=160, lo=40, hi=90):
     img = cv2.imread(os.path.join(ROOT, 'assets/ui/source', src))
     b, g, r = [img[:, :, i].astype(int) for i in range(3)]
     lum = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(int)
     navy = ((b - r > 25) & (lum < 90)).astype(np.uint8)
     n, lab, st, _ = cv2.connectedComponentsWithStats(navy)
-    plates = [st[i][:4] for i in range(1, n) if st[i, 2] > 80 and 20 < st[i, 3] < 50]
+    plates = [st[i][:4] for i in range(1, n) if st[i, 2] > 70 and 18 < st[i, 3] < 50]
     plates.sort(key=lambda p: (p[1] // 100, p[0]))
-    # The painted checkerboard is light and grey. The swords' glow is light
-    # too, with only a little colour, so both count as background: ink is
-    # what is darker than the glow or strongly coloured. The blades' white
-    # highlights fall out as well, but they sit inside the black outline
-    # and come back when the holes are filled.
-    ink = ((lum < 165) | (img.max(2).astype(int) - img.min(2) > 62)).astype(np.uint8)
+    mask = np.zeros(img.shape[:2], np.uint8)
     for (x, y, w, h) in plates:
-        ink[y - 7:y + h + 7, x - 7:x + w + 7] = 0
-    x0, y0, x1, y1 = title
-    ink[y0:y1, x0:x1] = 0
-    img = img.copy()
-    for (x, y, w, h) in plates:
-        img[y - 7:y + h + 7, x - 7:x + w + 7] = 245      # plates become background
-    ink = cv2.morphologyEx(ink, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-    ink = cv2.morphologyEx(ink, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))   # lone glow specks
-    n, lab, st, _ = cv2.connectedComponentsWithStats(ink)
+        cv2.rectangle(mask, (x - 8, y - 6), (x + w + 8, y + h + 6), 255, -1)
+    clean = cv2.inpaint(img, mask, 9, cv2.INPAINT_TELEA)
+    small = cv2.resize(clean, (clean.shape[1] // 8, clean.shape[0] // 8), interpolation=cv2.INTER_AREA)
+    bg = cv2.resize(cv2.medianBlur(small, 9), (clean.shape[1], clean.shape[0]), interpolation=cv2.INTER_CUBIC)
+    d = np.abs(clean.astype(int) - bg.astype(int)).sum(2).astype(np.float32)
+    solid = (d > lo).astype(np.uint8)
+    solid = cv2.morphologyEx(solid, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(solid)
     rows = (len(plates) + cols - 1) // cols
     atlas = np.zeros((cell * rows, cell * cols, 4), np.uint8)
     for k, (x, y, w, h) in enumerate(plates):
-        # the biggest blob whose box reaches the plate's left end from above
+        # the biggest blob whose box comes down to the plate from above
         best, area = 0, 0
         for i in range(1, n):
             bx, by, bw, bh, a = st[i]
-            if a > area and bx < x + 20 and bx + bw > x - 20 and by + bh > y - 30 and by < y:
+            if a > area and bx < x + w and bx + bw > x and by + bh > y - 40 and by < y:
                 best, area = i, a
         bx, by, bw, bh, _ = st[best]
         m = (lab[by:by + bh, bx:bx + bw] == best).astype(np.uint8) * 255
-        # fill the holes: flood the outside from a border that is surely empty
         ff = cv2.copyMakeBorder(m, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
         cv2.floodFill(ff, np.zeros((bh + 4, bw + 4), np.uint8), (0, 0), 255)
         m = m | cv2.bitwise_not(ff[1:-1, 1:-1])
-        # a crisp edge: the outermost pixel is half checkerboard, so it goes,
-        # and the edge that is left is antialiased by one pixel only
-        m = cv2.erode(m, np.ones((3, 3), np.uint8))
+        # solid inside, and a soft rim where the difference fades out
+        rim = np.clip((d[by:by + bh, bx:bx + bw] - lo) / (hi - lo), 0, 1)
+        inner = cv2.erode(m, np.ones((3, 3), np.uint8)) > 0
+        alpha = np.where(inner, 1.0, rim * (m > 0))
         rgba = cv2.cvtColor(img[by:by + bh, bx:bx + bw], cv2.COLOR_BGR2RGBA)
-        rgba[:, :, 3] = cv2.GaussianBlur(m, (3, 3), 0.6)
-        piece = trim(rgba)
+        rgba[:, :, 3] = (alpha * 255).astype(np.uint8)
         rr, cc = divmod(k, cols)
-        atlas[rr * cell:(rr + 1) * cell, cc * cell:(cc + 1) * cell] = strip([piece], cell)
+        atlas[rr * cell:(rr + 1) * cell, cc * cell:(cc + 1) * cell] = strip([trim(rgba)], cell)
     save(out, atlas, quality=96)
     return len(plates)
 
 
-print('rare swords', plated_sheet('sword_rare_sheet.png', 'swords_rare'))
+print('rare swords', plated_weapons('sword_rare_sheet.png', 'swords_rare'))

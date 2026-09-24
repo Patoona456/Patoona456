@@ -1,5 +1,5 @@
-// The swordsman's two ladders: the common starters every five levels, and
-// the rare sheet spread over the same range.
+// The swordsman's two ladders: the common starters and the rare sheet, both
+// on five-level steps from Lv.1 to Lv.120.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SWORDS, RARE_SWORDS } from '../shared/data/items.js';
@@ -9,7 +9,7 @@ import { SHOPS } from '../shared/data/npcs.js';
 const byLevel = (set) => Object.values(set).sort((a, b) => a.level - b.level);
 
 test('both ladders run Lv.1 to Lv.120, climbing, one picture each', () => {
-  for (const [set, n] of [[SWORDS, 24], [RARE_SWORDS, 26]]) {
+  for (const [set, n] of [[SWORDS, 24], [RARE_SWORDS, 25]]) {
     const list = byLevel(set);
     assert.equal(list.length, n);
     assert.equal(list[0].level, 1);
