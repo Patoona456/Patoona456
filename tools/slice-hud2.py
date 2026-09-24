@@ -18,7 +18,7 @@ from PIL import Image
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 OUT = os.path.join(ROOT, 'assets/ui')
 SHEETS = {k: np.array(Image.open(os.path.join(ROOT, f'assets/ui/source/hud2_{k}.png')).convert('RGBA'))
-          for k in 'abcde'}
+          for k in 'abcd'}
 made = {}
 
 
@@ -287,53 +287,6 @@ for row, (y0, kind) in enumerate(((312, 'buff'), (405, 'debuff'))):
         x0 = 31 + i * 60
         ic = solid(crop('c', (x0, y0, x0 + 58, y0 + 50)))
         save(f'st_{kind}{i}', trim(ic), 48)
-
-# ------------------------------------------------------------ the bag (sheet E)
-def wipe_mid(rgba, x0=.2, x1=.8, y0=.2, y1=.8):
-    """Captions sit in the middle of a plate that shades top to bottom."""
-    h, w = rgba.shape[:2]
-    return smear(rgba, (int(w * x0), int(h * y0), int(w * x1), int(h * y1)), int(w * x0) - 1)
-
-
-def recolor_rim(rgba, hue=None, sat=1.0, val=1.0):
-    """Turn the gold rim of a frame another colour (hue None = silver)."""
-    hsv = cv2.cvtColor(np.ascontiguousarray(rgba[:, :, :3]), cv2.COLOR_RGB2HSV).astype(np.float32)
-    gold = (hsv[:, :, 1] > 70) & (hsv[:, :, 0] > 8) & (hsv[:, :, 0] < 32)
-    if hue is None:
-        hsv[:, :, 1] = np.where(gold, hsv[:, :, 1] * .08, hsv[:, :, 1])
-        hsv[:, :, 2] = np.where(gold, np.minimum(255, hsv[:, :, 2] * 1.05), hsv[:, :, 2])
-    else:
-        hsv[:, :, 0] = np.where(gold, hue, hsv[:, :, 0])
-        hsv[:, :, 1] = np.where(gold, np.minimum(255, hsv[:, :, 1] * sat), hsv[:, :, 1])
-        hsv[:, :, 2] = np.where(gold, np.minimum(255, hsv[:, :, 2] * val), hsv[:, :, 2])
-    rgba[:, :, :3] = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2RGB)
-    return rgba
-
-
-E = lambda box: trim(solid(crop('e', box)))
-cell = E((1045, 805, 1088, 846))
-save('inv_slot', cell.copy())
-# the rim in each rarity's colour (OpenCV hue is 0..180)
-for name, hue, sat, val in (('common', None, 1, 1), ('uncommon', 60, 1.1, 1.05), ('rare', 105, 1.2, 1.1),
-                            ('epic', 140, 1.1, 1.1), ('legendary', 18, 1.3, 1.25), ('mythic', 176, 1.3, 1.1)):
-    save(f'inv_slot_{name}', recolor_rim(cell.copy(), hue, sat, val))
-save('inv_sel', E((1157, 805, 1201, 846)))
-save('inv_check', E((987, 805, 1030, 846)))
-save('inv_new', E((499, 734, 561, 772)))
-lockpad = key_dark(solid(crop('e', (1119, 949, 1157, 993))), (38, 41, 49), tol=34)
-save('inv_lock', main_blob(lockpad))
-for name, box in (('tab', (22, 867, 198, 926)), ('tab_sel', (205, 867, 377, 926)), ('tab_off', (380, 867, 551, 926))):
-    save(f'inv_{name}', wipe_mid(E(box), .16, .84, .22, .78))
-for name, box in (('b_confirm', (27, 937, 175, 1004)), ('b_cancel', (184, 937, 331, 1004)),
-                  ('b_ok', (341, 937, 492, 1004)), ('b_green', (501, 937, 669, 1005))):
-    save(f'inv_{name}', wipe_mid(E(box), .14, .86, .2, .8))
-for name, box in (('use', (680, 937, 806, 1004)), ('sell', (816, 937, 944, 1004)),
-                  ('drop', (954, 937, 1086, 1004)), ('lockbtn', (1100, 937, 1253, 1004))):
-    save(f'inv_{name}', E(box))
-sort = E((1039, 870, 1190, 920))
-save('inv_sort', smear(sort, (22, 10, 100, 40), 21))
-search = E((1200, 869, 1511, 921))
-save('inv_search', smear(search, (61, 17, 125, 41), 59))   # the placeholder
 
 if len(sys.argv) > 1:
     # contact sheet for eyeballing

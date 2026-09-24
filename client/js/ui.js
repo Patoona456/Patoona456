@@ -17,7 +17,7 @@ import { SLOTS, slotName } from '../../shared/constants.js';
 import { ZOOM_STEPS } from './renderer.js';
 import { gameClock, skyAt } from '../../shared/daycycle.js';
 import { glowTier, glowCss, specialMarks, signatureOf, SPECIAL_MARKS, SIGNATURES } from '../../shared/refineglow.js';
-import { WEAPON_CLASSES } from '../../shared/weapons.js';
+import { WEAPON_CLASSES, jobCanHold } from '../../shared/weapons.js';
 import { MAPS } from '../../shared/data/maps.js';
 
 /** Zone ids to the names players see, for quest rows. */
@@ -839,101 +839,137 @@ export class UI {
     const wrap = $('#inv-body');
     if (!wrap) return;
     const inv = this.game.inventory ?? { items: [] };
+    const self = this.game.self ?? {};
     this.noteSeen(inv, false);
-    // keep the search box (and its caret) across redraws
     const typing = document.activeElement?.id === 'inv-search-input';
     wrap.innerHTML = '';
+    wrap.className = 'bag';
+    const IMG = (name) => `${UI_BASE}/bag_${name}.webp`;
+    const pic = (name, cls = '') => { const i = el('img', cls); i.src = IMG(name); i.alt = ''; i.draggable = false; return i; };
 
-    /* tabs, then sort and search on one line */
-    const tabs = el('div', 'inv-tabs');
-    for (const [key, label] of [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ'], ['armor', 'เกราะ'],
-      ['consumable', 'ของใช้'], ['material', 'วัตถุดิบ']]) {
-      const b = el('button', 'inv-tab' + ((this.invFilter ?? 'all') === key ? ' on' : ''), label);
+    /* six painted tabs: icon over the word */
+    const KEYS = new Set(Object.values(KEY_ITEMS).filter(Boolean));
+    const CATS = [
+      ['all', 'ทั้งหมด', () => true],
+      ['equip', 'อุปกรณ์', (it) => it.type === 'weapon' || it.type === 'armor'],
+      ['use', 'ใช้สอย', (it) => it.type === 'consumable' && !KEYS.has(it.id)],
+      ['mat', 'วัตถุดิบ', (it) => (it.type === 'material' || it.type === 'ammo') && !KEYS.has(it.id)],
+      ['quest', 'ภารกิจ', (it) => KEYS.has(it.id)],
+      ['other', 'อื่นๆ', (it) => !['weapon', 'armor', 'consumable', 'material', 'ammo'].includes(it.type) && !KEYS.has(it.id)],
+    ];
+    const cat = CATS.find(([k]) => k === this.invFilter) ?? CATS[0];
+    const tabs = el('div', 'bag-tabs');
+    for (const [key, label, test] of CATS) {
+      const on = key === cat[0];
+      const b = el('button', 'bag-tab' + (on ? ' on' : ''));
+      const n = inv.items.filter(test).length;
+      b.append(pic(`tab_i_${key}${on ? '_d' : ''}`, 'ico'), el('span', '', label), el('em', 'num', n ? String(n) : ''));
       b.addEventListener('click', () => { this.invFilter = key; this.renderInventory(); });
       tabs.append(b);
     }
     wrap.append(tabs);
 
-    const tools = el('div', 'inv-tools');
-    const SORTS = [['slot', 'ตามช่อง'], ['rarity', 'ความหายาก'], ['type', 'ประเภท'], ['level', 'เลเวล'], ['name', 'ชื่อ']];
-    const sortKey = this.invSort ?? 'slot';
-    const sort = el('button', 'inv-sort', `เรียง: ${SORTS.find(([k]) => k === sortKey)[1]}`);
-    sort.title = 'กดเพื่อเปลี่ยนวิธีเรียง';
-    sort.addEventListener('click', () => {
-      const i = SORTS.findIndex(([k]) => k === sortKey);
-      this.invSort = SORTS[(i + 1) % SORTS.length][0];
-      this.renderInventory();
-    });
-    const search = el('label', 'inv-search');
+    /* search + the sort toggle; the sort chips fold out under them */
+    const bar = el('div', 'bag-bar');
+    const search = el('label', 'bag-search');
     const input = el('input');
     input.id = 'inv-search-input';
     input.placeholder = 'ค้นหา...';
     input.value = this.invQuery ?? '';
     input.addEventListener('input', () => { this.invQuery = input.value; this.renderInventory(); });
     input.addEventListener('keydown', (e) => e.stopPropagation());
-    const clear = el('button', 'inv-clear');
+    const clear = el('button', 'bag-clear', '✕');
+    clear.hidden = !this.invQuery;
     clear.setAttribute('aria-label', 'ล้างคำค้น');
     clear.addEventListener('click', (e) => { e.preventDefault(); this.invQuery = ''; this.renderInventory(); });
     search.append(input, clear);
-    tools.append(sort, search);
-    wrap.append(tools);
+    const sortBtn = el('button', 'bag-sortbtn' + (this.invSortOpen ? ' on' : ''));
+    sortBtn.setAttribute('aria-label', 'เรียงลำดับ');
+    sortBtn.addEventListener('click', () => { this.invSortOpen = !this.invSortOpen; this.renderInventory(); });
+    bar.append(search, sortBtn);
+    wrap.append(bar);
 
-    const filter = this.invFilter ?? 'all';
+    const SORTS = [['latest', 'ล่าสุด'], ['level', 'เลเวล'], ['quality', 'คุณภาพ'], ['type', 'ประเภท'], ['name', 'ชื่อ']];
+    const sortKey = SORTS.some(([k]) => k === this.invSort) ? this.invSort : 'latest';
+    const asc = !!this.invAsc;
+    if (this.invSortOpen) {
+      const chips = el('div', 'bag-sorts');
+      for (const [key, label] of SORTS) {
+        const on = key === sortKey;
+        const b = el('button', 'bag-chip' + (on ? ' on' : ''));
+        b.append(pic(`sort_i_${key}${on ? '_d' : ''}`, 'ico'), el('span', '', label));
+        b.addEventListener('click', () => { this.invSort = key; this.renderInventory(); });
+        chips.append(b);
+      }
+      const order = el('button', 'bag-order', asc ? 'น้อยไปมาก' : 'มากไปน้อย');
+      order.addEventListener('click', () => { this.invAsc = !asc; this.renderInventory(); });
+      chips.append(order);
+      wrap.append(chips);
+    }
+
     const q = (this.invQuery ?? '').trim().toLowerCase();
     const RANK = { mythic: 6, legendary: 5, epic: 4, rare: 3, uncommon: 2, common: 1 };
     const TYPE = { weapon: 1, armor: 2, consumable: 3, material: 4, ammo: 5 };
-    const shown = inv.items.filter((it) => (filter === 'all'
-      || (filter === 'armor' ? it.type === 'armor' : it.type === filter)
-      || (filter === 'material' && it.type === 'ammo'))
+    const shown = inv.items.filter((it) => cat[2](it)
       && (!q || String(it.name).toLowerCase().includes(q) || String(it.id).includes(q)));
-    const by = {
-      slot: (a, b) => a.i - b.i,
-      rarity: (a, b) => (RANK[b.rarity] ?? 1) - (RANK[a.rarity] ?? 1) || a.i - b.i,
-      type: (a, b) => (TYPE[a.type] ?? 9) - (TYPE[b.type] ?? 9) || a.i - b.i,
-      level: (a, b) => (b.level ?? 0) - (a.level ?? 0) || a.i - b.i,
-      name: (a, b) => String(a.name).localeCompare(String(b.name), 'th'),
+    const cmp = {
+      latest: (a, b) => b.i - a.i,
+      level: (a, b) => (b.level ?? 0) - (a.level ?? 0),
+      quality: (a, b) => (RANK[b.rarity] ?? 1) - (RANK[a.rarity] ?? 1),
+      type: (a, b) => (TYPE[a.type] ?? 9) - (TYPE[b.type] ?? 9),
+      name: (a, b) => String(b.name).localeCompare(String(a.name), 'th'),
     }[sortKey];
-    shown.sort(by);
+    shown.sort((a, b) => (asc ? -1 : 1) * cmp(a, b) || a.i - b.i);
 
-    const grid = el('div', 'slot-grid inv-grid');
+    /* the grid: tile, rarity frame over it, state rings and badges on top */
+    const job = JOBS[self.job];
+    const canWear = (it) => (it.type === 'weapon' || it.type === 'armor') && !it.equipped
+      && (it.level ?? 0) <= (self.level ?? 0) && (it.type !== 'weapon' || jobCanHold(job, it.wclass));
+    const grid = el('div', 'bag-grid');
     for (const it of shown) {
       const broken = it.dur !== undefined && it.dur <= 0;
-      const node = el('div', `slot inv-slot rarity-${it.rarity ?? 'common'}`
-        + (this.selectedInv === it.i ? ' sel' : '') + (broken ? ' broken' : ''));
+      const node = el('div', `bag-slot r-${it.rarity ?? 'common'}`
+        + (this.selectedInv === it.i ? ' sel' : '') + (it.equipped ? ' eq' : canWear(it) ? ' can' : '')
+        + (broken ? ' broken' : ''));
       node.append(itemIcon(it.id, { size: 34 }));
-      if (it.qty > 1) node.append(el('span', 'qty num', fmt(it.qty)));
+      if (it.qty > 1) node.append(el('span', 'qty num', it.qty > 9999 ? '9999+' : String(it.qty)));
       if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
-      if (it.equipped) node.append(el('i', 'badge-equip'));
-      if (it.locked) node.append(el('i', 'badge-lock'));
-      if (this.isNewItem(it)) node.append(el('i', 'badge-new'));
-      node.title = it.name + (it.locked ? ' (ล็อก)' : '') + (it.equipped ? ' (สวมอยู่)' : '');
+      if (it.equipped) node.append(el('i', 'b-e'));
+      if (it.locked) node.append(el('i', 'b-lock'));
+      if (this.isNewItem(it)) node.append(el('i', 'b-new'));
+      node.title = it.name + (it.locked ? ' (ล็อก)' : '') + (it.equipped ? ' (สวมอยู่)' : canWear(it) ? ' (ใส่ได้)' : '');
       node.addEventListener('click', () => { this.selectedInv = it.i; this.markSeen(it); this.renderInventory(); });
       node.addEventListener('dblclick', () => this.useInvItem(it));
       grid.append(node);
     }
-    for (let i = shown.length; i < Math.max(24, Math.ceil(shown.length / 8) * 8); i++) {
-      grid.append(el('div', 'slot inv-slot empty'));
-    }
-    wrap.append(grid);
-    if (!shown.length && q) grid.before(el('div', 'muted', `ไม่พบไอเทมที่ตรงกับ “${esc(this.invQuery)}”`));
-
-    /* footer: purse, weight and the bag's next size */
-    const foot = el('div', 'inv-foot');
-    const pct = Math.min(100, Math.round((inv.weight / Math.max(1, inv.weightCap)) * 100));
-    foot.innerHTML = `<span class="inv-purse"><i class="cur coin"></i><b class="num">${fmt(inv.aurum)}</b></span>
-      <span class="inv-weight${pct >= 90 ? ' heavy' : ''}" title="น้ำหนัก"><i class="bag"></i>
-        <span class="num">${fmt(inv.weight)} / ${fmt(inv.weightCap)}</span><em style="--w:${pct}%"></em></span>`;
+    const cells = Math.max(25, Math.ceil((shown.length + 1) / 5) * 5);
+    for (let i = shown.length; i < cells - 1; i++) grid.append(el('div', 'bag-slot empty'));
     const bag = inv.bag;
-    if (bag) {
-      const grow = el('button', 'inv-expand', bag.level >= bag.max ? 'ขยายสุดแล้ว' : `ขยาย +${bag.step}`);
-      grow.disabled = bag.level >= bag.max;
-      grow.title = bag.level >= bag.max ? 'กระเป๋าใหญ่สุดแล้ว'
-        : `ขยายกระเป๋าขั้น ${bag.level + 1}/${bag.max} · ${fmt(bag.cost)} ออรัม`;
-      grow.addEventListener('click', () => {
-        if (confirm(`ขยายกระเป๋า +${bag.step} น้ำหนัก ด้วย ${fmt(bag.cost)} ออรัม ?`)) this.game.net.send({ t: 'expandBag' });
-      });
-      foot.append(grow);
-    }
+    const more = el('button', 'bag-slot bag-more');
+    more.title = !bag ? '' : bag.level >= bag.max ? 'กระเป๋าใหญ่สุดแล้ว' : `ขยายกระเป๋า +${bag.step} น้ำหนัก (${fmt(bag.cost)} ออรัม)`;
+    more.disabled = !bag || bag.level >= bag.max;
+    more.addEventListener('click', () => this.expandBag());
+    grid.append(more);
+    wrap.append(grid);
+    if (!shown.length && q) grid.before(el('div', 'muted bag-none', `ไม่พบไอเทมที่ตรงกับ “${esc(this.invQuery)}”`));
+
+    /* weight, the purse, and the painted "expand bag" button */
+    const foot = el('div', 'bag-foot');
+    const pct = Math.min(100, Math.round((inv.weight / Math.max(1, inv.weightCap)) * 100));
+    const w = el('div', 'bag-weight' + (pct >= 90 ? ' heavy' : ''));
+    w.title = 'น้ำหนักที่แบก';
+    w.innerHTML = `<i style="width:calc(${pct}% * .52)"></i><span class="num">${fmt(inv.weight)} / ${fmt(inv.weightCap)}</span>`;
+    const plus = el('button', 'bag-wplus');
+    plus.setAttribute('aria-label', 'ขยายกระเป๋า');
+    plus.disabled = more.disabled;
+    plus.addEventListener('click', () => this.expandBag());
+    const purse = el('span', 'bag-purse', `<i class="cur coin"></i><b class="num">${fmt(inv.aurum)}</b>`);
+    const grow = el('button', 'bag-expand');
+    grow.setAttribute('aria-label', 'ขยายกระเป๋า');
+    grow.title = more.title;
+    grow.disabled = more.disabled;
+    grow.addEventListener('click', () => this.expandBag());
+    foot.append(w, plus, purse, grow);
     wrap.append(foot);
 
     const sel = inv.items.find((x) => x.i === this.selectedInv);
@@ -944,6 +980,14 @@ export class UI {
       again?.setSelectionRange(again.value.length, again.value.length);
     }
     return wrap;
+  }
+
+  expandBag() {
+    const bag = this.game.inventory?.bag;
+    if (!bag || bag.level >= bag.max) return;
+    if (confirm(`ขยายกระเป๋าขั้น ${bag.level + 1}/${bag.max}: แบกได้เพิ่ม +${bag.step}\nราคา ${fmt(bag.cost)} ออรัม ?`)) {
+      this.game.net.send({ t: 'expandBag' });
+    }
   }
 
   /**
@@ -1015,6 +1059,8 @@ export class UI {
     head.style.justifyContent = 'flex-start';
     head.style.gap = '10px';
     box.append(head);
+    const tags = this.itemTags(it);
+    if (tags) box.append(tags);
 
     const stat = (k, v) => {
       const r = el('div', 'stat');
@@ -1035,12 +1081,11 @@ export class UI {
     return box;
   }
 
-  /** Buttons under the detail card: the sheet's painted Use / Sell / Drop / Lock. */
+  /** Buttons under the detail card: the sheet's painted buttons, words and all. */
   itemActions(it) {
-    const box = el('div', 'opts inv-actions');
-    box.style.marginTop = '8px';
-    const add = (label, fn, cls, { disabled = false, title = '' } = {}) => {
-      const b = el('button', 'ibtn ' + cls, label);
+    const box = el('div', 'opts bag-actions');
+    const add = (label, kind, fn, { disabled = false, title = '' } = {}) => {
+      const b = el('button', `bag-btn bb-${kind}`, label);
       b.setAttribute('aria-label', label);
       b.disabled = disabled;
       if (title) b.title = title;
@@ -1049,24 +1094,34 @@ export class UI {
     };
     const net = this.game.net;
     if (it.type === 'weapon' || it.type === 'armor') {
-      if (it.equipped) add('ถอด', () => net.send({ t: 'unequip', slot: it.equipped }), 'ib-plain');
-      else add('สวมใส่', () => net.send({ t: 'equip', index: it.i }), 'ib-gold');
+      if (it.equipped) add('ถอด', 'unequip', () => net.send({ t: 'unequip', slot: it.equipped }));
+      else add('สวมใส่', 'equip', () => net.send({ t: 'equip', index: it.i }));
     }
-    if (it.type === 'consumable') add('ใช้', () => { this.game.audio?.play('potion'); net.send({ t: 'useItem', index: it.i }); }, 'ib-use');
-    // selling needs a shopkeeper in front of you; the button says so
+    if (it.type === 'consumable') add('ใช้', 'use', () => { this.game.audio?.play('potion'); net.send({ t: 'useItem', index: it.i }); });
     const atShop = this.openPanels.has('shop');
-    add('ขาย', () => {
+    const why = it.locked ? 'ปลดล็อกก่อน' : it.equipped ? 'ถอดก่อน' : '';
+    add('ขาย', 'sell', () => {
       if (confirm(`ขาย ${it.name}${it.qty > 1 ? ` x${it.qty}` : ''} ?`)) net.send({ t: 'shopSell', index: it.i, qty: it.qty });
-    }, 'ib-sell', {
-      disabled: !atShop || it.locked || !!it.equipped,
-      title: it.locked ? 'ปลดล็อกก่อน' : it.equipped ? 'ถอดก่อน' : atShop ? '' : 'ขายได้เมื่อคุยกับร้านค้า',
-    });
-    add('ทิ้ง', () => {
+    }, { disabled: !atShop || !!why, title: why || (atShop ? '' : 'ขายได้เมื่อคุยกับร้านค้า') });
+    add('ทิ้ง', 'drop', () => {
       if (confirm(`ทิ้ง ${it.name} ?`)) net.send({ t: 'dropItem', index: it.i, qty: it.qty });
-    }, 'ib-drop', { disabled: it.locked || !!it.equipped, title: it.locked ? 'ปลดล็อกก่อน' : it.equipped ? 'ถอดก่อน' : '' });
-    add(it.locked ? 'ปลดล็อก' : 'ล็อก', () => net.send({ t: 'lockItem', index: it.i }),
-      it.locked ? 'ib-unlock' : 'ib-lock', { title: it.locked ? 'ปลดล็อกให้ขาย/ทิ้ง/เทรดได้' : 'ล็อกกันขาย ทิ้ง และเทรดโดยไม่ตั้งใจ' });
+    }, { disabled: !!why, title: why });
+    if (it.locked) add('ปลดล็อก', 'unlock', () => net.send({ t: 'lockItem', index: it.i }), { title: 'ปลดล็อกให้ขาย/ทิ้ง/เทรดได้' });
+    else add('ล็อก', 'lock', () => net.send({ t: 'lockItem', index: it.i }), { title: 'ล็อกกันขาย ทิ้ง และเทรดโดยไม่ตั้งใจ' });
     return box;
+  }
+
+  /** The little painted tags on a card: worn, locked, new, bound, unsellable. */
+  itemTags(it) {
+    const row = el('div', 'bag-tags');
+    const def = ITEMS[it.id] ?? {};
+    const tag = (name, label) => { const t = el('i', `tag tag-${name}`); t.title = label; row.append(t); };
+    if (this.isNewItem?.(it)) tag('new', 'ใหม่');
+    if (it.equipped) tag('equip', 'สวมอยู่');
+    if (it.locked) tag('lock', 'ล็อก');
+    if (def.bound) tag('bound', 'ผูกมัด');
+    if (def.noSell || def.value === 0) tag('nosell', 'ขายไม่ได้');
+    return row.children.length ? row : null;
   }
 
   useInvItem(it) {

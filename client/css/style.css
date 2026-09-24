@@ -2153,94 +2153,135 @@ body[data-ui="ember"] #panels .shrine-pull {
 body[data-ui="ember"] #panels .shrine-pull.one { border-image-source: url(../../assets/ui/h2_b_blue.webp); color: #fff; text-shadow: 0 1px 2px #000; }
 body[data-ui="ember"] #panels .shrine-pull:disabled { filter: grayscale(.7) brightness(.75); }
 
-/* ============ the bag (inventory components sheet) ============ */
-#panels .inv-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-#panels .inv-tab {
-  flex: 1 1 0; min-width: 64px; padding: 4px 10px; font-size: 12px; font-weight: 700; color: #cfd8e6;
-  border: 7px solid transparent; border-image: url(../../assets/ui/h2_inv_tab.webp) 16 20 fill / 7px 10px stretch;
-  background: none; cursor: pointer; text-shadow: 0 1px 2px #000;
-}
-#panels .inv-tab.on { border-image-source: url(../../assets/ui/h2_inv_tab_sel.webp); color: #fff; }
-#panels .inv-tab:hover:not(.on) { filter: brightness(1.2); }
-#panels .inv-tools { display: flex; gap: 6px; align-items: stretch; }
-#panels .inv-sort {
-  flex: none; width: 150px; padding: 0 26px 0 12px; text-align: left; font-size: 12px; font-weight: 700; color: #e9eef6;
-  background: url(../../assets/ui/h2_inv_sort.webp) center / 100% 100% no-repeat; border: none; min-height: 34px;
-  cursor: pointer; text-shadow: 0 1px 2px #000; white-space: nowrap;
-}
-#panels .inv-search {
-  flex: 1; position: relative; display: block; min-height: 34px;
-  background: url(../../assets/ui/h2_inv_search.webp) center / 100% 100% no-repeat;
-}
-#panels .inv-search input {
-  position: absolute; left: 19%; right: 16%; top: 22%; bottom: 22%; width: auto;
-  background: none; border: none; outline: none; color: #eef3fa; font: inherit; font-size: 12px; padding: 0 4px;
-}
-#panels .inv-search input::placeholder { color: #8894a6; }
-#panels .inv-clear { position: absolute; right: 3%; top: 15%; bottom: 15%; width: 12%; background: none; border: none; cursor: pointer; }
 
-/* slots: the sheet's dark tile, its rim in the item's rarity colour */
-body[data-ui="ember"] #panels .inv-slot {
-  position: relative; border: 8px solid transparent; background: none; box-shadow: none;
-  border-image: url(../../assets/ui/h2_inv_slot.webp) 12 fill / 8px stretch;
+/* ============ the bag (inventory components sheet v2, assets/ui/bag_*) ============ */
+#panels .bag { display: grid; gap: 8px; }
+#panels .bag-tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+#panels .bag-tab {
+  position: relative; display: grid; justify-items: center; align-content: center; gap: 1px;
+  min-height: 56px; padding: 4px 2px; border: none; cursor: pointer;
+  background: url(../../assets/ui/bag_tab_off.webp) center / 100% 100% no-repeat;
+  color: #eef2f8; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #000;
 }
-body[data-ui="ember"] #panels .inv-slot.rarity-common { border-image-source: url(../../assets/ui/h2_inv_slot_common.webp); }
-body[data-ui="ember"] #panels .inv-slot.rarity-uncommon { border-image-source: url(../../assets/ui/h2_inv_slot_uncommon.webp); }
-body[data-ui="ember"] #panels .inv-slot.rarity-rare { border-image-source: url(../../assets/ui/h2_inv_slot_rare.webp); box-shadow: inset 0 0 10px rgba(66, 165, 245, .3); }
-body[data-ui="ember"] #panels .inv-slot.rarity-epic { border-image-source: url(../../assets/ui/h2_inv_slot_epic.webp); box-shadow: inset 0 0 10px rgba(171, 71, 188, .35); }
-body[data-ui="ember"] #panels .inv-slot.rarity-legendary { border-image-source: url(../../assets/ui/h2_inv_slot_legendary.webp); box-shadow: inset 0 0 12px rgba(255, 167, 38, .38); }
-body[data-ui="ember"] #panels .inv-slot.rarity-mythic { border-image-source: url(../../assets/ui/h2_inv_slot_mythic.webp); box-shadow: inset 0 0 14px rgba(255, 77, 94, .45); }
-body[data-ui="ember"] #panels .inv-slot.empty { opacity: .55; }
-body[data-ui="ember"] #panels .inv-slot.sel { box-shadow: 0 0 0 2px #ffd26a, 0 0 12px rgba(255, 196, 80, .75); }
-body[data-ui="ember"] #panels .inv-slot .qty {
-  right: -4px; bottom: -6px; font-size: 11px; font-weight: 800; color: #fff;
+#panels .bag-tab.on { background-image: url(../../assets/ui/bag_tab_on.webp); color: #3a2204; text-shadow: 0 1px 0 rgba(255, 255, 255, .4); }
+#panels .bag-tab .ico { height: 22px; width: auto; max-width: 30px; object-fit: contain; }
+#panels .bag-tab em {
+  position: absolute; top: 3px; right: 7px; font-style: normal; font-size: 9px; opacity: .75;
+}
+#panels .bag-tab:hover:not(.on) { filter: brightness(1.2); }
+
+#panels .bag-bar { display: flex; gap: 6px; }
+#panels .bag-search {
+  flex: 1; position: relative; min-height: 38px; display: block;
+  background: url(../../assets/ui/bag_search.webp) center / 100% 100% no-repeat;
+}
+#panels .bag-search input {
+  position: absolute; left: 20%; right: 10%; top: 20%; bottom: 20%; width: auto;
+  background: none; border: none; outline: none; color: #eef3fa; font: inherit; font-size: 13px;
+}
+#panels .bag-search input::placeholder { color: #7f8aa0; }
+#panels .bag-clear { position: absolute; right: 3%; top: 50%; transform: translateY(-50%); background: none; border: none; color: #c7d0dc; font-size: 14px; cursor: pointer; }
+#panels .bag-sortbtn {
+  flex: none; width: 140px; border: none; cursor: pointer;
+  background: url(../../assets/ui/bag_sortbtn.webp) center / 100% 100% no-repeat;
+}
+#panels .bag-sortbtn.on { filter: brightness(1.25) drop-shadow(0 0 4px rgba(255, 200, 90, .6)); }
+#panels .bag-sorts { display: flex; flex-wrap: wrap; gap: 5px; }
+#panels .bag-chip, #panels .bag-order {
+  display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px 0 10px; border: none; cursor: pointer;
+  background: url(../../assets/ui/bag_sort_off.webp) center / 100% 100% no-repeat;
+  color: #eef2f8; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #000;
+}
+#panels .bag-chip.on { background-image: url(../../assets/ui/bag_sort_on.webp); color: #3a2204; text-shadow: none; }
+#panels .bag-chip .ico { height: 16px; width: auto; }
+#panels .bag-order { background-image: url(../../assets/ui/bag_order.webp); padding-right: 34px; min-width: 130px; }
+
+/* slots: the plain tile, the rarity frame over it, state rings on top */
+#panels .bag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px; }
+#panels .bag-slot {
+  position: relative; aspect-ratio: 1; display: grid; place-items: center; border: none; padding: 0;
+  background: url(../../assets/ui/bag_slot.webp) center / 100% 100% no-repeat;
+}
+#panels .bag-slot::before, #panels .bag-slot::after {
+  content: ""; position: absolute; inset: -2px; pointer-events: none; background: center / 100% 100% no-repeat;
+}
+#panels .bag-slot.r-common::before { background-image: url(../../assets/ui/bag_r_common.webp); }
+#panels .bag-slot.r-uncommon::before { background-image: url(../../assets/ui/bag_r_uncommon.webp); }
+#panels .bag-slot.r-rare::before { background-image: url(../../assets/ui/bag_r_rare.webp); }
+#panels .bag-slot.r-epic::before { background-image: url(../../assets/ui/bag_r_epic.webp); }
+#panels .bag-slot.r-legendary::before { background-image: url(../../assets/ui/bag_r_legendary.webp); inset: -4px; }
+#panels .bag-slot.r-mythic::before { background-image: url(../../assets/ui/bag_r_mythic.webp); inset: -6px -8px; }
+#panels .bag-slot.can::after { background-image: url(../../assets/ui/bag_can.webp); }
+#panels .bag-slot.eq::after { background-image: url(../../assets/ui/bag_eq.webp); }
+#panels .bag-slot.sel::after { background-image: url(../../assets/ui/bag_sel.webp); inset: -4px; }
+#panels .bag-slot.empty { opacity: .6; }
+#panels .bag-slot canvas { position: relative; z-index: 1; }
+#panels .bag-slot .qty {
+  position: absolute; right: 5px; bottom: 3px; z-index: 3; font-size: 12px; font-weight: 800; color: #fff;
   text-shadow: -1px 0 #000, 1px 0 #000, 0 -1px #000, 0 1px #000, 0 0 3px #000;
 }
-#panels .inv-slot .badge-equip, #panels .inv-slot .badge-lock, #panels .inv-slot .badge-new {
-  position: absolute; pointer-events: none; background: center / contain no-repeat; z-index: 2;
+#panels .bag-slot .plus { position: absolute; left: 5px; bottom: 3px; z-index: 3; }
+#panels .bag-slot .b-e, #panels .bag-slot .b-lock, #panels .bag-slot .b-new {
+  position: absolute; z-index: 4; pointer-events: none; background: center / contain no-repeat;
 }
-#panels .inv-slot .badge-equip { left: -7px; top: -7px; width: 16px; height: 16px; background-image: url(../../assets/ui/h2_inv_check.webp); }
-#panels .inv-slot .badge-lock { right: -6px; top: -7px; width: 13px; height: 16px; background-image: url(../../assets/ui/h2_inv_lock.webp); filter: drop-shadow(0 1px 1px #000); }
-#panels .inv-slot .badge-new { left: -8px; bottom: -8px; width: 28px; height: 17px; background-image: url(../../assets/ui/h2_inv_new.webp); }
-#panels .inv-slot .worn { display: none; }
+#panels .bag-slot .b-e { right: -3px; top: -3px; width: 17px; height: 17px; background-image: url(../../assets/ui/bag_e.webp); }
+#panels .bag-slot .b-lock { left: 3px; top: 3px; width: 13px; height: 14px; background-image: url(../../assets/ui/bag_lock.webp); filter: drop-shadow(0 1px 1px #000); }
+#panels .bag-slot .b-new { right: -4px; top: -5px; width: 30px; height: 19px; background-image: url(../../assets/ui/bag_new.webp); }
+#panels .bag-slot.eq .b-new { top: auto; bottom: 14px; }
+#panels .bag-more { background-image: url(../../assets/ui/bag_plus.webp); cursor: pointer; }
+#panels .bag-more:disabled { opacity: .35; cursor: default; }
+#panels .bag-more:not(:disabled):hover { filter: brightness(1.25); }
 
-/* footer: purse, weight bar, and the gold "expand" button */
-#panels .inv-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; }
-#panels .inv-purse { display: flex; align-items: center; gap: 5px; }
-#panels .inv-purse .cur.coin { width: 18px; height: 18px; background: url(../../assets/ui/h2_coin.webp) center / contain no-repeat; display: inline-block; }
-#panels .inv-weight { flex: 1; min-width: 140px; position: relative; display: flex; align-items: center; gap: 6px; }
-#panels .inv-weight .bag { width: 22px; height: 22px; flex: none; background: url(../../assets/ui/h2_m_bag.webp) center / contain no-repeat; }
-#panels .inv-weight em {
-  position: absolute; left: 28px; right: 0; bottom: -4px; height: 4px; border-radius: 2px; background: #1a1e26;
-  box-shadow: inset 0 0 0 1px rgba(181, 138, 60, .4);
+/* footer */
+#panels .bag-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#panels .bag-weight {
+  flex: 1 1 200px; position: relative; height: 34px;
+  background: url(../../assets/ui/bag_weight.webp) center / 100% 100% no-repeat;
 }
-#panels .inv-weight em::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 2px; background: linear-gradient(90deg, #3fae4a, #9ad84a); }
-#panels .inv-weight.heavy em::after { background: linear-gradient(90deg, #e2572e, #ff8a3a); }
-#panels .inv-expand, #panels .ibtn {
-  border: 7px solid transparent; border-image: url(../../assets/ui/h2_inv_b_ok.webp) 14 18 fill / 7px 9px stretch;
-  background: none; color: #3a2204; font-weight: 800; font-size: 12px; padding: 1px 8px; cursor: pointer;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, .45); min-height: 32px;
+#panels .bag-weight i {
+  position: absolute; left: 44%; top: 38%; height: 26%; max-width: 52%; border-radius: 4px;
+  background: linear-gradient(180deg, #ffd66a, #e59a1a); box-shadow: 0 0 6px rgba(255, 190, 60, .5);
+  width: 0; transform-origin: left;
 }
-#panels .inv-expand:disabled { filter: grayscale(.8) brightness(.7); cursor: default; }
+#panels .bag-weight span {
+  position: absolute; left: 13%; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 700; color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+#panels .bag-weight.heavy i { background: linear-gradient(180deg, #ff9a6a, #d6401a); }
+#panels .bag-wplus { width: 34px; height: 34px; border: none; cursor: pointer; background: url(../../assets/ui/bag_wplus.webp) center / contain no-repeat; }
+#panels .bag-purse { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+#panels .bag-purse .cur.coin { width: 20px; height: 20px; background-image: url(../../assets/ui/h2_coin.webp); }
+#panels .bag-expand { width: 150px; height: 52px; border: none; cursor: pointer; background: url(../../assets/ui/bag_expand.webp) center / contain no-repeat; }
+#panels .bag-expand:disabled, #panels .bag-wplus:disabled { filter: grayscale(.8) brightness(.65); cursor: default; }
 
-/* Use / Sell / Drop / Lock are painted with their words: show the picture */
-#panels .inv-actions { gap: 6px; }
-#panels .ibtn { min-width: 76px; }
-#panels .ibtn.ib-use, #panels .ibtn.ib-sell, #panels .ibtn.ib-drop, #panels .ibtn.ib-lock {
-  border: none; border-image: none; font-size: 0; color: transparent; width: 84px; height: 44px;
+/* the detail card: painted tags and the painted buttons, words included */
+#panels .bag-tags { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0 4px; }
+#panels .bag-tags .tag { height: 20px; background: center / contain no-repeat; }
+#panels .bag-tags .tag-new { width: 38px; background-image: url(../../assets/ui/bag_tag_new.webp); }
+#panels .bag-tags .tag-equip { width: 42px; background-image: url(../../assets/ui/bag_tag_equip.webp); }
+#panels .bag-tags .tag-lock { width: 46px; background-image: url(../../assets/ui/bag_tag_lock.webp); }
+#panels .bag-tags .tag-bound { width: 52px; background-image: url(../../assets/ui/bag_tag_bound.webp); }
+#panels .bag-tags .tag-nosell { width: 84px; background-image: url(../../assets/ui/bag_tag_nosell.webp); }
+#panels .bag-actions { gap: 6px; margin-top: 8px; }
+#panels .bag-btn {
+  width: 92px; height: 38px; border: none; padding: 0; font-size: 0; color: transparent; cursor: pointer;
   background: center / 100% 100% no-repeat;
 }
-#panels .ibtn.ib-use { background-image: url(../../assets/ui/h2_inv_use.webp); }
-#panels .ibtn.ib-sell { background-image: url(../../assets/ui/h2_inv_sell.webp); }
-#panels .ibtn.ib-drop { background-image: url(../../assets/ui/h2_inv_drop.webp); }
-#panels .ibtn.ib-lock { background-image: url(../../assets/ui/h2_inv_lockbtn.webp); width: 100px; }
-#panels .ibtn.ib-plain, #panels .ibtn.ib-unlock { border-image-source: url(../../assets/ui/h2_inv_b_confirm.webp); color: #fff; text-shadow: 0 1px 2px #000; }
-#panels .ibtn:disabled { filter: grayscale(.85) brightness(.6); cursor: not-allowed; }
-#panels .ibtn:not(:disabled):hover { filter: brightness(1.12); }
-#panels .ibtn:not(:disabled):active { transform: translateY(1px); }
-body.landscape-ui #panels .inv-sort { width: 120px; font-size: 11px; }
-body.landscape-ui #panels .ibtn.ib-use, body.landscape-ui #panels .ibtn.ib-sell,
-body.landscape-ui #panels .ibtn.ib-drop { width: 70px; height: 36px; }
-body.landscape-ui #panels .ibtn.ib-lock { width: 84px; height: 36px; }
-body[data-ui="ember"] #panels .inv-grid .inv-slot { overflow: visible; }
-body[data-ui="ember"] #panels .inv-grid .inv-slot.sel { outline: 2px solid #ffd26a; outline-offset: 1px; box-shadow: 0 0 12px rgba(255, 196, 80, .8); }
+#panels .bag-btn.bb-use { background-image: url(../../assets/ui/bag_b_use.webp); }
+#panels .bag-btn.bb-equip { background-image: url(../../assets/ui/bag_b_equip.webp); }
+#panels .bag-btn.bb-unequip { background-image: url(../../assets/ui/bag_b_unequip.webp); }
+#panels .bag-btn.bb-sell { background-image: url(../../assets/ui/bag_b_sell.webp); }
+#panels .bag-btn.bb-drop { background-image: url(../../assets/ui/bag_b_drop.webp); }
+#panels .bag-btn.bb-lock { background-image: url(../../assets/ui/bag_b_lockbtn.webp); }
+#panels .bag-btn.bb-unlock { background-image: url(../../assets/ui/bag_b_unlockbtn.webp); width: 100px; }
+#panels .bag-btn:disabled { filter: grayscale(.85) brightness(.55); cursor: not-allowed; }
+#panels .bag-btn:not(:disabled):hover { filter: brightness(1.12); }
+#panels .bag-btn:not(:disabled):active { transform: translateY(1px); }
+
+body.landscape-ui #panels .bag-tab { min-height: 44px; font-size: 10px; }
+body.landscape-ui #panels .bag-tab .ico { height: 16px; }
+body.landscape-ui #panels .bag-sortbtn { width: 110px; }
+body.landscape-ui #panels .bag-search, body.landscape-ui #panels .bag-sortbtn { min-height: 32px; }
+body.landscape-ui #panels .bag-grid { grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); }
+body.landscape-ui #panels .bag-btn { width: 76px; height: 32px; }
+body.landscape-ui #panels .bag-expand { width: 120px; height: 42px; }
