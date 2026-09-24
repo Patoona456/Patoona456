@@ -71,21 +71,21 @@ const CHIBI_GRIP = [
 const CHIBI_STRIDE = 72;
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
 /**
- * A bow is held at the middle, standing up, its belly toward the facing.
- * Facing the camera or away it hangs in the fist beside the body like a
- * sword; in profile the fist that shows hangs at the back, but an archer
- * holds the bow out ahead, so there it stands in front of the chest (the far
- * hand, hidden behind the bow) and goes on after the body. `at` is where, in
- * frame pixels, for the side rows; `rest` tips it from level as for swords.
+ * A bow is gripped by its handle (the middle of the limb, where the riser
+ * is) in the fist the character shows, standing up, with the string toward
+ * the body and the limb bowing away from it. It goes on after the body and
+ * the fist is painted back over the handle, so the hand is plainly round the
+ * bow and never on the string. `side` mirrors it so the limb faces outward;
+ * `rest` tips it from level as for swords.
  */
 const BOW_POSE = [
-  { rest: 1.4 },                                  // down
-  { rest: 1.5, at: [38, 146] },                   // left
-  { rest: 1.4 },                                  // up
-  { rest: 1.5, at: [90, 146] },                   // right
+  { rest: 1.4, side: 1 },     // down
+  { rest: 1.45, side: 1 },    // left
+  { rest: 1.4, side: 1 },     // up
+  { rest: 1.45, side: -1 },   // right
 ];
 /** Tip to tip, in screen pixels: a bow stands taller in the hand than a sword. */
-const BOW_LEN = 25;
+const BOW_LEN = 23;
 /** Pommel to tip, in screen pixels, on a ~50px chibi: under half its height. */
 const HELD_LEN = 22;
 /** The fist's radius in frame pixels, for painting it back over the grip. */
@@ -96,13 +96,6 @@ function chibiRow(e) { return CHIBI_WALK.dirMap[((e.d ?? 0) % 8 + 8) % 8]; }
 
 /** The grip for this facing (so the draw order can ask before the body goes on). */
 export function chibiHand(e) { return CHIBI_GRIP[chibiRow(e)]; }
-
-/** A point on the chibi's frame, in frame pixels, on screen. */
-function chibiFrameToScreen(e, fx, fy) {
-  const { w, h } = CHIBI_WALK.frame;
-  const sc = (e.sprite?.scale ?? 1) * CHIBI_WALK.drawScale;
-  return { x: e.x + (fx - w / 2) * sc, y: e.y + (fy - CHIBI_WALK.anchor * h) * sc };
-}
 
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
@@ -217,15 +210,9 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const { img, file, cell, bow } = held;
   const hand = chibiHand(e);
   const pose = bow ? BOW_POSE[chibiRow(e)] : null;
-  let fist = chibiFist(e, anim, elapsed);
-  if (pose?.at) {
-    // out in front: the far hand, riding the same bob as the near one
-    const idle = chibiFist(e, 'idle', 0);
-    const at = chibiFrameToScreen(e, pose.at[0], pose.at[1]);
-    fist = { ...fist, x: at.x, y: at.y + (fist.y - idle.y) };
-    // loosing an arrow nudges the bow forward and back
-    if (anim === 'shoot') fist.x += hand.side * Math.sin(Math.min(1, elapsed / 220) * Math.PI) * 1.5;
-  }
+  const fist = chibiFist(e, anim, elapsed);
+  // loosing an arrow nudges the bow in the hand
+  if (bow && anim === 'shoot') fist.y -= Math.sin(Math.min(1, elapsed / 220) * Math.PI) * 1.2;
   const walking = anim === 'walk';
   const swing = !bow && (anim === 'slash' || anim === 'thrust');
   // the art's blades point up at 45 degrees; `angle` turns from there
@@ -248,7 +235,7 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.translate(fist.x, fist.y);
-  ctx.scale(swing ? hand.cut : hand.side, 1);
+  ctx.scale(pose ? pose.side : swing ? hand.cut : hand.side, 1);
   if (swing && angle > -1.2 && elapsed < 190) {
     // the cut leaves a thin trail behind the tip
     const tip = len * 0.85, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;
@@ -958,8 +945,8 @@ export class Renderer {
             ctx.translate(e.x, e.y); ctx.scale(1 / Math.sqrt(b), b); ctx.translate(-e.x, -e.y);
           }
           const held = chibi ? heldArt(e) : null;
-          // a bow held out in front goes on after the body, with no fist over it
-          const over = held && (held.bow ? !!BOW_POSE[chibiRow(e)].at : chibiHand(e).over);
+          // a bow always goes on after the body, gripped by the fist painted over it
+          const over = held && (held.bow || chibiHand(e).over);
           if (held && !over) drawHeld(ctx, held, e, anim, elapsed, now);
           const body = {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,
@@ -969,8 +956,7 @@ export class Renderer {
             flash: hurt,
           };
           drawCharacter(ctx, layers, body);
-          if (over && held.bow) drawHeld(ctx, held, e, anim, elapsed, now);
-          else if (over) {
+          if (over) {
             // across the body the sword goes on top, and the fist back over its grip
             drawHeld(ctx, held, e, anim, elapsed, now);
             const f = chibiFist(e, anim, elapsed);
