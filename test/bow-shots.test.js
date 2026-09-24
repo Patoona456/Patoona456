@@ -33,8 +33,12 @@ test('a bow with no arrows in the bag still shoots, and so do its skills', () =>
     assert.equal(p.findAmmo(), null);
     const m = zone.spawnMonster(Object.values(zone.def.spawns ?? [])[0]?.mob ?? 'mire_slime', p.x + 120, p.y);
     m.hp = m.maxHp = 1e6;
-    p.targetId = m.id; p.attacking = true; p.nextAttackAt = 0;
-    zone.updatePlayers(0.05, Date.now());
+    // a single arrow can miss (hit vs flee is a roll), so give it a few draws
+    p.targetId = m.id; p.attacking = true;
+    for (let i = 0; i < 20 && m.hp >= 1e6; i++) {
+      p.nextAttackAt = 0;
+      zone.updatePlayers(0.05, Date.now());
+    }
     assert.ok(m.hp < 1e6, 'the bow did not loose a shot');
     assert.ok(p.attacking, 'it stopped attacking for want of arrows');
 

@@ -103,15 +103,32 @@ def icon_of(src, region, dark_ink, cut=105):
     return out
 
 
-def plates(boxes, prefix, region, cut=105, first_dark=True):
-    """Blank gold and dark plates, plus each entry's icon in both inks."""
+def sprite(name, rows, cell, left=False):
+    """Pack pieces into one sheet: rows of cells, each piece centred (or left-aligned)."""
+    cw, ch = cell
+    out = np.zeros((ch * len(rows), cw * max(len(r) for r in rows), 4), np.uint8)
+    for y, row in enumerate(rows):
+        for x, im in enumerate(row):
+            pil = Image.fromarray(im)
+            pil.thumbnail((cw, ch), Image.LANCZOS)
+            a = np.array(pil)
+            oy, ox = y * ch + (ch - a.shape[0]) // 2, x * cw + (0 if left else (cw - a.shape[1]) // 2)
+            out[oy:oy + a.shape[0], ox:ox + a.shape[1]] = a
+    save(name, out)
+
+
+def plates(boxes, prefix, region, cut=105, first_dark=True, cell=(40, 32)):
+    """Blank gold and dark plates, and one sprite of the icons: light ink
+    on the top row, dark ink below, in the order the boxes are given."""
     on0 = crop(boxes[0][1])
     save(f'{prefix}_on', blank(on0))
     save(f'{prefix}_off', blank(crop(boxes[1][1])))
+    light, dark = [], []
     for i, (key, box) in enumerate(boxes):
         ic = icon_of(crop(box), region, dark_ink=(i == 0 and first_dark), cut=cut)
-        save(f'{prefix}_i_{key}', ic['light'])
-        save(f'{prefix}_i_{key}_d', ic['dark'])
+        light.append(ic['light'])
+        dark.append(ic['dark'])
+    sprite(f'{prefix}_icons', [light, dark], cell)
 
 
 # tabs (icon over the word) and sort chips (icon left of the word)
@@ -119,7 +136,7 @@ plates([('all', (29, 40, 175, 139)), ('equip', (180, 43, 335, 139)), ('use', (34
         ('mat', (487, 43, 616, 138)), ('quest', (621, 43, 758, 138)), ('other', (762, 43, 909, 138))],
        'tab', (.25, .12, .75, .56))
 plates([('latest', (30, 781, 170, 839)), ('level', (178, 782, 314, 839)), ('quality', (322, 782, 461, 839)),
-        ('type', (469, 782, 606, 839)), ('name', (614, 782, 750, 839))], 'sort', (.08, .18, .34, .82), first_dark=False)
+        ('type', (469, 782, 606, 839)), ('name', (614, 782, 750, 839))], 'sort', (.08, .18, .34, .82), first_dark=False, cell=(32, 32))
 order = crop((757, 782, 994, 839))
 save('order', smear(order, (18, 12, 175, 46), 17))           # "มากไปน้อย" wiped, the arrow kept
 
@@ -187,9 +204,9 @@ for name, box in {'use': (29, 614, 193, 681), 'equip': (203, 614, 354, 681), 'un
                   'sell': (515, 614, 660, 681), 'drop': (669, 615, 807, 681), 'lockbtn': (816, 614, 958, 681),
                   'unlockbtn': (967, 614, 1126, 681)}.items():
     save(f'b_{name}', crop(box))
-for name, box in {'new': (29, 933, 103, 973), 'equip': (121, 933, 202, 973), 'lock': (220, 934, 310, 973),
-                  'bound': (685, 935, 787, 976), 'nosell': (805, 936, 972, 977)}.items():
-    save(f'tag_{name}', crop(box))
+# tags, one per row of a sprite: new, equip, lock, bound, nosell
+sprite('tags', [[trim(crop(box))] for box in ((29, 933, 103, 973), (121, 933, 202, 973), (220, 934, 310, 973),
+                                              (685, 935, 787, 976), (805, 936, 972, 977))], (170, 42), left=True)
 
 if len(sys.argv) > 1:
     cells = list(made.items())

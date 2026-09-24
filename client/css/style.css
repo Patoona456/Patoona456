@@ -2160,7 +2160,16 @@ body[data-ui="ember"] #panels .shrine-pull:disabled { filter: grayscale(.7) brig
   color: #eef2f8; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #000;
 }
 #panels .bag-tab.on { background-image: url(../../assets/ui/bag_tab_on.webp); color: #3a2204; text-shadow: 0 1px 0 rgba(255, 255, 255, .4); }
-#panels .bag-tab .ico { height: 22px; width: auto; max-width: 30px; object-fit: contain; }
+#panels .bag-tab .ico {
+  width: 30px; height: 24px; background: url(../../assets/ui/bag_tab_icons.webp) 0 0 / 600% 200% no-repeat;
+}
+#panels .bag-tab.on .ico { background-position-y: 100%; }
+#panels .bag-tab .ti-all { background-position-x: 0; }
+#panels .bag-tab .ti-equip { background-position-x: 20%; }
+#panels .bag-tab .ti-use { background-position-x: 40%; }
+#panels .bag-tab .ti-mat { background-position-x: 60%; }
+#panels .bag-tab .ti-quest { background-position-x: 80%; }
+#panels .bag-tab .ti-other { background-position-x: 100%; }
 #panels .bag-tab em {
   position: absolute; top: 3px; right: 7px; font-style: normal; font-size: 9px; opacity: .75;
 }
@@ -2189,7 +2198,13 @@ body[data-ui="ember"] #panels .shrine-pull:disabled { filter: grayscale(.7) brig
   color: #eef2f8; font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px #000;
 }
 #panels .bag-chip.on { background-image: url(../../assets/ui/bag_sort_on.webp); color: #3a2204; text-shadow: none; }
-#panels .bag-chip .ico { height: 16px; width: auto; }
+#panels .bag-chip .ico { width: 18px; height: 18px; background: url(../../assets/ui/bag_sort_icons.webp) 0 0 / 500% 200% no-repeat; }
+#panels .bag-chip.on .ico { background-position-y: 100%; }
+#panels .bag-chip .si-latest { background-position-x: 0; }
+#panels .bag-chip .si-level { background-position-x: 25%; }
+#panels .bag-chip .si-quality { background-position-x: 50%; }
+#panels .bag-chip .si-type { background-position-x: 75%; }
+#panels .bag-chip .si-name { background-position-x: 100%; }
 #panels .bag-order { background-image: url(../../assets/ui/bag_order.webp); padding-right: 34px; min-width: 130px; }
 
 /* slots: the plain tile, the rarity frame over it, state rings on top */
@@ -2252,12 +2267,12 @@ body[data-ui="ember"] #panels .shrine-pull:disabled { filter: grayscale(.7) brig
 
 /* the detail card: painted tags and the painted buttons, words included */
 #panels .bag-tags { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0 4px; }
-#panels .bag-tags .tag { height: 20px; background: center / contain no-repeat; }
-#panels .bag-tags .tag-new { width: 38px; background-image: url(../../assets/ui/bag_tag_new.webp); }
-#panels .bag-tags .tag-equip { width: 42px; background-image: url(../../assets/ui/bag_tag_equip.webp); }
-#panels .bag-tags .tag-lock { width: 46px; background-image: url(../../assets/ui/bag_tag_lock.webp); }
-#panels .bag-tags .tag-bound { width: 52px; background-image: url(../../assets/ui/bag_tag_bound.webp); }
-#panels .bag-tags .tag-nosell { width: 84px; background-image: url(../../assets/ui/bag_tag_nosell.webp); }
+#panels .bag-tags .tag { height: 20px; background: url(../../assets/ui/bag_tags.webp) 0 0 / auto 100px no-repeat; }
+#panels .bag-tags .tag-new { width: 35px; background-position-y: 0; }
+#panels .bag-tags .tag-equip { width: 39px; background-position-y: -20px; }
+#panels .bag-tags .tag-lock { width: 43px; background-position-y: -40px; }
+#panels .bag-tags .tag-bound { width: 49px; background-position-y: -60px; }
+#panels .bag-tags .tag-nosell { width: 80px; background-position-y: -80px; }
 #panels .bag-actions { gap: 6px; margin-top: 8px; }
 #panels .bag-btn {
   width: 92px; height: 38px; border: none; padding: 0; font-size: 0; color: transparent; cursor: pointer;

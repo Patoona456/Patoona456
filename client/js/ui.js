@@ -844,8 +844,6 @@ export class UI {
     const typing = document.activeElement?.id === 'inv-search-input';
     wrap.innerHTML = '';
     wrap.className = 'bag';
-    const IMG = (name) => `${UI_BASE}/bag_${name}.webp`;
-    const pic = (name, cls = '') => { const i = el('img', cls); i.src = IMG(name); i.alt = ''; i.draggable = false; return i; };
 
     /* six painted tabs: icon over the word */
     const KEYS = new Set(Object.values(KEY_ITEMS).filter(Boolean));
@@ -863,7 +861,7 @@ export class UI {
       const on = key === cat[0];
       const b = el('button', 'bag-tab' + (on ? ' on' : ''));
       const n = inv.items.filter(test).length;
-      b.append(pic(`tab_i_${key}${on ? '_d' : ''}`, 'ico'), el('span', '', label), el('em', 'num', n ? String(n) : ''));
+      b.append(el('i', `ico ti-${key}`), el('span', '', label), el('em', 'num', n ? String(n) : ''));
       b.addEventListener('click', () => { this.invFilter = key; this.renderInventory(); });
       tabs.append(b);
     }
@@ -897,7 +895,7 @@ export class UI {
       for (const [key, label] of SORTS) {
         const on = key === sortKey;
         const b = el('button', 'bag-chip' + (on ? ' on' : ''));
-        b.append(pic(`sort_i_${key}${on ? '_d' : ''}`, 'ico'), el('span', '', label));
+        b.append(el('i', `ico si-${key}`), el('span', '', label));
         b.addEventListener('click', () => { this.invSort = key; this.renderInventory(); });
         chips.append(b);
       }
