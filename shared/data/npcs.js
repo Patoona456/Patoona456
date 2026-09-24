@@ -116,6 +116,10 @@ export const SHOPS = {
       { id: 'vip_pass', stock: 99, restock: 60, price: 6 },
       { id: 'book_royal', stock: 99, restock: 60, price: 12 },
       { id: 'scroll_daily_reset', stock: 99, restock: 60, price: 3 },
+      // the weapon boxes, one per band: the top one is the way to the late epics and legendaries
+      { id: 'box_weapon_1', stock: 99, restock: 60, price: 2 },
+      { id: 'box_weapon_2', stock: 99, restock: 60, price: 4 },
+      { id: 'box_weapon_3', stock: 99, restock: 60, price: 8 },
       // rare swords past the last hunting ground's level: the ticket counter is the only door
       { id: 'sword_rare_70', stock: 99, restock: 60, price: 4 },
       { id: 'sword_rare_75', stock: 99, restock: 60, price: 5 },

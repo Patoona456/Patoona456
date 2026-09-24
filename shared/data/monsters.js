@@ -1,4 +1,4 @@
-import { SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS } from './items.js';
+import { SWORDS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, WEAPON_BOXES } from './items.js';
 // Bestiary.
 //
 // sprite.kind:
@@ -485,6 +485,8 @@ const bandOf = (ladder, lv) => ladder.filter((w) => w.level <= lv).pop();
 const near = (ladder, lv) => ladder.filter((w) => w.level <= lv + 3 && w.level > lv - 6);
 const epicsNear = (lv) => near(EPIC_LADDER, lv);
 const legendsNear = (lv) => near(LEGEND_LADDER, lv);
+/** The weapon box whose band a monster of this level falls in. */
+const boxOf = (lv) => Object.values(WEAPON_BOXES).find((b) => lv >= b.band[0] && lv <= b.band[1])?.id ?? 'box_weapon_3';
 const ITEM_BOOK = { fire: 'book_fire', ice: 'book_ice', wind: 'book_wind', lightning: 'book_lightning',
   earth: 'book_earth', dark: 'book_dark', holy: 'book_holy' };
 const RESIST_OF = { fire: 'fire_resist', ice: 'ice_resist', lightning: 'lightning_resist', wind: 'wind_resist',
@@ -513,6 +515,7 @@ export function potionDrops(m) {
       { id: bandOf(RARE_LADDER, m.level)?.id, chance: 0.35 },
       ...epicsNear(m.level).map((e, _, all) => ({ id: e.id, chance: 0.1 / all.length })),
       ...legendsNear(m.level).map((e, _, all) => ({ id: e.id, chance: 0.03 / all.length })),
+      { id: boxOf(m.level), chance: 0.5 },
     ].filter((d) => d.id);
   }
   const out = [
@@ -535,7 +538,9 @@ export function potionDrops(m) {
   // an epic one, a story to tell: any of those a few levels either side of
   // it, since the epic ladder is finer than the monster list
   for (const e of epicsNear(m.level)) out.push({ id: e.id, chance: 0.0003 / epicsNear(m.level).length });
-  // and a legendary one: most players will only ever see it from a boss
+  // a sealed weapon box of its band: every grade inside, the best ones rarely
+  out.push({ id: boxOf(m.level), chance: 0.003 });
+  // and a legendary one: most players will only ever see it from a boss or a box
   for (const e of legendsNear(m.level)) out.push({ id: e.id, chance: 0.00006 / legendsNear(m.level).length });
   if (m.level >= 20) {
     out.push({ id: 'exp_potion', chance: 0.002 }, { id: 'drop_rate_up', chance: 0.0015 },

@@ -329,6 +329,16 @@ export const SHAPES = {
     px(c, 10, 6, 12, 3, '#c3b99c');
   },
   crate(c) { px(c, 6, 8, 20, 18, '#7a5a37'); px(c, 6, 8, 20, 3, '#96703f'); px(c, 14, 8, 4, 18, '#5c4227'); },
+  // a sealed chest of swords: dark wood, gold bands and latch, a blade across the lid
+  weaponbox(c) {
+    px(c, 4, 13, 24, 15, '#5a3a22'); px(c, 4, 9, 24, 6, '#74492a'); px(c, 5, 8, 22, 2, '#8c5a33');
+    px(c, 4, 14, 24, 2, '#e0b04a'); px(c, 7, 8, 2, 20, '#c9962e'); px(c, 23, 8, 2, 20, '#c9962e');
+    px(c, 4, 26, 24, 2, '#3b2616');
+    px(c, 14, 16, 4, 6, '#f2cf6a'); px(c, 15, 18, 2, 2, '#3b2616');
+    c.strokeStyle = '#e8eef6'; c.lineWidth = 1.6; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(9, 6); c.lineTo(23, 1.5); c.stroke();
+    px(c, 10, 4, 1, 4, '#e0b04a');
+  },
 };
 
 /* ============================ skill shapes ============================ */
@@ -491,6 +501,7 @@ export function itemIconKind(id) {
   const it = ITEMS[id];
   if (!it) return 'crate';
   if (ITEM_OVERRIDE[id]) return ITEM_OVERRIDE[id];
+  if (it.box && !it.art) return 'weaponbox';       // a weapon box, until it has a picture of its own
   if (it.type === 'weapon') {
     // every class draws as the nearest of the four weapon shapes
     const w = it.wclass ?? 'sword';

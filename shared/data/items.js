@@ -322,78 +322,106 @@ export const RARE_SWORDS = {
 Object.assign(ITEMS, RARE_SWORDS);
 
 /* ============ EPIC SWORDS (assets/ui/source/swords_epic.png) ============
-   Twenty-three epic swords, Lv.45 to Lv.70. The board's own level plates are
-   misnumbered (two 52s, two 63s, two 69s, a 63 between 57 and 58), so the
-   ladder follows the board's order, left to right and down, which is also
-   the order the art grows in. An epic sword is the common sword of its level
-   plus two fifths more ATK (a rare one is a fifth), a faster swing, more crit
-   and STR/AGI/DEX. Found only: rarer than rare on the field, a bigger share
-   of a boss's pouch. */
+   Twenty-three epic swords, Lv.1 to Lv.120. Epic is a grade, not a band:
+   like rare, it runs the whole ladder, on the same five-level steps (it
+   skips 105 and 115). The board's own plates say Lv.45-70 and are
+   misnumbered besides, so the pictures keep the board's order, which is
+   the order the art grows in. An epic sword is the common sword of its
+   level plus two fifths more ATK (a rare one is a fifth), a faster swing,
+   more crit and STR/AGI/DEX. Found only: rarer than rare from monsters, a
+   bigger share of a boss's pouch, and in the weapon boxes. */
 const EPIC_SWORD = (art, o) => W({ art: 'swords_epic#' + art, wclass: 'sword', range: 47, rarity: 'epic',
   weight: 46 + Math.round(o.level * 0.6), ...o });
 export const EPIC_SWORDS = {
-  sword_epic_45: EPIC_SWORD(0, { id: 'sword_epic_45', name: 'Amethyst Edge', nameTh: 'ดาบคมอเมทิสต์', level: 45, atk: 98, delay: 0.8, value: 88200, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_46: EPIC_SWORD(1, { id: 'sword_epic_46', name: 'Violet Oath', nameTh: 'ดาบคำสัตย์ม่วง', level: 46, atk: 99, delay: 0.8, value: 91080, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_47: EPIC_SWORD(2, { id: 'sword_epic_47', name: 'Duskfang', nameTh: 'ดาบเขี้ยวสนธยา', level: 47, atk: 100, delay: 0.8, value: 94000, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_48: EPIC_SWORD(3, { id: 'sword_epic_48', name: 'Nightbloom', nameTh: 'ดาบบุปผาราตรี', level: 48, atk: 102, delay: 0.8, value: 97920, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_50: EPIC_SWORD(4, { id: 'sword_epic_50', name: 'Voidguard', nameTh: 'ดาบองครักษ์ห้วงมืด', level: 50, atk: 104, delay: 0.8, value: 104000, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_51: EPIC_SWORD(5, { id: 'sword_epic_51', name: 'Twilight Warden', nameTh: 'ดาบผู้พิทักษ์สนธยา', level: 51, atk: 106, delay: 0.8, value: 108120, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_52: EPIC_SWORD(6, { id: 'sword_epic_52', name: 'Mystic Talon', nameTh: 'ดาบกรงเล็บมนตรา', level: 52, atk: 107, delay: 0.79, value: 111280, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
-  sword_epic_53: EPIC_SWORD(7, { id: 'sword_epic_53', name: 'Umbral Crest', nameTh: 'ดาบตราเงามืด', level: 53, atk: 108, delay: 0.79, value: 114480, crit: 4, stats: { str: 5, agi: 2, dex: 1 } }),
-  sword_epic_54: EPIC_SWORD(8, { id: 'sword_epic_54', name: 'Amethyst Reaver', nameTh: 'ดาบอเมทิสต์ผลาญ', level: 54, atk: 110, delay: 0.79, value: 118800, crit: 4, stats: { str: 5, agi: 2, dex: 1 } }),
-  sword_epic_55: EPIC_SWORD(9, { id: 'sword_epic_55', name: 'Shadeborn Blade', nameTh: 'ดาบกำเนิดเงา', level: 55, atk: 111, delay: 0.79, value: 122100, crit: 5, stats: { str: 5, agi: 3, dex: 1 } }),
-  sword_epic_56: EPIC_SWORD(10, { id: 'sword_epic_56', name: 'Eclipse Thorn', nameTh: 'ดาบหนามสุริยคราส', level: 56, atk: 112, delay: 0.79, value: 125440, crit: 5, stats: { str: 5, agi: 3, dex: 1 } }),
-  sword_epic_58: EPIC_SWORD(11, { id: 'sword_epic_58', name: 'Violet Tempest', nameTh: 'ดาบพายุม่วง', level: 58, atk: 115, delay: 0.79, value: 133400, crit: 5, stats: { str: 5, agi: 3, dex: 2 } }),
-  sword_epic_59: EPIC_SWORD(12, { id: 'sword_epic_59', name: 'Abyssal Wing', nameTh: 'ดาบปีกห้วงลึก', level: 59, atk: 116, delay: 0.79, value: 136880, crit: 5, stats: { str: 5, agi: 3, dex: 2 } }),
-  sword_epic_60: EPIC_SWORD(13, { id: 'sword_epic_60', name: 'Dusk Sovereign', nameTh: 'ดาบราชันย์สนธยา', level: 60, atk: 117, delay: 0.79, value: 140400, crit: 5, stats: { str: 5, agi: 3, dex: 2 } }),
-  sword_epic_61: EPIC_SWORD(14, { id: 'sword_epic_61', name: 'Nether Spire', nameTh: 'ดาบยอดแหลมนรก', level: 61, atk: 119, delay: 0.79, value: 145180, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
-  sword_epic_62: EPIC_SWORD(15, { id: 'sword_epic_62', name: 'Starless Fang', nameTh: 'ดาบเขี้ยวไร้ดาว', level: 62, atk: 120, delay: 0.79, value: 148800, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
-  sword_epic_63: EPIC_SWORD(16, { id: 'sword_epic_63', name: 'Wraithcrown', nameTh: 'ดาบมงกุฎวิญญาณ', level: 63, atk: 121, delay: 0.79, value: 152460, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
-  sword_epic_64: EPIC_SWORD(17, { id: 'sword_epic_64', name: 'Amethyst Dragonfang', nameTh: 'ดาบเขี้ยวมังกรอเมทิสต์', level: 64, atk: 122, delay: 0.78, value: 156160, crit: 5, stats: { str: 6, agi: 3, dex: 2 } }),
-  sword_epic_65: EPIC_SWORD(18, { id: 'sword_epic_65', name: 'Void Reaper', nameTh: 'ดาบเคียวห้วงมืด', level: 65, atk: 124, delay: 0.78, value: 161200, crit: 6, stats: { str: 6, agi: 4, dex: 2 } }),
-  sword_epic_67: EPIC_SWORD(19, { id: 'sword_epic_67', name: 'Eventide Lord', nameTh: 'ดาบจ้าวรัตติกาล', level: 67, atk: 126, delay: 0.78, value: 168840, crit: 6, stats: { str: 6, agi: 4, dex: 2 } }),
-  sword_epic_68: EPIC_SWORD(20, { id: 'sword_epic_68', name: 'Phantom Monarch', nameTh: 'ดาบกษัตริย์ภูต', level: 68, atk: 127, delay: 0.78, value: 172720, crit: 6, stats: { str: 6, agi: 4, dex: 2 } }),
-  sword_epic_69: EPIC_SWORD(21, { id: 'sword_epic_69', name: 'Abyss Emperor', nameTh: 'ดาบจักรพรรดิห้วงลึก', level: 69, atk: 129, delay: 0.78, value: 178020, crit: 6, stats: { str: 7, agi: 4, dex: 3 } }),
-  sword_epic_70: EPIC_SWORD(22, { id: 'sword_epic_70', name: 'Celestial Amethyst', nameTh: 'ดาบอเมทิสต์สวรรค์', level: 70, atk: 130, delay: 0.78, value: 182000, crit: 6, stats: { str: 7, agi: 4, dex: 3 } }),
+  sword_epic_1: EPIC_SWORD(0, { id: 'sword_epic_1', name: 'Amethyst Edge', nameTh: 'ดาบคมอเมทิสต์', level: 1, atk: 25, delay: 0.84, value: 2020, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_epic_5: EPIC_SWORD(1, { id: 'sword_epic_5', name: 'Violet Oath', nameTh: 'ดาบคำสัตย์ม่วง', level: 5, atk: 34, delay: 0.84, value: 5610, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_epic_10: EPIC_SWORD(2, { id: 'sword_epic_10', name: 'Duskfang', nameTh: 'ดาบเขี้ยวสนธยา', level: 10, atk: 44, delay: 0.83, value: 11880, crit: 3, stats: { str: 2, agi: 1 } }),
+  sword_epic_15: EPIC_SWORD(3, { id: 'sword_epic_15', name: 'Nightbloom', nameTh: 'ดาบบุปผาราตรี', level: 15, atk: 53, delay: 0.83, value: 19880, crit: 3, stats: { str: 3, agi: 1 } }),
+  sword_epic_20: EPIC_SWORD(4, { id: 'sword_epic_20', name: 'Voidguard', nameTh: 'ดาบองครักษ์ห้วงมืด', level: 20, atk: 61, delay: 0.83, value: 29280, crit: 3, stats: { str: 3, agi: 2, dex: 1 } }),
+  sword_epic_25: EPIC_SWORD(5, { id: 'sword_epic_25', name: 'Twilight Warden', nameTh: 'ดาบผู้พิทักษ์สนธยา', level: 25, atk: 69, delay: 0.82, value: 40360, crit: 3, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_30: EPIC_SWORD(6, { id: 'sword_epic_30', name: 'Mystic Talon', nameTh: 'ดาบกรงเล็บมนตรา', level: 30, atk: 76, delay: 0.82, value: 52440, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_35: EPIC_SWORD(7, { id: 'sword_epic_35', name: 'Umbral Crest', nameTh: 'ดาบตราเงามืด', level: 35, atk: 84, delay: 0.82, value: 66780, crit: 4, stats: { str: 4, agi: 2, dex: 1 } }),
+  sword_epic_40: EPIC_SWORD(8, { id: 'sword_epic_40', name: 'Amethyst Reaver', nameTh: 'ดาบอเมทิสต์ผลาญ', level: 40, atk: 91, delay: 0.81, value: 81900, crit: 4, stats: { str: 5, agi: 3, dex: 2 } }),
+  sword_epic_45: EPIC_SWORD(9, { id: 'sword_epic_45', name: 'Shadeborn Blade', nameTh: 'ดาบกำเนิดเงา', level: 45, atk: 98, delay: 0.81, value: 98490, crit: 4, stats: { str: 5, agi: 3, dex: 2 } }),
+  sword_epic_50: EPIC_SWORD(10, { id: 'sword_epic_50', name: 'Eclipse Thorn', nameTh: 'ดาบหนามสุริยคราส', level: 50, atk: 104, delay: 0.81, value: 115440, crit: 4, stats: { str: 6, agi: 3, dex: 2 } }),
+  sword_epic_55: EPIC_SWORD(11, { id: 'sword_epic_55', name: 'Violet Tempest', nameTh: 'ดาบพายุม่วง', level: 55, atk: 111, delay: 0.8, value: 134860, crit: 4, stats: { str: 6, agi: 4, dex: 2 } }),
+  sword_epic_60: EPIC_SWORD(12, { id: 'sword_epic_60', name: 'Abyssal Wing', nameTh: 'ดาบปีกห้วงลึก', level: 60, atk: 117, delay: 0.8, value: 154440, crit: 5, stats: { str: 7, agi: 4, dex: 3 } }),
+  sword_epic_65: EPIC_SWORD(13, { id: 'sword_epic_65', name: 'Dusk Sovereign', nameTh: 'ดาบราชันย์สนธยา', level: 65, atk: 124, delay: 0.8, value: 176700, crit: 5, stats: { str: 7, agi: 4, dex: 3 } }),
+  sword_epic_70: EPIC_SWORD(14, { id: 'sword_epic_70', name: 'Nether Spire', nameTh: 'ดาบยอดแหลมนรก', level: 70, atk: 130, delay: 0.79, value: 198900, crit: 5, stats: { str: 7, agi: 4, dex: 3 } }),
+  sword_epic_75: EPIC_SWORD(15, { id: 'sword_epic_75', name: 'Starless Fang', nameTh: 'ดาบเขี้ยวไร้ดาว', level: 75, atk: 136, delay: 0.79, value: 222360, crit: 5, stats: { str: 8, agi: 5, dex: 3 } }),
+  sword_epic_80: EPIC_SWORD(16, { id: 'sword_epic_80', name: 'Wraithcrown', nameTh: 'ดาบมงกุฎวิญญาณ', level: 80, atk: 142, delay: 0.79, value: 247080, crit: 5, stats: { str: 8, agi: 5, dex: 4 } }),
+  sword_epic_85: EPIC_SWORD(17, { id: 'sword_epic_85', name: 'Amethyst Dragonfang', nameTh: 'ดาบเขี้ยวมังกรอเมทิสต์', level: 85, atk: 148, delay: 0.78, value: 273060, crit: 5, stats: { str: 9, agi: 5, dex: 4 } }),
+  sword_epic_90: EPIC_SWORD(18, { id: 'sword_epic_90', name: 'Void Reaper', nameTh: 'ดาบเคียวห้วงมืด', level: 90, atk: 154, delay: 0.78, value: 300300, crit: 6, stats: { str: 9, agi: 6, dex: 4 } }),
+  sword_epic_95: EPIC_SWORD(19, { id: 'sword_epic_95', name: 'Eventide Lord', nameTh: 'ดาบจ้าวรัตติกาล', level: 95, atk: 160, delay: 0.78, value: 328800, crit: 6, stats: { str: 9, agi: 6, dex: 4 } }),
+  sword_epic_100: EPIC_SWORD(20, { id: 'sword_epic_100', name: 'Phantom Monarch', nameTh: 'ดาบกษัตริย์ภูต', level: 100, atk: 166, delay: 0.77, value: 358560, crit: 6, stats: { str: 10, agi: 6, dex: 5 } }),
+  sword_epic_110: EPIC_SWORD(21, { id: 'sword_epic_110', name: 'Abyss Emperor', nameTh: 'ดาบจักรพรรดิห้วงลึก', level: 110, atk: 177, delay: 0.77, value: 419490, crit: 6, stats: { str: 11, agi: 7, dex: 5 } }),
+  sword_epic_120: EPIC_SWORD(22, { id: 'sword_epic_120', name: 'Celestial Amethyst', nameTh: 'ดาบอเมทิสต์สวรรค์', level: 120, atk: 189, delay: 0.76, value: 487620, crit: 7, stats: { str: 12, agi: 7, dex: 6 } }),
 };
 Object.assign(ITEMS, EPIC_SWORDS);
 
 /* ============ LEGENDARY SWORDS (assets/ui/source/swords_legendary.png) ============
-   Twenty-five legendary swords, Lv.45 to Lv.70. The plates repeat 57 and 58,
-   so the ladder follows the board's order, left to right and down. A
-   legendary sword is the common sword of its level plus three fifths more
-   ATK (epic two fifths, rare one), the fastest swing, the most crit, and
-   STR/AGI/DEX/LUK. The rarest find in the game: a boss is the likely source. */
+   Twenty-five legendary swords on the rare ladder's steps, Lv.1 to Lv.120
+   (the board's plates say Lv.45-70 and repeat 57 and 58; the pictures keep
+   the board's order). A legendary sword is the common sword of its level
+   plus three fifths more ATK (epic two fifths, rare one), the fastest swing,
+   the most crit, and STR/AGI/DEX/LUK. The rarest find in the game: a boss
+   or a weapon box is the likely source. */
 const LEGEND_SWORD = (art, o) => W({ art: 'swords_legendary#' + art, wclass: 'sword', range: 47, rarity: 'legendary',
   weight: 50 + Math.round(o.level * 0.6), ...o });
 export const LEGENDARY_SWORDS = {
-  sword_legend_45: LEGEND_SWORD(0, { id: 'sword_legend_45', name: 'Crimson Oath', nameTh: 'ดาบคำสาบานโลหิต', level: 45, atk: 111, delay: 0.78, value: 139860, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_46: LEGEND_SWORD(1, { id: 'sword_legend_46', name: 'Scarlet Fang', nameTh: 'ดาบเขี้ยวชาด', level: 46, atk: 113, delay: 0.78, value: 145540, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_47: LEGEND_SWORD(2, { id: 'sword_legend_47', name: 'Bloodspire', nameTh: 'ดาบยอดโลหิต', level: 47, atk: 115, delay: 0.78, value: 151340, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_48: LEGEND_SWORD(3, { id: 'sword_legend_48', name: 'Emberwing', nameTh: 'ดาบปีกถ่านเพลิง', level: 48, atk: 116, delay: 0.78, value: 155900, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_49: LEGEND_SWORD(4, { id: 'sword_legend_49', name: 'Ruby Tyrant', nameTh: 'ดาบทรราชทับทิม', level: 49, atk: 118, delay: 0.78, value: 161900, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_50: LEGEND_SWORD(5, { id: 'sword_legend_50', name: 'Cinderclaw', nameTh: 'ดาบกรงเล็บเถ้าเพลิง', level: 50, atk: 119, delay: 0.78, value: 166600, crit: 6, stats: { str: 6, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_51: LEGEND_SWORD(6, { id: 'sword_legend_51', name: 'Flameheart', nameTh: 'ดาบหัวใจเพลิง', level: 51, atk: 121, delay: 0.78, value: 172790, crit: 6, stats: { str: 7, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_52: LEGEND_SWORD(7, { id: 'sword_legend_52', name: 'Hellfang', nameTh: 'ดาบเขี้ยวนรก', level: 52, atk: 122, delay: 0.77, value: 177630, crit: 6, stats: { str: 7, agi: 3, dex: 2, luk: 1 } }),
-  sword_legend_53: LEGEND_SWORD(8, { id: 'sword_legend_53', name: 'Wyrmblood Edge', nameTh: 'ดาบคมเลือดวายุภักษ์', level: 53, atk: 124, delay: 0.77, value: 184020, crit: 7, stats: { str: 7, agi: 4, dex: 2, luk: 1 } }),
-  sword_legend_54: LEGEND_SWORD(9, { id: 'sword_legend_54', name: 'Crimson Reaver', nameTh: 'ดาบผลาญแดงฉาน', level: 54, atk: 125, delay: 0.77, value: 189000, crit: 7, stats: { str: 7, agi: 4, dex: 2, luk: 1 } }),
-  sword_legend_55: LEGEND_SWORD(10, { id: 'sword_legend_55', name: 'Pyre Sovereign', nameTh: 'ดาบราชันกองไฟ', level: 55, atk: 127, delay: 0.77, value: 195580, crit: 7, stats: { str: 7, agi: 4, dex: 3, luk: 1 } }),
-  sword_legend_56: LEGEND_SWORD(11, { id: 'sword_legend_56', name: 'Scarlet Talon', nameTh: 'ดาบกรงเล็บแดง', level: 56, atk: 128, delay: 0.77, value: 200700, crit: 7, stats: { str: 7, agi: 4, dex: 3, luk: 1 } }),
-  sword_legend_58: LEGEND_SWORD(12, { id: 'sword_legend_58', name: 'Inferno Crest', nameTh: 'ดาบตรานรกเพลิง', level: 58, atk: 131, delay: 0.77, value: 212740, crit: 7, stats: { str: 8, agi: 4, dex: 3, luk: 2 } }),
-  sword_legend_59: LEGEND_SWORD(13, { id: 'sword_legend_59', name: 'Bloodmoon', nameTh: 'ดาบจันทร์โลหิต', level: 59, atk: 133, delay: 0.77, value: 219720, crit: 7, stats: { str: 8, agi: 4, dex: 3, luk: 2 } }),
-  sword_legend_60: LEGEND_SWORD(14, { id: 'sword_legend_60', name: 'Dragonflame', nameTh: 'ดาบเพลิงมังกร', level: 60, atk: 134, delay: 0.77, value: 225120, crit: 7, stats: { str: 8, agi: 4, dex: 3, luk: 2 } }),
-  sword_legend_61: LEGEND_SWORD(15, { id: 'sword_legend_61', name: 'Magma Lord', nameTh: 'ดาบจ้าวลาวา', level: 61, atk: 136, delay: 0.77, value: 232290, crit: 8, stats: { str: 8, agi: 5, dex: 3, luk: 2 } }),
-  sword_legend_62: LEGEND_SWORD(16, { id: 'sword_legend_62', name: 'Crimson Wyrm', nameTh: 'ดาบวายุภักษ์แดง', level: 62, atk: 137, delay: 0.77, value: 237830, crit: 8, stats: { str: 8, agi: 5, dex: 3, luk: 2 } }),
-  sword_legend_63: LEGEND_SWORD(17, { id: 'sword_legend_63', name: 'Blazeborn', nameTh: 'ดาบกำเนิดเปลวไฟ', level: 63, atk: 138, delay: 0.77, value: 243430, crit: 8, stats: { str: 9, agi: 5, dex: 3, luk: 2 } }),
-  sword_legend_64: LEGEND_SWORD(18, { id: 'sword_legend_64', name: 'Phoenix Talon', nameTh: 'ดาบกรงเล็บหงส์เพลิง', level: 64, atk: 140, delay: 0.76, value: 250880, crit: 8, stats: { str: 9, agi: 5, dex: 3, luk: 2 } }),
-  sword_legend_65: LEGEND_SWORD(19, { id: 'sword_legend_65', name: 'Hellfire Monarch', nameTh: 'ดาบกษัตริย์ไฟนรก', level: 65, atk: 141, delay: 0.76, value: 256620, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
-  sword_legend_66: LEGEND_SWORD(20, { id: 'sword_legend_66', name: 'Ruby Dragonfang', nameTh: 'ดาบเขี้ยวมังกรทับทิม', level: 66, atk: 143, delay: 0.76, value: 264260, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
-  sword_legend_67: LEGEND_SWORD(21, { id: 'sword_legend_67', name: 'Sanguine Emperor', nameTh: 'ดาบจักรพรรดิโลหิต', level: 67, atk: 144, delay: 0.76, value: 270140, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
-  sword_legend_68: LEGEND_SWORD(22, { id: 'sword_legend_68', name: 'Infernal Crown', nameTh: 'ดาบมงกุฎนรกันต์', level: 68, atk: 146, delay: 0.76, value: 277980, crit: 8, stats: { str: 9, agi: 5, dex: 4, luk: 2 } }),
-  sword_legend_69: LEGEND_SWORD(23, { id: 'sword_legend_69', name: 'Dragonking Blade', nameTh: 'ดาบราชามังกร', level: 69, atk: 147, delay: 0.76, value: 284000, crit: 9, stats: { str: 10, agi: 6, dex: 4, luk: 3 } }),
-  sword_legend_70: LEGEND_SWORD(24, { id: 'sword_legend_70', name: 'Heart of the Inferno', nameTh: 'ดาบหัวใจอัคคี', level: 70, atk: 149, delay: 0.76, value: 292040, crit: 9, stats: { str: 10, agi: 6, dex: 4, luk: 3 } }),
+  sword_legend_1: LEGEND_SWORD(0, { id: 'sword_legend_1', name: 'Crimson Oath', nameTh: 'ดาบคำสาบานโลหิต', level: 1, atk: 28, delay: 0.82, value: 3330, crit: 4, stats: { str: 3, agi: 2, dex: 1, luk: 1 } }),
+  sword_legend_5: LEGEND_SWORD(1, { id: 'sword_legend_5', name: 'Scarlet Fang', nameTh: 'ดาบเขี้ยวชาด', level: 5, atk: 39, delay: 0.82, value: 9440, crit: 4, stats: { str: 3, agi: 2, dex: 1, luk: 1 } }),
+  sword_legend_10: LEGEND_SWORD(2, { id: 'sword_legend_10', name: 'Bloodspire', nameTh: 'ดาบยอดโลหิต', level: 10, atk: 50, delay: 0.81, value: 19800, crit: 4, stats: { str: 4, agi: 2, dex: 1, luk: 1 } }),
+  sword_legend_15: LEGEND_SWORD(3, { id: 'sword_legend_15', name: 'Emberwing', nameTh: 'ดาบปีกถ่านเพลิง', level: 15, atk: 60, delay: 0.81, value: 33000, crit: 4, stats: { str: 4, agi: 3, dex: 1, luk: 1 } }),
+  sword_legend_20: LEGEND_SWORD(4, { id: 'sword_legend_20', name: 'Ruby Tyrant', nameTh: 'ดาบทรราชทับทิม', level: 20, atk: 70, delay: 0.81, value: 49280, crit: 4, stats: { str: 5, agi: 3, dex: 2, luk: 1 } }),
+  sword_legend_25: LEGEND_SWORD(5, { id: 'sword_legend_25', name: 'Cinderclaw', nameTh: 'ดาบกรงเล็บเถ้าเพลิง', level: 25, atk: 79, delay: 0.8, value: 67780, crit: 5, stats: { str: 5, agi: 3, dex: 2, luk: 2 } }),
+  sword_legend_30: LEGEND_SWORD(6, { id: 'sword_legend_30', name: 'Flameheart', nameTh: 'ดาบหัวใจเพลิง', level: 30, atk: 87, delay: 0.8, value: 88040, crit: 5, stats: { str: 6, agi: 4, dex: 2, luk: 2 } }),
+  sword_legend_35: LEGEND_SWORD(7, { id: 'sword_legend_35', name: 'Hellfang', nameTh: 'ดาบเขี้ยวนรก', level: 35, atk: 96, delay: 0.8, value: 111940, crit: 5, stats: { str: 6, agi: 4, dex: 2, luk: 2 } }),
+  sword_legend_40: LEGEND_SWORD(8, { id: 'sword_legend_40', name: 'Wyrmblood Edge', nameTh: 'ดาบคมเลือดวายุภักษ์', level: 40, atk: 104, delay: 0.79, value: 137280, crit: 5, stats: { str: 7, agi: 4, dex: 3, luk: 2 } }),
+  sword_legend_45: LEGEND_SWORD(9, { id: 'sword_legend_45', name: 'Crimson Reaver', nameTh: 'ดาบผลาญแดงฉาน', level: 45, atk: 111, delay: 0.79, value: 163610, crit: 5, stats: { str: 7, agi: 5, dex: 3, luk: 2 } }),
+  sword_legend_50: LEGEND_SWORD(10, { id: 'sword_legend_50', name: 'Pyre Sovereign', nameTh: 'ดาบราชันกองไฟ', level: 50, atk: 119, delay: 0.79, value: 193730, crit: 6, stats: { str: 8, agi: 5, dex: 3, luk: 3 } }),
+  sword_legend_55: LEGEND_SWORD(11, { id: 'sword_legend_55', name: 'Scarlet Talon', nameTh: 'ดาบกรงเล็บแดง', level: 55, atk: 127, delay: 0.78, value: 226310, crit: 6, stats: { str: 8, agi: 5, dex: 4, luk: 3 } }),
+  sword_legend_60: LEGEND_SWORD(12, { id: 'sword_legend_60', name: 'Inferno Crest', nameTh: 'ดาบตรานรกเพลิง', level: 60, atk: 134, delay: 0.78, value: 259420, crit: 6, stats: { str: 9, agi: 6, dex: 4, luk: 3 } }),
+  sword_legend_65: LEGEND_SWORD(13, { id: 'sword_legend_65', name: 'Bloodmoon', nameTh: 'ดาบจันทร์โลหิต', level: 65, atk: 141, delay: 0.78, value: 294690, crit: 6, stats: { str: 9, agi: 6, dex: 4, luk: 3 } }),
+  sword_legend_70: LEGEND_SWORD(14, { id: 'sword_legend_70', name: 'Dragonflame', nameTh: 'ดาบเพลิงมังกร', level: 70, atk: 149, delay: 0.77, value: 334360, crit: 6, stats: { str: 10, agi: 6, dex: 4, luk: 3 } }),
+  sword_legend_75: LEGEND_SWORD(15, { id: 'sword_legend_75', name: 'Magma Lord', nameTh: 'ดาบจ้าวลาวา', level: 75, atk: 156, delay: 0.77, value: 374090, crit: 7, stats: { str: 10, agi: 7, dex: 5, luk: 4 } }),
+  sword_legend_80: LEGEND_SWORD(16, { id: 'sword_legend_80', name: 'Crimson Wyrm', nameTh: 'ดาบวายุภักษ์แดง', level: 80, atk: 163, delay: 0.77, value: 415980, crit: 7, stats: { str: 11, agi: 7, dex: 5, luk: 4 } }),
+  sword_legend_85: LEGEND_SWORD(17, { id: 'sword_legend_85', name: 'Blazeborn', nameTh: 'ดาบกำเนิดเปลวไฟ', level: 85, atk: 169, delay: 0.76, value: 457310, crit: 7, stats: { str: 11, agi: 7, dex: 5, luk: 4 } }),
+  sword_legend_90: LEGEND_SWORD(18, { id: 'sword_legend_90', name: 'Phoenix Talon', nameTh: 'ดาบกรงเล็บหงส์เพลิง', level: 90, atk: 176, delay: 0.76, value: 503360, crit: 7, stats: { str: 12, agi: 8, dex: 6, luk: 4 } }),
+  sword_legend_95: LEGEND_SWORD(19, { id: 'sword_legend_95', name: 'Hellfire Monarch', nameTh: 'ดาบกษัตริย์ไฟนรก', level: 95, atk: 183, delay: 0.76, value: 551560, crit: 7, stats: { str: 12, agi: 8, dex: 6, luk: 4 } }),
+  sword_legend_100: LEGEND_SWORD(20, { id: 'sword_legend_100', name: 'Ruby Dragonfang', nameTh: 'ดาบเขี้ยวมังกรทับทิม', level: 100, atk: 190, delay: 0.75, value: 601920, crit: 8, stats: { str: 13, agi: 8, dex: 6, luk: 5 } }),
+  sword_legend_105: LEGEND_SWORD(21, { id: 'sword_legend_105', name: 'Sanguine Emperor', nameTh: 'ดาบจักรพรรดิโลหิต', level: 105, atk: 196, delay: 0.75, value: 651110, crit: 8, stats: { str: 13, agi: 9, dex: 6, luk: 5 } }),
+  sword_legend_110: LEGEND_SWORD(22, { id: 'sword_legend_110', name: 'Infernal Crown', nameTh: 'ดาบมงกุฎนรกันต์', level: 110, atk: 203, delay: 0.75, value: 705630, crit: 8, stats: { str: 14, agi: 9, dex: 7, luk: 5 } }),
+  sword_legend_115: LEGEND_SWORD(23, { id: 'sword_legend_115', name: 'Dragonking Blade', nameTh: 'ดาบราชามังกร', level: 115, atk: 209, delay: 0.74, value: 758670, crit: 8, stats: { str: 14, agi: 9, dex: 7, luk: 5 } }),
+  sword_legend_120: LEGEND_SWORD(24, { id: 'sword_legend_120', name: 'Heart of the Inferno', nameTh: 'ดาบหัวใจอัคคี', level: 120, atk: 216, delay: 0.74, value: 817340, crit: 8, stats: { str: 15, agi: 10, dex: 7, luk: 6 } }),
 };
 Object.assign(ITEMS, LEGENDARY_SWORDS);
+
+/* ============ WEAPON BOXES ============
+   A sealed box of swords for one band of levels. Every grade is in it, the
+   better ones more rarely: common 62, rare 28, epic 8.5, legendary 1.5 in a
+   hundred, shared evenly among that grade's swords in the band. They drop
+   from monsters of the band, from bosses, and are at the ticket counter. */
+export const BOX_ODDS = { common: 62, rare: 28, epic: 8.5, legendary: 1.5 };
+const BOX_BANDS = [
+  { id: 'box_weapon_1', from: 1, to: 39, name: "Novice's Weapon Box", nameTh: 'กล่องสุ่มอาวุธนักผจญภัย', value: 3000, rarity: 'uncommon' },
+  { id: 'box_weapon_2', from: 40, to: 79, name: "Veteran's Weapon Box", nameTh: 'กล่องสุ่มอาวุธทหารผ่านศึก', value: 12000, rarity: 'rare' },
+  { id: 'box_weapon_3', from: 80, to: 120, name: "Hero's Weapon Box", nameTh: 'กล่องสุ่มอาวุธวีรชน', value: 40000, rarity: 'epic' },
+];
+export const WEAPON_BOXES = {};
+for (const band of BOX_BANDS) {
+  const opens = [];
+  for (const [grade, set] of [['common', SWORDS], ['rare', RARE_SWORDS], ['epic', EPIC_SWORDS], ['legendary', LEGENDARY_SWORDS]]) {
+    const inBand = Object.values(set).filter((w) => w.level >= band.from && w.level <= band.to);
+    for (const w of inBand) opens.push({ id: w.id, qty: 1, weight: BOX_ODDS[grade] / inBand.length });
+  }
+  WEAPON_BOXES[band.id] = C({
+    id: band.id, name: band.name, nameTh: band.nameTh, value: band.value, rarity: band.rarity, box: true, weight: 10,
+    level: 1, cooldown: 1, band: [band.from, band.to], opens,
+    desc: `เปิดแล้วได้ดาบ Lv.${band.from}–${band.to} หนึ่งเล่ม — ธรรมดา 62% · Rare 28% · Epic 8.5% · Legendary 1.5%`,
+  });
+}
+Object.assign(ITEMS, WEAPON_BOXES);
 
 /** Items that game systems use by role, not by drop table. */
 export const KEY_ITEMS = {
