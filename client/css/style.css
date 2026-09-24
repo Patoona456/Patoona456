@@ -346,10 +346,6 @@ body[data-ui="ember"] .btn.act {
   background: center / contain no-repeat; box-shadow: none; text-shadow: none;
 }
 body[data-ui="ember"] .btn.act:hover { filter: brightness(1.15); }
-body[data-ui="ember"] .btn.act-use { background-image: url(../../assets/ui/act_use.webp); }
-body[data-ui="ember"] .btn.act-equip { background-image: url(../../assets/ui/act_equip.webp); }
-body[data-ui="ember"] .btn.act-unequip { background-image: url(../../assets/ui/act_unequip.webp); }
-body[data-ui="ember"] .btn.act-drop { background-image: url(../../assets/ui/act_drop.webp); }
 
 /* status row: painted icons */
 body[data-ui="ember"] #statuses div { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 1px; background: rgba(20, 18, 16, .75); border-color: #6b5024; }
