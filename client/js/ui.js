@@ -1,5 +1,5 @@
 // All DOM: HUD, chat, panels. The game loop only calls into this module.
-import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
+import { ITEMS, RECIPES, RARITY_COLORS, CRAFTING_INPUTS, isEquip, socketsOf, cardFits, KEY_ITEMS } from '../../shared/data/items.js';
 import { SKILLS, val, skillCost } from '../../shared/data/skills.js';
 import { JOBS } from '../../shared/data/jobs.js';
 import { QUESTS } from '../../shared/data/quests.js';
@@ -203,7 +203,7 @@ export class UI {
     $('#job-lv').textContent = `Job Lv.${jobLevel}`;
 
     $('#aurum').textContent = fmt(you?.aurum ?? self.aurum);
-    const shards = (this.game.inventory?.items ?? []).find((x) => x.id === 'shard_dawn');
+    const shards = (this.game.inventory?.items ?? []).find((x) => x.id === KEY_ITEMS.gachaShard);
     $('#shards').textContent = fmt(shards?.qty ?? 0);
 
     this.updateClock();
@@ -2429,7 +2429,9 @@ export class UI {
     // what it costs, and what is in the bag to pay with
     const have = (id) => inv.filter((x) => x.id === id).reduce((a, x) => a + (x.qty ?? 1), 0);
     const cost = refineCost(def.value ?? 0, lvl);
-    const stones = refineStones(lvl), hasStones = have('runed_whetstone'), oils = have('blessing_oil');
+    const stones = refineStones(lvl), hasStones = have(KEY_ITEMS.refineStone), oils = have(KEY_ITEMS.refineOil);
+    const stoneName = ITEMS[KEY_ITEMS.refineStone]?.nameTh ?? 'หินตีบวก';
+    const oilName = ITEMS[KEY_ITEMS.refineOil]?.nameTh ?? 'น้ำมันกันแตก';
     const aurum = this.game.inventory?.aurum ?? 0;
     const mats = el('div', 'forge-mats');
     const mat = (pic, label, text, ok) => {
@@ -2438,10 +2440,10 @@ export class UI {
       m.append(i, el('span', 'num', text), el('small', 'muted', label));
       mats.append(m);
     };
-    if (stones) mat('mat_enhance', 'หินลับรูน', `${fmt(hasStones)}/${stones}`, hasStones >= stones);
+    if (stones) mat('mat_enhance', stoneName, `${fmt(hasStones)}/${stones}`, hasStones >= stones);
     mat('rw_coin', 'ออรัม', fmt(cost), aurum >= cost);
     const canProtect = risk.onFail === 'down' || risk.onFail === 'break';
-    if (canProtect) mat('mat_protect', 'น้ำมันศักดิ์สิทธิ์', `มี ${fmt(oils)}`, true);
+    if (canProtect) mat('mat_protect', oilName, `มี ${fmt(oils)}`, true);
     bench.append(mats);
 
     const opts = el('div', 'forge-opts');
@@ -2469,7 +2471,7 @@ export class UI {
     opts.append(auto);
     bench.append(opts);
 
-    const short = aurum < cost ? 'ออรัมไม่พอ' : hasStones < stones ? `หินลับรูนไม่พอ (ต้องใช้ ${stones})` : null;
+    const short = aurum < cost ? 'ออรัมไม่พอ' : hasStones < stones ? `${stoneName}ไม่พอ (ต้องใช้ ${stones})` : null;
     const go = this.sheetBtn('fb-enhance', 'เสริมพลัง', () => {
       const useOil = !!oilBox?.checked;
       const goal = Number(target.value);
@@ -2557,7 +2559,8 @@ export class UI {
         : 'ระดับถ่ายโอนครบ · ของต้นทางกลับเป็น +0'));
       if (dst) {
         const fee = transferFee(ITEMS[dst.id]?.value ?? 0, src.refine);
-        const have = inv.filter((x) => x.id === 'runed_whetstone').reduce((a, x) => a + (x.qty ?? 1), 0);
+        const have = inv.filter((x) => x.id === KEY_ITEMS.refineStone).reduce((a, x) => a + (x.qty ?? 1), 0);
+        const stoneName = ITEMS[KEY_ITEMS.refineStone]?.nameTh ?? 'หินตีบวก';
         const aurum = this.game.inventory?.aurum ?? 0;
         const mats = el('div', 'forge-mats');
         const mat = (pic, label, text, ok) => {
@@ -2566,14 +2569,14 @@ export class UI {
           m.append(i, el('span', 'num', text), el('small', 'muted', label));
           mats.append(m);
         };
-        if (fee.stones) mat('mat_enhance', 'หินลับรูน', `${fmt(have)}/${fee.stones}`, have >= fee.stones);
+        if (fee.stones) mat('mat_enhance', stoneName, `${fmt(have)}/${fee.stones}`, have >= fee.stones);
         mat('rw_coin', 'ออรัม', fmt(fee.aurum), aurum >= fee.aurum);
         bench.append(mats);
-        const short = aurum < fee.aurum ? 'ออรัมไม่พอ' : have < fee.stones ? `หินลับรูนไม่พอ (ต้องใช้ ${fee.stones})` : null;
+        const short = aurum < fee.aurum ? 'ออรัมไม่พอ' : have < fee.stones ? `${stoneName}ไม่พอ (ต้องใช้ ${fee.stones})` : null;
         const go = el('button', 'btn primary xfer-go', 'ถ่ายโอน');
         go.disabled = !!short;
         go.addEventListener('click', () => this.forgeConfirm(
-          `ย้าย +${src.refine} จาก <b>${esc(src.name)}</b> ไปที่ <b>${esc(dst.name)}</b> เป็น <b>+${to}</b><br>ของต้นทางจะกลับเป็น +0 · ค่าธรรมเนียม ${fmt(fee.aurum)} ออรัม${fee.stones ? ` + หินลับรูน ${fee.stones}` : ''}`,
+          `ย้าย +${src.refine} จาก <b>${esc(src.name)}</b> ไปที่ <b>${esc(dst.name)}</b> เป็น <b>+${to}</b><br>ของต้นทางจะกลับเป็น +0 · ค่าธรรมเนียม ${fmt(fee.aurum)} ออรัม${fee.stones ? ` + ${ITEMS[KEY_ITEMS.refineStone]?.nameTh ?? 'หินตีบวก'} ${fee.stones}` : ''}`,
           () => this.game.net.send({ t: 'refineTransfer', from: src.i, to: dst.i })));
         bench.append(go);
         if (short) bench.append(el('div', 'forge-short', `⚠ ${short}`));
@@ -3049,7 +3052,7 @@ export class UI {
   openGacha(d) {
     this.lastGacha = d;
     const wrap = el('div', 'shrine');
-    const shard = ITEMS.shard_dawn?.nameTh ?? 'เศษรุ่งอรุณ';
+    const shard = ITEMS[KEY_ITEMS.gachaShard]?.nameTh ?? 'เศษรุ่งอรุณ';
 
     // left: the banner and the two buttons
     const left = el('div', 'shrine-left');

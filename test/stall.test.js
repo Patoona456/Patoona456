@@ -5,6 +5,7 @@
 // the seller's bag until it is paid for - but that only holds if every path
 // through it is checked, including the ones a seller can create by shuffling
 // their inventory while somebody is looking at the window.
+import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as Stall from '../server/game/stall.js';

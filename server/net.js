@@ -360,16 +360,13 @@ export class Conn {
         for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) r[k] = m.stat ?? 60;
         r.aurum += 1000000;
         Econ.mint(this.world, 1000000, 'dev');   // counted, so the dashboard still reconciles
-        // The kit is what a QA session actually wants to look at, so it
-        // carries one of each of the newer weapon classes rather than three
-        // spears. Anything above this level is skipped, not force-equipped.
-        const kit = m.items ?? ['emberfall_greatsword', 'riftsplitter', 'glacier_lance', 'ashguard_plate',
-          'plate_cuirass', 'leather_vest', 'golden_helm', 'metal_helm', 'golden_greaves',
-          'metal_greaves', 'golden_boots', 'metal_boots', 'golden_gauntlets', 'metal_gauntlets',
-          'emberheart_amulet', 'band_of_vigor', 'greater_salve'];
+        // A QA session names the gear it wants to look at (`items`); ids the
+        // item table does not have are skipped, and so is anything above
+        // this level, rather than force-equipped.
+        const kit = (m.items ?? []).filter((id) => ITEMS[id]);
         for (const id of kit) {
           if ((ITEMS[id]?.level ?? 1) > r.level) continue;      // only what this level may wear
-          p.addItem(id, id === 'greater_salve' ? 50 : id === 'shard_dawn' ? 60 : 1);
+          p.addItem(id, ITEMS[id].stack > 1 ? 50 : 1);
         }
         for (const [i, st] of p.inventory.entries()) {
           const def = ITEMS[st.id];

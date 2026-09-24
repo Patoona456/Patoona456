@@ -3,6 +3,7 @@
 // docs/ECONOMY.md is a set of promises: money is hard to come by, the shrine
 // is a sink and never a shortcut, the gacha's pity is real, and nothing in it
 // can be had for cash. Those promises live in this file's assertions.
+import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as Econ from '../server/game/economy.js';
@@ -192,18 +193,6 @@ test('crafting consumes the materials and the fee', () => {
   assert.equal(p.countItem('iron_ore'), 30 - r.in[0].qty * 2);
   assert.equal(p.countItem('steel_ingot'), r.out.qty * 2);
   assert.equal(p.record.aurum, before - r.fee * 2);
-});
-
-test('the dungeon seal is a road into the deepest sink, and only the dungeon has it', () => {
-  const recipe = Object.values(RECIPES).find((r) => r.in.some((m) => m.id === 'reliquary_seal'));
-  assert.ok(recipe, 'seals cannot be turned into anything');
-  assert.equal(recipe.out.id, 'blessing_oil');
-
-  const sources = Object.values(MONSTERS)
-    .filter((m) => (m.drops ?? []).some((d) => d.id === 'reliquary_seal'))
-    .map((m) => m.id);
-  assert.ok(sources.length > 0, 'nothing drops the seal');
-  for (const id of sources) assert.match(id, /^reliquary_/, `${id} drops a seal but is not dungeon content`);
 });
 
 test('the weekly boss is the only thing on a lockout', () => {

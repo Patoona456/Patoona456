@@ -7,6 +7,7 @@
 // yet was `undefined`, JSON.stringify gave back `undefined`, SQLite refused
 // to bind it, and every save on every server without a guild threw inside the
 // transaction.
+import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';

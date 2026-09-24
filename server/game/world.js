@@ -1,6 +1,7 @@
 // The world: owns every zone, drives the tick, routes chat and warps.
 import { Zone } from './zone.js';
 import { MAPS } from '../../shared/data/maps.js';
+import { ITEMS } from '../../shared/data/items.js';
 import { TICK_MS, SNAPSHOT_HZ, TILE } from '../../shared/constants.js';
 import { db, markDirty, save, closeStore } from '../persistence.js';
 import { sweepMarket } from './economy.js';
@@ -18,8 +19,31 @@ function visit(p, mapId) {
   if (!v.includes(mapId)) { v.push(mapId); markDirty(); }
 }
 
+/**
+ * Market listings and guild vaults outlive any one character, so they are
+ * swept here: goods the item table no longer has are gone. A listing that
+ * already sold stays, because its seller is still owed the money.
+ */
+export function purgeWorldItems() {
+  let changed = false;
+  if (Array.isArray(db.market)) {
+    const kept = db.market.filter((l) => l.sold || ITEMS[l.id]);
+    changed ||= kept.length !== db.market.length;
+    db.market = kept;
+  }
+  for (const g of Object.values(db.guilds ?? {})) {
+    if (!Array.isArray(g.vault)) continue;
+    const kept = g.vault.filter((st) => st && ITEMS[st.id]);
+    changed ||= kept.length !== g.vault.length;
+    g.vault = kept;
+  }
+  if (changed) markDirty();
+  return changed;
+}
+
 export class World {
   constructor() {
+    purgeWorldItems();
     this.zones = new Map();
     this.players = new Map();          // playerId -> Player
     this.byCharId = new Map();

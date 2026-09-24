@@ -1,5 +1,5 @@
 // Everything that moves Aurum. The design goal: many small sinks, few faucets.
-import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip, socketsOf, cardFits } from '../../shared/data/items.js';
+import { ITEMS, RECIPES, CRAFTING_INPUTS, isEquip, socketsOf, cardFits, KEY_ITEMS, hasKeyItem } from '../../shared/data/items.js';
 import { SHOPS, HEAL_PRICE_PER_LEVEL, STORAGE_FEE, WARP_ROUTES, RESET_STAT_PRICE, RESET_SKILL_PRICE } from '../../shared/data/npcs.js';
 import { npcSellPrice, marketTax, refineChance, refineCost, refineRisk, refineStones, transferFee, transferResult, transferCompatible } from '../../shared/formulas.js';
 import { MAX_REFINE } from '../../shared/refineglow.js';
@@ -181,33 +181,23 @@ export function openBox(p, index) {
  * it survives logging out.
  */
 export const GACHA = {
-  cost: 2,                       // shard_dawn per draw
+  cost: 2,                       // gacha shards (KEY_ITEMS.gachaShard) per draw
   pity: 10,                      // draws until a guaranteed SSR or better
   // Five grades, named the way the shrine window shows them. `tier` is
   // what the pity counts: anything SSR and up resets it.
+  // Filled from the new item sheet: { id, qty: n | [lo, hi], weight, grade }.
+  // Until then the shrine stays shut (see gachaDraw).
   pool: [
-    { id: 'runed_whetstone', qty: [1, 3], weight: 26, grade: 'R' },
-    { id: 'greater_salve', qty: [5, 10], weight: 16, grade: 'R' },
-    { id: 'mana_draught', qty: [5, 10], weight: 12, grade: 'R' },
-    { id: 'blessing_oil', qty: [1, 2], weight: 14, grade: 'SR' },
-    { id: 'mystery_scroll', qty: [2, 4], weight: 10, grade: 'SR' },
-    { id: 'boss_casket', qty: 1, weight: 6, grade: 'SSR' },
-    { id: 'wings_feather', qty: 1, weight: 5, grade: 'SSR' },
-    { id: 'wings_raven', qty: 1, weight: 5, grade: 'SSR' },
-    { id: 'wings_bat', qty: 1, weight: 3, grade: 'UR' },
-    { id: 'wings_frost', qty: 1, weight: 2, grade: 'UR' },
-    { id: 'wings_ember', qty: 1, weight: 0.8, grade: 'LR' },
-    { id: 'wings_dawn', qty: 1, weight: 0.2, grade: 'LR' },
   ].map((o) => ({ ...o, tier: o.grade === 'LR' ? 'legendary' : ['SSR', 'UR'].includes(o.grade) ? 'rare' : 'common' })),
   // Every draw is a point; points unlock a chest at each milestone, and the
   // track starts over after the last one. Small things - the shrine is a
   // sink, and the track only softens a long unlucky run.
   pointsMax: 200,
   milestones: [
-    { at: 50, items: [{ id: 'runed_whetstone', qty: 3 }] },
-    { at: 100, items: [{ id: 'blessing_oil', qty: 2 }] },
-    { at: 150, items: [{ id: 'boss_casket', qty: 1 }] },
-    { at: 200, items: [{ id: 'wings_frost', qty: 1 }] },
+    { at: 50, items: [] },
+    { at: 100, items: [] },
+    { at: 150, items: [] },
+    { at: 200, items: [] },
   ],
 };
 const GRADE_RANK = { R: 0, SR: 1, SSR: 2, UR: 3, LR: 4 };
@@ -215,9 +205,11 @@ const GRADE_RANK = { R: 0, SR: 1, SSR: 2, UR: 3, LR: 4 };
 export function gachaDraw(world, p, times = 1) {
   const n = Math.max(1, Math.min(10, times | 0));
   const cost = GACHA.cost * n;
-  if (p.countItem('shard_dawn') < cost) return { error: `ต้องใช้เศษรุ่งอรุณ ${cost} ชิ้น` };
+  const pool = GACHA.pool.filter((o) => ITEMS[o.id]);
+  if (!pool.length || !hasKeyItem('gachaShard')) return { error: 'ศาลรุ่งอรุณยังไม่เปิด — รอไอเทมชุดใหม่' };
+  if (p.countItem(KEY_ITEMS.gachaShard) < cost) return { error: `ต้องใช้เศษรุ่งอรุณ ${cost} ชิ้น` };
   if (p.inventory.length + n >= 100) return { error: 'กระเป๋าเต็ม' };
-  p.removeItemById('shard_dawn', cost);
+  p.removeItemById(KEY_ITEMS.gachaShard, cost);
 
   const r = p.record;
   r.gachaPity = r.gachaPity ?? 0;
@@ -226,7 +218,8 @@ export function gachaDraw(world, p, times = 1) {
   for (let i = 0; i < n; i++) {
     r.gachaPity++;
     const guaranteed = r.gachaPity >= GACHA.pity;
-    const table = guaranteed ? GACHA.pool.filter((o) => o.tier !== 'common') : GACHA.pool;
+    const rare = pool.filter((o) => o.tier !== 'common');
+    const table = guaranteed && rare.length ? rare : pool;
     const roll = rollTable(table);
     if (roll.tier !== 'common') r.gachaPity = 0;
     const qty = qtyOf(roll.qty);
@@ -234,8 +227,9 @@ export function gachaDraw(world, p, times = 1) {
     results.push({ id: roll.id, qty, tier: roll.tier, grade: roll.grade, guaranteed });
   }
   // a ten-draw always holds at least one SR; upgrade its worst roll if not
-  if (n === 10 && !results.some((x) => GRADE_RANK[x.grade] >= 1)) {
-    const sr = rollTable(GACHA.pool.filter((o) => o.grade === 'SR'));
+  const srPool = pool.filter((o) => o.grade === 'SR');
+  if (n === 10 && srPool.length && !results.some((x) => GRADE_RANK[x.grade] >= 1)) {
+    const sr = rollTable(srPool);
     const worst = results[results.length - 1];
     p.removeItemById(worst.id, worst.qty);
     const qty = qtyOf(sr.qty);
@@ -259,7 +253,10 @@ export function gachaClaim(p) {
   if (!due.length) return { error: 'ยังไม่มีรางวัลให้รับ' };
   const got = [];
   for (const m of due) {
-    for (const it of m.items) { p.addItem(it.id, it.qty); got.push(it); }
+    for (const it of m.items) {
+      if (!ITEMS[it.id]) continue;
+      p.addItem(it.id, it.qty); got.push(it);
+    }
     claimed.add(m.at);
   }
   r.gachaClaimed = [...claimed];
@@ -273,7 +270,8 @@ export function shardShop(p) {
   const r = p.record;
   return {
     cost: GACHA.cost,
-    have: p.countItem('shard_dawn'),
+    have: p.countItem(KEY_ITEMS.gachaShard),
+    open: hasKeyItem('gachaShard') && GACHA.pool.some((o) => ITEMS[o.id]),
     pity: GACHA.pity - (r.gachaPity ?? 0),
     pityMax: GACHA.pity,
     points: r.gachaPoints ?? 0,
@@ -333,16 +331,16 @@ export function refine(world, p, index, useOil) {
   const cost = refineCost(def.value, lvl);
   if (p.record.aurum < cost) return { error: `ต้องใช้ ${cost.toLocaleString()} ออรัม` };
   const stones = refineStones(lvl);
-  if (p.countItem('runed_whetstone') < stones) return { error: `ต้องใช้หินลับรูน ${stones} ก้อน` };
+  if (p.countItem(KEY_ITEMS.refineStone) < stones) return { error: `ต้องใช้หินลับรูน ${stones} ก้อน` };
   const risk = refineRisk(lvl);
   // oil only matters where a failure costs something; never burn it for nothing
   const oil = useOil && (risk.onFail === 'down' || risk.onFail === 'break');
-  if (oil && p.countItem('blessing_oil') < 1) return { error: 'ไม่มีน้ำมันศักดิ์สิทธิ์' };
+  if (oil && p.countItem(KEY_ITEMS.refineOil) < 1) return { error: 'ไม่มีน้ำมันศักดิ์สิทธิ์' };
 
   p.record.aurum -= cost;
   burn(world, cost, 'refine');
-  if (stones) p.removeItemById('runed_whetstone', stones);
-  if (oil) p.removeItemById('blessing_oil', 1);
+  if (stones) p.removeItemById(KEY_ITEMS.refineStone, stones);
+  if (oil) p.removeItemById(KEY_ITEMS.refineOil, 1);
 
   const base = { ok: true, id: st.id, from: lvl, cost, stones, oil };
   if (Math.random() < refineChance(lvl)) {
@@ -379,10 +377,10 @@ export function refineTransfer(world, p, fromIndex, toIndex) {
   if ((dst.refine ?? 0) > 0) return { error: 'ของปลายทางต้องเป็น +0' };
   const fee = transferFee(b.value ?? 0, lvl);
   if (p.record.aurum < fee.aurum) return { error: `ต้องใช้ ${fee.aurum.toLocaleString()} ออรัม` };
-  if (p.countItem('runed_whetstone') < fee.stones) return { error: `ต้องใช้หินลับรูน ${fee.stones} ก้อน` };
+  if (p.countItem(KEY_ITEMS.refineStone) < fee.stones) return { error: `ต้องใช้หินลับรูน ${fee.stones} ก้อน` };
   p.record.aurum -= fee.aurum;
   burn(world, fee.aurum, 'refine-transfer');
-  if (fee.stones) p.removeItemById('runed_whetstone', fee.stones);
+  if (fee.stones) p.removeItemById(KEY_ITEMS.refineStone, fee.stones);
   const to = transferResult(lvl);
   // removeItemById may have shifted rows, so find both again by identity
   src.refine = 0;

@@ -5,6 +5,7 @@
 // permanent, irreversible change to a piece of gear - which is exactly the
 // kind of operation that has to be right the first time, because there is no
 // way to undo a mistake in it.
+import { BENCH_ITEMS } from './fixtures/items.js';   // the item systems need items to work on
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ITEMS, CARDS, socketsOf, cardFits } from '../shared/data/items.js';
@@ -71,7 +72,8 @@ test('every card drops from something, and rarely', () => {
       if (ITEMS[d.id]?.type === 'card') rates.set(d.id, Math.max(rates.get(d.id) ?? 0, d.chance));
     }
   }
-  for (const id of Object.keys(CARDS)) {
+  // the game's own cards, not the bench this file borrows
+  for (const id of Object.keys(CARDS).filter((c) => !BENCH_ITEMS[c])) {
     assert.ok(rates.has(id), `${id} drops from nothing`);
     assert.ok(rates.get(id) <= 0.06, `${id} drops at ${rates.get(id)}, which is not a card`);
   }

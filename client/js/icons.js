@@ -23,14 +23,10 @@ const ART = {
   light: 'skill_light', debuff: 'skill_debuff', poison: 'skill_debuff', slash: 'skill_slash',
   aoe: 'skill_aoe', pierce: 'skill_pierce', guard: 'skill_guard', dash: 'skill_dash',
   summon: 'skill_summon', shout: 'skill_summon',
-  potion: 'item_potion', mana: 'item_mana', antidote: 'item_antidote', food: 'item_food',
-  scroll: 'item_scroll', herb: 'item_herb', tear: 'item_crystal',
 };
-// A few items get art of their own rather than their kind's.
-const ITEM_ART = {
-  herbal_stew: 'item_stew', boss_casket: 'item_chest', dawn_casket: 'item_goldchest',
-  mystery_scroll: 'item_map', runed_whetstone: 'mat_enhance', blessing_oil: 'mat_protect',
-};
+// Items that get painted art of their own, by id. Empty until the new item
+// sheet is cut; until then every item draws its kind's shape.
+const ITEM_ART = {};
 const artImages = new Map();
 function artImage(name) {
   let img = artImages.get(name);
@@ -478,16 +474,8 @@ const SKILL_SHAPES = {
 };
 
 /* ================= mapping game data onto those shapes ================= */
-const ITEM_OVERRIDE = {
-  cloth_hood: 'hood', mage_robe: 'robe', leather_belt: 'belt',
-  lesser_salve: 'potion', greater_salve: 'potion', mana_draught: 'mana',
-  antidote: 'antidote', roast_boar: 'food', herbal_stew: 'food', warp_scroll: 'scroll',
-  shard_dawn: 'shard', rat_pelt: 'pelt', boar_tusk: 'fang', wolf_fang: 'fang',
-  bandit_rope: 'rope', bone_chip: 'bone', orc_tooth: 'tooth', ghoul_sinew: 'sinew',
-  ember_cinder: 'cinder', frost_tear: 'tear', storm_quill: 'quill', herb_bundle: 'herb',
-  iron_ore: 'ore', steel_ingot: 'ingot', runed_whetstone: 'whetstone',
-  blessing_oil: 'oil', skeleton_crown: 'crown',
-};
+// Items that draw as a shape other than their type's, by id.
+const ITEM_OVERRIDE = {};
 
 export function itemIconKind(id) {
   const it = ITEMS[id];

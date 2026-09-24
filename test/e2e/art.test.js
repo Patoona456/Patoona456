@@ -25,7 +25,12 @@ const pw = await playwright();
 const EITHER = ['bow', 'recurvebow', 'greatbow', 'longspear', 'arrow'];
 const MEASURED = ['spellcast', 'thrust', 'walk', 'slash', 'shoot'];
 
-test('weapon art', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright : {}, async (t) => {
+// The weapon sheets are measured per item; with the old set cleared there is
+// nothing to measure until the new item sheet brings weapons back.
+const NO_WEAPONS = !Object.values(ITEMS).some((it) => it.slot === 'weapon' && it.sprite);
+
+test('weapon art', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright
+  : NO_WEAPONS ? { skip: 'no weapons in the item table yet: waiting for the new item sheet' } : {}, async (t) => {
   if (!pw) return;
   const server = await startServer();
   const browser = await startBrowser(pw);

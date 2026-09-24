@@ -1,3 +1,4 @@
+import { KEY_ITEMS } from './items.js';
 // Skill book. A skill is pure data; server/game/skills.js interprets it.
 //
 // kind:
@@ -336,7 +337,7 @@ export const SKILLS = {
   revive: S({
     id: 'revive', name: 'Revive', nameTh: 'ชุบชีวิต', kind: 'revive', look: 'holy', target: 'corpse',
     maxLevel: 3, sp: [80, 15], hpPct: [20, 15], range: 100, castTime: 4, cooldown: [120, -20],
-    anim: 'spellcast', reagent: 'shard_dawn', desc: 'ชุบเพื่อนที่ตายในที่เกิดเหตุ (ใช้เศษรุ่งอรุณ 1 ชิ้น)',
+    anim: 'spellcast', reagent: KEY_ITEMS.reviveReagent, desc: 'ชุบเพื่อนที่ตายในที่เกิดเหตุ (ใช้ไอเทมชุบชีวิต 1 ชิ้น เมื่อมีในเกม)',
   }),
   aura_of_dawn: S({
     id: 'aura_of_dawn', name: 'Aura of Dawn', nameTh: 'ออร่าอรุณ', kind: 'buff', look: 'holy', target: 'party',

@@ -1,68 +1,21 @@
+import { KEY_ITEMS } from './items.js';
+
 // NPC services, shop stock and dialog.
 //
 // Shops stock *starter* gear and utility only. Nothing above uncommon is ever
 // sold by an NPC: mid/late gear has to come from drops, crafting or players.
+// Every shelf is empty until the new item sheet is in (shared/data/items.js).
 
 export const SHOPS = {
   general: {
     id: 'general', name: 'ร้านค้าทั่วไปเอมเบอร์โฮลด์',
     buysAnything: true,
-    stock: [
-      { id: 'lesser_salve', stock: 40, restock: 300 },
-      { id: 'antidote', stock: 20, restock: 300 },
-      { id: 'mana_draught', stock: 20, restock: 300 },
-      { id: 'warp_scroll', stock: 10, restock: 600 },
-      { id: 'wooden_arrow', stock: 4000, restock: 120 },
-      { id: 'iron_arrow', stock: 1200, restock: 300 },
-      { id: 'novice_top', stock: 10 },
-      { id: 'novice_bottom', stock: 10 },
-      { id: 'novice_boots', stock: 10 },
-      { id: 'novice_gloves', stock: 10 },
-      { id: 'novice_belt', stock: 10 },
-      { id: 'novice_cape', stock: 10 },
-      { id: 'training_blade', stock: 5 },
-      { id: 'worn_spear', stock: 5 },
-      { id: 'short_bow', stock: 5 },
-      { id: 'apprentice_rod', stock: 5 },
-      { id: 'iron_sword', stock: 5 },
-      { id: 'cloth_wraps', stock: 5 },
-      { id: 'throwing_knives', stock: 5 },
-      { id: 'hand_axe', stock: 5 },
-      { id: 'wooden_shield', stock: 5 },
-      { id: 'leather_belt', stock: 5 },
-      { id: 'wool_scarf', stock: 6 },
-      { id: 'travelers_cloak', stock: 6 },
-      { id: 'reading_lenses', stock: 6 },
-    ],
+    stock: [],
   },
   smith: {
     id: 'smith', name: 'โรงตีเหล็กบอร์ก',
     buysAnything: true, services: ['refine', 'socket', 'repair', 'craft'],
-    stock: [
-      { id: 'brown_tunic', stock: 6 },
-      { id: 'teal_tunic', stock: 6 },
-      { id: 'mage_robe', stock: 6 },
-      { id: 'leather_vest', stock: 4 },
-      { id: 'ashwood_pike', stock: 4 },
-      { id: 'hunting_bow', stock: 4 },
-      { id: 'birch_rod', stock: 4 },
-      { id: 'leather_cap', stock: 6 },
-      { id: 'cloth_hood', stock: 6 },
-      { id: 'leather_bracers', stock: 6 },
-      { id: 'scout_pants', stock: 6 },
-      { id: 'traveler_boots', stock: 6 },
-      { id: 'iron_shield', stock: 3 },
-      { id: 'bronze_shortblade', stock: 3 },
-      { id: 'iron_pike', stock: 3 },
-      { id: 'recurve_bow', stock: 3 },
-      { id: 'oak_rod', stock: 3 },
-      { id: 'guard_sword', stock: 3 },
-      { id: 'iron_greatsword', stock: 3 },
-      { id: 'bone_wand', stock: 3 },
-      { id: 'padded_jerkin', stock: 4 },
-      { id: 'cloth_mask', stock: 4 },
-      { id: 'iron_ore', stock: 200, restock: 600 },
-    ],
+    stock: [],
   },
   // Paid for in Dawn Shards, not coin: the sure-thing counterpart to the
   // shrine's gamble. Anything the gacha can roll can also simply be bought
@@ -75,27 +28,11 @@ export const SHOPS = {
   apothecary: {
     id: 'apothecary', name: 'ร้านยาโรซ่า',
     buysAnything: true,
-    stock: [
-      { id: 'lesser_salve', stock: 60, restock: 300 },
-      { id: 'greater_salve', stock: 10, restock: 900 },
-      { id: 'mana_draught', stock: 30, restock: 300 },
-      { id: 'antidote', stock: 30, restock: 300 },
-    ],
+    stock: [],
   },
   dawn: {
-    id: 'dawn', name: 'ร้านแลกเศษรุ่งอรุณ', currency: 'shard_dawn',
-    stock: [
-      { id: 'runed_whetstone', stock: 999, price: 1 },
-      { id: 'blessing_oil', stock: 999, price: 2 },
-      { id: 'mystery_scroll', stock: 999, price: 1 },
-      { id: 'boss_casket', stock: 999, price: 8 },
-      { id: 'wings_feather', stock: 99, price: 30 },
-      { id: 'wings_raven', stock: 99, price: 30 },
-      { id: 'wings_bat', stock: 99, price: 55 },
-      { id: 'wings_frost', stock: 99, price: 80 },
-      { id: 'wings_ember', stock: 99, price: 140 },
-      { id: 'wings_dawn', stock: 99, price: 260 },
-    ],
+    id: 'dawn', name: 'ร้านแลกเศษรุ่งอรุณ', currency: KEY_ITEMS.gachaShard,
+    stock: [],
   },
 };
 

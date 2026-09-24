@@ -32,7 +32,8 @@ export function begin(zone, caster, skillId, opts = {}) {
     if (sk.ammo && caster.weaponClass === 'bow' && (caster.findAmmo()?.qty ?? 0) < sk.ammo) {
       return { error: 'ลูกธนูไม่พอ' };
     }
-    if (sk.reagent && caster.countItem(sk.reagent) < 1) {
+    // a reagent the item table does not have (yet) is not asked for
+    if (sk.reagent && ITEMS[sk.reagent] && caster.countItem(sk.reagent) < 1) {
       return { error: `ต้องใช้ ${ITEMS[sk.reagent]?.nameTh ?? sk.reagent}` };
     }
   }
@@ -82,7 +83,7 @@ export function resolve(zone, caster, payload) {
     if (caster.sp < spCost) return { error: 'SP ไม่พอ' };
     caster.sp -= spCost;
     if (sk.ammo && caster.weaponClass === 'bow') caster.consumeAmmo(sk.ammo);
-    if (sk.reagent) caster.removeItemById(sk.reagent, 1);
+    if (sk.reagent && ITEMS[sk.reagent]) caster.removeItemById(sk.reagent, 1);
   }
   caster.cooldowns ??= {};
   caster.cooldowns[skillId] = now() + Math.max(0.5, val(sk.cooldown, lvl)) * 1000;

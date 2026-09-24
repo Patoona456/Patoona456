@@ -146,16 +146,7 @@ for k, b in SKILL.items():
     art = cv2.resize(art, (64, 64), interpolation=cv2.INTER_LANCZOS4)
     Image.fromarray(art).save(os.path.join(OUT, 'skill_' + k + '.webp'), 'WEBP', quality=92)
 
-# ---- item art: the object only, with the stack count painted out ----
-ITEM = {
-    'potion': (335, 485, 408, 560), 'mana': (415, 485, 488, 560), 'antidote': (495, 485, 568, 560),
-    'food': (575, 485, 648, 560), 'scroll': (655, 485, 728, 560), 'feather': (735, 485, 808, 560),
-    'orb': (815, 485, 888, 560),
-}
-for k, (x0, y0, x1, y1) in ITEM.items():
-    clean = erase_text(sheet, (x0 + 36, y0 + 44, x1 - 3, y1 - 3), thresh=175)
-    obj, _ = grab((x0 + 8, y0 + 7, x1 - 8, y1 - 8), pad=4, img=clean)
-    save('item_' + k, obj)
+# (item art used to be cut here; items now wait for their own sheet)
 print('done')
 
 
@@ -182,13 +173,6 @@ for k, (c, r) in GHOST.items():
     rgba[:, :, 3] = a
     save('ghost_' + k, trim(rgba))
 
-# more item art (inside the rarity frames, stack counts painted out)
-for k, (x0, y0, x1, y1) in {'stew': (1153, 169, 1202, 220), 'herb': (1273, 169, 1322, 220),
-                            'map': (1213, 169, 1262, 220), 'crystal': (1032, 231, 1082, 282),
-                            'chest': (1153, 231, 1202, 282),
-                            'key': (1213, 231, 1262, 282), 'goldchest': (1273, 231, 1322, 282)}.items():
-    clean = erase_text(inv, (x0 + 24, y0 + 30, x1 - 2, y1 - 2), thresh=185)
-    save('item_' + k, grab((x0 + 7, y0 + 6, x1 - 7, y1 - 7), pad=3, img=clean)[0])
 
 # status icons (the harmful ones come from the combat sheet: ail_*)
 for k, b in {'st_sword': (891, 873, 919, 902), 'st_shield': (921, 873, 949, 902),

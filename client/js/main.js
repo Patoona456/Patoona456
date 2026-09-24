@@ -929,8 +929,6 @@ class Game {
     const stats = { ...STARTING_STATS };
     // dir is one of the eight (shared/facing.js DIR8): 0 faces the camera
     const view = { dir: 0, anim: 'walk', spin: true };
-    // the starting kit, so nobody previews their character naked
-    const STARTER = { weapon: 'training_blade', torso: 'novice_top', legs: 'novice_bottom', feet: 'novice_boots', hands: 'novice_gloves', belt: 'novice_belt', cloak: 'novice_cape' };
     const body = $('#screen-body');
     $('#screen').classList.add('creating');
     body.innerHTML = `
@@ -978,7 +976,7 @@ class Game {
       ctx.clearRect(0, 0, cv.width, cv.height);
       ctx.save();
       ctx.scale(2.6, 2.6);
-      drawCharacter(ctx, playerLayers(look, STARTER), {
+      drawCharacter(ctx, playerLayers(look, {}), {
         x: 42, y: look.style === 'chibi' ? 80 : 62, anim: view.anim, dir: view.dir, elapsed: elapsed * 4,
       });
       ctx.restore();

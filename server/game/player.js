@@ -11,6 +11,39 @@ import { jobCanHold } from '../../shared/weapons.js';
 
 let seq = 0;
 
+/**
+ * Drop whatever a save holds that the item table no longer has - the whole
+ * old item set was cleared for a new one - and keep the equipment slots
+ * pointing at the rows they pointed at before.
+ */
+export function purgeUnknownItems(record) {
+  const keep = (st) => st && ITEMS[st.id];
+  const inv = record.inventory ?? [];
+  const moved = new Map();
+  const next = [];
+  inv.forEach((st, i) => { if (keep(st)) { moved.set(i, next.length); next.push(st); } });
+  let changed = next.length !== inv.length;
+  record.inventory = next;
+  for (const [slot, idx] of Object.entries(record.equipment ?? {})) {
+    if (moved.has(idx)) { if (moved.get(idx) !== idx) changed = true; record.equipment[slot] = moved.get(idx); }
+    else { delete record.equipment[slot]; changed = true; }
+  }
+  if (record.storage) {
+    const kept = record.storage.filter(keep);
+    changed ||= kept.length !== record.storage.length;
+    record.storage = kept;
+  }
+  for (const st of record.inventory.concat(record.storage ?? [])) {
+    if (Array.isArray(st.cards) && st.cards.some((c) => c && !ITEMS[c])) {
+      st.cards = st.cards.map((c) => (c && ITEMS[c] ? c : null));
+      changed = true;
+    }
+  }
+  if (Array.isArray(record.hotbarItems)) record.hotbarItems = record.hotbarItems.filter((id) => ITEMS[id]);
+  if (changed) markDirty();
+  return changed;
+}
+
 export class Player {
   constructor(record, conn) {
     this.kind = 'player';
@@ -19,6 +52,7 @@ export class Player {
     for (const st of [...(record.inventory ?? []), ...(record.storage ?? [])]) {
       if (st && RETIRED_ITEMS[st.id]) st.id = RETIRED_ITEMS[st.id];
     }
+    purgeUnknownItems(record);
     this.conn = conn;
     this.name = record.name;
     this.look = record.look;

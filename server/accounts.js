@@ -120,18 +120,9 @@ export function createCharacter(acc, { name, gender, body, hair, hairColor, eyes
     map: mapId, x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32,
     savePoint: { map: mapId, x: start.spawnPoint[0] * 32, y: start.spawnPoint[1] * 32 },
     aurum: 500,                   // a deliberately thin starting purse
-    inventory: [
-      { id: 'training_blade', qty: 1, refine: 0, dur: 120 },
-      { id: 'novice_top', qty: 1, refine: 0, dur: 150 },
-      { id: 'novice_bottom', qty: 1, refine: 0, dur: 150 },
-      { id: 'novice_boots', qty: 1, refine: 0, dur: 150 },
-      { id: 'novice_gloves', qty: 1, refine: 0, dur: 150 },
-      { id: 'novice_belt', qty: 1, refine: 0, dur: 150 },
-      { id: 'novice_cape', qty: 1, refine: 0, dur: 150 },
-      { id: 'lesser_salve', qty: 5 },
-    ],
-    // the novice outfit comes pre-equipped so nobody starts the game naked
-    equipment: { weapon: 0, torso: 1, legs: 2, feet: 3, hands: 4, belt: 5, cloak: 6 },
+    // nothing to carry or wear yet: the item table is waiting on the new sheet
+    inventory: [],
+    equipment: {},
     skills: {},
     hotbar: ['first_aid', null, null, null, null, null],
     quests: {},
