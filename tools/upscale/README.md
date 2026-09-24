@@ -2,7 +2,7 @@
 
 The town picture and building sprites are AI art at a low resolution; on a
 phone the camera enlarges them ~5x. They are upscaled once, offline, with
-Real-ESRGAN (x4plus, 4x) and sharpened. Buildings are stored at 4x as WebP; the ground is cut into 1024px tiles of the 4x picture (assets/maps/emberhold/ground, 2px bleed) plus a 1x WebP used as placeholder and minimap.
+Real-ESRGAN (x4plus, 4x) and sharpened. Buildings are stored at 4x as WebP; the ground is cut into 2048px tiles of the 4x picture (assets/maps/emberhold/ground, 2px bleed) plus a 1x WebP used as placeholder and minimap.
 
 Needs `torch` (CPU is fine), `opencv-python-headless`, `numpy`, and the
 `RealESRGAN_x4plus.pth` weights (not committed, 67 MB).
