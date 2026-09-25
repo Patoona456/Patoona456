@@ -154,6 +154,45 @@ export const MONSTERS = {
     aurum: { chance: 0.6, min: 5, max: 9 },
   }),
 
+  // The field's mini boss, on the clearing in the middle of it. It fights up
+  // close with bites and claws, and every move it has is read off the floor:
+  // the leap marks where you stand and lands there, the howl marks a ring
+  // round the wolf and slows whoever stays in it (and works the wolf up).
+  // Below half health it rages once for good - harder, faster hits - so the
+  // second half of the fight is the one to bring a friend for.
+  alpha_wolf: M({
+    id: 'alpha_wolf', name: 'Alpha Wolf', nameTh: 'จ่าฝูงหมาป่า', level: 9,
+    hp: 1400, atk: 30, def: 10, mdef: 6, hit: 76, flee: 70, exp: 240, jobExp: 140,
+    element: 'ice', race: 'beast', size: 'large', speed: 60, attackRange: 46,
+    attackDelay: 1.5, aggressive: true, aggroRange: 170, respawn: 240,
+    boss: true, mini: true, phases: [0.5],
+    // hop: how high it arcs, and the leap's lead and air below, for the client
+    sprite: { kind: 'frames', key: 'alpha_wolf', hop: [34, 375, 420] },
+    claw: 'claw',
+    // leap: at a target min..max away (close in too: it lands on you); the ring shows for tell+air ms; lead lands the
+    // sheet's landing frame (8 fps) on the moment it lands
+    leap: { every: 9000, min: 0, max: 260, tell: 800, air: 420, lead: 375, recover: 600, radius: 62,
+      power: 2.0, element: 'ice', label: 'หลบ!', art: 'impact' },
+    // howl: slow% for slowMs on who stays in the ring; the wolf hits `buff` harder for buffMs
+    howl: { every: 15000, tell: 900, lead: 667, recover: 300, radius: 150, slow: 40, slowMs: 3000,
+      buff: 0.2, buffMs: 8000, element: 'ice', label: 'ถอยออกจากวง!' },
+    // enrage: at `at` of its health, once; atk and speed multiply, attackDelay by haste
+    enrage: { at: 0.5, atk: 1.3, speed: 1.25, haste: 0.75, ms: 700, art: 'rage',
+      say: 'จ่าฝูงหมาป่าคลั่ง! โจมตีแรงและเร็วขึ้น' },
+    drops: [
+      { id: 'wolf_fang', chance: 0.8, qty: [1, 3] },
+      { id: 'alpha_fur', chance: 0.6, qty: [1, 2] },
+      { id: 'beast_core', chance: 0.3 },
+      { id: 'alpha_emblem', chance: 0.05 },
+      // what every boss pays
+      { id: 'revive_potion', chance: 0.1 },
+      { id: 'guard_break', chance: 0.08 },
+      { id: 'gacha_ticket', chance: 0.15 },
+      { id: 'refine_luck_5', chance: 0.05 },
+    ],
+    aurum: { chance: 1, min: 40, max: 80 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

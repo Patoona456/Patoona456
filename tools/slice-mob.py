@@ -102,6 +102,35 @@ MOBS = {
         # a sprout about the mushroom's size, floating a little off the grass
         'show': .6,
     },
+    'alpha_wolf': {
+        'src': 'assets/mob/source/alpha_wolf_sheet.png',
+        'alpha': True,
+        'x0': 100,
+        # the title card and the row labels
+        'blank': [(0, 0, 305, 118), (305, 5, 120, 45), (0, 120, 120, 46), (0, 230, 184, 46), (0, 320, 253, 46),
+                  (0, 424, 184, 46), (0, 537, 191, 47), (0, 679, 124, 46), (0, 748, 138, 42), (0, 835, 138, 46),
+                  (0, 911, 138, 46)],
+        # its skills have rows of their own: leap, howl, enrage
+        'rows': [('idle', 40, 130, 8, (300, 1480)), ('walk', 132, 235, 10, (100, 1420)),
+                 ('run', 236, 326, 9, (185, 1510, [329, 473, 625, 777, 929, 1073, 1217, 1353])), ('attack', 326, 432, 6, (110, 978)),
+                 ('leap', 438, 556, 5, (100, 1065, None, [(470, 536, 170, 20)])),
+                 # the howl's rings reach down beside the hit row: that row is cleared out of it
+                 ('howl', 563, 722, 8, (60, 1500, None, [(100, 684, 830, 40)])),
+                 ('hit', 684, 756, 6, (120, 920)), ('enrage', 755, 848, 6, (115, 962)),
+                 ('death', 848, 912, 4, (120, 815, [290, 445, 625])),
+                 # a portal opens, the wolf steps out (a stray portal frame between is left out)
+                 ('spawn', 912, 1016, 10, (80, 1536, [163, 281, 407, 535, 675, 795, 894, 971, 1151, 1310],
+                                            [(1151, 912, 159, 104)]))],
+        'fx': {
+            'claw': (326, 440, 985, 1470, [1133, 1240, 1370], 'middle'),
+            'impact': (430, 562, 1069, 1528, [1253, 1414], 540),
+            'rage': (755, 850, 960, 1532, [1051, 1156, 1268, 1366], 'middle'),
+        },
+        'faces': 'left',
+        'scale': .5,
+        # the mini boss: half again the boar's size
+        'show': 1,
+    },
     'wild_boar': {
         'src': 'assets/mob/source/boar_sheet.png',
         'alpha': True,
@@ -208,6 +237,8 @@ def frames_by_cuts(m, cuts):
     for a, b in zip(edges, edges[1:]):
         sub = np.zeros_like(m)
         sub[:, a:b] = m[:, a:b]
+        if not sub.any():
+            continue                                  # a column left out on purpose
         n, lab, st, _ = cv2.connectedComponentsWithStats(sub)
         big = max(range(1, n), key=lambda i: st[i, cv2.CC_STAT_AREA])
         xs = np.nonzero(sub.sum(0))[0]
@@ -219,14 +250,21 @@ def frames_by_cuts(m, cuts):
 def main(key, preview=None):
     cfg = MOBS[key]
     rgba = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGBA'))
+    # the sheet's own labels, where they sit in the way of a row
+    for x, y, w, h in cfg.get('blank', []):
+        rgba[y:y + h, x:x + w, 3] = 0
     rgb = rgba[..., :3]
     frames = {}
     for anim, y0, y1, count, *span in cfg['rows']:
         # a row may carry its own columns, where the sheet puts something else beside it
-        x0, x1, *cuts = span[0] if span else (cfg['x0'], None)
+        x0, x1, *extra = span[0] if span else (cfg['x0'], None)
+        cuts = [extra[0]] if extra and extra[0] else []
         band = rgb[y0:y1, x0:x1]
         if cfg.get('alpha'):
-            alpha = rgba[y0:y1, x0:x1, 3]
+            alpha = rgba[y0:y1, x0:x1, 3].copy()
+            # another row reaching into this one's band is cleared (absolute rects)
+            for bx, by, bw, bh in (extra[1] if len(extra) > 1 else []):
+                alpha[max(0, by - y0):max(0, by + bh - y0), max(0, bx - x0):max(0, bx + bw - x0)] = 0
             # solid already: filling "holes" here would wall in the gaps
             # between frames wherever leaves bridge them above and below
             m = (alpha > 100).astype(np.uint8)

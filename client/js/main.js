@@ -411,7 +411,7 @@ class Game {
       if (!e.boss || e.k !== 'm' || e.hp <= 0) continue;
       if (!this.bossSeen.has(e.id)) {
         this.bossSeen.set(e.id, bossPhase(e));
-        this.ui.banner('boss', 'BOSS', `${e.n} กำลังเข้าสู่สนาม!`);
+        this.ui.banner('boss', e.mini ? 'MINI BOSS' : 'BOSS', `${e.n} กำลังเข้าสู่สนาม!`);
       }
     }
   }

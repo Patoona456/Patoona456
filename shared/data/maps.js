@@ -312,6 +312,7 @@ export const MAPS = {
       { mob: 'wild_boar', count: 3, area: [36, 20, 12, 12] },
       { mob: 'forest_spirit', count: 3, area: [45, 29, 12, 4] },   // the path down to the marsh
       { mob: 'forest_spirit', count: 2, area: [9, 27, 10, 4] },    // the far south-west glade
+      { mob: 'alpha_wolf', count: 1, area: [30, 23, 9, 3] },       // the mini boss, on the clearing mid-field
     ],
   },
 

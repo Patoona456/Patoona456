@@ -38,7 +38,7 @@ const LOOT_LIFE_MS = 120000;
 const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
 
 /** Animations that play once and then hand back to idle. */
-const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill']);
+const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill', 'leap', 'howl', 'enrage']);
 const SPAWN_MS = 800;
 
 /**
@@ -699,6 +699,10 @@ export class Zone {
       // an ordinary monster's one area move; it stands its ground while winding up
       if (m.def.burst) this.tickBurst(m, target, t);
       if (m.def.charge) this.tickCharge(m, target, t, dt);
+      // a mini boss's moves: rage at half health, the howl, the leap
+      if (m.def.enrage) this.tickEnrage(m, t);
+      if (m.def.howl) this.tickHowl(m, target, t);
+      if (m.def.leap) this.tickLeap(m, target, t);
       if (m.castUntil > t) { if (target) m.dir = dirTo(m, target); continue; }
 
       // acquire
@@ -741,6 +745,7 @@ export class Zone {
         m.target = null; m.threat.clear(); target = null;
         m.hp = m.maxHp;   // full reset, classic leash behaviour
         m.tapped.clear();
+        this.calm(m);
         if (m.def.script) resetBoss(this, m);
       }
 
@@ -756,7 +761,7 @@ export class Zone {
           }
           m.dir = dirTo(m, target);
         } else if (t >= m.nextAttackAt) {
-          const mDelay = (m.def.attackDelay ?? 1.6) * 1000;
+          const mDelay = (m.def.attackDelay ?? 1.6) * 1000 * (m.enraged ? m.def.enrage.haste : 1);
           m.nextAttackAt = t + mDelay;
           m.dir = dirTo(m, target);
           startSwing(m, m.def.attackRange > 60 ? 'shoot' : 'slash', t, mDelay);
@@ -770,6 +775,9 @@ export class Zone {
           } else {
             basicAttack(this, m, target);
             if (target.kind === 'player') target.wearGear('defend');
+            // a slash painted on the sheet, across whoever took the swing
+            if (m.def.claw) this.pushEvent({ t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: m.def.claw,
+              x: Math.round(target.x), y: Math.round(target.y) - 16, delay: 120 });
           }
           this.pushEvent({ t: 'swing', id: m.id, target: target.id });
         } else if (m.def.kite && d < m.def.kite && !sm.rooted && !inOneShot(m, t)) {
@@ -928,6 +936,116 @@ export class Zone {
     m.castUntil = m.animUntil = Number.MAX_SAFE_INTEGER;
   }
 
+  /**
+   * The leap: a ring marks where the target stands, the monster crouches
+   * through the tell, then sails through the air and lands on the spot,
+   * hitting everyone still in the ring. It lands where the ring was, not
+   * where they ran to.
+   */
+  tickLeap(m, target, t) {
+    const L = m.def.leap;
+    const run = m.leaping;
+    if (run) {
+      if (!m.alive) { m.leaping = null; return; }
+      if (t < run.jumpAt) return;                   // still crouched, showing the ring
+      if (t < run.landAt) {
+        const k = (t - run.jumpAt) / (run.landAt - run.jumpAt);
+        m.x = run.sx + (run.x - run.sx) * k;          // over whatever is in the way
+        m.y = run.sy + (run.y - run.sy) * k;
+        return;
+      }
+      m.x = run.x; m.y = run.y;
+      m.leaping = null;
+      this.pushEvent({ t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: L.art, x: run.x, y: run.y });
+      for (const p of this.players.values()) {
+        if (!p.alive || dist2(p, run) > L.radius * L.radius) continue;
+        const dmg = Math.floor(m.derived.atk * L.power * (0.9 + Math.random() * 0.2));
+        applyDamage(this, m, p, dmg, { element: L.element });
+      }
+      m.castUntil = m.animUntil = t + L.recover;
+      m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+      return;
+    }
+    if (!m.alive || !target) return;
+    const d = dist(m, target);
+    if (d < L.min || d > L.max) return;
+    if (m.nextLeapAt == null) { m.nextLeapAt = t + L.every / 2; return; }
+    if (t < m.nextLeapAt) return;
+    m.nextLeapAt = t + L.every;
+    const x = Math.round(target.x), y = Math.round(target.y);
+    this.pushEvent({ t: 'warn', x, y, r: L.radius, el: L.element, ms: L.tell + L.air, label: L.label });
+    m.leaping = { sx: m.x, sy: m.y, x, y, jumpAt: t + L.tell, landAt: t + L.tell + L.air };
+    m.dir = dirTo(m, target);
+    // crouched on the first frame through the tell; the landing frame plays as it lands
+    m.anim = 'leap';
+    m.animSpeed = 1;
+    m.animStart = t + L.tell + L.air - L.lead;
+    m.castUntil = m.animUntil = Number.MAX_SAFE_INTEGER;
+  }
+
+  /**
+   * The howl: a ring round the monster, then a howl that slows everyone
+   * still inside it and works the monster itself up for a while.
+   */
+  tickHowl(m, target, t) {
+    const H = m.def.howl;
+    if (m.howlAt && t >= m.howlAt) {
+      m.howlAt = null;
+      if (m.alive) {
+        for (const p of this.players.values()) {
+          if (!p.alive || dist2(p, m) > H.radius * H.radius) continue;
+          addStatus(p, { key: 'howl', type: 'slow', icon: '🐺', slowPct: -H.slow, until: t + H.slowMs });
+          p.recompute?.();
+        }
+        m.furyUntil = t + H.buffMs;
+        this.furyAtk(m);
+      }
+    }
+    if (m.furyUntil && t > m.furyUntil) { m.furyUntil = 0; this.furyAtk(m); }
+    if (!m.alive || !target || m.leaping || dist(m, target) > H.radius + 40) return;
+    if (m.nextHowlAt == null) { m.nextHowlAt = t + H.every / 2; return; }
+    if (t < m.nextHowlAt) return;
+    m.nextHowlAt = t + H.every;
+    this.pushEvent({ t: 'warn', x: Math.round(m.x), y: Math.round(m.y), r: H.radius, el: H.element, ms: H.tell, label: H.label });
+    m.howlAt = t + H.tell;
+    m.anim = 'howl';
+    m.animSpeed = 1;
+    m.animStart = t + H.tell - H.lead;
+    m.castUntil = m.animUntil = t + H.tell + H.recover;
+    m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+  }
+
+  /** Below `enrage.at` of its health, once: it rages, and hits harder and faster from then on. */
+  tickEnrage(m, t) {
+    const E = m.def.enrage;
+    if (m.enraged || !m.alive || m.leaping || m.hp > m.maxHp * E.at) return;
+    m.enraged = true;                               // faster too: see Monster#speed
+    this.furyAtk(m);
+    this.pushEvent({ t: 'boss', id: m.id, say: E.say });
+    this.pushEvent({ t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: E.art, id: m.id,
+      x: Math.round(m.x), y: Math.round(m.y) - 24 });
+    m.anim = 'enrage';
+    m.animSpeed = 1;
+    m.animStart = t;
+    m.castUntil = m.animUntil = t + E.ms;
+    m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+  }
+
+  /** Attack as its howl and its rage leave it. */
+  furyAtk(m) {
+    m.baseAtk ??= m.derived.atk;
+    const howl = m.furyUntil ? 1 + m.def.howl.buff : 1;
+    const rage = m.enraged ? m.def.enrage.atk : 1;
+    m.derived.atk = Math.floor(m.baseAtk * howl * rage);
+  }
+
+  /** Back to itself: a leash or a respawn undoes the rage, the howl and any move in the air. */
+  calm(m) {
+    m.leaping = null; m.howlAt = null; m.furyUntil = 0; m.enraged = false;
+    m.nextLeapAt = m.nextHowlAt = undefined;
+    if (m.baseAtk) m.derived.atk = m.baseAtk;
+  }
+
   updateEffects(t) {
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const fx = this.effects[i];
@@ -981,6 +1099,7 @@ export class Zone {
       m.statuses = [];
       // whatever move it died in the middle of dies with it
       m.charging = null; m.bursts = []; m.shots = []; m.castUntil = 0;
+      this.calm(m);
       m.nextChargeAt = m.nextBurstAt = undefined;
     }
   }

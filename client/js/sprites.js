@@ -446,10 +446,12 @@ export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0, flip = false
  * same foot line.
  */
 const MOB_ANIM = { idle: 'idle', walk: 'walk', run: 'run', slash: 'attack', thrust: 'attack', shoot: 'attack',
-  spellcast: 'attack', hurt: 'hit', hit: 'hit', death: 'death', spawn: 'spawn', skill: 'skill' };
+  spellcast: 'attack', hurt: 'hit', hit: 'hit', death: 'death', spawn: 'spawn', skill: 'skill',
+  leap: 'leap', howl: 'howl', enrage: 'enrage' };
 // frames a second; the ones marked once hold their last frame
-const MOB_FPS = { idle: 8, walk: 11, run: 13, attack: 13, skill: 9, hit: 16, death: 11, spawn: 13 };
-const MOB_ONCE = new Set(['attack', 'skill', 'hit', 'death', 'spawn']);
+const MOB_FPS = { idle: 8, walk: 11, run: 13, attack: 13, skill: 9, hit: 16, death: 11, spawn: 13,
+  leap: 8, howl: 9, enrage: 9 };
+const MOB_ONCE = new Set(['attack', 'skill', 'hit', 'death', 'spawn', 'leap', 'howl', 'enrage']);
 
 /** How long one pass of an animation takes, in ms. */
 export function mobAnimMs(key, anim) {

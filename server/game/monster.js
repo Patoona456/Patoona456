@@ -55,7 +55,8 @@ export class Monster {
 
   get aggroRange() { return this.def.aggroRange ?? 150; }
   get attackRange() { return this.def.attackRange ?? 40; }
-  get speed() { return this.def.speed ?? 70; }
+  // a raging monster moves faster (see Zone#tickEnrage)
+  get speed() { return (this.def.speed ?? 70) * (this.enraged ? this.def.enrage.speed : 1); }
 
   /** What changes every tick. */
   netMotion() {
@@ -65,6 +66,7 @@ export class Monster {
       ast: this.animStart, as: this.animSpeed !== 1 ? +this.animSpeed.toFixed(2) : undefined,
       hp: this.hp, mhp: this.maxHp,
       st: this.statuses.filter((s) => s.icon).map((s) => s.icon).join(''),
+      rage: this.enraged ? 1 : 0,
     };
   }
 
@@ -76,7 +78,7 @@ export class Monster {
   netIdentity() {
     return {
       n: this.name, def: this.defId, lv: this.level,
-      boss: this.boss ? 1 : 0, sprite: this.def.sprite, sum: this.summon ? 1 : 0,
+      boss: this.boss ? 1 : 0, ...(this.def.mini ? { mini: 1 } : {}), sprite: this.def.sprite, sum: this.summon ? 1 : 0,
       ...(this.def.phases ? { pht: this.def.phases } : {}),
     };
   }

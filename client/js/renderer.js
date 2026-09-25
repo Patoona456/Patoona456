@@ -67,6 +67,14 @@ function mobOffset(e, anim, elapsed, now) {
     const out = Math.sin(Math.PI * k) * lunge;
     dx += vx * out; dy += vy * out * 0.6;
   }
+  // a leaper (`sprite.hop`: [height, ms from take-off to the landing frame... the
+  // landing frame's place in the row, ms in the air]) arcs over the ground
+  const hop = e.sprite.hop;
+  if (hop && anim === 'leap') {
+    const [h, lead, air] = hop;
+    const k = (elapsed - (lead - air)) / air;
+    if (k > 0 && k < 1) dy -= Math.sin(Math.PI * k) * h;
+  }
   return { dx, dy };
 }
 
@@ -115,7 +123,7 @@ const CHIBI_GRIP = [
  */
 const CHIBI_STRIDE = 72;
 // a monster in the middle of these is not interrupted by a flinch
-const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn', 'skill']);
+const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn', 'skill', 'leap', 'howl', 'enrage']);
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
 /**
  * A bow is gripped by its handle (the middle of the limb, where the riser
@@ -1116,6 +1124,7 @@ export class Renderer {
         const hitMs = now - (e._hitAt ?? -1e9);
         const flinch = hitMs < mobAnimMs(e.sprite.key, 'hit') && !ONE_SHOT_MOB.has(anim);
         const { dx, dy } = mobOffset(e, anim, elapsed, now);
+        if (e.rage) this.drawRage(ctx, e, now);
         drawMobFrames(ctx, e.sprite, {
           x: e.x + dx, y: e.y + dy, flip: !e._faceLeft, flash: hurt,
           anim: flinch ? 'hit' : anim, elapsed: flinch ? hitMs : elapsed,
@@ -1589,6 +1598,21 @@ export class Renderer {
     }
   }
 
+  /** A raging monster: a red glow pulsing under it and embers coming off it. */
+  drawRage(ctx, e, now) {
+    const pulse = 0.55 + Math.sin(now / 140) * 0.2;
+    const r = 34 * (e.sprite.scale ?? 1);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(e.x, e.y - 14, 2, e.x, e.y - 14, r * 1.4);
+    g.addColorStop(0, `rgba(255,60,40,${0.45 * pulse})`);
+    g.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(e.x, e.y - 14, r * 1.4, r, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    if (Math.random() < 0.25) this.particles.spark(e.x + (Math.random() - 0.5) * r, e.y - 20, { color: '255,70,50', n: 1, power: 0.5 });
+  }
+
   /**
    * Effects cut from a monster's sheet. A bolt waits for the swing to let go,
    * flies at whoever it was loosed at (following them as they move) and
@@ -1616,12 +1640,17 @@ export class Renderer {
         drawMobFx(ctx, f.mob, 'bolt', 5 + Math.floor(burst * 2), tx, ty, { scale: 1.2 });
         continue;
       }
-      // anything else plays its strip once at 11 fps where it was put, then fades
+      // anything else plays its strip once at 11 fps where it was put (or on
+      // whoever it rides with), then fades
       const n = MOB_ART[f.mob]?.fx?.[f.name]?.n ?? 1;
-      const frame = Math.floor(age / 90);
-      const fade = Math.max(0, (age - n * 90) / 250);
+      const played = age - (f.delay ?? 0);
+      if (played < 0) continue;
+      const frame = Math.floor(played / 90);
+      const fade = Math.max(0, (played - n * 90) / 250);
       if (fade >= 1) { this.mobFx.splice(i, 1); continue; }
-      drawMobFx(ctx, f.mob, f.name, frame, f.x, f.y, { scale: 1.5, alpha: 1 - fade });
+      const on = f.id && (state.ents ?? []).find((e) => e.id === f.id);
+      const x = on ? on.x : f.x, y = on ? on.y - 24 : f.y;
+      drawMobFx(ctx, f.mob, f.name, frame, x, y, { scale: 1.5, alpha: 1 - fade });
     }
   }
 
