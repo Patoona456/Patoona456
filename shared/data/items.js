@@ -560,6 +560,13 @@ export const MATERIALS = {
   water_crystal_s: M({ id: 'water_crystal_s', name: 'Small Water Crystal', nameTh: 'ผลึกน้ำ (เล็ก)', value: 24, weight: 1,
     rarity: 'uncommon', art: DROP('crystal_1'), loot: 'crystal',
     desc: 'ผลึกเล็ก ๆ ที่ก่อตัวในตัวสไลม์ เย็นเฉียบเมื่อจับ' }),
+  // the mushroom's; their pictures come with its drop sheet
+  mushroom_cap: M({ id: 'mushroom_cap', name: 'Mushroom Cap', nameTh: 'หมวกเห็ด', value: 8, weight: 1, rarity: 'common',
+    desc: 'หมวกเห็ดสีแดงจุดขาว นุ่มแต่เหนียว ใช้ทำยาและเควสต์' }),
+  herb: M({ id: 'herb', name: 'Herb', nameTh: 'สมุนไพร', value: 12, weight: 1, rarity: 'common',
+    desc: 'ใบไม้หอม ๆ ที่ขึ้นตามรากเห็ด หมอยาต้องการเสมอ' }),
+  nature_crystal_s: M({ id: 'nature_crystal_s', name: 'Small Nature Crystal', nameTh: 'ผลึกธรรมชาติ (เล็ก)', value: 28, weight: 1,
+    rarity: 'uncommon', desc: 'ผลึกสีเขียวอ่อนที่เห็ดเก็บพลังดินไว้ อุ่น ๆ เมื่อจับ' }),
 };
 Object.assign(ITEMS, MATERIALS);
 

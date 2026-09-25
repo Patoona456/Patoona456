@@ -316,6 +316,22 @@ export function drawOverlaySheet(ctx, url, { x, y, anim = 'idle', dir = 2, elaps
  * @param ctx canvas 2d context
  * @param layers map of layer -> url (from playerLayers/monsterLayers)
  */
+/** A small reusable canvas, cleared, for building one figure off screen. */
+let figureCanvas = null;
+function figureCtx(w, h) {
+  figureCanvas ??= document.createElement('canvas');
+  if (figureCanvas.width < w || figureCanvas.height < h) {
+    figureCanvas.width = Math.max(figureCanvas.width, w);
+    figureCanvas.height = Math.max(figureCanvas.height, h);
+  }
+  const g = figureCanvas.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = 1;
+  g.clearRect(0, 0, w, h);
+  return g;
+}
+
 export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elapsed = 0, scale = 1, alpha = 1, tint = null, flash = 0 }) {
   // Geometry comes from whichever layout the body sheet follows, so a
   // character drawn on a different grid lines up with its own equipment.
@@ -333,26 +349,39 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
     ctx.imageSmoothingEnabled = scale * ctx.getTransform().a < 1;
     ctx.imageSmoothingQuality = 'high';
   }
-  for (const layer of orderFor(layout)) {
-    const entry = layers[layer];
-    if (!entry) continue;
-    const url = urlOf(entry);
-    const plain = sheet(url);
-    if (!plain.ready) continue;
-    const own = layoutFor(url);
-    checkGeometry(url, plain.img, own);
-    const { sx, sy, sw, sh } = frameRect(own, anim, dir, elapsed, !ONE_SHOT.has(anim));
-    // A tinted piece falls back to its untinted sheet until the recolour is
-    // built, so gear never blinks out of existence for a frame.
-    const t = entry.tint ? tintedSheet(url, entry.tint) : null;
-    const img = t?.ready ? t.img : plain.img;
-    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, sw * scale, sh * scale);
-  }
+  const paint = (g, ox, oy) => {
+    for (const layer of orderFor(layout)) {
+      const entry = layers[layer];
+      if (!entry) continue;
+      const url = urlOf(entry);
+      const plain = sheet(url);
+      if (!plain.ready) continue;
+      const own = layoutFor(url);
+      checkGeometry(url, plain.img, own);
+      const { sx, sy, sw, sh } = frameRect(own, anim, dir, elapsed, !ONE_SHOT.has(anim));
+      // A tinted piece falls back to its untinted sheet until the recolour is
+      // built, so gear never blinks out of existence for a frame.
+      const t = entry.tint ? tintedSheet(url, entry.tint) : null;
+      const img = t?.ready ? t.img : plain.img;
+      g.drawImage(img, sx, sy, sw, sh, ox, oy, sw * scale, sh * scale);
+    }
+  };
   if (tint || flash) {
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.globalAlpha = flash ? flash * 0.6 : 0.35;
-    ctx.fillStyle = flash ? '#ffffff' : tint;
-    ctx.fillRect(dx, dy, layout.frame.w * scale, size);
+    // The colour has to land on the figure alone. Laid over the main canvas
+    // with source-atop it lit up the ground behind as well - a white box
+    // round anyone who was hit - so the figure is built on its own first.
+    const w = Math.ceil(layout.frame.w * scale), h = Math.ceil(size);
+    const g = figureCtx(w, h);
+    g.imageSmoothingEnabled = ctx.imageSmoothingEnabled;
+    g.imageSmoothingQuality = 'high';
+    paint(g, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.globalAlpha = flash ? flash * 0.6 : 0.35;
+    g.fillStyle = flash ? '#ffffff' : tint;
+    g.fillRect(0, 0, w, h);
+    ctx.drawImage(g.canvas, 0, 0, w, h, dx, dy, w, h);
+  } else {
+    paint(ctx, dx, dy);
   }
   ctx.restore();
   return { dx, dy, size };
@@ -417,10 +446,10 @@ export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0, flip = false
  * same foot line.
  */
 const MOB_ANIM = { idle: 'idle', walk: 'walk', run: 'run', slash: 'attack', thrust: 'attack', shoot: 'attack',
-  spellcast: 'attack', hurt: 'hit', hit: 'hit', death: 'death', spawn: 'spawn' };
+  spellcast: 'attack', hurt: 'hit', hit: 'hit', death: 'death', spawn: 'spawn', skill: 'skill' };
 // frames a second; the ones marked once hold their last frame
-const MOB_FPS = { idle: 8, walk: 11, run: 13, attack: 13, hit: 16, death: 11, spawn: 13 };
-const MOB_ONCE = new Set(['attack', 'hit', 'death', 'spawn']);
+const MOB_FPS = { idle: 8, walk: 11, run: 13, attack: 13, skill: 9, hit: 16, death: 11, spawn: 13 };
+const MOB_ONCE = new Set(['attack', 'skill', 'hit', 'death', 'spawn']);
 
 /** How long one pass of an animation takes, in ms. */
 export function mobAnimMs(key, anim) {

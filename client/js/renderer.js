@@ -87,7 +87,7 @@ const CHIBI_GRIP = [
  */
 const CHIBI_STRIDE = 72;
 // a monster in the middle of these is not interrupted by a flinch
-const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn']);
+const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn', 'skill']);
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
 /**
  * A bow is gripped by its handle (the middle of the limb, where the riser

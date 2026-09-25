@@ -3,5 +3,6 @@
 // the way the painting faces, how many world pixels one atlas pixel
 // covers, how tall it stands at rest, and each animation row with its frame count.
 export const MOB_ART = {
-  "blue_slime": {"cell": [201, 60], "foot": 59, "faces": "left", "show": 0.56, "top": 27, "anims": [["idle", 9], ["walk", 9], ["run", 6], ["attack", 7], ["hit", 8], ["death", 8], ["spawn", 10]]}
+  "blue_slime": {"cell": [201, 60], "foot": 59, "faces": "left", "show": 0.56, "top": 27, "anims": [["idle", 9], ["walk", 9], ["run", 6], ["attack", 7], ["hit", 8], ["death", 8], ["spawn", 10]]},
+  "mushroom": {"cell": [155, 82], "foot": 76, "faces": "left", "show": 0.58, "top": 31, "anims": [["idle", 8], ["walk", 9], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 8], ["death", 9], ["spawn", 10]]}
 };

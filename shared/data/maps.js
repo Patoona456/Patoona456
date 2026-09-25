@@ -286,17 +286,20 @@ export const MAPS = {
       { x: 55, y: 6, w: 2, h: 1, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },          // top of the north-east stairs
       { x: 56, y: 31, w: 2, h: 2, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },            // the south-east clearing
     ],
-    // Slimes keep to the clearings, a few in each, so there is something to
-    // hunt wherever a path leads. The gate meadow stays quiet.
+    // The further from the town stairs, the harder: slimes (Lv1) keep to the
+    // north and west, mushrooms (Lv3) hold the south, and the crossroads and
+    // the southern meadow are where the two meet. The gate meadow stays quiet.
     spawns: [
       { mob: 'blue_slime', count: 4, area: [20, 4, 12, 5] },     // below the north stairs
       { mob: 'blue_slime', count: 5, area: [4, 8, 6, 8] },       // the west ledge
       { mob: 'blue_slime', count: 6, area: [12, 14, 16, 5] },    // the long meadow west of the crossroads
-      { mob: 'blue_slime', count: 5, area: [33, 12, 10, 8] },    // the crossroads
+      { mob: 'blue_slime', count: 3, area: [33, 12, 10, 8] },    // the crossroads
+      { mob: 'mushroom', count: 2, area: [33, 12, 10, 8] },
       { mob: 'blue_slime', count: 5, area: [45, 8, 13, 6] },     // across the east bridge
-      { mob: 'blue_slime', count: 5, area: [3, 23, 16, 9] },     // the south-west hollow
-      { mob: 'blue_slime', count: 5, area: [22, 20, 14, 8] },    // the southern meadow
-      { mob: 'blue_slime', count: 5, area: [36, 20, 12, 12] },   // the south-east slope
+      { mob: 'mushroom', count: 5, area: [3, 23, 16, 9] },       // the south-west hollow
+      { mob: 'mushroom', count: 4, area: [22, 20, 14, 8] },      // the southern meadow
+      { mob: 'blue_slime', count: 2, area: [22, 20, 14, 8] },
+      { mob: 'mushroom', count: 5, area: [36, 20, 12, 12] },     // the south-east slope, on the way to the marsh
     ],
   },
 

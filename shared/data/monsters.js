@@ -35,6 +35,29 @@ export const MONSTERS = {
     aurum: { chance: 0.35, min: 1, max: 3 },
   }),
 
+  // One step up from the slime: a touch slower on its feet but it hits harder,
+  // spinning into a tackle. Its one trick is the lesson in area attacks: it
+  // roots itself, the floor round it is marked, and a moment later a ring of
+  // little mushrooms bursts up there. Step out of the circle and it misses.
+  mushroom: M({
+    id: 'mushroom', name: 'Mushroom', nameTh: 'เห็ดแดง', level: 3,
+    hp: 78, atk: 11, def: 3, mdef: 2, hit: 56, flee: 52, exp: 10, jobExp: 6,
+    element: 'earth', race: 'plant', size: 'small', speed: 34, attackRange: 36,
+    attackDelay: 2.0, aggressive: false, aggroRange: 120, respawn: 12,
+    sprite: { kind: 'frames', key: 'mushroom' },
+    // every: ms between bursts; reach: how close the target must be; tell: the
+    // warning before it lands; lead/recover: the sheet's spin before and the
+    // settle after the eruption frame (at 9 fps)
+    burst: { every: 9000, reach: 64, radius: 66, tell: 1100, lead: 444, recover: 350,
+      power: 1.8, element: 'earth', label: 'หลบ!' },
+    drops: [
+      { id: 'mushroom_cap', chance: 0.5, qty: [1, 2] },
+      { id: 'herb', chance: 0.22 },
+      { id: 'nature_crystal_s', chance: 0.06 },
+    ],
+    aurum: { chance: 0.4, min: 2, max: 4 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

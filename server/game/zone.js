@@ -38,7 +38,7 @@ const LOOT_LIFE_MS = 120000;
 const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
 
 /** Animations that play once and then hand back to idle. */
-const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn']);
+const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill']);
 const SPAWN_MS = 800;
 
 /**
@@ -695,6 +695,9 @@ export class Zone {
 
       // a scripted boss runs its own fight on top of the ordinary AI
       if (m.def.script) tickBoss(this, m, t);
+      // an ordinary monster's one area move; it stands its ground while winding up
+      if (m.def.burst) this.tickBurst(m, target, t);
+      if (m.castUntil > t) { if (target) m.dir = dirTo(m, target); continue; }
 
       // acquire
       if (!target && t >= m.nextThinkAt) {
@@ -790,6 +793,43 @@ export class Zone {
         }
       }
     }
+  }
+
+  /**
+   * A monster's area move, and the first lesson in stepping out of a marked
+   * patch of floor. Once its cooldown is up and its target is close, it roots
+   * itself, marks a circle round its own feet and bursts there a moment later.
+   * Whoever is still inside is hit - decided here, never by the client.
+   */
+  tickBurst(m, target, t) {
+    const b = m.def.burst;
+    m.bursts ??= [];
+    for (let i = m.bursts.length - 1; i >= 0; i--) {
+      const q = m.bursts[i];
+      if (t < q.at) continue;
+      m.bursts.splice(i, 1);
+      if (!m.alive) continue;
+      this.pushEvent({ t: 'fx', fx: 'aoe', el: b.element, x: q.x, y: q.y, r: b.radius });
+      for (const p of this.players.values()) {
+        if (!p.alive || dist2(p, q) > b.radius * b.radius) continue;
+        const dmg = Math.floor(m.derived.atk * b.power * (0.9 + Math.random() * 0.2));
+        applyDamage(this, m, p, dmg, { element: b.element });
+      }
+    }
+    if (!m.alive || !target || dist(m, target) > b.reach) return;
+    // not the instant a fight starts: the first one comes half a cooldown in
+    if (m.nextBurstAt == null) { m.nextBurstAt = t + b.every / 2; return; }
+    if (t < m.nextBurstAt) return;
+    m.nextBurstAt = t + b.every;
+    const x = Math.round(m.x), y = Math.round(m.y);
+    this.pushEvent({ t: 'warn', x, y, r: b.radius, el: b.element, ms: b.tell, label: b.label });
+    m.bursts.push({ at: t + b.tell, x, y });
+    // hold the wind-up pose through the warning; spin and erupt as it lands
+    m.anim = 'skill';
+    m.animSpeed = 1;
+    m.animStart = t + b.tell - b.lead;
+    m.castUntil = m.animUntil = t + b.tell + b.recover;
+    m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
   }
 
   updateEffects(t) {

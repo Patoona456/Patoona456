@@ -40,6 +40,18 @@ MOBS = {
         # atlas pixels to world pixels: a body about thirty wide, knee-high to a player
         'show': .56,
     },
+    'mushroom': {
+        'src': 'assets/mob/source/mushroom_sheet.png',
+        # painted on a transparent sheet: the picture's own alpha is the mask
+        'alpha': True,
+        'x0': 196,
+        'rows': [('idle', 18, 126, 8), ('walk', 151, 250, 9), ('run', 277, 379, 8), ('attack', 392, 522, 8),
+                 ('skill', 522, 674, 7), ('hit', 684, 799, 8), ('death', 808, 897, 9), ('spawn', 912, 1007, 10)],
+        'faces': 'left',
+        'scale': .5,
+        # a little bigger than the slime: the cap is about thirty-six across
+        'show': .58,
+    },
 }
 
 
@@ -47,6 +59,10 @@ def mask_of(rgb, solid):
     R, G, B = (rgb[..., i].astype(np.int32) for i in range(3))
     m = solid(R, G, B).astype(np.uint8)
     m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    return fill_holes(m)
+
+
+def fill_holes(m):
     # fill what the outline encloses: flood the outside, keep everything else
     h, w = m.shape
     flood = m.copy()
@@ -82,22 +98,76 @@ def frames_of(m, count):
     return [(b, np.isin(lab, [i for i, o in owner.items() if o == b]).astype(np.uint8), st[b]) for b in bodies]
 
 
+def frames_by_columns(m, count):
+    """Frames of a transparent sheet, where leaves, dust and swirls bridge one
+    frame to the next so no piece stands alone. The bodies are found with the
+    thin bits eroded away; each frame then owns the columns up to halfway to
+    its neighbours' bodies."""
+    core = cv2.erode(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13)))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(core)
+    sep = .55 * m.shape[1] / count
+    cx = lambda i: st[i, 0] + st[i, 2] / 2
+    bodies = []
+    for i in sorted(range(1, n), key=lambda i: -st[i, cv2.CC_STAT_AREA]):
+        if all(abs(cx(i) - cx(b)) >= sep for b in bodies):
+            bodies.append(i)
+        if len(bodies) == count:
+            break
+    bodies.sort(key=cx)
+    cuts = [0] + [int((st[a, 0] + st[a, 2] + st[b, 0]) / 2) for a, b in zip(bodies, bodies[1:])] + [m.shape[1]]
+    # A loose piece (a dust puff, a leaf, a glint) goes whole to the frame its
+    # middle is in; only a piece that carries two bodies is cut at the column.
+    pn, plab, pst, _ = cv2.connectedComponentsWithStats(m)
+    body_px = np.isin(lab, bodies)
+    owner = np.full(m.shape, -1, np.int32)
+    for i in range(1, pn):
+        piece = plab == i
+        carried = set(lab[piece & body_px].tolist())
+        if len(carried) > 1:
+            continue                                  # cut by column below
+        mid = pst[i, 0] + pst[i, 2] / 2
+        k = next(j for j in range(len(bodies)) if mid < cuts[j + 1] or j == len(bodies) - 1)
+        owner[piece] = k
+    cols = np.searchsorted(cuts[1:-1], np.arange(m.shape[1]), side='right')
+    owner = np.where((owner < 0) & (m > 0), cols[None, :], owner)
+    out = []
+    for k, b in enumerate(bodies):
+        sub = (owner == k).astype(np.uint8)
+        x, y, w, h, area = st[b]
+        # the eroded body is 6px short on every side
+        out.append((b, sub, (x - 6, y - 6, w + 12, h + 12, area)))
+    return out
+
+
 def main(key, preview=None):
     cfg = MOBS[key]
-    rgb = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGB'))
+    rgba = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGBA'))
+    rgb = rgba[..., :3]
     frames = {}
     for anim, y0, y1, count in cfg['rows']:
         band = rgb[y0:y1, cfg['x0']:]
-        m = mask_of(band, cfg['solid'])
+        if cfg.get('alpha'):
+            alpha = rgba[y0:y1, cfg['x0']:, 3]
+            # solid already: filling "holes" here would wall in the gaps
+            # between frames wherever leaves bridge them above and below
+            m = (alpha > 100).astype(np.uint8)
+        else:
+            m = mask_of(band, cfg['solid'])
         out = []
-        for _, sub, (bx, by, bw, bh, _) in frames_of(m, count):
+        split = frames_by_columns if cfg.get('alpha') else frames_of
+        for _, sub, (bx, by, bw, bh, _) in split(m, count):
             ys = np.nonzero(sub.sum(1))[0]
             xs = np.nonzero(sub.sum(0))[0]
             s, e = xs.min(), xs.max() + 1
             a = np.zeros((y1 - y0, e - s, 4), np.uint8)
             a[..., :3] = band[:, s:e]
-            soft = cv2.GaussianBlur(sub[:, s:e].astype(np.float32), (3, 3), 0)
-            a[..., 3] = (np.clip(soft * 1.4, 0, 1) * 255).astype(np.uint8)
+            if cfg.get('alpha'):
+                # the painter's own edges and glows, but only this frame's pieces
+                near = cv2.dilate(sub[:, s:e], np.ones((7, 7), np.uint8))
+                a[..., 3] = alpha[:, s:e] * near
+            else:
+                soft = cv2.GaussianBlur(sub[:, s:e].astype(np.float32), (3, 3), 0)
+                a[..., 3] = (np.clip(soft * 1.4, 0, 1) * 255).astype(np.uint8)
             # the feet: the bottom and middle of the body
             out.append({'img': a[ys.min():ys.max() + 1], 'fx': bx + bw / 2 - s, 'fy': by + bh - ys.min()})
         frames[anim] = out
