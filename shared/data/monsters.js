@@ -193,6 +193,60 @@ export const MONSTERS = {
     aurum: { chance: 1, min: 40, max: 80 },
   }),
 
+  // Greenmire's boss, at the end of the south path. Slow and huge: the fight
+  // is about the floor and the adds, not trading blows. Its root spikes come
+  // up under whoever it is after (step off the ring, or be held), its leaf
+  // tornado spins round itself and hits three times (walk out), and every so
+  // often it calls up two saplings that mend it while they stand - cut them
+  // down first. Below 40% it rages for good.
+  tree_guardian: M({
+    id: 'tree_guardian', name: 'Ancient Tree Guardian', nameTh: 'ผู้พิทักษ์ต้นไม้โบราณ', level: 10,
+    hp: 4200, atk: 36, def: 14, mdef: 10, hit: 76, flee: 55, exp: 800, jobExp: 450,
+    element: 'earth', race: 'plant', size: 'large', speed: 34, attackRange: 58,
+    attackDelay: 2.0, aggressive: true, aggroRange: 180, respawn: 600,
+    boss: true, phases: [0.4],
+    sprite: { kind: 'frames', key: 'tree_guardian' },
+    claw: 'swipe',
+    burst: [
+      // root spikes: under the target, holds whoever stays
+      { every: 11000, reach: 260, radius: 58, tell: 1100, lead: 444, recover: 300, power: 2.0,
+        element: 'earth', at: 'target', root: 1000, art: 'spikes', anim: 'spike', label: 'หลบ!' },
+      // leaf tornado: round itself, three hits
+      { every: 14000, reach: 110, radius: 100, tell: 1000, lead: 556, recover: 500, power: 0.9,
+        pulses: 3, gap: 300, element: 'wind', anim: 'tornado', label: 'ออกห่าง!' },
+    ],
+    // calls: `count` saplings `radius` away, the first `first` ms into the
+    // fight, again `every` ms once they are all gone ('summon' would mark the
+    // guardian itself as a player's pet)
+    calls: { first: 12000, every: 24000, count: 2, radius: 110, mob: 'guardian_sapling', tell: 800,
+      lead: 444, recover: 300, say: 'ผู้พิทักษ์เรียกต้นไม้มาฟื้นพลัง — ตัดต้นไม้ก่อน!' },
+    enrage: { at: 0.4, atk: 1.3, speed: 1.2, haste: 0.8, ms: 700, art: 'rage', dy: 0,
+      say: 'ผู้พิทักษ์ต้นไม้โบราณโกรธเกรี้ยว!' },
+    drops: [
+      { id: 'ancient_bark', chance: 0.9, qty: [2, 4] },
+      { id: 'guardian_core', chance: 0.5 },
+      { id: 'nature_crystal_l', chance: 0.35 },
+      { id: 'ancient_emblem', chance: 0.08 },
+      // what every boss pays
+      { id: 'revive_potion', chance: 0.2 },
+      { id: 'guard_break', chance: 0.12 },
+      { id: 'gacha_ticket', chance: 0.25 },
+      { id: 'refine_luck_5', chance: 0.08 },
+    ],
+    aurum: { chance: 1, min: 120, max: 220 },
+  }),
+
+  // The guardian's saplings: they grow where it calls them and mend it by
+  // `mend` of its health a second while they stand. They do nothing else.
+  guardian_sapling: M({
+    id: 'guardian_sapling', name: 'Guardian Sapling', nameTh: 'ต้นกล้าผู้พิทักษ์', level: 10,
+    hp: 280, atk: 1, def: 4, mdef: 4, hit: 50, flee: 20, exp: 30, jobExp: 18,
+    element: 'earth', race: 'plant', size: 'medium', speed: 0, attackRange: 0,
+    aggressive: false, aggroRange: 0, respawn: 0, mend: 0.015,
+    sprite: { kind: 'frames', key: 'guardian_sapling' },
+    drops: [{ id: 'herb', chance: 0.3 }],
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

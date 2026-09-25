@@ -131,6 +131,53 @@ MOBS = {
         # the mini boss: half again the boar's size
         'show': 1,
     },
+    'tree_guardian': {
+        'src': 'assets/mob/source/tree_guardian_sheet.png',
+        'alpha': True,
+        'x0': 145,
+        'blank': [(0, 0, 262, 116), (20, 112, 130, 82), (20, 200, 130, 82), (20, 297, 130, 82), (20, 397, 130, 82),
+                  (20, 527, 130, 82), (20, 642, 130, 82), (20, 737, 130, 82), (20, 836, 130, 82), (20, 925, 130, 82)],
+        # every row is given its columns: bark and leaves touch from frame to frame
+        'rows': [('idle', 5, 112, 9, (264, 1300, [375, 487, 597, 709, 825, 940, 1057, 1176])),
+                 ('walk', 115, 208, 8, (145, 1060, [265, 378, 486, 601, 717, 831, 946])),
+                 ('attack', 212, 322, 8, (145, 1030, [262, 366, 470, 558, 660, 772, 896])),
+                 ('spike', 325, 433, 6, (145, 733, [255, 357, 461, 557, 642])),
+                 # it spins itself into the tornado: the whole row is the move
+                 ('tornado', 436, 530, 10, (145, 1515, [270, 398, 519, 636, 748, 855, 969, 1096, 1239])),
+                 ('summon', 532, 664, 5, (145, 663, [260, 364, 477, 561])),
+                 ('hit', 666, 737, 5, (145, 710, [258, 366, 474, 590])),
+                 ('enrage', 738, 833, 6, (145, 905, [258, 383, 500, 629, 766])),
+                 ('death', 836, 922, 9, (145, 1375, [255, 356, 458, 562, 670, 781, 900, 1083])),
+                 # the portal glows and it rises out of it (the sheet's last, standing
+                 # frame is painted at twice the size, so the rise ends the row)
+                 ('spawn', 924, 1008, 7, (145, 932, [253, 368, 476, 585, 699, 813]))],
+        'fx': {
+            'swipe': (212, 322, 1036, 1440, [1096, 1168, 1240, 1330], 'middle'),
+            'spikes': (325, 433, 737, 1512, [831, 938, 1050, 1200, 1368], 425),
+            'rage': (680, 833, 905, 1520, [984, 1051, 1163, 1323], 825),
+        },
+        'faces': 'left',
+        'scale': .5,
+        # the boss: towers over the wolf
+        'show': 1.9,
+    },
+    # The trees the guardian calls up: they grow out of the ground and mend it
+    # while they stand. Cut from the same sheet's summon row.
+    'guardian_sapling': {
+        'src': 'assets/mob/source/tree_guardian_sheet.png',
+        'alpha': True,
+        'x0': 663,
+        'rows': [('idle', 532, 664, 2, (1243, 1525, [1377])),
+                 ('walk', 532, 664, 1, (1377, 1525)),
+                 ('hit', 532, 664, 1, (1377, 1525)),
+                 ('death', 532, 664, 6, (663, 1243, [739, 820, 916, 1015, 1117])),
+                 ('spawn', 532, 664, 8, (663, 1525, [739, 820, 916, 1015, 1117, 1243, 1377]))],
+        # it withers back the way it grew
+        'reverse': ['death'],
+        'faces': 'left',
+        'scale': .5,
+        'show': 1.1,
+    },
     'wild_boar': {
         'src': 'assets/mob/source/boar_sheet.png',
         'alpha': True,
@@ -289,7 +336,7 @@ def main(key, preview=None):
                 a[..., 3] = (np.clip(soft * 1.4, 0, 1) * 255).astype(np.uint8)
             # the feet: the bottom and middle of the body
             out.append({'img': a[ys.min():ys.max() + 1], 'fx': bx + bw / 2 - s, 'fy': by + bh - ys.min()})
-        frames[anim] = out
+        frames[anim] = out[::-1] if anim in cfg.get('reverse', []) else out
 
     # one cell for the whole sheet, big enough for any frame placed on its feet
     left = max(f['fx'] for fs in frames.values() for f in fs)

@@ -124,7 +124,7 @@ const CHIBI_GRIP = [
  */
 const CHIBI_STRIDE = 72;
 // a monster in the middle of these is not interrupted by a flinch
-const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn', 'skill', 'leap', 'howl', 'enrage']);
+const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn', 'skill', 'leap', 'howl', 'enrage', 'spike', 'tornado', 'summon']);
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
 /**
  * A bow is gripped by its handle (the middle of the limb, where the riser
@@ -1650,7 +1650,7 @@ export class Renderer {
       const fade = Math.max(0, (played - n * 90) / 250);
       if (fade >= 1) { this.mobFx.splice(i, 1); continue; }
       const on = f.id && (state.ents ?? []).find((e) => e.id === f.id);
-      const x = on ? on.x : f.x, y = on ? on.y - 24 : f.y;
+      const x = on ? on.x : f.x, y = on ? on.y + (f.dy ?? -24) : f.y;
       drawMobFx(ctx, f.mob, f.name, frame, x, y, { scale: 1.5, alpha: 1 - fade });
     }
   }

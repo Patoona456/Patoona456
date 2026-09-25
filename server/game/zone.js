@@ -38,7 +38,7 @@ const LOOT_LIFE_MS = 120000;
 const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
 
 /** Animations that play once and then hand back to idle. */
-const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill', 'leap', 'howl', 'enrage']);
+const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill', 'leap', 'howl', 'enrage', 'spike', 'tornado', 'summon']);
 const SPAWN_MS = 800;
 
 /**
@@ -679,6 +679,18 @@ export class Zone {
       if (m.summon && m.expiresAt && t > m.expiresAt) { this.entities.delete(m.id); continue; }
       if (!m.alive) continue;
       if (m.shots?.length) this.tickShots(m, t);
+      // a tree a boss called up mends it while it stands, and goes when it goes
+      if (m.guards) {
+        const boss = this.entities.get(m.guards);
+        if (!boss?.alive) { this.entities.delete(m.id); continue; }
+        if (t >= (m.nextMendAt ?? t + 1000)) {
+          healEntity(this, boss, Math.floor(boss.maxHp * m.def.mend));
+          this.pushEvent({ t: 'fx', fx: 'line', el: 'earth', x: Math.round(m.x), y: Math.round(m.y) - 30,
+            tx: Math.round(boss.x), ty: Math.round(boss.y) - 40 });
+        }
+        if (t >= (m.nextMendAt ?? 0)) m.nextMendAt = t + 1000;
+        continue;                                   // rooted where it grew: it does nothing else
+      }
 
       const sm = statusMods(m);
       if (sm.stunned) continue;
@@ -703,6 +715,7 @@ export class Zone {
       if (m.def.enrage) this.tickEnrage(m, t);
       if (m.def.howl) this.tickHowl(m, target, t);
       if (m.def.leap) this.tickLeap(m, target, t);
+      if (m.def.calls) this.tickSummon(m, target, t);
       if (m.castUntil > t) { if (target) m.dir = dirTo(m, target); continue; }
 
       // acquire
@@ -848,16 +861,23 @@ export class Zone {
   }
 
   tickBurst(m, target, t) {
-    const b = m.def.burst;
+    // one area move, or a boss's several: each keeps its own cooldown
+    const list = [].concat(m.def.burst);
     m.bursts ??= [];
+    m.burstNext ??= [];
     for (let i = m.bursts.length - 1; i >= 0; i--) {
       const q = m.bursts[i];
       if (t < q.at) continue;
       m.bursts.splice(i, 1);
       if (!m.alive) continue;
-      this.pushEvent(b.art
-        ? { t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: b.art, x: q.x, y: q.y }
-        : { t: 'fx', fx: 'aoe', el: b.element, x: q.x, y: q.y, r: b.radius });
+      const b = list[q.i];
+      if (q.first) {
+        this.pushEvent(b.art
+          ? { t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: b.art, x: q.x, y: q.y }
+          : { t: 'fx', fx: 'aoe', el: b.element, x: q.x, y: q.y, r: b.radius });
+      } else {
+        this.pushEvent({ t: 'fx', fx: 'aoe', el: b.element, x: q.x, y: q.y, r: b.radius });
+      }
       for (const p of this.players.values()) {
         if (!p.alive || dist2(p, q) > b.radius * b.radius) continue;
         const dmg = Math.floor(m.derived.atk * b.power * (0.9 + Math.random() * 0.2));
@@ -865,22 +885,30 @@ export class Zone {
         if (b.root && p.alive) addStatus(p, { key: 'vine_root', type: 'root', icon: '🌿', until: t + b.root });
       }
     }
-    if (!m.alive || !target || dist(m, target) > b.reach) return;
-    // not the instant a fight starts: the first one comes half a cooldown in
-    if (m.nextBurstAt == null) { m.nextBurstAt = t + b.every / 2; return; }
-    if (t < m.nextBurstAt) return;
-    m.nextBurstAt = t + b.every;
-    // most go off round the monster's own feet; a caster's comes up under yours
-    const at = b.at === 'target' ? target : m;
-    const x = Math.round(at.x), y = Math.round(at.y);
-    this.pushEvent({ t: 'warn', x, y, r: b.radius, el: b.element, ms: b.tell, label: b.label });
-    m.bursts.push({ at: t + b.tell, x, y });
-    // hold the wind-up pose through the warning; spin and erupt as it lands
-    m.anim = 'skill';
-    m.animSpeed = 1;
-    m.animStart = t + b.tell - b.lead;
-    m.castUntil = m.animUntil = t + b.tell + b.recover;
-    m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+    if (!m.alive || !target || m.castUntil > t) return;
+    for (let i = 0; i < list.length; i++) {
+      const b = list[i];
+      if (dist(m, target) > b.reach) continue;
+      // not the instant a fight starts: the first one comes half a cooldown in
+      if (m.burstNext[i] == null) { m.burstNext[i] = t + b.every / 2; continue; }
+      if (t < m.burstNext[i]) continue;
+      m.burstNext[i] = t + b.every;
+      // most go off round the monster's own feet; a caster's comes up under yours
+      const at = b.at === 'target' ? target : m;
+      const x = Math.round(at.x), y = Math.round(at.y);
+      this.pushEvent({ t: 'warn', x, y, r: b.radius, el: b.element, ms: b.tell, label: b.label });
+      // a spinning move hits more than once: `pulses` hits, `gap` ms apart
+      for (let k = 0; k < (b.pulses ?? 1); k++) {
+        m.bursts.push({ at: t + b.tell + k * (b.gap ?? 0), x, y, i, first: k === 0 });
+      }
+      // hold the wind-up pose through the warning; spin and erupt as it lands
+      m.anim = b.anim ?? 'skill';
+      m.animSpeed = 1;
+      m.animStart = t + b.tell - b.lead;
+      m.castUntil = m.animUntil = t + b.tell + ((b.pulses ?? 1) - 1) * (b.gap ?? 0) + b.recover;
+      m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+      return;
+    }
   }
 
   /**
@@ -1023,7 +1051,7 @@ export class Zone {
     this.furyAtk(m);
     this.pushEvent({ t: 'boss', id: m.id, say: E.say });
     this.pushEvent({ t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: E.art, id: m.id,
-      x: Math.round(m.x), y: Math.round(m.y) - 24 });
+      x: Math.round(m.x), y: Math.round(m.y) + (E.dy ?? -24), dy: E.dy ?? -24 });
     m.anim = 'enrage';
     m.animSpeed = 1;
     m.animStart = t;
@@ -1031,10 +1059,48 @@ export class Zone {
     m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
   }
 
+  /**
+   * A boss calls up trees round itself. They grow out of the ground and mend
+   * it while they stand (see updateMonsters), so they are the thing to cut
+   * down first. It calls again only once the last ones are gone.
+   */
+  tickSummon(m, target, t) {
+    const S = m.def.calls;
+    if (m.summonAt && t >= m.summonAt) {
+      m.summonAt = null;
+      if (m.alive) {
+        for (let k = 0; k < S.count; k++) {
+          const a = (k / S.count) * Math.PI * 2 + Math.PI / 4;
+          let x = m.x, y = m.y;
+          for (const r of [S.radius, S.radius * 0.6, S.radius * 0.3]) {
+            const tx = m.x + Math.cos(a) * r, ty = m.y + Math.sin(a) * r * 0.7;
+            if (this.walkable(tx, ty, 10)) { x = tx; y = ty; break; }
+          }
+          const tree = this.spawnMonster(S.mob, x, y, {});
+          tree.guards = m.id;
+          tree.anim = 'spawn'; tree.animStart = t; tree.animSpeed = 1; tree.animUntil = t + SPAWN_MS;
+          tree.nextMendAt = t + 1500;
+        }
+        this.pushEvent({ t: 'boss', id: m.id, say: S.say });
+      }
+    }
+    if (!m.alive || !target || m.castUntil > t) return;
+    if (m.nextSummonAt == null) { m.nextSummonAt = t + S.first; return; }
+    if (t < m.nextSummonAt) return;
+    for (const e of this.entities.values()) if (e.guards === m.id && e.alive) return;
+    m.nextSummonAt = t + S.every;
+    m.summonAt = t + S.tell;
+    m.anim = 'summon';
+    m.animSpeed = 1;
+    m.animStart = t + S.tell - S.lead;
+    m.castUntil = m.animUntil = t + S.tell + S.recover;
+    m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+  }
+
   /** Attack as its howl and its rage leave it. */
   furyAtk(m) {
     m.baseAtk ??= m.derived.atk;
-    const howl = m.furyUntil ? 1 + m.def.howl.buff : 1;
+    const howl = m.furyUntil ? 1 + (m.def.howl?.buff ?? 0) : 1;
     const rage = m.enraged ? m.def.enrage.atk : 1;
     m.derived.atk = Math.floor(m.baseAtk * howl * rage);
   }
@@ -1043,6 +1109,8 @@ export class Zone {
   calm(m) {
     m.leaping = null; m.howlAt = null; m.furyUntil = 0; m.enraged = false;
     m.nextLeapAt = m.nextHowlAt = undefined;
+    m.summonAt = null; m.nextSummonAt = undefined;
+    for (const e of [...this.entities.values()]) if (e.guards === m.id) this.entities.delete(e.id);
     if (m.baseAtk) m.derived.atk = m.baseAtk;
   }
 
@@ -1079,7 +1147,7 @@ export class Zone {
   updateRespawns(t) {
     for (const m of this.entities.values()) {
       if (m.kind !== 'monster' || m.alive) continue;
-      if (m.summon) { this.entities.delete(m.id); continue; }
+      if (m.summon || m.guards) { this.entities.delete(m.id); continue; }
       if (t < m.deadUntil) continue;
       const pos = this.randomWalkable(m.area);
       m.x = pos.x; m.y = pos.y;
@@ -1100,7 +1168,7 @@ export class Zone {
       // whatever move it died in the middle of dies with it
       m.charging = null; m.bursts = []; m.shots = []; m.castUntil = 0;
       this.calm(m);
-      m.nextChargeAt = m.nextBurstAt = undefined;
+      m.nextChargeAt = undefined; m.burstNext = [];
     }
   }
 
