@@ -15,6 +15,7 @@ import { SKILLS } from '../../shared/data/skills.js';
 import { JOBS, STARTING_STATS } from '../../shared/data/jobs.js';
 import { deriveStats } from '../../shared/formulas.js';
 import { AdminPanel } from './admin.js';
+import { prefs, onPref, TOUCH_SCALE } from './prefs.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 
@@ -66,6 +67,7 @@ class Game {
     }
     this.syncLayout();
     addEventListener('resize', () => this.syncLayout());
+    onPref((key) => { if (key === 'touch') this.syncLayout(); });
     this.input.onPadChange = (connected, id) => {
       this.ui.toast(connected ? `เชื่อมต่อจอยแล้ว: ${id?.slice(0, 28) ?? ''}` : 'ถอดจอยออกแล้ว', connected ? 'good' : 'warn');
     };
@@ -94,7 +96,8 @@ class Game {
     const root = document.documentElement.style;
     root.setProperty('--hud-k', k.toFixed(3));
     // thumbs do not shrink with the screen: the touch pad keeps a size you can hit
-    root.setProperty('--touch-k', Math.max(0.82, Math.min(1, k * 1.2)).toFixed(3));
+    const pad = TOUCH_SCALE[prefs.touch] ?? 1;       // the player's own choice on top
+    root.setProperty('--touch-k', (Math.max(0.82, Math.min(1, k * 1.2)) * pad).toFixed(3));
     root.setProperty('--ui-k', compact ? Math.max(0.62, Math.min(0.8, k * 0.92)).toFixed(3) : '1');
   }
 
@@ -444,6 +447,8 @@ class Game {
 
   loop(t) {
     requestAnimationFrame((t2) => this.loop(t2));
+    // the 30 fps cap skips every other screen refresh (a little slack for jitter)
+    if (prefs.fps === 30 && t - (this._last ?? 0) < 30) return;
     const dt = Math.min(0.1, (t - (this._last ?? t)) / 1000);
     this._last = t;
     if (!this.inWorld) return;
@@ -452,6 +457,7 @@ class Game {
     this.handleActions();
     this.updateNav(t);
     this.updateAuto(t);
+    this.autoLoot(t);
     this.predictMovement(dt);
     this.interpolate(t);
 
@@ -634,6 +640,22 @@ class Game {
    * the gap, swing, spend whatever skills are off cooldown, hoover up loot.
    * Manual input always wins - the moment you touch the keys, auto lets go.
    */
+  /** Walking over your own loot picks it up (a setting); auto mode hoovers it anyway. */
+  autoLoot(now) {
+    if (!prefs.autoLoot || this.auto || now - (this._lootAt ?? 0) < 250) return;
+    this._lootAt = now;
+    const me = this.predicted;
+    this._asked ??= new Map();       // uid -> when we asked, so one pile is one request
+    for (const g of this.state.ground ?? []) {
+      if (!g.mine || Math.hypot(g.x - me.x, g.y - me.y) > 28) continue;
+      // a full bag says so once, not every step you stand on the pile
+      if (now - (this._asked.get(g.uid) ?? -Infinity) < 4000) continue;
+      this._asked.set(g.uid, now);
+      this.net.send({ t: 'pickup', uid: g.uid });
+    }
+    if (this._asked.size > 64) this._asked.clear();
+  }
+
   updateAuto(now) {
     if (!this.auto || now - this.autoAt < 260) return;
     this.autoAt = now;

@@ -21,6 +21,7 @@ import { CHIBI_FISTS } from '../../shared/data/chibi.js';
 import { SWING } from '../../shared/data/swing.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
 import { DROP_ART } from '../../shared/data/dropart.js';
+import { prefs, onPref } from './prefs.js';
 import { atlasFile, atlasRect, ATLAS_FILES } from '../../shared/atlas.js';
 
 const uiImages = new Map();
@@ -469,10 +470,12 @@ export class Renderer {
     this.shake = 0;
     this.resize();
     addEventListener('resize', () => this.resize());
+    onPref((key) => { if (key === 'quality') this.resize(); });
   }
 
   resize() {
-    const dpr = Math.min(2, devicePixelRatio || 1);
+    // battery saver draws at one pixel per CSS pixel: a quarter of the work on a phone
+    const dpr = prefs.quality === 'saver' ? 1 : Math.min(2, devicePixelRatio || 1);
     // when the page itself is turned a quarter, width and height swap
     const rotated = document.body.classList.contains('forced-landscape');
     const w = rotated ? innerHeight : innerWidth;
@@ -541,6 +544,8 @@ export class Renderer {
    * stream of hits fans out instead of stacking into an unreadable pile.
    */
   floater(text, x, y, color = '#fff', size = 12, opts = {}) {
+    // numbers can be switched off; words (LEVEL UP, MISS, ...) always show
+    if (!prefs.dmg && /^[+-]?[\d,]+!?$/.test(String(text))) return;
     this._fanSide = -(this._fanSide ?? 1);
     this.floaters.push({
       text, x, y, color, size, t: performance.now(),
@@ -624,6 +629,7 @@ export class Renderer {
     const ty = Math.max(halfH, Math.min(this.zone.height * TILE - halfH, me.y));
     this.camera.x += (tx - this.camera.x) * 0.18;
     this.camera.y += (ty - this.camera.y) * 0.18;
+    if (!prefs.shake) this.shake = 0;
     if (this.shake > 0) {
       this.camera.x += (Math.random() - 0.5) * this.shake;
       this.camera.y += (Math.random() - 0.5) * this.shake;
@@ -665,8 +671,10 @@ export class Renderer {
     this.particles.drawGlow(ctx);
     ctx.restore();
 
-    this.weather.update(now, this.canvas.width, this.canvas.height);
-    this.weather.draw(ctx, now, this.canvas.width, this.canvas.height);
+    if (prefs.quality !== 'saver') {
+      this.weather.update(now, this.canvas.width, this.canvas.height);
+      this.weather.draw(ctx, now, this.canvas.width, this.canvas.height);
+    }
     this.drawVignette(ctx);
     this.drawCritFlash(ctx, now);
     this.drawFloaters(ctx, s);
@@ -1490,11 +1498,14 @@ export class Renderer {
         ctx.drawImage(mark, e.x - mw / 2, top - 37 + bob, mw, h);
       }
     }
-    ctx.strokeText(label, e.x, top - 4);
-    ctx.fillStyle = plated ? '#f6ecd6' : e.k === 'n' ? '#9fe0b0'
-      : e.k === 'm' ? (hunts ? '#ff8a8a' : e.boss ? '#ffb45e' : '#ffd9d9')
-        : (isMe ? '#b9f6c7' : '#cfe4ff');
-    ctx.fillText(label, e.x, top - 4);
+    // other players' names can be hidden; the one you have picked keeps its name
+    if (e.k !== 'p' || isMe || isTarget || prefs.names) {
+      ctx.strokeText(label, e.x, top - 4);
+      ctx.fillStyle = plated ? '#f6ecd6' : e.k === 'n' ? '#9fe0b0'
+        : e.k === 'm' ? (hunts ? '#ff8a8a' : e.boss ? '#ffb45e' : '#ffd9d9')
+          : (isMe ? '#b9f6c7' : '#cfe4ff');
+      ctx.fillText(label, e.x, top - 4);
+    }
 
     // and a slow pulse under its feet, readable from across the screen where
     // an eight-pixel name plate is not

@@ -19,6 +19,7 @@ import { gameClock, skyAt } from '../../shared/daycycle.js';
 import { glowTier, glowCss, specialMarks, signatureOf, SPECIAL_MARKS, SIGNATURES } from '../../shared/refineglow.js';
 import { WEAPON_CLASSES, jobCanHold } from '../../shared/weapons.js';
 import { MAPS } from '../../shared/data/maps.js';
+import { prefs, setPref } from './prefs.js';
 
 /** Zone ids to the names players see, for quest rows. */
 const ZONE_NAMES = Object.fromEntries(Object.entries(MAPS).map(([id, m]) => [id, m.nameTh ?? m.name]));
@@ -3410,30 +3411,38 @@ export class UI {
   /** Volume sliders. Everything is synthesised, so this is the whole mixer. */
   audioSettings() {
     const audio = this.game.audio;
-    const box = el('div');
-    box.innerHTML = '<h3 style="margin:0 0 6px">เสียง</h3>';
-    const mute = el('button', 'btn' + (audio.settings.muted ? ' danger' : ''), audio.settings.muted ? 'ปิดเสียงอยู่' : 'เปิดเสียงอยู่');
-    mute.addEventListener('click', () => { audio.toggleMute(); this.open('settings'); });
-    box.append(mute);
+    const box = el('div', 'set-sec');
+    box.append(el('h3', '', 'เสียง'));
+    const top = el('div', 'set-row');
+    const text = el('div', 'set-text');
+    text.append(el('b', '', 'เสียงทั้งหมด'));
+    const opts = el('div', 'opts');
+    for (const [muted, name] of [[false, 'เปิด'], [true, 'ปิด']]) {
+      const b = el('button', 'btn' + (audio.settings.muted === muted ? ' primary' : ''), name);
+      b.addEventListener('click', () => { if (audio.settings.muted !== muted) audio.toggleMute(); this.open('settings'); });
+      opts.append(b);
+    }
+    top.append(text, opts);
+    box.append(top);
     for (const [key, label] of [['master', 'เสียงรวม'], ['sfx', 'เอฟเฟกต์'], ['music', 'เพลงบรรยากาศ']]) {
-      const row = el('div', 'row');
-      const name = el('span', '', label);
+      const row = el('div', 'set-row');
+      const name = el('b', 'set-text', label);
       const val = el('span', 'muted num', Math.round(audio.settings[key] * 100) + '%');
       const slider = document.createElement('input');
       slider.type = 'range';
       slider.min = '0'; slider.max = '100'; slider.step = '5';
       slider.value = String(Math.round(audio.settings[key] * 100));
-      slider.style.width = '180px';
       slider.addEventListener('input', () => {
         audio.set(key, Number(slider.value) / 100);
         val.textContent = slider.value + '%';
       });
       // hearing the change is the only useful preview
       slider.addEventListener('change', () => audio.play(key === 'music' ? 'buff' : 'hit'));
-      row.append(name, slider, val);
+      const right = el('div', 'set-slider');
+      right.append(slider, val);
+      row.append(name, right);
       box.append(row);
     }
-    box.append(el('div', 'muted', 'เสียงทั้งหมดสังเคราะห์สดในเบราว์เซอร์ ไม่มีไฟล์เสียงให้โหลด'));
     return box;
   }
 
@@ -3853,50 +3862,54 @@ export class UI {
   }
 
   openSettings() {
-    const wrap = el('div');
-    const themes = el('div');
-    themes.innerHTML = '<h3 style="margin:0 0 6px">หน้าตา UI</h3>';
-    const row = el('div', 'opts');
-    const current = document.body.dataset.ui ?? 'ember';
-    for (const [key, label, note] of [
-      ['ember', 'ทองคำ', 'กรอบทองลายวาด ไอคอนสีจากชีต UI หลัก'],
-      ['pixel', 'พิกเซล', 'ขอบคม มุมบาก เข้ากับสไปรต์'],
-      ['ornate', 'แฟนตาซี', 'หนังกับทอง แบบ MMO ยุคเก่า'],
-      ['glass', 'มินิมอล', 'กระจกฝ้า บังฉากน้อยที่สุด'],
-    ]) {
-      const b = el('button', 'btn' + (current === key ? ' primary' : ''), label);
-      b.title = note;
-      b.addEventListener('click', () => { setTheme(key); this.open('settings'); });
-      row.append(b);
-    }
-    themes.append(row);
-    themes.append(el('div', 'muted', 'เปลี่ยนได้ตลอดเวลา ระบบจำค่าไว้ในเบราว์เซอร์นี้'));
-    wrap.append(themes, el('hr'));
+    const wrap = el('div', 'settings');
+    const section = (title) => {
+      const box = el('div', 'set-sec');
+      box.append(el('h3', '', title));
+      wrap.append(box);
+      return box;
+    };
+    // one row: a name, a short note, and a choice of buttons
+    const choice = (box, label, note, options, current, pick) => {
+      const row = el('div', 'set-row');
+      const text = el('div', 'set-text');
+      text.append(el('b', '', label));
+      if (note) text.append(el('span', 'muted', note));
+      const opts = el('div', 'opts');
+      for (const [value, name] of options) {
+        const b = el('button', 'btn' + (current === value ? ' primary' : ''), name);
+        b.addEventListener('click', () => { pick(value); this.open('settings'); });
+        opts.append(b);
+      }
+      row.append(text, opts);
+      box.append(row);
+    };
+    const pref = (box, key, label, note, options) =>
+      choice(box, label, note, options, prefs[key], (v) => setPref(key, v));
+    const onOff = [[true, 'เปิด'], [false, 'ปิด']];
 
-    const cam = el('div');
-    cam.innerHTML = '<h3 style="margin:0 0 6px">ระยะกล้อง</h3>';
-    const camRow = el('div', 'opts');
-    const curStep = this.game.renderer?.zoomStep ?? 1;
-    ZOOM_STEPS.forEach((z, i) => {
-      const b = el('button', 'btn' + (curStep === i ? ' primary' : ''), z.label);
-      b.title = z.note;
-      b.addEventListener('click', () => this.game.setZoom(i));
-      camRow.append(b);
-    });
-    cam.append(camRow);
-    cam.append(el('div', 'muted', 'ปุ่มลัด: − / +  ·  จอยเกม: กดแกนอนาล็อกขวา'));
-    wrap.append(cam, el('hr'));
+    const gfx = section('กราฟิก');
+    choice(gfx, 'ระยะกล้อง', 'ปุ่มลัด − / +', ZOOM_STEPS.map((z, i) => [i, z.label]),
+      this.game.renderer?.zoomStep ?? 1, (i) => this.game.setZoom(i));
+    pref(gfx, 'quality', 'คุณภาพภาพ', 'ประหยัดแบต: ความละเอียดต่ำลง ไม่มีฝน/หมอก',
+      [['high', 'สูง'], ['saver', 'ประหยัดแบต']]);
+    pref(gfx, 'fps', 'เฟรมเรต', '30 FPS ช่วยให้เครื่องไม่ร้อน', [[60, '60 FPS'], [30, '30 FPS']]);
+    pref(gfx, 'shake', 'จอสั่นเมื่อโดนแรง ๆ', '', onOff);
 
-    wrap.append(this.audioSettings(), el('hr'));
+    const view = section('การแสดงผล');
+    pref(view, 'dmg', 'ตัวเลขดาเมจ / ฮีล', '', onOff);
+    pref(view, 'names', 'ชื่อผู้เล่นคนอื่น', 'เป้าหมายที่เลือกยังแสดงชื่อเสมอ', [[true, 'แสดง'], [false, 'ซ่อน']]);
 
-    const screenBox = el('div');
-    screenBox.innerHTML = '<h3 style="margin:0 0 6px">การวางจอ</h3>';
-    screenBox.append(el('div', 'muted', 'เกมเล่นแนวนอนเสมอ — ถ้าถือมือถือแนวตั้ง เกมจะหมุนภาพให้เป็นแนวนอนเอง ถือเครื่องตะแคงได้เลย'));
-    wrap.append(screenBox, el('hr'));
+    const play = section('การเล่น');
+    pref(play, 'autoLoot', 'เก็บของอัตโนมัติ', 'เดินผ่านของที่ตกเป็นของเรา เก็บให้ทันที', onOff);
+    pref(play, 'touch', 'ขนาดปุ่มบนจอ', 'จอยและปุ่มสกิลบนมือถือ',
+      [['small', 'เล็ก'], ['normal', 'กลาง'], ['large', 'ใหญ่']]);
+
+    wrap.append(this.audioSettings());
 
     const help = el('div');
     help.innerHTML = `
-      <h3>ปุ่มควบคุม</h3>
+      <h4>ปุ่มควบคุม</h4>
       <table>
         <tr><th></th><th>จอยเกม</th><th>คีย์บอร์ด</th><th>มือถือ</th></tr>
         <tr><td>เดิน</td><td>อนาล็อกซ้าย</td><td>WASD / ลูกศร</td><td>จอยหลอกซ้าย</td></tr>
@@ -3908,7 +3921,7 @@ export class UI {
         <tr><td>ระยะกล้อง ไกล/กลาง/ใกล้</td><td>กดอนาล็อกขวา</td><td>− / +</td><td>ตั้งค่า</td></tr>
         <tr><td>เมนู / ปิดหน้าต่าง</td><td>Start / B</td><td>I K C J P / Esc</td><td>ปุ่มมุมขวาล่าง</td></tr>
       </table>
-      <h3>สิ่งที่ควรรู้</h3>
+      <h4>สิ่งที่ควรรู้</h4>
       <ul class="muted">
         <li>เงิน (ออรัม) หายากโดยตั้งใจ — มอนสเตอร์ส่วนใหญ่ไม่ดรอปเงิน รายได้จริงมาจากของที่ผู้เล่นคนอื่นต้องใช้</li>
         <li>NPC รับซื้อถูกมากและราคาตกถ้าขายซ้ำ ให้ขายของดีในตลาดผู้เล่น</li>
@@ -3917,26 +3930,31 @@ export class UI {
         <li>ปาร์ตี้ได้ EXP รวมเพิ่ม 10% ต่อสมาชิกหนึ่งคน (ต้องอยู่ใกล้กัน)</li>
         <li>ล่ามอนสเตอร์ที่เลเวลต่างจากเรามากจะได้ EXP ลดลง ป้องกันการพาวเวอร์เลเวล</li>
       </ul>`;
-    wrap.append(help);
-    return this.panel('settings', 'ตั้งค่าและวิธีเล่น', wrap);
+    const how = el('details', 'set-sec');
+    how.append(el('summary', '', 'วิธีเล่นและปุ่มควบคุม'), help);
+    wrap.append(how);
+
+    const acct = section('บัญชี');
+    const leave = el('button', 'btn danger', 'ออกจากเกม');
+    leave.addEventListener('click', () => {
+      if (confirm('ออกจากเกมและกลับไปหน้าเข้าสู่ระบบ?')) location.reload();
+    });
+    const row = el('div', 'set-row');
+    const text = el('div', 'set-text');
+    text.append(el('b', '', 'กลับหน้าเข้าสู่ระบบ'), el('span', 'muted', 'ตัวละครบันทึกอัตโนมัติ ไม่มีอะไรหาย'));
+    row.append(text, leave);
+    acct.append(row);
+    return this.panel('settings', 'ตั้งค่า', wrap);
   }
 }
 
-/** UI theme lives on <body data-ui>, remembered per browser. */
-export function setTheme(name) {
-  const ok = ['ember', 'pixel', 'ornate', 'glass'].includes(name) ? name : 'ember';
-  document.body.dataset.ui = ok;
-  try { localStorage.setItem(THEME_KEY, ok); } catch { /* no storage */ }
+/** The interface wears the gold (ember) theme; there is no other to choose. */
+export function setTheme() {
+  document.body.dataset.ui = 'ember';
 }
 
-// A new key, so everyone meets the painted HUD once; the old key only ever
-// held whatever the default was when the page first loaded.
-const THEME_KEY = 'emberfall-ui-v2';
-
 export function loadTheme() {
-  let saved = 'ember';
-  try { saved = localStorage.getItem(THEME_KEY) || 'ember'; } catch { /* no storage */ }
-  setTheme(saved);
+  setTheme();
 }
 
 /* ---------------- helpers ---------------- */

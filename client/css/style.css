@@ -2597,3 +2597,28 @@ body.landscape-ui .tbtn.small { width: 44px; height: 44px; }
 body.landscape-ui #actionbar { right: 232px; }
 /* the stick keeps its own (larger) scale, so the chat above it follows that height */
 body.landscape-ui #chat { bottom: calc(128px * var(--touch-k, 1) / var(--hud-k, 1) + var(--safe-b)); }
+
+/* ============================ settings ============================ */
+.settings { display: grid; gap: 10px; }
+.set-sec {
+  display: grid; gap: 2px; padding: 8px 12px; border-radius: 10px;
+  background: rgba(0, 0, 0, .28); border: 1px solid rgba(181, 138, 60, .35);
+}
+.set-sec h3 { margin: 0 0 4px; font-size: 14px; color: #fbe7b6; }
+.set-sec h4 { margin: 10px 0 4px; font-size: 13px; color: #fbe7b6; }
+.set-sec summary { cursor: pointer; font-weight: 700; font-size: 14px; color: #fbe7b6; padding: 2px 0; }
+.set-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, .06);
+}
+.set-sec h3 + .set-row { border-top: none; }
+.set-text { display: grid; gap: 1px; min-width: 120px; flex: 1; }
+.set-text b { font-size: 13px; }
+.set-text .muted { font-size: 11px; }
+.set-row .opts { gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.set-row .opts .btn { min-width: 56px; padding: 4px 10px; font-size: 12px; }
+.set-slider { display: flex; align-items: center; gap: 8px; }
+.set-slider input[type=range] { width: 160px; accent-color: #f2c35b; }
+.set-slider .num { min-width: 36px; text-align: right; }
+body.landscape-ui .set-row { padding: 4px 0; }
+body.landscape-ui .set-slider input[type=range] { width: 120px; }
