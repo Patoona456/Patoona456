@@ -83,8 +83,19 @@ class Game {
     // windows - a desktop browser is wide, but it is not short
     const touch = document.body.classList.contains('touch');
     const phoneOnItsSide = touch && innerWidth > innerHeight;
-    document.body.classList.toggle('landscape-ui',
-      this.forcedLandscape || phoneOnItsSide || innerHeight <= 520);
+    const compact = this.forcedLandscape || phoneOnItsSide || innerHeight <= 520;
+    document.body.classList.toggle('landscape-ui', compact);
+    // Phones differ a lot in size: the whole HUD scales with the screen so a
+    // small phone gets small buttons instead of a screen full of them. The
+    // turned page swaps the sides, so measure the long and short edge.
+    const long = this.forcedLandscape ? innerHeight : Math.max(innerWidth, innerHeight);
+    const short = this.forcedLandscape ? innerWidth : Math.min(innerWidth, innerHeight);
+    const k = compact ? Math.max(0.58, Math.min(1, long / 1000, short / 480)) : 1;
+    const root = document.documentElement.style;
+    root.setProperty('--hud-k', k.toFixed(3));
+    // thumbs do not shrink with the screen: the touch pad keeps a size you can hit
+    root.setProperty('--touch-k', Math.max(0.82, Math.min(1, k * 1.2)).toFixed(3));
+    root.setProperty('--ui-k', compact ? Math.max(0.62, Math.min(0.8, k * 0.92)).toFixed(3) : '1');
   }
 
   /** Turn the whole page a quarter turn, for browsers that will not. */

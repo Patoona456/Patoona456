@@ -1846,7 +1846,7 @@ body.landscape-ui #combo { top: auto; right: auto; left: 250px; bottom: 150px; }
    portrait, so the max-width rules above would otherwise make every window
    a full-width sheet. Sizes are in % of the (rotated) page, not vw/vh,
    which point the wrong way on a rotated page. */
-body.landscape-ui { --ui-k: .74; }
+
 body.landscape-ui .win.window {
   top: 50%; left: 50%; bottom: auto; right: auto;
   transform: translate(-50%, -50%) scale(var(--ui-k));
@@ -2587,3 +2587,13 @@ body.landscape-ui .cx-job { display: none; }
 .wm-go:has(img):disabled img { filter: grayscale(.8) brightness(.6); }
 .cx .doll-slot .ghost { width: 60%; height: 60%; object-fit: contain; opacity: .9; filter: brightness(1.3); }
 #statuses .st-strip { display: block; background: url(../../assets/ui/h2_status.webp) 0 0 / 1600% 100% no-repeat; }
+
+/* the whole HUD follows the screen: --hud-k is set in main.js syncLayout */
+body.landscape-ui :is(#vitals, #currencies, #topright, #menu-buttons, #target-frame, #quest-track, #chat,
+  #statuses, #expstrip, #party-frames, #cast-bar, #combo, #toasts, #zone-banner) { zoom: var(--hud-k, 1); }
+body.landscape-ui #touch > *, body.landscape-ui #actionbar { zoom: var(--touch-k, 1); }
+body.landscape-ui #buttons { grid-template-columns: repeat(4, 46px); grid-template-rows: repeat(3, 46px); }
+body.landscape-ui .tbtn.small { width: 44px; height: 44px; }
+body.landscape-ui #actionbar { right: 232px; }
+/* the stick keeps its own (larger) scale, so the chat above it follows that height */
+body.landscape-ui #chat { bottom: calc(128px * var(--touch-k, 1) / var(--hud-k, 1) + var(--safe-b)); }
