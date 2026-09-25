@@ -3,6 +3,7 @@
 // so the generator only has to be right once.
 
 import { EMBERHOLD_OBSTACLES } from './emberhold-obstacles.js';
+import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
 
 export const TILES = {
   GRASS: 0, PATH: 1, WATER: 2, TREE: 3, ROCK: 4, SAND: 5,
@@ -64,7 +65,7 @@ export const MAPS = {
     spawnPoint: [30, 23],
     warps: [
       { x: 28, y: 0, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
-      { x: 28, y: 38, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 28, y: 38, w: 4, h: 2, to: 'greenmire', at: [30, 3], label: 'ทุ่งกรีนไมร์' },
       { x: 0, y: 17, w: 1, h: 3, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
       { x: 59, y: 17, w: 1, h: 3, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
     ],
@@ -114,7 +115,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
     spawnPoint: [40, 32],
     warps: [
-      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [40, 8], label: 'ทุ่งกรีนไมร์' },
+      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
       { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [55, 18], label: 'เอมเบอร์โฮลด์' },
@@ -258,16 +259,32 @@ export const MAPS = {
 
   greenmire: {
     id: 'greenmire', name: 'Greenmire Flats', nameTh: 'ทุ่งกรีนไมร์', kind: 'field',
-    width: 80, height: 64, seed: 2002, theme: 'grass', levelRange: [1, 10],
-    spawnPoint: [40, 6],
+    width: 60, height: 40, seed: 2002, theme: 'grass', levelRange: [1, 10],
+    // One painting (assets/maps/source/greenmire.png, 1536x1024): meadows and
+    // dirt paths between wooded ledges, streams and falls. Where a character
+    // may stand is traced off it by tools/trace-field.py into
+    // greenmire-obstacles.js; a tile is 25.6px of the painting, as in town.
+    backdrop: 'assets/maps/greenmire.webp',
+    walk: [[0, 0, 60, 40]],
+    obstacles: GREENMIRE_OBSTACLES,
+    spawnPoint: [30, 5],
+    // the ways out are where the painted paths run off the edge
     warps: [
-      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },
-      { x: 76, y: 30, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
+      { x: 29, y: 0, w: 2, h: 2, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },    // the north stairs
+      { x: 44, y: 0, w: 1, h: 2, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },          // the north-east track
+      { x: 58, y: 9, w: 2, h: 3, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },             // the east path
     ],
-    // the north strip by the town gate stays gentle; anything that bites
-    // lives further out, so a brand new character has somewhere to start
+    // Slimes keep to the clearings, a few in each, so there is something to
+    // hunt wherever a path leads. The gate meadow stays quiet.
     spawns: [
-      { mob: 'blue_slime', count: 30, area: [4, 6, 72, 34] },
+      { mob: 'blue_slime', count: 4, area: [20, 4, 12, 5] },     // below the north stairs
+      { mob: 'blue_slime', count: 5, area: [4, 8, 6, 8] },       // the west ledge
+      { mob: 'blue_slime', count: 6, area: [12, 14, 16, 5] },    // the long meadow west of the crossroads
+      { mob: 'blue_slime', count: 5, area: [33, 12, 10, 8] },    // the crossroads
+      { mob: 'blue_slime', count: 5, area: [45, 8, 13, 6] },     // across the east bridge
+      { mob: 'blue_slime', count: 5, area: [3, 23, 16, 9] },     // the south-west hollow
+      { mob: 'blue_slime', count: 5, area: [22, 20, 14, 8] },    // the southern meadow
+      { mob: 'blue_slime', count: 5, area: [36, 20, 12, 12] },   // the south-east slope
     ],
   },
 
@@ -276,7 +293,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 3003, theme: 'marsh', levelRange: [10, 22],
     spawnPoint: [8, 32],
     warps: [
-      { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [72, 32], label: 'ทุ่งกรีนไมร์' },
+      { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [56, 10], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 18], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
