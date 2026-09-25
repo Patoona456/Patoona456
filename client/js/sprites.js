@@ -468,6 +468,8 @@ export function drawMobFrames(ctx, sprite, { x, y, anim = 'idle', elapsed = 0, f
   if (!s.ready) return false;
   const name = MOB_ANIM[anim] ?? 'idle';
   let r = art.anims.findIndex(([a]) => a === name);
+  // a sheet without a run row walks instead of sliding along in its idle pose
+  if (r < 0 && name === 'run') r = art.anims.findIndex(([a]) => a === 'walk');
   if (r < 0) r = 0;
   const [row, count] = art.anims[r];
   let f = Math.floor((Math.max(0, elapsed) / 1000) * MOB_FPS[row]);

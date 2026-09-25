@@ -5,6 +5,8 @@
 // players, so there is no browser and no network in the way.
 import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
+import { BOSS_LEASH, BOSS_RESET_MS } from '../server/game/zone.js';
+import { applyDamage } from '../server/game/combat.js';
 import assert from 'node:assert/strict';
 import { World } from '../server/game/world.js';
 import { MONSTERS } from '../shared/data/monsters.js';
@@ -181,6 +183,34 @@ test('the monster book counts each kind a character brings down, and tells them'
   assert.deepEqual(p.record.kills, { blue_slime: 2, mushroom: 1 });
   assert.deepEqual(sent.filter((m) => m.t === 'kill').map((m) => [m.def, m.n]),
     [['blue_slime', 1], ['blue_slime', 2], ['mushroom', 1]]);
+});
+
+test('a field boss dragged too far walks home untouchable, keeps its wounds, and heals only when left a minute', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('greenmire');
+  const wolf = [...zone.entities.values()].find((e) => e.defId === 'alpha_wolf');
+  const home = { ...wolf.anchor };
+  const p = stubPlayer('P', 10, zone, home.x + BOSS_LEASH + 200, home.y);
+  zone.players.set('P', p); zone.entities.set('P', p);
+  wolf.x = home.x + BOSS_LEASH + 40; wolf.y = home.y;          // dragged past its leash
+  wolf.target = 'P'; wolf.hp = 500;
+  let now = Date.now();
+  wolf.lastHurtAt = now;
+  zone.updateMonsters(0.05, now);
+  assert.equal(wolf.returning, true, 'it turns for home');
+  assert.equal(wolf.target, null);
+  assert.equal(wolf.hp, 500, 'and keeps its wounds');
+  assert.equal(applyDamage(zone, p, wolf, 100), 0, 'no free hits on the way');
+  for (let i = 0; i < 400 && wolf.returning; i++) zone.updateMonsters(0.05, now += 50);
+  assert.equal(wolf.returning, false, 'it gets home');
+  assert.ok(Math.hypot(wolf.x - home.x, wolf.y - home.y) < 16);
+  assert.equal(wolf.hp, 500, 'still wounded at home');
+  zone.players.delete('P'); zone.entities.delete('P');
+  zone.updateMonsters(0.05, wolf.lastHurtAt + BOSS_RESET_MS - 1000);
+  assert.equal(wolf.hp, 500, 'not yet: someone might come back');
+  zone.updateMonsters(0.05, wolf.lastHurtAt + BOSS_RESET_MS + 1);
+  assert.equal(wolf.hp, wolf.maxHp, 'a minute alone and it is whole again');
 });
 
 /* --------------------------------------------------------------- aggro */

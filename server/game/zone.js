@@ -40,6 +40,14 @@ const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
 /** Animations that play once and then hand back to idle. */
 const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill', 'leap', 'howl', 'enrage', 'spike', 'tornado', 'summon']);
 const SPAWN_MS = 800;
+/**
+ * A field boss cannot be dragged far from its ground: past BOSS_LEASH it
+ * turns and walks home, untouchable on the way, and keeps its wounds. Only
+ * a full BOSS_RESET_MS with nobody hitting it heals it back to full.
+ */
+export const BOSS_LEASH = 8 * TILE;
+export const BOSS_RESET_MS = 60000;
+const fieldBoss = (m) => m.boss && !m.def.script;
 /** The share of a boss's health a player (or their party) must deal to be owed its loot. */
 export const BOSS_LOOT_SHARE = 0.1;
 
@@ -729,6 +737,14 @@ export class Zone {
       if (target && (!target.alive || target.zone !== this && target.kind === 'player')) target = null;
       if (target && statusMods(target).invisible) target = null;
 
+      // a field boss cannot be dragged off its ground: past its leash it walks home
+      if (target && fieldBoss(m) && dist(m, m.anchor) > BOSS_LEASH) {
+        // home it goes, wounds and all (see BOSS_RESET_MS for when it heals)
+        m.target = null; m.threat.clear(); target = null;
+        m.returning = true;
+        m.leaping = null; m.charging = null; m.bursts = []; m.castUntil = 0; m.howlAt = null; m.summonAt = null;
+        continue;
+      }
       // a scripted boss runs its own fight on top of the ordinary AI
       if (m.def.script) tickBoss(this, m, t);
       // an ordinary monster's one area move; it stands its ground while winding up
@@ -740,6 +756,20 @@ export class Zone {
       if (m.def.leap) this.tickLeap(m, target, t);
       if (m.def.calls) this.tickSummon(m, target, t);
       if (m.castUntil > t) { if (target) m.dir = dirTo(m, target); continue; }
+
+      // a boss that was dragged too far walks home, ignoring everyone, and cannot be hurt on the way
+      if (m.returning) {
+        if (dist(m, m.anchor) < 12) {
+          m.returning = false;
+          m.anim = 'idle';
+        } else {
+          const step = this.chaseStep(m, m.anchor, t);
+          this.moveTo(m, m.x + step.x * m.speed * 1.5 * dt, m.y + step.y * m.speed * 1.5 * dt);
+          m.dir = dirTo(m, m.anchor);
+          if (!inOneShot(m, t)) m.anim = m.def.sprite?.kind === 'frames' ? 'run' : 'walk';
+        }
+        continue;
+      }
 
       // acquire
       if (!target && t >= m.nextThinkAt) {
@@ -841,8 +871,14 @@ export class Zone {
           m.dir = dirTo(m, m.wanderTo);
           m.anim = 'walk';
         }
-        // out-of-combat regen
-        if (m.hp < m.maxHp && t - m.lastCombat > 6000) {
+        // out-of-combat regen: a field boss heals only when left alone a full minute, and then all at once
+        if (fieldBoss(m)) {
+          if (m.hp < m.maxHp && t - (m.lastHurtAt ?? 0) > BOSS_RESET_MS) {
+            m.hp = m.maxHp;
+            m.tapped.clear(); m.dealt?.clear();
+            this.calm(m);
+          }
+        } else if (m.hp < m.maxHp && t - m.lastCombat > 6000) {
           m.hp = Math.min(m.maxHp, m.hp + Math.ceil(m.maxHp * 0.03));
         }
       }
@@ -1130,7 +1166,7 @@ export class Zone {
 
   /** Back to itself: a leash or a respawn undoes the rage, the howl and any move in the air. */
   calm(m) {
-    m.leaping = null; m.howlAt = null; m.furyUntil = 0; m.enraged = false;
+    m.leaping = null; m.howlAt = null; m.furyUntil = 0; m.enraged = false; m.returning = false;
     m.nextLeapAt = m.nextHowlAt = undefined;
     m.summonAt = null; m.nextSummonAt = undefined;
     for (const e of [...this.entities.values()]) if (e.guards === m.id) this.entities.delete(e.id);

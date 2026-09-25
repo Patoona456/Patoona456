@@ -43,6 +43,11 @@ export function statusMods(target) {
 /** Absorb through shields first, then HP. Returns damage actually taken. */
 export function applyDamage(zone, attacker, target, amount, opts = {}) {
   if (!target.alive || amount <= 0) return 0;
+  // a boss walking home after being dragged too far cannot be hurt
+  if (target.returning) {
+    zone.pushEvent({ t: 'miss', id: target.id, src: attacker?.id ?? null });
+    return 0;
+  }
 
   // Player against player runs on its own curve. See pvpDamage: PvE numbers
   // pointed at another character kill in two or three seconds.
@@ -71,6 +76,7 @@ export function applyDamage(zone, attacker, target, amount, opts = {}) {
 
   target.hp = Math.max(0, target.hp - remaining);
   target.lastCombat = Date.now();
+  if (target.kind === 'monster') target.lastHurtAt = Date.now();
   if (attacker) attacker.lastCombat = Date.now();
 
   zone.pushEvent({
