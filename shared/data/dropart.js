@@ -36,18 +36,9 @@ export const DROP_ART = {
       "ncrystal_4": 89,
       "leaf_1": 132,
       "shell_1": 146,
-      "honey_3": 160,
-      "honey_2": 161,
-      "honey_1": 162,
-      "honey_4": 163,
-      "stinger_1": 168,
-      "stinger_2": 169,
-      "stinger_3": 170,
-      "stinger_4": 171,
-      "wcrystal_1": 176,
-      "wcrystal_2": 177,
-      "wcrystal_3": 178,
-      "wcrystal_4": 179
+      "honey_1": 160,
+      "stinger_1": 175,
+      "wcrystal_1": 190
     },
     "fall_jelly": [
       14,
@@ -128,18 +119,18 @@ export const DROP_ART = {
       "shell_2": 153,
       "shell_3": 154,
       "shell_4": 155,
-      "honey_3": 164,
-      "honey_2": 165,
-      "honey_1": 166,
-      "honey_4": 167,
-      "stinger_1": 172,
-      "stinger_2": 173,
-      "stinger_3": 174,
-      "stinger_4": 175,
-      "wcrystal_1": 180,
-      "wcrystal_2": 181,
-      "wcrystal_3": 182,
-      "wcrystal_4": 183
+      "honey_2": 167,
+      "honey_1": 168,
+      "honey_3": 169,
+      "honey_4": 170,
+      "stinger_1": 182,
+      "stinger_2": 183,
+      "stinger_3": 184,
+      "stinger_4": 185,
+      "wcrystal_1": 197,
+      "wcrystal_2": 198,
+      "wcrystal_3": 199,
+      "wcrystal_4": 200
     },
     "pickup": {
       "water": [
@@ -173,6 +164,24 @@ export const DROP_ART = {
         157,
         158,
         159
+      ],
+      "honey": [
+        171,
+        172,
+        173,
+        174
+      ],
+      "stinger": [
+        186,
+        187,
+        188,
+        189
+      ],
+      "wcrystal": [
+        201,
+        202,
+        203,
+        204
       ]
     },
     "fall_cap": [
@@ -222,6 +231,30 @@ export const DROP_ART = {
       149,
       150,
       151
+    ],
+    "fall_honey": [
+      161,
+      162,
+      163,
+      164,
+      165,
+      166
+    ],
+    "fall_stinger": [
+      176,
+      177,
+      178,
+      179,
+      180,
+      181
+    ],
+    "fall_wcrystal": [
+      191,
+      192,
+      193,
+      194,
+      195,
+      196
     ]
   }
 };

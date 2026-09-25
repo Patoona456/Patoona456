@@ -69,18 +69,26 @@ SHEETS = [
         ('ground', (488, 577), ['shell_1', 'shell_2', 'shell_3', 'shell_4'], 722, 1062),
         ('pickup', (488, 577), ['shell'] * 4, 1222, 1536),
     ]),
-    # The bee's, from the panel under its animation sheet until its own drop
-    # sheet comes: four of each item, standing in for the tiers. Each is cut
-    # from inside its box, clear of the box's border.
-    ('assets/mob/source/bee_sheet.png', 190, [
-        # pot, drop, drop, comb: one honey is the small drop, a pot is more
-        ('icon', (925, 1004), ['honey_3', 'honey_2', 'honey_1', 'honey_4'], 198, 481),
-        ('ground', (925, 1004), ['honey_3', 'honey_2', 'honey_1', 'honey_4'], 198, 481),
-        ('icon', (925, 1004), ['stinger_1', 'stinger_2', 'stinger_3', 'stinger_4'], 508, 774),
-        ('ground', (925, 1004), ['stinger_1', 'stinger_2', 'stinger_3', 'stinger_4'], 508, 774),
-        ('icon', (925, 1004), ['wcrystal_1', 'wcrystal_2', 'wcrystal_3', 'wcrystal_4'], 801, 1056),
-        ('ground', (925, 1004), ['wcrystal_1', 'wcrystal_2', 'wcrystal_3', 'wcrystal_4'], 801, 1056),
-    ], {'alpha_floor': 90}),
+    # The bee's: laid out like the caterpillar's. The piles on the ground lie
+    # at a slant and share columns, so they are found as separate shapes; the
+    # honey icon is the drop in the top row. Its wind crystal is green here.
+    ('assets/ui/source/bee_drops.png', 200, [
+        ('icon', (40, 160), ['honey_1'], 850, 925),
+        ('fall_honey', (236, 330), 6, 200, 690),
+        ('ground', (236, 330), [None, None, 'honey_2', 'honey_1', 'honey_3', 'honey_4'], 690, 1188,
+         {'blobs': True, 'thr': 150}),
+        ('pickup', (236, 330), ['honey'] * 4, 1190, 1536),
+        ('icon', (405, 508), [None, None, None, 'stinger_1', None, None], 690, 1188, {'blobs': True, 'thr': 150}),
+        ('fall_stinger', (405, 508), 6, 200, 664, {'blobs': True, 'thr': 150}),
+        ('ground', (405, 508), ['stinger_1', None, 'stinger_2', None, 'stinger_3', 'stinger_4'], 690, 1188,
+         {'blobs': True, 'thr': 150}),
+        ('pickup', (405, 508), ['stinger'] * 4, 1190, 1536, {'thr': 200}),
+        ('icon', (596, 722), ['wcrystal_1', None, None, None, None], 690, 1188, {'blobs': True, 'thr': 200}),
+        ('fall_wcrystal', (596, 722), 6, 205, 690),
+        ('ground', (596, 722), ['wcrystal_1', 'wcrystal_2', 'wcrystal_3', 'wcrystal_4', None], 690, 1188,
+         {'blobs': True, 'thr': 200}),
+        ('pickup', (596, 722), ['wcrystal'] * 4, 1190, 1536, {'thr': 150}),
+    ]),
 ]
 
 
@@ -102,6 +110,22 @@ def runs(mask, y0, y1, x0, gap=6, x1=None):
         else:
             merged.append([s, e])
     return merged
+
+
+def blobs(im, y0, y1, x0, x1, thr):
+    """The separate shapes in a band, left to right: each cut to its own box
+    with its neighbours' pixels cleared out of it."""
+    band = im[y0:y1, x0:x1]
+    m = cv2.morphologyEx((band[..., 3] > thr).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m)
+    out = []
+    for i in sorted((i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] > 300), key=lambda i: st[i, 0]):
+        x, _, w, _, _ = st[i]
+        mine = cv2.dilate((lab == i).astype(np.uint8), np.ones((9, 9), np.uint8))
+        crop = band[:, x:x + w].copy()
+        crop[..., 3] = crop[..., 3] * mine[:, x:x + w]
+        out.append(crop)
+    return out
 
 
 def split_widest(im, y0, y1, spans, want):
@@ -127,22 +151,30 @@ def main():
             im[..., 3] = np.clip((a - floor) / (250 - floor) * 255, 0, 255).astype(np.uint8)
         mask = (im[..., 3] > 24).astype(np.uint8)
         for group, (y0, y1), names, *rest in rows:
+            # a trailing dict tunes one row: `thr` the opacity a piece starts
+            # at, `blobs` to find pieces as separate shapes rather than runs of
+            # columns (for pieces lying at a slant that share columns)
+            tune = rest.pop() if rest and isinstance(rest[-1], dict) else {}
             count = len(names) if isinstance(names, list) else names
             # icons start at the left edge; other rows past the row labels
             x0 = rest[0] if rest else 0 if group == 'icon' else label_x
-            x1 = rest[1] if len(rest) > 1 else None
-            spans = runs(mask, y0, y1, x0, x1=x1)
-            if count and len(spans) < count:
-                spans = split_widest(im, y0, y1, spans, count)
+            x1 = rest[1] if len(rest) > 1 else im.shape[1]
+            thr = tune.get('thr', 24)
+            if tune.get('blobs'):
+                cuts = blobs(im, y0, y1, x0, x1, thr)
+            else:
+                spans = runs((im[..., 3] > thr).astype(np.uint8) if thr != 24 else mask, y0, y1, x0, x1=x1)
+                if count and len(spans) < count:
+                    spans = split_widest(im, y0, y1, spans, count)
+                cuts = [im[y0:y1, s:e] for s, e in spans]
             if count:
-                assert len(spans) == count, (src, group, len(spans), count)
-            widest = max(e - s for s, e in spans)
+                assert len(cuts) == count, (src, group, len(cuts), count)
+            widest = max(c.shape[1] for c in cuts)
             k = (CELL - 6) / max(y1 - y0, widest)
-            for i, (s, e) in enumerate(spans):
+            for i, crop in enumerate(cuts):
                 name = names[i] if isinstance(names, list) else None
                 if isinstance(names, list) and name is None:
                     continue
-                crop = im[y0:y1, s:e]
                 kk = k
                 if group == 'icon':
                     # an icon fills its own square: trim it and fit it alone

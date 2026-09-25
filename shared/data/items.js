@@ -577,7 +577,7 @@ export const MATERIALS = {
   soft_shell: M({ id: 'soft_shell', name: 'Soft Insect Shell', nameTh: 'เปลือกแมลงอ่อน', value: 16, weight: 1,
     rarity: 'common', art: DROP('shell_1'), loot: 'shell',
     desc: 'เปลือกนิ่ม ๆ ที่หนอนลอกทิ้ง เบาแต่เหนียว ใช้ทำเกราะเบา' }),
-  // the bee's; pictures from the panel under its sheet until its drop sheet comes
+  // the bee's; cut from its drop sheet
   honey: M({ id: 'honey', name: 'Honey', nameTh: 'น้ำผึ้ง', value: 14, weight: 1, rarity: 'common',
     art: DROP('honey_1'), loot: 'honey',
     desc: 'น้ำผึ้งสีทองจากรังผึ้งป่า หวานหอม หมอยาและพ่อครัวต้องการ' }),
@@ -586,7 +586,7 @@ export const MATERIALS = {
     desc: 'เหล็กในแหลมคมของผึ้งป่า ใช้ทำหัวลูกศรและกับดัก' }),
   wind_crystal_s: M({ id: 'wind_crystal_s', name: 'Small Wind Crystal', nameTh: 'ผลึกลม (เล็ก)', value: 30, weight: 1,
     rarity: 'uncommon', art: DROP('wcrystal_1'), loot: 'wcrystal',
-    desc: 'ผลึกสีทองที่มีลมหมุนอยู่ข้างใน เบาจนเกือบลอยได้' }),
+    desc: 'ผลึกสีเขียวมรกตที่มีลมหมุนอยู่ข้างใน เบาจนเกือบลอยได้' }),
 };
 Object.assign(ITEMS, MATERIALS);
 
