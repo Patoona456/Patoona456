@@ -3,18 +3,17 @@
 
     python3 tools/slice-water.py
 
-From assets/fx/source/water-sheet.png (1536x1024, transparent ground):
-  assets/fx/water_curtain.webp  falling streaks from the widest curtain, cut
-                                so the bottom runs on into the top: scrolled
-                                down over a painted fall, the water moves
-  assets/fx/water_splash.webp   the seven splashes where a fall lands, a strip
-  assets/fx/water_bubbles.webp  the seven bubble puffs, a strip
-  assets/fx/water_sparkle.webp  from water-sparkle-sheet.png: four rows of eight
-                                twinkles (stars, a caustic net, long glints,
-                                another net), light only, to add on the water
-  assets/fx/water_caustic.webp  the light on the water, from the nine surface
-                                patches, stamped round a torus so it repeats
-                                without a seam in either direction
+All in one atlas, assets/fx/water.webp (the layout is ATLAS in
+client/js/water.js), from assets/fx/source/water-sheet.png (1536x1024,
+transparent ground) and water-sparkle-sheet.png:
+  caustic   256x256 at (0, 0): the light on the water, from the nine surface
+            patches, stamped round a torus so it repeats without a seam
+  curtain   at (256, 0): falling streaks from the widest curtain, cut so the
+            bottom runs on into the top - scrolled down over a painted fall
+  splash    a strip at (0, 256): the seven splashes where a fall lands
+  bubbles   a strip under it: the seven bubble puffs
+  sparkle   under that: four rows of eight twinkles (stars, a net of light,
+            long glints, another net), light only, lifted off the sheet's blue
 And for each map listed in MAPS, the map's water as a mask:
   assets/maps/<id>/water.webp   quarter size, white where the painting is water
 """
@@ -139,14 +138,19 @@ def main():
     sheet = Image.open(os.path.join(ROOT, SHEET)).convert('RGBA')
     save = lambda im, name: im.save(os.path.join(ROOT, OUT, name), 'WEBP', quality=90, method=6)
     c = curtain(sheet)
-    save(c, 'water_curtain.webp')
     s, sw = strip(sheet, SPLASH, *SPLASH_Y)
-    save(s, 'water_splash.webp')
     b, bw = strip(sheet, BUBBLES, *BUBBLES_Y)
-    save(b, 'water_bubbles.webp')
-    save(caustic(sheet), 'water_caustic.webp')
-    save(sparkle(), 'water_sparkle.webp')
-    print('curtain', c.size, 'splash cell', sw, 'x', s.size[1], 'bubbles cell', bw, 'x', b.size[1])
+    k, sp = caustic(sheet), sparkle()
+    # one atlas, one file: the demo counts its files. ATLAS in client/js/water.js must match.
+    atlas = Image.new('RGBA', (max(sp.size[0], s.size[0]), 256 + s.size[1] + b.size[1] + sp.size[1]))
+    atlas.alpha_composite(k, (0, 0))
+    atlas.alpha_composite(c, (256, 0))
+    atlas.alpha_composite(s, (0, 256))
+    atlas.alpha_composite(b, (0, 256 + s.size[1]))
+    atlas.alpha_composite(sp, (0, 256 + s.size[1] + b.size[1]))
+    save(atlas, 'water.webp')
+    print('atlas', atlas.size, 'curtain', c.size, 'splash', s.size, 'cell', sw, 'bubbles', b.size, 'cell', bw,
+          'sparkle', sp.size, 'at y', 256 + s.size[1] + b.size[1])
     for key, src in MAPS.items():
         m = water_mask(os.path.join(ROOT, src))
         os.makedirs(os.path.join(ROOT, 'assets/maps', key), exist_ok=True)

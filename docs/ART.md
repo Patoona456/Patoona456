@@ -245,7 +245,7 @@ sprite: { kind: 'blob', shape: 'spiky', color: '#8a6a4a' }   // วาดด้�
 แมพที่เป็นภาพวาดทั้งแผ่น (เช่น Greenmire) น้ำในภาพจะนิ่ง ความเคลื่อนไหวถูกวาดทับตอนเล่นโดย `client/js/water.js`
 
 * ชีตต้นฉบับ: `assets/fx/source/water-sheet.png` (ม่านน้ำตก, ฟองกระเซ็น, ฟองอากาศ, ผิวน้ำ) และ `water-sparkle-sheet.png` (ระยิบระยับ 4 แถว x 8 เฟรม บนพื้นสีฟ้า)
-* ตัดด้วย `python3 tools/slice-water.py` ได้ `assets/fx/water_curtain|splash|bubbles|caustic|sparkle.webp` และหน้ากากน้ำของแต่ละแมพ `assets/maps/<id>/water.webp` (สีขาว = น้ำ, ย่อ 1/4)
+* ตัดด้วย `python3 tools/slice-water.py` ได้ `assets/fx/water.webp` (แผ่นเดียวรวมทุกชิ้น) และหน้ากากน้ำของแต่ละแมพ `assets/maps/<id>/water.webp` (สีขาว = น้ำ, ย่อ 1/4)
 * ตั้งค่าในแมพ: `waterFx: { mask, falls: [{ x, y, w, h, bubbles? }] }` หน่วยเป็นช่อง (tile) กรอบน้ำตกต้องครอบม่านน้ำที่วาดไว้ตั้งแต่ขอบบนถึงฟองด้านล่าง ใส่ `bubbles: false` ถ้ามีสะพานอยู่ใต้น้ำตกพอดี
 * สิ่งที่วาดทับ: แสงบนผิวน้ำสองชั้นเลื่อนสวนกัน (ตัดตามหน้ากาก), ระยิบระยับที่ผุดขึ้นสุ่มบนน้ำ, ม่านน้ำตกไหลลง, ฟองกระเซ็นกับฟองอากาศที่ตีนน้ำตก
 * โหมดประหยัด (`quality: 'saver'`) ข้ามชั้นแสงบนผิวน้ำ แต่ยังมีน้ำตกกับระยิบระยับ

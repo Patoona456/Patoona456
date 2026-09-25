@@ -6,7 +6,14 @@
 // map's `waterFx.falls`, in tiles.
 import { TILE } from '../../shared/constants.js';
 
-const FX = 'assets/fx/';
+// Where each piece sits in assets/fx/water.webp (tools/slice-water.py packs it)
+const ATLAS = {
+  caustic: [0, 0, 256, 256],
+  curtain: [256, 0, 186, 76],
+  splash: [0, 256],
+  bubbles: [0, 370],
+  sparkle: [0, 484],
+};
 const SPLASH_CELL = [145, 114], SPLASH_FRAMES = 7;
 const BUBBLE_CELL = [55, 114], BUBBLE_FRAMES = 7;
 const SPARKLE_CELL = [184, 150], SPARKLE_FRAMES = 8, SPARKLE_ROWS = 4;
@@ -29,11 +36,7 @@ export class WaterFx {
     this.cfg = cfg;
     this.worldW = worldW;
     this.mask = img(cfg.mask);
-    this.caustic = img(FX + 'water_caustic.webp');
-    this.sparkle = img(FX + 'water_sparkle.webp');
-    this.curtain = img(FX + 'water_curtain.webp');
-    this.splash = img(FX + 'water_splash.webp');
-    this.bubbles = img(FX + 'water_bubbles.webp');
+    this.atlas = img('assets/fx/water.webp');
     this.twinkles = [];
     this.layer = document.createElement('canvas');
     this.fallCanvas = document.createElement('canvas');
@@ -72,7 +75,7 @@ export class WaterFx {
 
   /** Two sheets of light sliding across each other, only where there is water. */
   drawLight(ctx, x0, y0, x1, y1, now) {
-    if (!ready(this.caustic) || !ready(this.mask)) return;
+    if (!ready(this.atlas) || !ready(this.mask)) return;
     const w = x1 - x0, h = y1 - y0;
     const W = Math.ceil(w * CAUSTIC_RES), H = Math.ceil(h * CAUSTIC_RES);
     const c = this.layer;
@@ -83,7 +86,14 @@ export class WaterFx {
     o.globalAlpha = 1;
     o.clearRect(0, 0, W, H);
     o.setTransform(CAUSTIC_RES, 0, 0, CAUSTIC_RES, -x0 * CAUSTIC_RES, -y0 * CAUSTIC_RES);
-    this.pattern ??= o.createPattern(this.caustic, 'repeat');
+    if (!this.pattern) {
+      // a pattern repeats a whole image: the light gets a canvas of its own
+      const [sx, sy, sw, sh] = ATLAS.caustic;
+      const tile = document.createElement('canvas');
+      tile.width = sw; tile.height = sh;
+      tile.getContext('2d').drawImage(this.atlas, sx, sy, sw, sh, 0, 0, sw, sh);
+      this.pattern = o.createPattern(tile, 'repeat');
+    }
     const p = this.pattern;
     const t = now / 1000;
     if (p.setTransform) p.setTransform(new DOMMatrix().translate(t * 14, t * 6).scale(0.9));
@@ -109,7 +119,7 @@ export class WaterFx {
 
   /** Twinkles come up here and there on the water, play once, and go. */
   drawTwinkles(ctx, x0, y0, x1, y1, now) {
-    if (!ready(this.sparkle)) return;
+    if (!ready(this.atlas)) return;
     const life = SPARKLE_FRAMES * SPARKLE_MS;
     this.twinkles = this.twinkles.filter((s) => now - s.start < s.life && s.x > x0 - 64 && s.x < x1 + 64 && s.y > y0 - 64 && s.y < y1 + 64);
     // a few tries a frame to find water in view: the count follows how much of it there is
@@ -141,7 +151,7 @@ export class WaterFx {
       ctx.translate(s.x, s.y);
       if (s.flip) ctx.scale(-1, 1);
       ctx.globalAlpha = 0.9;
-      ctx.drawImage(this.sparkle, f * cw, s.row * ch, cw, ch, -w / 2, -h / 2, w, h);
+      ctx.drawImage(this.atlas, ATLAS.sparkle[0] + f * cw, ATLAS.sparkle[1] + s.row * ch, cw, ch, -w / 2, -h / 2, w, h);
       ctx.restore();
     }
     ctx.restore();
@@ -149,7 +159,8 @@ export class WaterFx {
 
   /** The curtain pours down over the painted fall, fading in under its lip and out into the foam; a splash plays where it lands. */
   drawFall(ctx, fx, fy, fw, fh, now, f) {
-    if (ready(this.curtain)) {
+    if (!ready(this.atlas)) return;
+    {
       const c = this.fallCanvas;
       const W = Math.ceil(fw), H = Math.ceil(fh);
       if (c.width < W || c.height < H) { c.width = Math.max(c.width, W); c.height = Math.max(c.height, H); }
@@ -157,10 +168,10 @@ export class WaterFx {
       o.setTransform(1, 0, 0, 1, 0, 0);
       o.globalCompositeOperation = 'source-over';
       o.clearRect(0, 0, c.width, c.height);
-      const k = W / this.curtain.naturalWidth;
-      const th = this.curtain.naturalHeight * k;
+      const [cx, cy, cw, ch] = ATLAS.curtain;
+      const th = ch * W / cw;
       const off = (now * CURTAIN_SPEED * (f.speed ?? 1)) % th;
-      for (let y = off - th; y < H; y += th) o.drawImage(this.curtain, 0, Math.floor(y), W, Math.ceil(th) + 1);
+      for (let y = off - th; y < H; y += th) o.drawImage(this.atlas, cx, cy, cw, ch, 0, Math.floor(y), W, Math.ceil(th) + 1);
       // soft at the edges: under the lip, into the foam, and down both sides
       o.globalCompositeOperation = 'destination-in';
       const gv = o.createLinearGradient(0, 0, 0, H);
@@ -186,7 +197,7 @@ export class WaterFx {
     const baseX = fx + fw / 2, baseY = fy + fh;
     ctx.save();
     ctx.imageSmoothingEnabled = true;
-    if (ready(this.splash)) {
+    {
       const [cw, ch] = SPLASH_CELL;
       const w = fw * 1.15, h = w * ch / cw;
       for (const [phase, flip, a] of [[0, 1, 0.7], [0.5, -1, 0.45]]) {
@@ -196,17 +207,18 @@ export class WaterFx {
         ctx.translate(baseX, baseY + h * 0.08);
         ctx.scale(flip, 1);
         ctx.globalAlpha = a;
-        ctx.drawImage(this.splash, fr * cw, 0, cw, ch, -w / 2, -h, w, h);
+        ctx.drawImage(this.atlas, ATLAS.splash[0] + fr * cw, ATLAS.splash[1], cw, ch, -w / 2, -h, w, h);
         ctx.restore();
       }
     }
-    if (ready(this.bubbles) && f.bubbles !== false) {      // not where a bridge crosses the foot
+    if (f.bubbles !== false) {      // not where a bridge crosses the foot
       const [cw, ch] = BUBBLE_CELL;
       const w = fw * 0.5, h = w * ch / cw;
       const fr = Math.floor(now / 140) % BUBBLE_FRAMES;
       ctx.globalAlpha = 0.7;
-      ctx.drawImage(this.bubbles, fr * cw, 0, cw, ch, baseX - fw * 0.55, baseY + h * 0.1, w, h);
-      ctx.drawImage(this.bubbles, ((fr + 3) % BUBBLE_FRAMES) * cw, 0, cw, ch, baseX + fw * 0.1, baseY + h * 0.25, w, h);
+      const [bx, by] = ATLAS.bubbles;
+      ctx.drawImage(this.atlas, bx + fr * cw, by, cw, ch, baseX - fw * 0.55, baseY + h * 0.1, w, h);
+      ctx.drawImage(this.atlas, bx + ((fr + 3) % BUBBLE_FRAMES) * cw, by, cw, ch, baseX + fw * 0.1, baseY + h * 0.25, w, h);
     }
     ctx.restore();
   }
