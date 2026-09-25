@@ -220,6 +220,7 @@ export class Player {
     gear.agi += bm.agiFlat; gear.vit += bm.vitFlat; gear.luk += bm.lukFlat;
 
     const d = deriveStats(this.record, job, gear);
+    this.statBonus = { str: gear.str, agi: gear.agi, vit: gear.vit, int: gear.int, dex: gear.dex, luk: gear.luk };
     if (gear.hpPct || bm.maxHpPct) d.maxHp = Math.floor(d.maxHp * (1 + ((gear.hpPct ?? 0) + bm.maxHpPct) / 100));
     if (bm.maxSpPct) d.maxSp = Math.floor(d.maxSp * (1 + bm.maxSpPct / 100));
     // an elemental tome sets the weapon's element while it lasts
@@ -523,6 +524,7 @@ export class Player {
       expNext: baseExpToNext(r.level), jobExpNext: jobExpToNext(r.jobLevel),
       statPoints: r.statPoints, skillPoints: r.skillPoints,
       base: { str: r.str, agi: r.agi, vit: r.vit, int: r.int, dex: r.dex, luk: r.luk },
+      bonus: this.statBonus ?? {},             // what gear and buffs add on top of base
       statCosts: Object.fromEntries(['str', 'agi', 'vit', 'int', 'dex', 'luk'].map((k) => [k, statCost(r[k])])),
       derived: this.derived, hp: this.hp, sp: this.sp, maxHp: this.maxHp, maxSp: this.maxSp,
       aurum: r.aurum, weight: this.weight(), weightCap: this.weightCap,

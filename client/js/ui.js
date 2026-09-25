@@ -691,10 +691,33 @@ export class UI {
 
   /* ---------------- character ---------------- */
   openCharacter(self) {
-    const wrap = el('div');
     const d = self.derived;
+    const ca = (name, scale, tag = 'div', cls = '') => {
+      const n = el(tag, `ca ca-${name}${cls ? ' ' + cls : ''}`);
+      if (scale != null) n.style.setProperty('--s', scale);
+      return n;
+    };
+    const wrap = el('div', 'cx');
+    const tab = this.charTab ?? 'info';
 
-    /* --- equipment doll: the character between two columns of slots --- */
+    /* tabs: info and equipment are this window; skills opens its own; the rest wait */
+    const tabs = el('div', 'cx-tabs');
+    for (const [key, label] of [['info', 'ข้อมูล'], ['equip', 'อุปกรณ์'], ['costume', 'คอสตูม'], ['skills', 'สกิล'], ['title', 'ฉายา']]) {
+      const soon = key === 'costume' || key === 'title';
+      const b = ca(key === tab ? 'tab_on' : 'tab_off', .75, 'button', soon ? 'soon' : '');
+      b.append(el('span', '', label));
+      if (soon) b.title = 'เร็วๆ นี้';
+      b.addEventListener('click', () => {
+        if (soon) return;
+        if (key === 'skills') { this.close('character'); return this.open('skills'); }
+        this.charTab = key;
+        this.openCharacter(this.game.self);
+      });
+      tabs.append(b);
+    }
+    wrap.append(tabs);
+
+    /* --- equipment doll: the character on the sheet's platform, slots around it --- */
     const gear = el('div', 'doll');
     const left = el('div', 'doll-col');
     const right = el('div', 'doll-col');
@@ -703,33 +726,26 @@ export class UI {
     const preview = document.createElement('canvas');
     preview.width = 96; preview.height = 116;
     preview.className = 'doll-view';
-    mid.append(preview);
-    const cp = el('div', 'doll-cp');
-    cp.innerHTML = `<span class="label">CP</span> <b class="num">${fmt(Math.round(
-      (d.atk ?? 0) + (d.matk ?? 0) * 0.8 + (d.def ?? 0) * 2.2 + (d.mdef ?? 0) * 1.6
-      + (d.maxHp ?? 0) / 12 + (d.hit ?? 0) * 0.4 + (d.flee ?? 0) * 0.4))}</b>`;
-    mid.append(cp);
+    const stand = el('div', 'cx-stand');
+    stand.append(ca('plat', .62, 'div', 'cx-plat'), preview);
+    mid.append(stand);
 
     const worn = Object.fromEntries(Object.entries(self.equipment ?? {})
       .map(([slot, idx]) => [slot, this.game.inventory?.items?.find((x) => x.i === idx)])
       .filter(([, it]) => it));
 
     const LABELS = Object.fromEntries(SLOTS.map((s) => [s, slotName(s)]));
+    const PAINTED = new Set(['weapon', 'head', 'glasses', 'cloak', 'offhand', 'mask', 'accessory', 'hands', 'legs', 'scarf', 'wings']);
     const slotNode = (slot) => {
       const it = worn[slot];
-      const node = el('div', 'slot doll-slot' + (it ? ` rarity-${it.rarity ?? 'common'}` : ' empty'));
+      const node = ca(it || !PAINTED.has(slot) ? 's_blank' : `s_${slot}`, .6, 'div',
+        'doll-slot' + (it ? ` worn r-${it.rarity ?? 'common'}` : ' empty'));
       node.title = it ? `${it.name}${it.refine ? ` +${it.refine}` : ''} — คลิกเพื่อถอด` : LABELS[slot];
       if (it) {
         node.append(itemIcon(it.id, { size: 30 }));
-        if (it.refine) { node.append(el('span', 'plus', '+' + it.refine)); markRefine(node, it.refine); }
+        if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
         node.addEventListener('click', () => this.game.net.send({ t: 'unequip', slot }));
-      } else if (GHOSTS.has(slot)) {
-        // the sheet's grey outline of what goes here, the name on hover
-        const img = el('img', 'ghost');
-        img.src = `${UI_BASE}/ghost_${slot}.webp`;
-        img.alt = LABELS[slot];
-        node.append(img);
-      } else {
+      } else if (!PAINTED.has(slot)) {
         node.append(el('span', 'doll-label', LABELS[slot]));
       }
       return node;
@@ -738,8 +754,9 @@ export class UI {
     // read head to foot so the doll matches where things are worn.
     for (const slot of ['head', 'glasses', 'mask', 'scarf', 'torso', 'armor', 'hands']) left.append(slotNode(slot));
     for (const slot of ['weapon', 'offhand', 'belt', 'legs', 'feet', 'cloak']) right.append(slotNode(slot));
-    mid.append(slotNode('accessory'));
-    mid.append(slotNode('wings'));
+    const under = el('div', 'cx-under');
+    under.append(slotNode('accessory'), slotNode('wings'));
+    mid.append(under);
     gear.append(left, mid, right);
 
     const ctx = preview.getContext('2d');
@@ -782,42 +799,150 @@ export class UI {
     };
     paint();
 
-    /* --- stats --- */
-    const stats = el('div', 'grid cols-2');
-    const statsLeft = el('div');
-    statsLeft.innerHTML = `<h3 style="margin:0 0 6px">สเตตัสหลัก <small class="muted">แต้มเหลือ ${self.statPoints}</small></h3>`;
-    for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) {
-      const row = el('div', 'row');
-      row.innerHTML = `<span><b>${k.toUpperCase()}</b> <span class="num">${self.base[k]}</span></span>`;
-      const b = el('button', 'btn', `+ (${self.statCosts[k]})`);
-      b.disabled = self.statPoints < self.statCosts[k];
-      b.addEventListener('click', () => this.game.net.send({ t: 'allocStat', stat: k }));
-      row.append(b);
-      statsLeft.append(row);
-    }
-    const statsRight = el('div');
-    statsRight.innerHTML = `
-      <h3 style="margin:0 0 6px">ค่าที่ได้จริง</h3>
-      ${statRow('ATK', d.atk)}${statRow('MATK', d.matk)}
-      ${statRow('DEF', `${d.def} (+${d.softDef})`)}${statRow('MDEF', `${d.mdef} (+${d.softMdef})`)}
-      ${statRow('HIT', d.hit)}${statRow('FLEE', d.flee)}
-      ${statRow('CRIT', d.crit + '%')}${statRow('ความเร็วโจมตี', (1 / d.aspdFactor).toFixed(2) + 'x')}
-      ${statRow('ความเร็วเดิน', Math.round(d.moveSpeed))}
-      ${statRow('ลดเวลาร่าย', Math.round((1 - d.castFactor) * 100) + '%')}
-      ${statRow('น้ำหนักสูงสุด', fmt(self.weightCap ?? d.weight))}`;
-    stats.append(statsLeft, statsRight);
-
+    /* --- the right-hand side: who, how strong, and either the numbers or the gear --- */
+    const side = el('div', 'cx-side');
+    const head = el('div', 'cx-head');
+    const ring = ca('ring', .42, 'div', 'cx-ring');
+    const face = document.createElement('canvas');
+    face.width = face.height = 52;
+    const hud = $('#portrait canvas');
+    if (hud) face.getContext('2d').drawImage(hud, 0, 0);
+    ring.append(face, el('b', 'num cx-lv', `Lv. ${self.level}`));
+    const who = el('div', 'cx-who');
     const job = JOBS[self.job];
-    const info = el('div');
-    info.innerHTML = `<div class="row"><span>อาชีพ</span><b>${job?.nameTh} (${job?.name})</b></div>
-      <div class="muted" style="padding:4px 0">${job?.desc ?? ''}</div>
-      <div class="row"><span>อาวุธที่ใช้ได้</span><b>${(job?.weapons ?? []).map((w) => WEAPON_CLASSES[w]?.nameTh ?? w).join(', ')}</b></div>`;
-    if (job?.next?.length) {
-      info.append(el('div', 'muted', `สายต่อไป: ${job.next.map((j) => JOBS[j].nameTh).join(' / ')} (คุยกับครูฝึกเมื่อ Job Lv. ${job.advance?.jobLevel ?? job.jobLevelToAdvance ?? 10})`));
+    who.append(el('b', '', esc(self.name)), el('span', 'muted', `${job?.nameTh ?? ''} · Job Lv. ${self.jobLevel}`));
+    const cpPlate = ca('cp', .72, 'div', 'cx-cp');
+    const power = Math.round((d.atk ?? 0) + (d.matk ?? 0) * 0.8 + (d.def ?? 0) * 2.2 + (d.mdef ?? 0) * 1.6
+      + (d.maxHp ?? 0) / 12 + (d.hit ?? 0) * 0.4 + (d.flee ?? 0) * 0.4);
+    cpPlate.append(el('b', 'num', fmt(power)));
+    head.append(ring, who, cpPlate);
+    side.append(head);
+
+    if (tab === 'equip') side.append(this.charGear(self, worn, ca));
+    else {
+      const panels = el('div', 'cx-panels');
+      const base = ca('base', .75, 'div', 'cx-base');
+      const rows = el('div', 'cx-rows');
+      for (const v of [fmt(self.maxHp ?? d.maxHp), fmt(self.maxSp ?? d.maxSp), fmt(d.atk), fmt(d.def) + ` <em>+${fmt(d.softDef ?? 0)}</em>`,
+        fmt(d.matk), fmt(d.mdef) + ` <em>+${fmt(d.softMdef ?? 0)}</em>`, fmt(d.hit), fmt(d.flee), `${d.crit}%`,
+        `${(1 / d.aspdFactor).toFixed(2)}x`]) rows.append(el('div', 'num', v));
+      base.append(rows);
+      const detail = ca('detail', .8, 'div', 'cx-detail');
+      const drows = el('div', 'cx-rows');
+      const adding = !!this.statAdding && self.statPoints > 0;
+      for (const k of ['str', 'agi', 'vit', 'int', 'dex', 'luk']) {
+        const r = el('div', 'num');
+        const bonus = self.bonus?.[k] ?? 0;
+        r.innerHTML = `<span>${self.base[k]}</span><em>${bonus ? `+${bonus}` : ''}</em>`;
+        if (adding) {
+          const plus = ca('b_plus', .5, 'button', 'cx-plus');
+          plus.title = `+1 ${k.toUpperCase()} (ใช้ ${self.statCosts[k]} แต้ม)`;
+          plus.disabled = self.statPoints < self.statCosts[k];
+          plus.addEventListener('click', () => this.game.net.send({ t: 'allocStat', stat: k }));
+          r.append(plus);
+        }
+        drows.append(r);
+      }
+      detail.append(drows);
+      const right2 = el('div', 'cx-col2');
+      right2.append(detail);
+      const add = ca('b_addstat', .75, 'button', 'cx-add' + (adding ? ' on' : ''));
+      add.setAttribute('aria-label', 'เพิ่มค่าสถานะ');
+      add.title = self.statPoints > 0 ? `แต้มเหลือ ${self.statPoints}` : 'ไม่มีแต้มสถานะเหลือ';
+      add.disabled = !(self.statPoints > 0);
+      add.addEventListener('click', () => { this.statAdding = !this.statAdding; this.openCharacter(this.game.self); });
+      right2.append(el('div', 'cx-points', `แต้มสถานะ <b class="num">${self.statPoints}</b>`), add);
+      panels.append(base, right2);
+      side.append(panels);
+      const info = el('div', 'cx-job');
+      info.innerHTML = `<div class="muted">${job?.desc ?? ''}</div>
+        <div>อาวุธที่ใช้ได้: <b>${(job?.weapons ?? []).map((w) => WEAPON_CLASSES[w]?.nameTh ?? w).join(', ')}</b></div>
+        <div class="muted">ความเร็วเดิน ${Math.round(d.moveSpeed)} · ลดเวลาร่าย ${Math.round((1 - d.castFactor) * 100)}% · น้ำหนัก ${fmt(self.weightCap ?? d.weight)}</div>`;
+      if (job?.next?.length) {
+        info.append(el('div', 'muted', `สายต่อไป: ${job.next.map((j) => JOBS[j].nameTh).join(' / ')} (คุยกับครูฝึกเมื่อ Job Lv. ${job.advance?.jobLevel ?? job.jobLevelToAdvance ?? 10})`));
+      }
+      side.append(info);
     }
 
-    wrap.append(gear, info, stats);
+    const body = el('div', 'cx-body');
+    body.append(gear, side);
+    wrap.append(body);
     return this.panel('character', 'ตัวละคร', wrap);
+  }
+
+  /**
+   * The equipment tab: what in the bag you could wear, and for the one you
+   * pick, how it compares with what that slot holds now.
+   */
+  charGear(self, worn, ca) {
+    const box = el('div', 'cx-gear');
+    const job = JOBS[self.job];
+    const items = (this.game.inventory?.items ?? []).filter((it) => (it.type === 'weapon' || it.type === 'armor') && !it.equipped);
+    const grid = el('div', 'bag-grid cx-gear-grid');
+    if (!items.length) box.append(el('div', 'muted', 'ไม่มีอุปกรณ์ในกระเป๋า'));
+    let pick = items.find((x) => x.i === this.charPick) ?? items[0];
+    for (const it of items) {
+      const ok = (it.level ?? 0) <= self.level && (it.type !== 'weapon' || jobCanHold(job, it.wclass));
+      const n = el('div', `bag-slot r-${it.rarity ?? 'common'}${ok ? ' can' : ''}${pick === it ? ' sel' : ''}`);
+      n.append(itemIcon(it.id, { size: 30 }));
+      if (it.refine) n.append(el('span', 'plus', '+' + it.refine));
+      n.title = it.name + (ok ? '' : ' (ใส่ไม่ได้ตอนนี้)');
+      n.addEventListener('click', () => { this.charPick = it.i; this.openCharacter(this.game.self); });
+      grid.append(n);
+    }
+    box.append(grid);
+    if (!pick) return box;
+
+    const now = worn[pick.slot];
+    const cmp = el('div', 'cx-cmp');
+    const side = (it, label) => {
+      const c = el('div', 'cx-cmp-side');
+      c.append(el('div', 'g-sub', label));
+      if (!it) { c.append(el('div', 'muted', 'ว่าง')); return c; }
+      const t = el('div', 'cx-cmp-name');
+      const ic = el('div', `bag-slot r-${it.rarity ?? 'common'}`);
+      ic.append(itemIcon(it.id, { size: 26 }));
+      t.append(ic, el('b', `rarity-${it.rarity ?? 'common'}`, esc(it.name) + (it.refine ? ` +${it.refine}` : '')));
+      c.append(t);
+      return c;
+    };
+    cmp.append(side(now, `สวมอยู่ (${slotName(pick.slot)})`), side(pick, 'ชิ้นที่เลือก'));
+    const val = (it, k) => {
+      if (!it) return 0;
+      if (k === 'atk') return (it.atk ?? 0) + (it.refine ?? 0) * 2;
+      if (k === 'def') return (it.def ?? 0) + (it.refine ?? 0);
+      if (k === 'matk' || k === 'mdef') return it[k] ?? 0;
+      return it.stats?.[k] ?? 0;
+    };
+    const diff = el('div', 'cx-diff');
+    for (const [k, label] of [['atk', 'ATK'], ['matk', 'MATK'], ['def', 'DEF'], ['mdef', 'MDEF'],
+      ['str', 'STR'], ['agi', 'AGI'], ['vit', 'VIT'], ['int', 'INT'], ['dex', 'DEX'], ['luk', 'LUK']]) {
+      const a = val(now, k), b = val(pick, k);
+      if (!a && !b) continue;
+      const dlt = b - a;
+      diff.append(el('div', 'cx-drow', `<span>${label}</span><span class="num">${a}</span><span class="num">→ ${b}</span>`
+        + `<b class="num ${dlt > 0 ? 'up' : dlt < 0 ? 'down' : ''}">${dlt > 0 ? '▲ +' + dlt : dlt < 0 ? '▼ ' + dlt : '–'}</b>`));
+    }
+    if (!diff.children.length) diff.append(el('div', 'muted', 'ไม่มีค่าพลังให้เทียบ'));
+    cmp.append(diff);
+    box.append(cmp);
+
+    const acts = el('div', 'cx-acts');
+    const ok = (pick.level ?? 0) <= self.level && (pick.type !== 'weapon' || jobCanHold(job, pick.wclass));
+    const eq = ca('b_equip', .7, 'button');
+    eq.setAttribute('aria-label', 'สวมใส่');
+    eq.disabled = !ok;
+    eq.title = ok ? 'สวมใส่' : (pick.level ?? 0) > self.level ? `ต้องเลเวล ${pick.level}` : 'อาชีพนี้ใช้ไม่ได้';
+    eq.addEventListener('click', () => this.game.net.send({ t: 'equip', index: pick.i }));
+    acts.append(eq);
+    if (now) {
+      const off = ca('b_unequip', .7, 'button');
+      off.setAttribute('aria-label', 'ถอด');
+      off.addEventListener('click', () => this.game.net.send({ t: 'unequip', slot: pick.slot }));
+      acts.append(off);
+    }
+    box.append(acts);
+    return box;
   }
 
   /* ---------------- inventory ---------------- */

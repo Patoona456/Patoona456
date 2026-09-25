@@ -2442,3 +2442,137 @@ body.landscape-ui .gx-draws .ga, body.landscape-ui .gx-gauges .ga { --s: .5 !imp
 .ga-ticket { --x: 310; --y: 1177; --w: 50; --h: 44; }
 .ga-title { --x: 620; --y: 274; --w: 407; --h: 128; }
 /* end gacha atlas */
+
+/* ============ character window (character / equipment sheet; pieces from the char atlas) ============ */
+.win.window:has(.cx) { width: min(980px, 96vw); }
+.cx { display: grid; gap: 10px; }
+.cx-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.cx-tabs .ca { position: relative; border: none; padding: 0; cursor: pointer; display: grid; place-items: center; }
+.cx-tabs .ca span { font-size: 13px; font-weight: 700; color: #eef2f8; text-shadow: 0 1px 2px #000; }
+.cx-tabs .ca.soon { filter: grayscale(.8) brightness(.6); cursor: default; }
+.cx-body { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+.cx .doll { gap: 8px; }
+.cx .doll-col { gap: 5px; }
+.cx .doll-slot { position: relative; display: grid; place-items: center; cursor: default; }
+.cx .doll-slot.worn { cursor: pointer; }
+.cx .doll-slot.worn::before { content: ""; position: absolute; inset: -1px; background: center / 100% 100% no-repeat; pointer-events: none; }
+.cx .doll-slot.r-common::before { background-image: url(../../assets/ui/bag_r_common.webp); }
+.cx .doll-slot.r-uncommon::before { background-image: url(../../assets/ui/bag_r_uncommon.webp); }
+.cx .doll-slot.r-rare::before { background-image: url(../../assets/ui/bag_r_rare.webp); }
+.cx .doll-slot.r-epic::before { background-image: url(../../assets/ui/bag_r_epic.webp); }
+.cx .doll-slot.r-legendary::before { background-image: url(../../assets/ui/bag_r_legendary.webp); inset: -3px; }
+.cx .doll-slot.r-mythic::before { background-image: url(../../assets/ui/bag_r_mythic.webp); inset: -5px -6px; }
+.cx .doll-slot canvas { position: relative; z-index: 1; }
+.cx .doll-slot .plus { position: absolute; left: 6px; bottom: 4px; z-index: 2; font-size: 10px; font-weight: 800; }
+.cx .doll-label { font-size: 10px; color: #9aa6b8; text-align: center; }
+.cx .doll-mid { align-content: end; }
+.cx-stand { position: relative; width: 150px; height: 200px; display: grid; place-items: end center; }
+.cx-plat { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); }
+.cx-stand .doll-view { position: relative; z-index: 1; width: 120px; height: auto; margin-bottom: 12px; image-rendering: pixelated; }
+.cx-under { display: flex; gap: 8px; }
+.cx-side { display: grid; gap: 10px; min-width: 0; }
+.cx-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cx-ring { position: relative; }
+.cx-ring canvas { position: absolute; left: 22%; top: 20%; width: 56%; height: auto; border-radius: 50%; image-rendering: pixelated; z-index: -1;
+  background: radial-gradient(circle at 50% 38%, #4a5068, #161925 72%); }
+.cx-lv { position: absolute; left: 0; right: 0; bottom: 5%; text-align: center; font-size: 12px; color: #fff; text-shadow: 0 1px 2px #000; }
+.cx-who { display: grid; gap: 2px; flex: 1; min-width: 120px; }
+.cx-who b { font-size: 16px; }
+.cx-cp { position: relative; }
+.cx-cp b { position: absolute; left: 26%; right: 10%; top: 50%; bottom: 10%; display: grid; place-items: center;
+  font-size: 22px; font-weight: 900; color: #ffe07a; text-shadow: 0 2px 0 #6a1208, 0 0 6px rgba(0, 0, 0, .7); }
+.cx-panels { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+.cx-base, .cx-detail { position: relative; }
+.cx-rows { position: absolute; display: grid; font-size: 12px; color: #f2f5fa; text-shadow: 0 1px 1px #000; }
+.cx-base .cx-rows { left: 44%; right: 6%; top: calc(46px * var(--s)); grid-auto-rows: calc(30.1px * var(--s)); }
+.cx-detail .cx-rows { left: 42%; right: 6%; top: calc(44px * var(--s)); grid-auto-rows: calc(28.3px * var(--s)); }
+.cx-rows > div { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cx-rows em { font-style: normal; color: #7ee07a; font-size: 11px; }
+.cx-plus { border: none; padding: 0; cursor: pointer; }
+.cx-plus:disabled { filter: grayscale(1) brightness(.6); cursor: default; }
+.cx-col2 { display: grid; gap: 6px; justify-items: center; }
+.cx-points { font-size: 12px; }
+.cx-add { border: none; padding: 0; cursor: pointer; }
+.cx-add.on { filter: brightness(1.25) drop-shadow(0 0 5px rgba(255, 200, 90, .8)); }
+.cx-add:disabled { filter: grayscale(.8) brightness(.6); cursor: default; }
+.cx-job { display: grid; gap: 3px; font-size: 12px; }
+.cx-gear { display: grid; gap: 8px; }
+.cx-gear-grid { max-height: 170px; overflow-y: auto; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); }
+.cx-cmp { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; border-radius: 8px; background: rgba(0, 0, 0, .3); border: 1px solid rgba(181, 138, 60, .35); }
+.cx-cmp-side { display: grid; gap: 4px; }
+.cx-cmp-name { display: flex; align-items: center; gap: 6px; }
+.cx-cmp-name .bag-slot { width: 38px; }
+.cx-diff { grid-column: 1 / -1; display: grid; gap: 2px; }
+.cx-drow { display: grid; grid-template-columns: 60px 60px 70px 70px; gap: 6px; font-size: 12px; }
+.cx-drow .up { color: #7ee07a; } .cx-drow .down { color: #ff7a6a; }
+.cx-acts { display: flex; gap: 8px; }
+.cx-acts .ca { border: none; padding: 0; cursor: pointer; }
+.cx-acts .ca:disabled { filter: grayscale(.85) brightness(.55); cursor: not-allowed; }
+body.landscape-ui .cx .doll-slot { --s: .42 !important; }
+body.landscape-ui .cx .doll { gap: 4px; }
+body.landscape-ui .cx .doll-col { gap: 3px; }
+body.landscape-ui .cx-stand { width: 96px; height: 130px; }
+body.landscape-ui .cx-stand .doll-view { width: 76px; margin-bottom: 8px; }
+body.landscape-ui .cx-plat { --s: .42 !important; }
+body.landscape-ui .cx-ring { --s: .3 !important; }
+body.landscape-ui .cx-cp { --s: .5 !important; }
+body.landscape-ui .cx-cp b { font-size: 15px; }
+body.landscape-ui .cx-base { --s: .56 !important; }
+body.landscape-ui .cx-detail { --s: .6 !important; }
+body.landscape-ui .cx-rows { font-size: 10px; }
+body.landscape-ui .cx-rows em { font-size: 9px; }
+body.landscape-ui .cx-add { --s: .55 !important; }
+body.landscape-ui .cx-tabs .ca { --s: .55 !important; }
+body.landscape-ui .cx-tabs .ca span { font-size: 11px; }
+body.landscape-ui .cx-job { display: none; }
+
+/* char atlas: generated by tools/slice-char.py - do not edit by hand */
+.ca { display: block; flex: none; background: url(../../assets/ui/char_atlas.webp) no-repeat; width: calc(var(--w) * var(--s, .5) * 1px); height: calc(var(--h) * var(--s, .5) * 1px); background-size: calc(1024 * var(--s, .5) * 1px) calc(972 * var(--s, .5) * 1px); background-position: calc(var(--x) * var(--s, .5) * -1px) calc(var(--y) * var(--s, .5) * -1px); }
+.ca-b_addstat { --x: 403; --y: 921; --w: 127; --h: 46; }
+.ca-b_compare { --x: 146; --y: 921; --w: 149; --h: 49; }
+.ca-b_enhance { --x: 0; --y: 921; --w: 144; --h: 51; }
+.ca-b_equip { --x: 565; --y: 863; --w: 144; --h: 52; }
+.ca-b_load { --x: 102; --y: 863; --w: 101; --h: 56; }
+.ca-b_look { --x: 481; --y: 780; --w: 172; --h: 72; }
+.ca-b_plus { --x: 532; --y: 921; --w: 35; --h: 35; }
+.ca-b_reset { --x: 297; --y: 921; --w: 104; --h: 46; }
+.ca-b_save { --x: 0; --y: 863; --w: 100; --h: 56; }
+.ca-b_unequip { --x: 205; --y: 863; --w: 144; --h: 53; }
+.ca-b_upgrade { --x: 848; --y: 863; --w: 144; --h: 51; }
+.ca-base { --x: 0; --y: 0; --w: 254; --h: 359; }
+.ca-cp { --x: 420; --y: 557; --w: 252; --h: 106; }
+.ca-detail { --x: 466; --y: 0; --w: 240; --h: 218; }
+.ca-female { --x: 725; --y: 780; --w: 68; --h: 66; }
+.ca-holo { --x: 708; --y: 0; --w: 114; --h: 214; }
+.ca-male { --x: 655; --y: 780; --w: 68; --h: 66; }
+.ca-n_achieve { --x: 836; --y: 557; --w: 78; --h: 103; }
+.ca-n_emblem { --x: 916; --y: 557; --w: 80; --h: 103; }
+.ca-n_info { --x: 674; --y: 557; --w: 78; --h: 103; }
+.ca-n_mount { --x: 80; --y: 675; --w: 77; --h: 103; }
+.ca-n_pet { --x: 0; --y: 675; --w: 78; --h: 103; }
+.ca-n_skill { --x: 754; --y: 557; --w: 80; --h: 103; }
+.ca-plat { --x: 351; --y: 863; --w: 212; --h: 52; }
+.ca-preset { --x: 159; --y: 675; --w: 162; --h: 101; }
+.ca-ring { --x: 256; --y: 0; --w: 208; --h: 300; }
+.ca-s_accessory { --x: 752; --y: 675; --w: 79; --h: 84; }
+.ca-s_blank { --x: 665; --y: 675; --w: 85; --h: 85; }
+.ca-s_bow { --x: 0; --y: 780; --w: 78; --h: 81; }
+.ca-s_cloak { --x: 323; --y: 675; --w: 82; --h: 87; }
+.ca-s_glasses { --x: 407; --y: 675; --w: 85; --h: 86; }
+.ca-s_hair { --x: 578; --y: 675; --w: 85; --h: 85; }
+.ca-s_hands { --x: 164; --y: 780; --w: 77; --h: 79; }
+.ca-s_head { --x: 914; --y: 675; --w: 83; --h: 82; }
+.ca-s_legs { --x: 243; --y: 780; --w: 77; --h: 79; }
+.ca-s_mask { --x: 402; --y: 780; --w: 77; --h: 78; }
+.ca-s_offhand { --x: 322; --y: 780; --w: 78; --h: 78; }
+.ca-s_scarf { --x: 494; --y: 675; --w: 82; --h: 86; }
+.ca-s_weapon { --x: 833; --y: 675; --w: 79; --h: 83; }
+.ca-s_wings { --x: 80; --y: 780; --w: 82; --h: 81; }
+.ca-stab_off { --x: 780; --y: 863; --w: 66; --h: 51; }
+.ca-stab_on { --x: 711; --y: 863; --w: 67; --h: 51; }
+.ca-tab_off { --x: 893; --y: 780; --w: 96; --h: 56; }
+.ca-tab_on { --x: 795; --y: 780; --w: 96; --h: 56; }
+.ca-title { --x: 0; --y: 557; --w: 418; --h: 116; }
+.ca-titles { --x: 0; --y: 361; --w: 377; --h: 194; }
+.ca-wings { --x: 379; --y: 361; --w: 300; --h: 192; }
+/* end char atlas */
