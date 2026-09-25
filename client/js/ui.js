@@ -10,7 +10,8 @@ import { TILES } from '../../shared/data/maps.js';
 import { TILE } from '../../shared/constants.js';
 import { refineChance, refineCost, npcSellPrice, refineRisk, refineStones, refineBonus, transferFee, transferResult, transferCompatible } from '../../shared/formulas.js';
 import { itemIcon, skillIcon, icon, UI_BASE } from './icons.js';
-import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio } from './sprites.js';
+import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio, drawMobFrames } from './sprites.js';
+import { MOB_ART } from '../../shared/data/mobart.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
 import { SLOTS, slotName } from '../../shared/constants.js';
@@ -84,7 +85,7 @@ export class UI {
     $('#mm-out')?.addEventListener('click', () => this.zoomMinimap(-1));
     addEventListener('keydown', (e) => {
       if (game.input.textMode) return;
-      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade', KeyV: 'stall' };
+      const map = { KeyC: 'character', KeyI: 'inventory', KeyK: 'skills', KeyJ: 'quests', KeyP: 'party', KeyG: 'guild', F1: 'settings', KeyT: 'trade', KeyV: 'stall', KeyB: 'monsterbook' };
       if (e.code === 'KeyN') { e.preventDefault(); this.toggle('worldmap'); }
       if (e.code === 'KeyF') { this.socialTab = 'friends'; this.game.net.send({ t: 'friend', cmd: 'state' }); }
       if (e.code === 'KeyP') this.socialTab = 'party';
@@ -694,6 +695,7 @@ export class UI {
         this.game.net.send({ t: 'guild', cmd: 'state' });
         return this.openGuild(this.lastGuild);
       case 'settings': return this.openSettings();
+      case 'monsterbook': return this.openMonsterBook();
       case 'jobchange': return this.openJobChange();
       case 'trade': return this.lastTrade ? this.openTrade(data ?? this.lastTrade) : this.openTradePicker();
       case 'tradePicker': return this.openTradePicker();
@@ -705,6 +707,119 @@ export class UI {
       case 'dialog': return this.openDialog(data);
       default: return null;
     }
+  }
+
+  /* ---------------- monster book ---------------- */
+  /**
+   * Every painted monster, in the order you meet them. A page fills in as you
+   * hunt: one kill shows its name, numbers and moves; more show what it
+   * drops, and more again how often. Bosses need only a few.
+   */
+  openMonsterBook() {
+    const kills = this.game.self?.kills ?? {};
+    const book = bookEntries();
+    const found = book.filter((m) => kills[m.id]).length;
+    this.bookSel ??= book.find((m) => kills[m.id])?.id ?? book[0]?.id;
+    const sel = book.find((m) => m.id === this.bookSel) ?? book[0];
+
+    const wrap = el('div', 'mbook');
+    const head = el('div', 'mb-head');
+    head.innerHTML = `<b>ค้นพบ <span class="num">${found}</span> / <span class="num">${book.length}</span></b>
+      <div class="bar small"><i style="width:${(found / Math.max(1, book.length)) * 100}%"></i></div>`;
+    wrap.append(head);
+
+    const grid = el('div', 'mb-grid');
+    const portraits = [];
+    for (const m of book) {
+      const n = kills[m.id] ?? 0;
+      const card = el('button', 'mb-card' + (m.id === sel.id ? ' sel' : '') + (n ? '' : ' unknown') + (m.boss ? ' boss' : ''));
+      card.type = 'button';
+      const cv = document.createElement('canvas');
+      cv.width = 72; cv.height = 64;
+      card.append(cv, el('span', 'mb-lv num', `Lv.${m.level}`), el('span', 'mb-name', n ? m.nameTh : '???'));
+      if (n) card.append(el('span', 'mb-count num', `×${n}`));
+      card.addEventListener('click', () => { this.bookSel = m.id; this.openMonsterBook(); });
+      grid.append(card);
+      portraits.push({ cv, m, known: !!n, detail: false });
+    }
+
+    const n = kills[sel.id] ?? 0;
+    const need = bookReveal(sel);
+    const detail = el('div', 'mb-detail');
+    const stageCv = document.createElement('canvas');
+    stageCv.width = 480; stageCv.height = 340;
+    stageCv.className = 'mb-stage';
+    portraits.push({ cv: stageCv, m: sel, known: n > 0, detail: true });
+    const title = el('div', 'mb-title');
+    title.innerHTML = n
+      ? `<b>${esc(sel.nameTh)}</b><span class="muted">${esc(sel.name)} · Lv.${sel.level}${sel.boss ? (sel.mini ? ' · MINI BOSS' : ' · BOSS') : ''}</span>`
+      : `<b>???</b><span class="muted">Lv.${sel.level} · ยังไม่เคยล้ม</span>`;
+    detail.append(stageCv, title);
+
+    // the next page to fill in, and how far off it is
+    const next = n < need.info ? ['ข้อมูล', need.info] : n < need.drops ? ['ของดรอป', need.drops] : n < need.rates ? ['โอกาสดรอป', need.rates] : null;
+    const prog = el('div', 'mb-prog');
+    prog.innerHTML = next
+      ? `<span class="muted">ล้มแล้ว <b class="num">${n}</b> ตัว · ปลดล็อก${next[0]}ที่ <b class="num">${next[1]}</b></span>
+         <div class="bar small"><i style="width:${Math.min(100, (n / next[1]) * 100)}%"></i></div>`
+      : `<span class="mb-done">★ บันทึกครบแล้ว · ล้ม <b class="num">${n}</b> ตัว</span>`;
+    detail.append(prog);
+
+    if (n >= need.info) {
+      const where = bookWhere(sel.id);
+      const stats = el('div', 'mb-stats');
+      for (const [k, v] of [['HP', sel.hp.toLocaleString()], ['ATK', sel.atk], ['DEF', sel.def], ['MDEF', sel.mdef],
+        ['HIT', sel.hit], ['FLEE', sel.flee], ['EXP', sel.exp], ['Job', sel.jobExp]]) {
+        stats.append(el('div', '', `<span class="muted">${k}</span><b class="num">${v}</b>`));
+      }
+      detail.append(stats);
+      const traits = el('div', 'mb-traits');
+      traits.innerHTML = [`ธาตุ${ELEMENT_TH[sel.element] ?? sel.element}`, sel.aggressive ? 'เข้าโจมตีเอง' : 'ไม่โจมตีก่อน',
+        where ? `พบที่ ${esc(where)}` : null].filter(Boolean).map((t) => `<span>${t}</span>`).join('');
+      detail.append(traits);
+      const moves = bookMoves(sel);
+      if (moves.length) {
+        const list = el('div', 'mb-moves');
+        list.append(el('h4', '', 'ท่าที่ต้องระวัง'));
+        for (const [name, how] of moves) list.append(el('p', '', `<b>${name}</b> — ${how}`));
+        detail.append(list);
+      }
+    }
+    const drops = el('div', 'mb-drops');
+    drops.append(el('h4', '', 'ของดรอป'));
+    if (n >= need.drops) {
+      for (const d of sel.drops ?? []) {
+        const it = ITEMS[d.id];
+        if (!it) continue;
+        const row = el('div', 'mb-drop');
+        row.append(itemIcon(d.id, { size: 26 }), el('span', `rarity-${it.rarity ?? 'common'}`, esc(it.nameTh ?? it.name)),
+          el('span', 'num muted', n >= need.rates ? bookPct(d.chance) : '?'));
+        drops.append(row);
+      }
+    } else {
+      drops.append(el('p', 'muted', `ล้มให้ครบ ${need.drops} ตัวเพื่อดูว่ามันดรอปอะไร`));
+    }
+    detail.append(drops);
+
+    const body = el('div', 'mb-body');
+    body.append(grid, detail);
+    wrap.append(body);
+    const panel = this.panel('monsterbook', 'สมุดมอนสเตอร์', wrap);
+
+    // the portraits play their idle row while the book is open
+    const t0 = performance.now();
+    const draw = (now) => {
+      if (!panel.isConnected) return;
+      for (const p of portraits) drawBookPortrait(p, now - t0);
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }
+
+  /** The first kill of a new kind: a note that the book has a new page. */
+  bookFound(id) {
+    const m = MONSTERS[id];
+    if (m && MOB_ART[m.sprite?.key]) this.toast(`สมุดมอนสเตอร์: บันทึก ${m.nameTh} แล้ว (B)`, 'good');
   }
 
   /* ---------------- character ---------------- */
@@ -4121,6 +4236,64 @@ function setBar(barSel, txtSel, cur, max, mode) {
 const statRow = (k, v) => `<div class="row"><span class="muted">${k}</span><b>${v}</b></div>`;
 function esc(s) {
   return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+/* ---------------- monster book helpers ---------------- */
+const ELEMENT_TH = { ice: 'น้ำแข็ง', earth: 'ดิน', wind: 'ลม', fire: 'ไฟ', neutral: 'ไม่มีธาตุ', dark: 'มืด', holy: 'ศักดิ์สิทธิ์', lightning: 'สายฟ้า', water: 'น้ำ', poison: 'พิษ' };
+/** Painted monsters only: the ones the book can draw. Lowest level first, bosses after their peers. */
+function bookEntries() {
+  return Object.values(MONSTERS)
+    .filter((m) => m.sprite?.kind === 'frames' && MOB_ART[m.sprite.key] && !m.summon)
+    .sort((a, b) => a.level - b.level || (a.boss ? 1 : 0) - (b.boss ? 1 : 0));
+}
+/** Kills needed for each page: its numbers, what it drops, how often. */
+function bookReveal(m) {
+  return m.boss ? { info: 1, drops: 1, rates: 3 } : { info: 1, drops: 10, rates: 50 };
+}
+function bookWhere(id) {
+  const zones = Object.values(MAPS).filter((z) => (z.spawns ?? []).some((s) => s.mob === id)).map((z) => z.nameTh ?? z.name);
+  if (zones.length) return zones.join(', ');
+  const caller = Object.values(MONSTERS).find((m) => m.calls?.mob === id);
+  return caller ? `เรียกโดย ${caller.nameTh}` : null;
+}
+function bookPct(c) {
+  const v = c * 100;
+  return (v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2)).replace(/\.?0+$/, '') + '%';
+}
+/** Its moves, as a player would describe them, and what to do about each. */
+function bookMoves(m) {
+  const out = [];
+  for (const b of [].concat(m.burst ?? [])) {
+    const name = b.anim === 'tornado' ? 'ทอร์นาโดใบไม้' : b.anim === 'spike' ? 'รากไม้พุ่ง' : b.at === 'target' ? 'รากไม้ใต้เท้า' : 'ระเบิดรอบตัว';
+    out.push([name, `วงเตือนขึ้น${b.at === 'target' ? 'ใต้เท้าคุณ' : 'รอบตัวมัน'} ออกจากวงภายใน ${(b.tell / 1000).toFixed(1)} วิ${b.root ? ' (ถ้าโดนจะถูกตรึง)' : ''}`]);
+  }
+  if (m.charge) out.push(['พุ่งชน', `เลนเตือนผ่านจุดที่คุณยืน ก้าวออกด้านข้าง${m.charge.recover >= 800 ? ' แล้วตีสวนตอนมันหอบ' : ''}`]);
+  if (m.shot) out.push(['ยิงลูกเวท', 'ยิงจากระยะไกลและถอยหนี รีบปิดระยะ']);
+  if (m.leap) out.push(['กระโดดตะครุบ', 'ลงตรงวงเตือนใต้เท้าคุณ วิ่งออกจากวงก็รอด']);
+  if (m.howl) out.push(['หอน', 'คนที่อยู่ในวงรอบตัวมันจะช้าลง ถอยออกก่อน']);
+  if (m.calls) out.push(['เรียกต้นไม้', 'ต้นกล้าฟื้นเลือดให้บอส ตัดต้นกล้าก่อน']);
+  if (m.enrage) out.push(['คลั่ง', `เลือดต่ำกว่า ${m.enrage.at * 100}% จะตีแรงและเร็วขึ้น`]);
+  return out;
+}
+/** One portrait: its idle row playing, or a dark shape for one not yet met. */
+function drawBookPortrait({ cv, m, known, detail }, elapsed) {
+  const g = cv.getContext('2d');
+  const art = MOB_ART[m.sprite.key];
+  g.clearRect(0, 0, cv.width, cv.height);
+  const [, ch] = art.cell;
+  // a card fills its frame; the big stage caps the zoom, so a slime stays small beside a boss
+  const fit = ((cv.height - (detail ? 28 : 8)) / (ch * art.show)) / (m.sprite.scale ?? 1);
+  const k = detail ? Math.min(fit, 4.4) : fit;
+  const drawn = drawMobFrames(g, m.sprite, {
+    x: cv.width / 2, y: cv.height / 2 - (ch * art.show * k) / 2 + art.foot * art.show * k,
+    anim: 'idle', elapsed: known ? elapsed : 0, scale: k,
+  });
+  if (drawn && !known) {
+    g.save();
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = 'rgba(12,14,20,.92)';
+    g.fillRect(0, 0, cv.width, cv.height);
+    g.restore();
+  }
 }
 function iconFor(it) {
   return { weapon: '⚔', armor: '🛡', consumable: '🧪', material: '🔩', ammo: '🏹' }[it.type] ?? '📦';

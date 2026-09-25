@@ -223,6 +223,10 @@ export class World {
   }
 
   onKill(p, monster) {
+    // the monster book: how many of each this character has brought down
+    const kills = p.record.kills ??= {};
+    kills[monster.defId] = (kills[monster.defId] ?? 0) + 1;
+    p.conn?.send({ t: 'kill', def: monster.defId, n: kills[monster.defId] });
     Quests.onKill(p, monster.defId);
     Guild.onKill(this, p, monster.level ?? 1);
   }

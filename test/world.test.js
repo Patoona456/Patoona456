@@ -168,6 +168,21 @@ test('boxes in Greenmire: a real chance from its bosses, a small one in the fiel
   assert.ok(chance('blue_slime', 'box_weapon_1') < chance('forest_spirit', 'box_weapon_1'));
 });
 
+test('the monster book counts each kind a character brings down, and tells them', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('greenmire');
+  const p = stubPlayer('P', 5, zone);
+  const sent = [];
+  p.conn.send = (m) => sent.push(m);
+  w.onKill(p, { defId: 'blue_slime', level: 1 });
+  w.onKill(p, { defId: 'blue_slime', level: 1 });
+  w.onKill(p, { defId: 'mushroom', level: 3 });
+  assert.deepEqual(p.record.kills, { blue_slime: 2, mushroom: 1 });
+  assert.deepEqual(sent.filter((m) => m.t === 'kill').map((m) => [m.def, m.n]),
+    [['blue_slime', 1], ['blue_slime', 2], ['mushroom', 1]]);
+});
+
 /* --------------------------------------------------------------- aggro */
 
 test('a monster far above you hunts on sight, and sees you coming from further', (t) => {

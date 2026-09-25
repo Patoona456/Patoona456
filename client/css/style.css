@@ -2622,3 +2622,46 @@ body.landscape-ui #chat { bottom: calc(128px * var(--touch-k, 1) / var(--hud-k, 
 .set-slider .num { min-width: 36px; text-align: right; }
 body.landscape-ui .set-row { padding: 4px 0; }
 body.landscape-ui .set-slider input[type=range] { width: 120px; }
+
+/* ============================ monster book ============================ */
+.win.window:has(.mbook) { width: min(920px, 96vw); }
+.mbook { display: grid; gap: 10px; }
+.mb-head { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+.mb-head .bar i { background: linear-gradient(90deg, #3ea54c, #9be86a); }
+.mb-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 12px; align-items: start; }
+.mb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; max-height: 62vh; overflow: auto; padding: 2px; }
+.mb-card {
+  position: relative; display: grid; justify-items: center; gap: 0; padding: 4px 4px 6px; cursor: pointer; color: var(--text);
+  background: radial-gradient(ellipse at 50% 70%, rgba(60, 80, 64, .55), rgba(14, 18, 24, .9) 75%);
+  border: 1px solid #3a4658; border-radius: 8px; font: inherit;
+}
+.mb-card:hover { border-color: #a47c38; }
+.mb-card.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 10px rgba(242, 195, 91, .3); }
+.mb-card.boss { border-color: #8a5a24; }
+.mb-card.unknown .mb-name { color: var(--muted); }
+.mb-card canvas { width: 72px; height: 64px; }
+.mb-lv { position: absolute; left: 5px; top: 3px; font-size: 10px; color: #cbd6e4; text-shadow: 0 1px 2px #000; }
+.mb-card.boss .mb-lv { color: #ffcf8a; }
+.mb-count { position: absolute; right: 5px; top: 3px; font-size: 10px; color: #9be86a; text-shadow: 0 1px 2px #000; }
+.mb-name { font-size: 11.5px; font-weight: 600; text-align: center; line-height: 1.25; }
+.mb-detail { display: grid; gap: 8px; padding: 10px; border-radius: 10px; background: rgba(10, 14, 22, .7); border: 1px solid rgba(181, 138, 60, .35); }
+.mb-stage { width: 100%; height: auto; aspect-ratio: 240 / 170; border-radius: 8px; background: radial-gradient(ellipse at 50% 75%, #33503a, #141c16 72%); }
+.mb-title { display: grid; gap: 0; }
+.mb-title b { font-size: 17px; color: #fbe7b6; }
+.mb-prog { display: grid; gap: 4px; font-size: 12px; }
+.mb-prog .bar i { background: linear-gradient(90deg, #2d7df0, #68c0ff); }
+.mb-done { color: #ffcf6a; font-weight: 700; }
+.mb-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.mb-stats div { display: grid; padding: 3px 6px; border-radius: 5px; background: rgba(255, 255, 255, .05); font-size: 11px; }
+.mb-stats b { font-size: 14px; }
+.mb-traits { display: flex; flex-wrap: wrap; gap: 4px; }
+.mb-traits span { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1); }
+.mb-moves h4, .mb-drops h4 { margin: 2px 0 4px; font-size: 12.5px; color: #fbe7b6; }
+.mb-moves p { margin: 0 0 3px; font-size: 12px; line-height: 1.45; }
+.mb-drops { display: grid; gap: 3px; }
+.mb-drop { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; font-size: 12.5px; }
+.mb-drops p { margin: 0; font-size: 12px; }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="monsterbook"]::before { background-image: url(../../assets/ui/rw_book.webp); }
+@media (max-width: 680px) { .mb-body { grid-template-columns: 1fr; } .mb-grid { max-height: 30vh; } }
+body.landscape-ui .mb-grid { max-height: 60vh; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+body.landscape-ui .mb-card canvas { width: 60px; height: 54px; }

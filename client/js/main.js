@@ -180,6 +180,13 @@ class Game {
       if (this.ui.openPanels.has('skills')) this.ui.open('skills');
       this.renderPortrait();
     });
+    n.on('kill', (m) => {
+      if (!this.self) return;
+      const first = !this.self.kills?.[m.def];
+      (this.self.kills ??= {})[m.def] = m.n;
+      if (first) this.ui.bookFound?.(m.def);
+      if (this.ui.openPanels.has('monsterbook')) this.ui.open('monsterbook');
+    });
     n.on('inventory', (m) => {
       const before = this.inventory;
       this.inventory = m;
