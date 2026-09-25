@@ -265,6 +265,9 @@ export const MAPS = {
     // may stand is traced off it by tools/trace-field.py into
     // greenmire-obstacles.js; a tile is 25.6px of the painting, as in town.
     backdrop: 'assets/maps/greenmire.webp',
+    // the same picture sharpened 4x (tools/upscale: Real-ESRGAN), shrunk to
+    // 3x and cut into 2304px tiles streamed in near the camera
+    backdropTiles: { dir: 'assets/maps/greenmire/ground', size: 2304, bleed: 2, cols: 2, rows: 2, width: 4608, height: 3072 },
     walk: [[0, 0, 60, 40]],
     obstacles: GREENMIRE_OBSTACLES,
     spawnPoint: [30, 5],
