@@ -12,7 +12,7 @@ import { refineChance, refineCost, npcSellPrice, refineRisk, refineStones, refin
 import { itemIcon, skillIcon, icon, UI_BASE } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio, drawMobFrames } from './sprites.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
-import { bookEntries, bookReveal, bookReward, bookBonus, rewardText, BOOK_SETS, setMembers, isFinished } from '../../shared/data/monsterbook.js';
+import { bookEntries, bookReveal, bookReward, bookBonus, rewardText, BOOK_SETS, setMembers, isFinished, PIECES, pieceCount, pieceChance } from '../../shared/data/monsterbook.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
 import { SLOTS, slotName } from '../../shared/constants.js';
@@ -712,12 +712,14 @@ export class UI {
 
   /* ---------------- monster book ---------------- */
   /**
-   * Every painted monster, in the order you meet them. A page fills in as you
-   * hunt: one kill shows its name, numbers and moves; more show what it
-   * drops, and more again how often. Bosses need only a few.
+   * Every painted monster, in the order you meet them. Each page is its
+   * picture cut into a 3x3 jigsaw: the first kill opens it, and pieces that
+   * drop as you hunt fill it in - three show what it drops, six how often,
+   * and all nine finish it for a permanent bonus.
    */
   openMonsterBook() {
     const kills = this.game.self?.kills ?? {};
+    const jigsaw = this.game.self?.jigsaw ?? {};
     const book = bookEntries();
     const found = book.filter((m) => kills[m.id]).length;
     this.bookSel ??= book.find((m) => kills[m.id])?.id ?? book[0]?.id;
@@ -725,7 +727,7 @@ export class UI {
 
     const wrap = el('div', 'mbook');
     const head = el('div', 'mb-head');
-    const bonus = bookBonus(kills);
+    const bonus = bookBonus(jigsaw);
     head.innerHTML = `<b>ค้นพบ <span class="num">${found}</span> / <span class="num">${book.length}</span>
       · ครบ <span class="num">${bonus.pages.length}</span></b>
       <div class="bar small"><i style="width:${(found / Math.max(1, book.length)) * 100}%"></i></div>`;
@@ -733,10 +735,10 @@ export class UI {
     // what the finished pages give, and how far each region is from its own reward
     const perks = el('div', 'mb-perks');
     const total = rewardText(bonus);
-    perks.innerHTML = `<span class="muted">โบนัสถาวรจากสมุด:</span> <b>${total || 'ยังไม่มี — บันทึกให้ครบสักตัว'}</b>`;
+    perks.innerHTML = `<span class="muted">โบนัสถาวรจากสมุด:</span> <b>${total || 'ยังไม่มี — ต่อจิ๊กซอให้ครบสักภาพ'}</b>`;
     for (const set of BOOK_SETS) {
       const members = setMembers(set);
-      const done = members.filter((id) => isFinished(id, kills)).length;
+      const done = members.filter((id) => isFinished(id, jigsaw)).length;
       const got = bonus.sets.includes(set.id);
       perks.append(el('span', 'mb-set' + (got ? ' got' : ''),
         `${got ? '★' : '☆'} ${esc(set.name)} <span class="num">${done}/${members.length}</span> → ${rewardText(set.reward)}`));
@@ -752,35 +754,42 @@ export class UI {
       const cv = document.createElement('canvas');
       cv.width = 72; cv.height = 64;
       card.append(cv, el('span', 'mb-lv num', `Lv.${m.level}`), el('span', 'mb-name', n ? m.nameTh : '???'));
-      if (n) card.append(el('span', 'mb-count num', `×${n}`));
+      const got = pieceCount(jigsaw[m.id]);
+      if (n) card.append(el('span', 'mb-count num' + (got === PIECES ? ' full' : ''), `🧩${got}/${PIECES}`));
       card.addEventListener('click', () => { this.bookSel = m.id; this.openMonsterBook(); });
       grid.append(card);
       portraits.push({ cv, m, known: !!n, detail: false });
     }
 
     const n = kills[sel.id] ?? 0;
+    const mask = jigsaw[sel.id] ?? 0;
+    const pieces = pieceCount(mask);
     const need = bookReveal(sel);
     const detail = el('div', 'mb-detail');
     const stageCv = document.createElement('canvas');
     stageCv.width = 480; stageCv.height = 340;
     stageCv.className = 'mb-stage';
-    portraits.push({ cv: stageCv, m: sel, known: n > 0, detail: true });
+    const fresh = this.bookPiece?.def === sel.id && performance.now() - this.bookPiece.at < 4000 ? this.bookPiece.idx : -1;
+    portraits.push({ cv: stageCv, m: sel, known: n > 0, detail: true, mask, fresh });
     const title = el('div', 'mb-title');
     title.innerHTML = n
       ? `<b>${esc(sel.nameTh)}</b><span class="muted">${esc(sel.name)} · Lv.${sel.level}${sel.boss ? (sel.mini ? ' · MINI BOSS' : ' · BOSS') : ''}</span>`
       : `<b>???</b><span class="muted">Lv.${sel.level} · ยังไม่เคยล้ม</span>`;
     detail.append(stageCv, title);
 
-    // the next page to fill in, and how far off it is
-    const next = n < need.info ? ['ข้อมูล', need.info] : n < need.drops ? ['ของดรอป', need.drops] : n < need.rates ? ['โอกาสดรอป', need.rates] : null;
+    // the jigsaw: how many pieces, what the next ones open, what the last one pays
+    const next = !n ? null : pieces < need.drops ? ['ของดรอป', need.drops] : pieces < need.rates ? ['โอกาสดรอป', need.rates]
+      : pieces < need.done ? ['รางวัล', need.done] : null;
     const prog = el('div', 'mb-prog');
-    prog.innerHTML = next
-      ? `<span class="muted">ล้มแล้ว <b class="num">${n}</b> ตัว · ปลดล็อก${next[0]}ที่ <b class="num">${next[1]}</b></span>
-         <div class="bar small"><i style="width:${Math.min(100, (n / next[1]) * 100)}%"></i></div>`
-      : `<span class="mb-done">★ บันทึกครบแล้ว · ล้ม <b class="num">${n}</b> ตัว</span>`;
+    prog.innerHTML = !n
+      ? `<span class="muted">ล้มสักตัวเพื่อเปิดหน้านี้</span>`
+      : next
+        ? `<span class="muted">🧩 <b class="num">${pieces}/${PIECES}</b> ชิ้น · ได้${next[0]}ที่ <b class="num">${next[1]}</b> ชิ้น · ล้มแล้ว <b class="num">${n}</b> ตัว · ชิ้นดรอป <b class="num">${bookPct(pieceChance(sel))}</b> ต่อตัว</span>
+           <div class="bar small"><i style="width:${(pieces / PIECES) * 100}%"></i></div>`
+        : `<span class="mb-done">★ ต่อภาพครบแล้ว · ล้ม <b class="num">${n}</b> ตัว</span>`;
     detail.append(prog);
-    const reward = el('div', 'mb-reward' + (n >= need.rates ? ' got' : ''));
-    reward.innerHTML = `<span class="muted">${n >= need.rates ? 'ได้รับแล้ว' : 'รางวัลเมื่อบันทึกครบ'}</span> <b>${rewardText(bookReward(sel))}</b>`;
+    const reward = el('div', 'mb-reward' + (pieces >= need.done ? ' got' : ''));
+    reward.innerHTML = `<span class="muted">${pieces >= need.done ? 'ได้รับแล้ว' : 'รางวัลเมื่อต่อภาพครบ'}</span> <b>${rewardText(bookReward(sel))}</b>`;
     detail.append(reward);
 
     if (n >= need.info) {
@@ -805,17 +814,17 @@ export class UI {
     }
     const drops = el('div', 'mb-drops');
     drops.append(el('h4', '', 'ของดรอป'));
-    if (n >= need.drops) {
+    if (pieces >= need.drops) {
       for (const d of sel.drops ?? []) {
         const it = ITEMS[d.id];
         if (!it) continue;
         const row = el('div', 'mb-drop');
         row.append(itemIcon(d.id, { size: 26 }), el('span', `rarity-${it.rarity ?? 'common'}`, esc(it.nameTh ?? it.name)),
-          el('span', 'num muted', n >= need.rates ? bookPct(d.chance) : '?'));
+          el('span', 'num muted', pieces >= need.rates ? bookPct(d.chance) : '?'));
         drops.append(row);
       }
     } else {
-      drops.append(el('p', 'muted', `ล้มให้ครบ ${need.drops} ตัวเพื่อดูว่ามันดรอปอะไร`));
+      drops.append(el('p', 'muted', `ต่อจิ๊กซอให้ได้ ${need.drops} ชิ้นเพื่อดูว่ามันดรอปอะไร`));
     }
     detail.append(drops);
 
@@ -4283,14 +4292,15 @@ function bookMoves(m) {
   return out;
 }
 /** One portrait: its idle row playing, or a dark shape for one not yet met. */
-function drawBookPortrait({ cv, m, known, detail }, elapsed) {
+function drawBookPortrait({ cv, m, known, detail, mask = 0, fresh = -1 }, elapsed) {
   const g = cv.getContext('2d');
   const art = MOB_ART[m.sprite.key];
   g.clearRect(0, 0, cv.width, cv.height);
   const [, ch] = art.cell;
-  // a card fills its frame; the big stage caps the zoom, so a slime stays small beside a boss
+  // the monster fills its frame: on the big board every piece of the jigsaw holds some of it
   const fit = ((cv.height - (detail ? 28 : 8)) / (ch * art.show)) / (m.sprite.scale ?? 1);
-  const k = detail ? Math.min(fit, 4.4) : fit;
+  // (by height: a cell is often much wider than the body, to hold its splashes)
+  const k = detail ? fit * 0.9 : fit;
   const drawn = drawMobFrames(g, m.sprite, {
     x: cv.width / 2, y: cv.height / 2 - (ch * art.show * k) / 2 + art.foot * art.show * k,
     anim: 'idle', elapsed: known ? elapsed : 0, scale: k,
@@ -4302,6 +4312,50 @@ function drawBookPortrait({ cv, m, known, detail }, elapsed) {
     g.fillRect(0, 0, cv.width, cv.height);
     g.restore();
   }
+  if (detail) drawJigsaw(g, cv.width, cv.height, mask, fresh, elapsed);
+}
+/** The 3x3 jigsaw over the big picture: missing pieces covered, the newest one glowing. */
+function drawJigsaw(g, w, h, mask, fresh, elapsed) {
+  const cw = w / 3, ch = h / 3;
+  const tab = Math.min(cw, ch) * 0.16;
+  // one piece's outline: straight edges on the border, a round tab on the inner ones
+  const path = (i) => {
+    const x = (i % 3) * cw, y = Math.floor(i / 3) * ch;
+    const p = new Path2D();
+    p.moveTo(x, y);
+    if (y > 0) { p.lineTo(x + cw / 2 - tab, y); p.arc(x + cw / 2, y, tab, Math.PI, 0, i % 2 === 0); }
+    p.lineTo(x + cw, y);
+    if (x + cw < w - 1) { p.lineTo(x + cw, y + ch / 2 - tab); p.arc(x + cw, y + ch / 2, tab, -Math.PI / 2, Math.PI / 2, i % 2 === 1); }
+    p.lineTo(x + cw, y + ch);
+    if (y + ch < h - 1) { p.lineTo(x + cw / 2 + tab, y + ch); p.arc(x + cw / 2, y + ch, tab, 0, Math.PI, (i + 1) % 2 === 0); }
+    p.lineTo(x, y + ch);
+    if (x > 0) { p.lineTo(x, y + ch / 2 + tab); p.arc(x, y + ch / 2, tab, Math.PI / 2, -Math.PI / 2, (i + 1) % 2 === 1); }
+    p.closePath();
+    return p;
+  };
+  g.save();
+  g.lineWidth = Math.max(1.5, w / 240);
+  for (let i = 0; i < 9; i++) {
+    const p = path(i);
+    if (!(mask & (1 << i))) {
+      g.fillStyle = 'rgba(16,20,30,.94)';
+      g.fill(p);
+      g.fillStyle = 'rgba(160,176,200,.35)';
+      g.font = `700 ${Math.round(ch * 0.34)}px system-ui, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('?', (i % 3) * cw + cw / 2, Math.floor(i / 3) * ch + ch / 2);
+    }
+    g.strokeStyle = 'rgba(255,230,170,.28)';
+    g.stroke(p);
+  }
+  if (fresh >= 0) {
+    const pulse = 0.5 + Math.sin(elapsed / 160) * 0.5;
+    g.strokeStyle = `rgba(255,214,106,${0.55 + pulse * 0.45})`;
+    g.lineWidth = Math.max(3, w / 110);
+    g.shadowColor = '#ffd66a'; g.shadowBlur = 14;
+    g.stroke(path(fresh));
+  }
+  g.restore();
 }
 function iconFor(it) {
   return { weapon: '⚔', armor: '🛡', consumable: '🧪', material: '🔩', ammo: '🏹' }[it.type] ?? '📦';

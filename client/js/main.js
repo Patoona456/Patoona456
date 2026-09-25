@@ -180,6 +180,12 @@ class Game {
       if (this.ui.openPanels.has('skills')) this.ui.open('skills');
       this.renderPortrait();
     });
+    n.on('piece', (m) => {
+      if (!this.self) return;
+      (this.self.jigsaw ??= {})[m.def] = m.mask;
+      this.ui.bookPiece = { def: m.def, idx: m.idx, at: performance.now() };
+      if (this.ui.openPanels.has('monsterbook')) this.ui.open('monsterbook');
+    });
     n.on('kill', (m) => {
       if (!this.self) return;
       const first = !this.self.kills?.[m.def];

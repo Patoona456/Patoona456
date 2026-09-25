@@ -243,7 +243,7 @@ export class Player {
       for (const [k, v] of Object.entries(s.flat ?? {})) if (d[k] != null) d[k] += v;
     }
     // the monster book: every finished page, for good
-    const book = bookBonus(this.record.kills);
+    const book = bookBonus(this.record.jigsaw);
     d.maxHp += book.maxHp; d.atk += book.atk; d.matk += book.matk; d.def += book.def; d.mdef += book.mdef;
     bm.expPct = (bm.expPct ?? 0) + book.expPct;
     this.book = book;
@@ -535,7 +535,7 @@ export class Player {
       derived: this.derived, hp: this.hp, sp: this.sp, maxHp: this.maxHp, maxSp: this.maxSp,
       aurum: r.aurum, weight: this.weight(), weightCap: this.weightCap,
       map: r.map, x: this.x, y: this.y, skills: r.skills, hotbar: r.hotbar,
-      equipment: r.equipment, quests: r.quests, visited: r.visited ?? [], kills: r.kills ?? {},
+      equipment: r.equipment, quests: r.quests, visited: r.visited ?? [], kills: r.kills ?? {}, jigsaw: r.jigsaw ?? {},
       book: this.book ? { ...this.book } : null,
       statuses: this.statuses.map((s) => ({ type: s.type, key: s.key, until: s.until, icon: s.icon, beneficial: !!s.beneficial, item: s.item, mods: Object.keys(s.mods ?? {}) })),
       cooldowns: this.cooldowns,

@@ -2672,3 +2672,4 @@ body.landscape-ui .mb-card canvas { width: 60px; height: 54px; }
 .mb-reward { font-size: 12.5px; padding: 5px 8px; border-radius: 6px; background: rgba(255, 255, 255, .05); border: 1px dashed rgba(255, 207, 106, .35); }
 .mb-reward b { color: #ffcf6a; }
 .mb-reward.got { border-style: solid; background: rgba(255, 207, 106, .1); }
+.mb-count.full { color: #ffcf6a; font-weight: 700; }

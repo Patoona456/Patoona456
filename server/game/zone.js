@@ -529,6 +529,8 @@ export class Zone {
 
     // drops: the luckiest bottle among the people who earned them counts
     const looters = share.filter((p) => ownerIds.includes(p.id));
+    // a jigsaw piece for each of them, rolled on their own
+    for (const p of looters) this.world.rollPiece?.(p, m);
     const best = (k) => Math.max(0, ...looters.map((p) => p.mods?.[k] ?? 0)) / 100;
     const dropMul = 1 + best('dropPct'), rareMul = 1 + best('rareDropPct'), aurumMul = 1 + best('aurumPct');
     for (const d of m.def.drops ?? []) {

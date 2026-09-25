@@ -1,11 +1,13 @@
-// The monster book: which monsters it lists, how many kills fill in each
-// page, and what a finished page is worth.
+// The monster book: which monsters it lists, how each page fills in, and
+// what a finished page is worth.
 //
-// A page is finished at its `rates` threshold. Each finished page gives a
-// small permanent bonus to the character that finished it, and finishing
-// every monster of a region gives one more. None of it is an item, so none of
-// it can be traded or inflate the market: it is earned by hunting, per
-// character, and a spare character has to earn its own.
+// Every page is a picture of its monster cut into a 3x3 jigsaw. Each kill
+// may drop a piece - always one this character is still missing - straight
+// into the book. The first kill opens the page; three pieces show what it
+// drops, six how often, and all nine finish the picture, which gives a small
+// permanent bonus. Finishing every monster of a region gives one more.
+// Pieces are not items: they cannot be traded, so a spare character's pieces
+// stay its own and nothing reaches the market.
 import { MONSTERS } from './monsters.js';
 import { MOB_ART } from './mobart.js';
 import { MAPS } from './maps.js';
@@ -17,10 +19,29 @@ export function bookEntries() {
     .sort((a, b) => a.level - b.level || (a.boss ? 1 : 0) - (b.boss ? 1 : 0));
 }
 
-/** Kills needed for each page: its numbers, what it drops, how often (which finishes it). */
-export function bookReveal(m) {
-  return m.boss ? { info: 1, drops: 1, rates: 3 } : { info: 1, drops: 10, rates: 50 };
+export const PIECES = 9;
+const FULL = (1 << PIECES) - 1;
+
+/** What opens each part of a page: kills for its numbers, pieces for the rest. */
+export function bookReveal() {
+  return { info: 1, drops: 3, rates: 6, done: PIECES };
 }
+
+/**
+ * The chance a kill drops a piece. A field monster's picture takes about a
+ * hundred and fifty kills; the mini boss's about twenty-five; the boss's
+ * about eighteen - each of those a real fight.
+ */
+export function pieceChance(m) {
+  if (m.boss && !m.mini) return 0.5;
+  if (m.boss) return 0.35;
+  if (m.mend) return 0.2;                    // a boss's saplings: only met in its fight
+  return 0.06;
+}
+
+/** How many pieces a mask holds, and which ones are still missing. */
+export const pieceCount = (mask = 0) => { let n = 0; for (let i = 0; i < PIECES; i++) if (mask & (1 << i)) n++; return n; };
+export const missingPieces = (mask = 0) => [...Array(PIECES).keys()].filter((i) => !(mask & (1 << i)));
 
 /** What a finished page gives, for good. */
 export function bookReward(m) {
@@ -37,20 +58,20 @@ export function setMembers(set) {
   return [...new Set((MAPS[set.zone]?.spawns ?? []).map((s) => s.mob))].filter((id) => MONSTERS[id]);
 }
 
-export const isFinished = (id, kills) => (kills?.[id] ?? 0) >= bookReveal(MONSTERS[id]).rates;
+export const isFinished = (id, jigsaw) => ((jigsaw?.[id] ?? 0) & FULL) === FULL;
 
-/** Everything the book gives a character with these kills. */
-export function bookBonus(kills = {}) {
+/** Everything the book gives a character with these pictures. */
+export function bookBonus(jigsaw = {}) {
   const out = { maxHp: 0, atk: 0, matk: 0, def: 0, mdef: 0, expPct: 0, pages: [], sets: [] };
   const add = (r) => { for (const [k, v] of Object.entries(r)) out[k] = (out[k] ?? 0) + v; };
   for (const m of bookEntries()) {
-    if (!isFinished(m.id, kills)) continue;
+    if (!isFinished(m.id, jigsaw)) continue;
     out.pages.push(m.id);
     add(bookReward(m));
   }
   for (const set of BOOK_SETS) {
     const members = setMembers(set);
-    if (members.length && members.every((id) => isFinished(id, kills))) {
+    if (members.length && members.every((id) => isFinished(id, jigsaw))) {
       out.sets.push(set.id);
       add(set.reward);
     }
