@@ -14,6 +14,7 @@ import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
 import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from './skillfx.js';
 import { Weather } from './weather.js';
+import { WaterFx } from './water.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
@@ -562,6 +563,9 @@ export class Renderer {
     this.terrain = painted.canvas;
     this.water = painted.water;
     this.backdrop = painted.backdrop ?? null;
+    // a painted map's rivers and falls, set moving
+    const waterFx = MAPS[zonePayload.id]?.waterFx;
+    this.waterFx = waterFx ? new WaterFx(waterFx, zonePayload.width * TILE) : null;
 
     const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
@@ -746,7 +750,9 @@ export class Renderer {
     } else {
       ctx.drawImage(this.terrain, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
     }
-    this.drawWaterShimmer(ctx, x0, y0, x1, y1, now);
+    // the saver setting keeps the falls and the twinkles but not the sliding light
+    if (this.waterFx) this.waterFx.draw(ctx, x0, y0, x1, y1, now, prefs.quality === 'saver');
+    else this.drawWaterShimmer(ctx, x0, y0, x1, y1, now);
   }
 
   /** Water is painted flat; the movement is added live so it never looks dead. */

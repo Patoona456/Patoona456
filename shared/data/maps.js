@@ -267,6 +267,18 @@ export const MAPS = {
     // stand is traced off it by tools/trace-field.py into greenmire-obstacles.js.
     backdrop: 'assets/maps/greenmire.webp',
     backdropTiles: { dir: 'assets/maps/greenmire/ground', size: 1464, tileW: 1464, tileH: 1952, bleed: 2, cols: 2, rows: 1, width: 2928, height: 1952 },
+    // its rivers set moving (client/js/water.js): the mask marks the water,
+    // and the falls, in tiles, are where the painting pours
+    waterFx: {
+      mask: 'assets/maps/greenmire/water.webp',
+      falls: [
+        { x: 11.1, y: 0.4, w: 1.8, h: 3.3 },    // the north-west falls
+        { x: 14.1, y: 1.0, w: 0.9, h: 2.4 },    // and the thin one beside them
+        { x: 73.4, y: 0.3, w: 1.8, h: 3.4 },    // the north-east falls
+        { x: 26.1, y: 40.3, w: 2.3, h: 3.7, bubbles: false },   // by the west bridge to the ruins
+        { x: 66.7, y: 42.8, w: 2.0, h: 4.0 },   // east of the ruins
+      ],
+    },
     walk: [[0, 0, 90, 60]],
     obstacles: GREENMIRE_OBSTACLES,
     spawnPoint: [44, 4],
