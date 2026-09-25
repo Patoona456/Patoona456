@@ -154,12 +154,18 @@ test('a boss pays only those who fought it: a spare character landing one blow g
   assert.equal(kill({ MAIN: 10, ALT: 10 }).length, 0);
 });
 
-test('weapon boxes are rare in Greenmire: a few percent from its bosses, a tenth of a percent in the field', () => {
-  const box = (id) => MONSTERS[id].drops.find((d) => d.id === 'box_weapon_1')?.chance ?? 0;
-  assert.ok(box('alpha_wolf') > 0 && box('alpha_wolf') <= 0.05);
-  assert.ok(box('tree_guardian') > box('alpha_wolf') && box('tree_guardian') <= 0.15);
-  for (const id of ['forest_bee', 'wild_boar', 'forest_spirit']) assert.ok(box(id) > 0 && box(id) <= 0.002, id);
-  for (const id of ['blue_slime', 'mushroom', 'caterpillar']) assert.equal(box(id), 0, `${id} is too easy to farm`);
+test('boxes in Greenmire: a real chance from its bosses, a small one in the field', () => {
+  const chance = (mob, id) => MONSTERS[mob].drops.find((d) => d.id === id)?.chance ?? 0;
+  const boxes = ['box_weapon_1', 'treasure_map', 'scroll_mystery'];
+  for (const id of boxes) {
+    assert.ok(chance('tree_guardian', id) > chance('alpha_wolf', id), `the boss pays more ${id}`);
+    assert.ok(chance('tree_guardian', id) <= 0.3, `but a ${id} is still not a given`);
+  }
+  for (const mob of ['blue_slime', 'mushroom', 'caterpillar', 'forest_bee', 'wild_boar', 'forest_spirit']) {
+    assert.ok(chance(mob, 'box_weapon_1') > 0 && chance(mob, 'box_weapon_1') <= 0.003, mob);
+  }
+  // the harder the monster, the better the odds
+  assert.ok(chance('blue_slime', 'box_weapon_1') < chance('forest_spirit', 'box_weapon_1'));
 });
 
 /* --------------------------------------------------------------- aggro */
