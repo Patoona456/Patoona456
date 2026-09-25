@@ -2,6 +2,8 @@
 import { Zone } from './zone.js';
 import { MAPS } from '../../shared/data/maps.js';
 import { ITEMS } from '../../shared/data/items.js';
+import { MONSTERS } from '../../shared/data/monsters.js';
+import { bookReveal, bookReward, bookBonus, rewardText, BOOK_SETS } from '../../shared/data/monsterbook.js';
 import { TICK_MS, SNAPSHOT_HZ, TILE } from '../../shared/constants.js';
 import { db, markDirty, save, closeStore } from '../persistence.js';
 import { sweepMarket } from './economy.js';
@@ -227,6 +229,19 @@ export class World {
     const kills = p.record.kills ??= {};
     kills[monster.defId] = (kills[monster.defId] ?? 0) + 1;
     p.conn?.send({ t: 'kill', def: monster.defId, n: kills[monster.defId] });
+    // the kill that finishes its page pays the page's reward, and maybe a region's
+    const def = MONSTERS[monster.defId];
+    if (def && kills[monster.defId] === bookReveal(def).rates) {
+      const setsBefore = new Set(p.book?.sets ?? bookBonus({ ...kills, [monster.defId]: 0 }).sets);
+      p.recompute?.();
+      p.conn?.send({ t: 'notice', kind: 'good', text: `สมุดมอนสเตอร์: บันทึก ${def.nameTh} ครบแล้ว! ได้รับ ${rewardText(bookReward(def))} ถาวร` });
+      for (const set of BOOK_SETS) {
+        if (!setsBefore.has(set.id) && (p.book?.sets ?? []).includes(set.id)) {
+          p.conn?.send({ t: 'notice', kind: 'good', text: `สมุดมอนสเตอร์: ${set.name}! บันทึกมอนทั้งภูมิภาคครบ ได้รับ ${rewardText(set.reward)} ถาวร` });
+        }
+      }
+      p.conn?.send({ t: 'self', self: p.selfState?.() });
+    }
     Quests.onKill(p, monster.defId);
     Guild.onKill(this, p, monster.level ?? 1);
   }

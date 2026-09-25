@@ -12,6 +12,7 @@ import { refineChance, refineCost, npcSellPrice, refineRisk, refineStones, refin
 import { itemIcon, skillIcon, icon, UI_BASE } from './icons.js';
 import { playerLayers, drawCharacter, drawRefineGlow, loadedRatio, drawMobFrames } from './sprites.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
+import { bookEntries, bookReveal, bookReward, bookBonus, rewardText, BOOK_SETS, setMembers, isFinished } from '../../shared/data/monsterbook.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
 import { SLOTS, slotName } from '../../shared/constants.js';
@@ -724,9 +725,23 @@ export class UI {
 
     const wrap = el('div', 'mbook');
     const head = el('div', 'mb-head');
-    head.innerHTML = `<b>ค้นพบ <span class="num">${found}</span> / <span class="num">${book.length}</span></b>
+    const bonus = bookBonus(kills);
+    head.innerHTML = `<b>ค้นพบ <span class="num">${found}</span> / <span class="num">${book.length}</span>
+      · ครบ <span class="num">${bonus.pages.length}</span></b>
       <div class="bar small"><i style="width:${(found / Math.max(1, book.length)) * 100}%"></i></div>`;
     wrap.append(head);
+    // what the finished pages give, and how far each region is from its own reward
+    const perks = el('div', 'mb-perks');
+    const total = rewardText(bonus);
+    perks.innerHTML = `<span class="muted">โบนัสถาวรจากสมุด:</span> <b>${total || 'ยังไม่มี — บันทึกให้ครบสักตัว'}</b>`;
+    for (const set of BOOK_SETS) {
+      const members = setMembers(set);
+      const done = members.filter((id) => isFinished(id, kills)).length;
+      const got = bonus.sets.includes(set.id);
+      perks.append(el('span', 'mb-set' + (got ? ' got' : ''),
+        `${got ? '★' : '☆'} ${esc(set.name)} <span class="num">${done}/${members.length}</span> → ${rewardText(set.reward)}`));
+    }
+    wrap.append(perks);
 
     const grid = el('div', 'mb-grid');
     const portraits = [];
@@ -764,6 +779,9 @@ export class UI {
          <div class="bar small"><i style="width:${Math.min(100, (n / next[1]) * 100)}%"></i></div>`
       : `<span class="mb-done">★ บันทึกครบแล้ว · ล้ม <b class="num">${n}</b> ตัว</span>`;
     detail.append(prog);
+    const reward = el('div', 'mb-reward' + (n >= need.rates ? ' got' : ''));
+    reward.innerHTML = `<span class="muted">${n >= need.rates ? 'ได้รับแล้ว' : 'รางวัลเมื่อบันทึกครบ'}</span> <b>${rewardText(bookReward(sel))}</b>`;
+    detail.append(reward);
 
     if (n >= need.info) {
       const where = bookWhere(sel.id);
@@ -4239,16 +4257,6 @@ function esc(s) {
 }
 /* ---------------- monster book helpers ---------------- */
 const ELEMENT_TH = { ice: 'น้ำแข็ง', earth: 'ดิน', wind: 'ลม', fire: 'ไฟ', neutral: 'ไม่มีธาตุ', dark: 'มืด', holy: 'ศักดิ์สิทธิ์', lightning: 'สายฟ้า', water: 'น้ำ', poison: 'พิษ' };
-/** Painted monsters only: the ones the book can draw. Lowest level first, bosses after their peers. */
-function bookEntries() {
-  return Object.values(MONSTERS)
-    .filter((m) => m.sprite?.kind === 'frames' && MOB_ART[m.sprite.key] && !m.summon)
-    .sort((a, b) => a.level - b.level || (a.boss ? 1 : 0) - (b.boss ? 1 : 0));
-}
-/** Kills needed for each page: its numbers, what it drops, how often. */
-function bookReveal(m) {
-  return m.boss ? { info: 1, drops: 1, rates: 3 } : { info: 1, drops: 10, rates: 50 };
-}
 function bookWhere(id) {
   const zones = Object.values(MAPS).filter((z) => (z.spawns ?? []).some((s) => s.mob === id)).map((z) => z.nameTh ?? z.name);
   if (zones.length) return zones.join(', ');

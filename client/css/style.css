@@ -2665,3 +2665,10 @@ body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="monsterbook"]::before 
 @media (max-width: 680px) { .mb-body { grid-template-columns: 1fr; } .mb-grid { max-height: 30vh; } }
 body.landscape-ui .mb-grid { max-height: 60vh; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
 body.landscape-ui .mb-card canvas { width: 60px; height: 54px; }
+.mb-perks { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 12.5px; padding: 6px 10px; border-radius: 8px; background: rgba(0, 0, 0, .28); border: 1px solid rgba(181, 138, 60, .3); }
+.mb-perks b { color: #9be86a; }
+.mb-set { font-size: 12px; color: var(--muted); }
+.mb-set.got { color: #ffcf6a; font-weight: 700; }
+.mb-reward { font-size: 12.5px; padding: 5px 8px; border-radius: 6px; background: rgba(255, 255, 255, .05); border: 1px dashed rgba(255, 207, 106, .35); }
+.mb-reward b { color: #ffcf6a; }
+.mb-reward.got { border-style: solid; background: rgba(255, 207, 106, .1); }

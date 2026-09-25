@@ -8,6 +8,7 @@ import { SKILLS, val } from '../../shared/data/skills.js';
 import { MAX_BASE_LEVEL, MAX_JOB_LEVEL, SLOTS, STAT_CAP, TILE } from '../../shared/constants.js';
 import { markDirty } from '../persistence.js';
 import { jobCanHold } from '../../shared/weapons.js';
+import { bookBonus } from '../../shared/data/monsterbook.js';
 
 let seq = 0;
 
@@ -241,6 +242,11 @@ export class Player {
       for (const [k, v] of Object.entries(s.pct ?? {})) if (d[k] != null) d[k] = Math.floor(d[k] * (1 + v / 100));
       for (const [k, v] of Object.entries(s.flat ?? {})) if (d[k] != null) d[k] += v;
     }
+    // the monster book: every finished page, for good
+    const book = bookBonus(this.record.kills);
+    d.maxHp += book.maxHp; d.atk += book.atk; d.matk += book.matk; d.def += book.def; d.mdef += book.mdef;
+    bm.expPct = (bm.expPct ?? 0) + book.expPct;
+    this.book = book;
     d.level = this.record.level;
     this.derived = d;
     this.mods = bm;
@@ -530,6 +536,7 @@ export class Player {
       aurum: r.aurum, weight: this.weight(), weightCap: this.weightCap,
       map: r.map, x: this.x, y: this.y, skills: r.skills, hotbar: r.hotbar,
       equipment: r.equipment, quests: r.quests, visited: r.visited ?? [], kills: r.kills ?? {},
+      book: this.book ? { ...this.book } : null,
       statuses: this.statuses.map((s) => ({ type: s.type, key: s.key, until: s.until, icon: s.icon, beneficial: !!s.beneficial, item: s.item, mods: Object.keys(s.mods ?? {}) })),
       cooldowns: this.cooldowns,
       jobInfo: { id: r.job, name: JOBS[r.job]?.name, nameTh: JOBS[r.job]?.nameTh, weapons: JOBS[r.job]?.weapons, next: JOBS[r.job]?.next },
