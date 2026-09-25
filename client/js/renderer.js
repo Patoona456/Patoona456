@@ -18,6 +18,7 @@ import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 import { CHIBI_FISTS } from '../../shared/data/chibi.js';
+import { SWING } from '../../shared/data/swing.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
 import { atlasFile, atlasRect, ATLAS_FILES } from '../../shared/atlas.js';
 
@@ -92,8 +93,8 @@ const BOW_POSE = [
 const SHOOT_SIDE = [1, -1, 1, 1];
 /** Tip to tip, in screen pixels: a bow stands taller in the hand than a sword. */
 const BOW_LEN = 23;
-/** Pommel to tip, in screen pixels, on a ~50px chibi: under half its height. */
-const HELD_LEN = 22;
+/** Pommel to tip, in screen pixels, on a ~50px chibi: about half its height. */
+const HELD_LEN = 26;
 /** The fist's radius in frame pixels, for painting it back over the grip. */
 const FIST_R = 8;
 
@@ -103,11 +104,56 @@ function chibiRow(e) { return CHIBI_WALK.dirMap[((e.d ?? 0) % 8 + 8) % 8]; }
 /** The grip for this facing (so the draw order can ask before the body goes on). */
 export function chibiHand(e) { return CHIBI_GRIP[chibiRow(e)]; }
 
+/** The frame of the sword swing a chibi is on, or -1 if it is not swinging a sword. */
+function swingFrame(e, anim, elapsed, held) {
+  if (anim !== 'slash' || !held || held.bow) return -1;
+  return frameAt(CHIBI_WALK, 'slash', elapsed, false);
+}
+
+/**
+ * The cut's crescent: a sweep of light from where the blade was on the frame
+ * before to where it is now, thick at the tip and thinning toward the hand,
+ * fading as the frame plays out. Coloured by the blade's refine or element
+ * light when it has one.
+ */
+function drawSwingArc(ctx, from, to, len, t, rgb, sweep) {
+  let d = to - from;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  if (Math.abs(d) > 2.6 && Math.sign(d) !== sweep) d += sweep * Math.PI * 2;
+  if (Math.abs(d) < 0.15) return;
+  const outer = len * 1.08, inner = len * 0.42, steps = 14;
+  const col = rgb ? rgb.join(',') : '255,250,235';
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.85 * (1 - t * 0.7);
+  const g = ctx.createRadialGradient(0, 0, inner, 0, 0, outer);
+  g.addColorStop(0, `rgba(${col},0)`);
+  g.addColorStop(0.55, `rgba(${col},0.35)`);
+  g.addColorStop(1, `rgba(${col},0.95)`);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  // the outer edge runs the whole sweep; the inner edge comes back toward the
+  // outer one at the trailing end, so the crescent tapers behind the blade
+  for (let i = 0; i <= steps; i++) {
+    const a = from + (d * i) / steps;
+    ctx.lineTo(Math.cos(a) * outer, Math.sin(a) * outer);
+  }
+  for (let i = steps; i >= 0; i--) {
+    const a = from + (d * i) / steps;
+    const r = inner + (outer - inner) * (1 - i / steps) * 0.85;
+    ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
   const row = chibiRow(e);
   const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed)
-    : anim === 'shoot' ? CHIBI_WALK.anims.shoot.start + frameAt(CHIBI_WALK, 'shoot', elapsed, false)
+    : anim === 'shoot' || anim === 'slash' ? CHIBI_WALK.anims[anim].start + frameAt(CHIBI_WALK, anim, elapsed, false)
       : CHIBI_WALK.anims.idle.start;
   const [fx, fy] = CHIBI_FISTS[row][col] ?? CHIBI_FISTS[row][0];
   const { w, h } = CHIBI_WALK.frame;
@@ -224,7 +270,9 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   const shooting = bow && anim === 'shoot';
   const side = shooting ? SHOOT_SIDE[chibiRow(e)] : pose?.side;
   const walking = anim === 'walk';
-  const swing = !bow && (anim === 'slash' || anim === 'thrust');
+  // a sword swing has frames of its own: the blade's angle comes from them
+  const sf = swingFrame(e, anim, elapsed, held);
+  const swing = !bow && sf < 0 && (anim === 'slash' || anim === 'thrust');
   // the art's blades point up at 45 degrees; `angle` turns from there
   const rest = Math.PI / 4 - (shooting ? Math.PI / 2 : pose?.rest ?? hand.rest);
   let angle = rest + (walking ? Math.sin(now / 124) * 0.06 : 0);
@@ -245,7 +293,29 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.translate(fist.x, fist.y);
-  ctx.scale(pose ? side : swing ? hand.cut : hand.side, 1);
+  // refine and element light the blade itself: the tier's colour leaned
+  // toward the element, breathing, brighter in the swing
+  const tier = glowTier(e.wr);
+  const el = ITEMS[e.eq?.weapon]?.element;
+  const elemental = el && el !== 'neutral' ? elLook(el).main : null;
+  const rgb = tier ? (elemental ? mixRgb(tier.color, elemental, 0.55) : tier.color) : elemental;
+  if (sf >= 0) {
+    const row = chibiRow(e);
+    const deg = SWING.angle[row];
+    const th = (deg[sf] * Math.PI) / 180;
+    if (SWING.arc.includes(sf)) {
+      const perFrame = 1000 / CHIBI_WALK.anims.slash.fps;
+      const t = Math.min(1, (elapsed - sf * perFrame) / perFrame);
+      drawSwingArc(ctx, (deg[sf - 1] * Math.PI) / 180, th, len, t, rgb, SWING.sweep[row]);
+    }
+    // the picture's own axis onto the blade's, mirrored along the blade when
+    // it points left so its guard and edge stay the right way up
+    ctx.rotate(th);
+    if (Math.cos(th) < 0) ctx.scale(1, -1);
+    ctx.rotate(-grip.angle);
+  } else {
+    ctx.scale(pose ? side : swing ? hand.cut : hand.side, 1);
+  }
   if (swing && angle > -1.2 && elapsed < 190) {
     // the cut leaves a thin trail behind the tip
     const tip = len * 0.85, from = -Math.PI / 4 - 1.2, to = -Math.PI / 4 + angle;
@@ -260,18 +330,12 @@ function drawHeld(ctx, held, e, anim, elapsed, now) {
     ctx.stroke();
   }
   // turn the picture's own axis onto the held angle, about its grip
-  ctx.rotate(-Math.PI / 4 + angle - grip.angle);
-  // refine and element light the blade itself: the tier's colour leaned
-  // toward the element, breathing, brighter in the swing
-  const tier = glowTier(e.wr);
-  const el = ITEMS[e.eq?.weapon]?.element;
-  const elemental = el && el !== 'neutral' ? elLook(el).main : null;
-  const rgb = tier ? (elemental ? mixRgb(tier.color, elemental, 0.55) : tier.color) : elemental;
+  if (sf < 0) ctx.rotate(-Math.PI / 4 + angle - grip.angle);
   const { sx, sy, size } = atlasRect(file, cell, img.naturalWidth);
   const dx = -grip.x * k, dy = -grip.y * k;
   if (rgb) {
     const pulse = 0.7 + 0.3 * Math.sin(now / 480 + e.x * 0.05);
-    const power = (tier ? 0.45 + tier.aura * 0.35 : 0.35) * pulse * (swing ? 1.4 : 1);
+    const power = (tier ? 0.45 + tier.aura * 0.35 : 0.35) * pulse * (swing || sf >= 0 ? 1.4 : 1);
     ctx.save();
     ctx.shadowColor = `rgba(${rgb.join(',')},${Math.min(1, power).toFixed(2)})`;
     ctx.shadowBlur = 4 + (tier?.aura ?? 0.5) * 6;
@@ -889,8 +953,8 @@ export class Renderer {
         e._lx = e.x; e._ly = e.y;
         if (anim === 'walk') elapsed = (e._stride / (CHIBI_STRIDE * (e.sprite?.scale ?? 1))) * CHIBI_CYCLE_MS;
       }
-      // (a bow shot has frames of its own, drawn from the shooting board)
-      if (chibi && (anim === 'slash' || anim === 'thrust' || anim === 'spellcast')) {
+      // (a bow shot and a sword swing have frames of their own)
+      if (chibi && (anim === 'thrust' || anim === 'spellcast')) {
         const k = Math.min(1, elapsed / 260);
         const [vx, vy] = vecOf(e.d ?? 0);
         const reach = Math.sin(k * Math.PI) * (anim === 'spellcast' ? 2 : 6);
@@ -977,8 +1041,11 @@ export class Renderer {
             ctx.translate(e.x, e.y); ctx.scale(1 / Math.sqrt(b), b); ctx.translate(-e.x, -e.y);
           }
           const held = chibi ? heldArt(e) : null;
-          // a bow always goes on after the body, gripped by the fist painted over it
-          const over = held && (held.bow || chibiHand(e).over);
+          // a bow always goes on after the body, gripped by the fist painted
+          // over it; in a sword swing each frame says which side of the body
+          // the blade is on
+          const sf = swingFrame(e, anim, elapsed, held);
+          const over = held && (sf >= 0 ? !SWING.behind[chibiRow(e)].includes(sf) : held.bow || chibiHand(e).over);
           if (held && !over) drawHeld(ctx, held, e, anim, elapsed, now);
           const body = {
             x: e.x, y: e.y, anim, dir: e.d ?? 0, elapsed,

@@ -237,6 +237,28 @@ test('chibi hair is a layer on the body\'s grid, and bald means none', async () 
   }
 });
 
+test('the sword swing has a blade angle for every frame, and every fist is inside its cell', async () => {
+  const { CHIBI_WALK } = await import('../shared/sheets.js');
+  const { CHIBI_FISTS } = await import('../shared/data/chibi.js');
+  const { SWING } = await import('../shared/data/swing.js');
+  const { frames, start } = CHIBI_WALK.anims.slash;
+  assert.equal(SWING.angle.length, CHIBI_WALK.dirRows);
+  assert.equal(SWING.behind.length, CHIBI_WALK.dirRows);
+  assert.equal(SWING.sweep.length, CHIBI_WALK.dirRows);
+  for (const row of SWING.angle) {
+    assert.equal(row.length, frames);
+    for (const a of row) assert.ok(a >= -180 && a <= 180, `blade angle ${a} is not in degrees`);
+  }
+  for (const row of SWING.behind) for (const f of row) assert.ok(f >= 0 && f < frames);
+  for (const f of SWING.arc) assert.ok(f >= 1 && f < frames, 'an arc needs the frame before it');
+  for (const row of CHIBI_FISTS) {
+    for (let c = start; c < start + frames; c++) {
+      const [x, y] = row[c];
+      assert.ok(x > 0 && x < CHIBI_WALK.frame.w && y > 0 && y < CHIBI_WALK.frame.h, `fist ${x},${y} is off the cell`);
+    }
+  }
+});
+
 test('in every town, each keeper and each way out can be walked to from the spawn', () => {
   for (const m of Object.values(MAPS)) {
     if (m.kind !== 'town') continue;

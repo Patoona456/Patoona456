@@ -95,21 +95,22 @@ CHIBI8.aliases = CHIBI_ALIASES;
 
 /**
  * The chibi base (assets/chibi/body/base_male.png), as cut by
- * tools/slice-base.py: eight walk frames, a standing frame and ten frames of
- * a bow shot across, four facings down (down, left, up, right). A diagonal shows the side it leans to, so walking
- * down-left reads as walking left. The body is bald and in its shorts: hair,
- * hats and clothes are layers on the same grid. It is drawn at source
- * resolution and shrunk on the way to the screen, so it stays sharp when the
- * camera zooms in. There is only a walk: every other action falls back to
- * the standing frame, and the renderer lunges the body for attacks instead.
+ * tools/slice-base.py: eight walk frames, a standing frame, ten frames of a
+ * bow shot and ten of a sword swing across, four facings down (down, left,
+ * up, right). A diagonal shows the side it leans to, so walking down-left
+ * reads as walking left. The body is bald and in its shorts: hair, hats and
+ * clothes are layers on the same grid. It is drawn at source resolution and
+ * shrunk on the way to the screen, so it stays sharp when the camera zooms
+ * in. Actions with no frames of their own fall back to the standing frame,
+ * and the renderer lunges the body for them instead.
  */
 export const CHIBI_WALK = {
   id: 'chibi_walk',
   aliases: {},
-  frame: { w: 128, h: 192 },
-  cols: 19,
+  frame: { w: 192, h: 224 },
+  cols: 29,
   rows: 4,
-  anchor: 184 / 192,
+  anchor: 216 / 224,
   drawScale: 0.36,   // ~50px from crown to heel, level with the town NPCs
   dirRows: 4,
   //       down  dl  left  ul  up  ur  right  dr
@@ -119,6 +120,10 @@ export const CHIBI_WALK = {
     walk: { row: 0, frames: 8, fps: 11 },
     // ready, raise, nock, draw, full draw, aim, loose, follow through, ease, back
     shoot: { row: 0, frames: 10, fps: 15, start: 9 },
+    // ready, grip, draw back, raised, cut, cut through, follow through, ease,
+    // return, ready: bare hands round a grip that is not there - the sword is
+    // the item's own picture, put in the fist frame by frame by the renderer
+    slash: { row: 0, frames: 10, fps: 24, start: 19 },
   },
 };
 
