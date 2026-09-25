@@ -597,18 +597,18 @@ export const MATERIALS = {
   boar_tusk: M({ id: 'boar_tusk', name: 'Boar Tusk', nameTh: 'เขี้ยวหมูป่า', value: 34, weight: 1, rarity: 'uncommon',
     art: DROP('tusk_1'), loot: 'tusk',
     desc: 'เขี้ยวโค้งแข็งแรง ช่างตีเหล็กใช้ทำด้ามและเครื่องประดับ' }),
-  // the tree guardian's; the art is borrowed until its drop sheet comes
+  // the tree guardian's; cut from its drop sheet
   ancient_bark: M({ id: 'ancient_bark', name: 'Ancient Bark', nameTh: 'เปลือกไม้โบราณ', value: 40, weight: 2,
-    rarity: 'uncommon', art: DROP('shell_1'), loot: 'shell',
+    rarity: 'uncommon', art: DROP('bark_1'), loot: 'bark',
     desc: 'เปลือกไม้หนาแข็งของผู้พิทักษ์ อายุนับพันปี ใช้ทำโล่และเกราะไม้' }),
   guardian_core: M({ id: 'guardian_core', name: 'Guardian Core', nameTh: 'แก่นผู้พิทักษ์', value: 160, weight: 1,
-    rarity: 'rare', art: DROP('core_1'), loot: 'core',
+    rarity: 'rare', art: DROP('gcore_1'), loot: 'gcore',
     desc: 'หัวใจสีเขียวเรืองแสงของผู้พิทักษ์ต้นไม้ เก็บพลังชีวิตของป่าทั้งผืน' }),
   nature_crystal_l: M({ id: 'nature_crystal_l', name: 'Large Nature Crystal', nameTh: 'ผลึกธรรมชาติ (ใหญ่)', value: 120,
-    weight: 1, rarity: 'rare', art: DROP('ncrystal_4'), loot: 'ncrystal',
+    weight: 1, rarity: 'rare', art: DROP('lcrystal_1'), loot: 'lcrystal',
     desc: 'ผลึกธรรมชาติก้อนใหญ่ที่งอกในรากของผู้พิทักษ์ ใช้ตีบวกอาวุธธาตุดิน' }),
   ancient_emblem: M({ id: 'ancient_emblem', name: 'Ancient Guardian Emblem', nameTh: 'ตราผู้พิทักษ์โบราณ', value: 800,
-    weight: 1, rarity: 'epic', art: DROP('emblem_1'), loot: 'emblem',
+    weight: 1, rarity: 'epic', art: DROP('aemblem_1'), loot: 'aemblem',
     desc: 'ตราที่ได้จากการล้มผู้พิทักษ์ต้นไม้โบราณ ผู้ครองทุ่งกรีนไมร์' }),
   // the alpha wolf's; cut from its drop sheet
   wolf_fang: M({ id: 'wolf_fang', name: 'Wolf Fang', nameTh: 'เขี้ยวหมาป่า', value: 30, weight: 1, rarity: 'common',

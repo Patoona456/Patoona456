@@ -110,6 +110,26 @@ SHEETS = [
         ('ground', (838, 990), ['emblem_1', 'emblem_2', 'emblem_3', 'emblem_4'], 740, 1150, {'thr': 200}),
         ('pickup', (838, 990), ['emblem'] * 4, 1150, 1536, {'thr': 200}),
     ]),
+    # The tree guardian's: laid out like the wolf's, icons from the first of
+    # each lying on the ground, and a gold we have.
+    ('assets/ui/source/guardian_drops.png', 210, [
+        ('icon', (74, 208), ['bark_1'], 780, 880),
+        ('fall_bark', (74, 208), 6, 210, 775, {'thr': 150}),
+        ('ground', (74, 208), ['bark_1', 'bark_2', 'bark_3', 'bark_4'], 780, 1170, {'thr': 150}),
+        ('pickup', (74, 208), ['bark'] * 4, 1185, 1536),
+        ('icon', (272, 418), ['gcore_1'], 790, 885),
+        ('fall_gcore', (272, 418), 6, 210, 785),
+        ('ground', (272, 418), ['gcore_1', 'gcore_2', 'gcore_3', 'gcore_4'], 788, 1180),
+        ('pickup', (272, 418), ['gcore'] * 4, 1188, 1536, {'thr': 150}),
+        ('icon', (494, 640), ['lcrystal_1'], 778, 878),
+        ('fall_lcrystal', (494, 640), 6, 218, 778),
+        ('ground', (494, 640), ['lcrystal_1', 'lcrystal_2', 'lcrystal_3', 'lcrystal_4'], 778, 1184),
+        ('pickup', (494, 640), ['lcrystal'] * 4, 1184, 1536),
+        ('icon', (878, 1004), ['aemblem_1'], 782, 887),
+        ('fall_aemblem', (878, 1004), 6, 205, 780),
+        ('ground', (878, 1004), ['aemblem_1', 'aemblem_2', 'aemblem_3', 'aemblem_4'], 782, 1186),
+        ('pickup', (878, 1004), ['aemblem'] * 4, 1190, 1536),
+    ]),
     ('assets/ui/source/bee_drops.png', 200, [
         ('icon', (40, 160), ['honey_1'], 850, 925),
         ('fall_honey', (236, 330), 6, 200, 690),
