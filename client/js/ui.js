@@ -66,6 +66,10 @@ export class UI {
 
     for (const b of document.querySelectorAll('#menu-buttons button[data-panel]')) {
       b.addEventListener('click', () => {
+        if (b.dataset.panel === 'party') {
+          this.socialTab = b.dataset.social ?? 'party';
+          if (this.socialTab === 'friends') this.game.net.send({ t: 'friend', cmd: 'state' });
+        }
         this.toggle(b.dataset.panel);
         if (b.classList.contains('more')) $('#menu-buttons').classList.remove('open');
       });
@@ -225,9 +229,16 @@ export class UI {
     if (!node) return;
     const sky = skyAt();
     const p = sky.phase;
-    const icon = p < 0.24 ? '🌙' : p < 0.30 ? '🌅' : p < 0.70 ? '🌤' : p < 0.80 ? '🌇' : '🌙';
-    node.textContent = `${icon} ${gameClock().text}`;
-    node.title = sky.night ? 'กลางคืน — คบไฟและโคมสว่างขึ้น' : 'กลางวัน';
+    // the zone's own sky wins over the hour: rain in the marsh, snow on the ice
+    const theme = this.game.renderer?.zone?.theme;
+    const wx = { marsh: 'rain', ice: 'snow', crypt: 'fog', rock: 'wind' }[theme] ?? (p < 0.24 || p >= 0.80 ? 'night' : 'day');
+    const TH = { rain: 'ฝนตก', snow: 'หิมะตก', fog: 'หมอกลง', wind: 'ลมแรง', night: 'กลางคืน — คบไฟและโคมสว่างขึ้น', day: 'กลางวัน' };
+    if (node.dataset.wx !== wx) {
+      node.dataset.wx = wx;
+      node.innerHTML = `<img class="wx" src="${UI_BASE}/wx_${wx}.webp" alt=""><span class="num"></span>`;
+    }
+    node.querySelector('span').textContent = gameClock().text;
+    node.title = TH[wx];
   }
 
   /** The quest tracker pinned to the left edge. */
@@ -309,7 +320,7 @@ export class UI {
     const t = Date.now();
     for (const s of list ?? []) {
       if (!s.icon) continue;
-      const pic = STATUS_ART[s.key] ?? STATUS_ART[s.type];
+      const pic = statusArt(s);
       const ail = AILMENTS.indexOf(s.key) >= 0 ? AILMENTS.indexOf(s.key) : AILMENTS.indexOf(s.type);
       const node = el('div', s.beneficial ? 'good' : 'bad', pic || ail >= 0 ? '' : s.icon);
       if (s.item && ITEMS[s.item]) {
@@ -738,6 +749,7 @@ export class UI {
     const PAINTED = new Set(['weapon', 'head', 'glasses', 'cloak', 'offhand', 'mask', 'accessory', 'hands', 'legs', 'scarf', 'wings']);
     const slotNode = (slot) => {
       const it = worn[slot];
+      const ghost = !it && (slot === 'torso' || slot === 'armor');
       const node = ca(it || !PAINTED.has(slot) ? 's_blank' : `s_${slot}`, .6, 'div',
         'doll-slot' + (it ? ` worn r-${it.rarity ?? 'common'}` : ' empty'));
       node.title = it ? `${it.name}${it.refine ? ` +${it.refine}` : ''} — คลิกเพื่อถอด` : LABELS[slot];
@@ -745,6 +757,11 @@ export class UI {
         node.append(itemIcon(it.id, { size: 30 }));
         if (it.refine) node.append(el('span', 'plus', '+' + it.refine));
         node.addEventListener('click', () => this.game.net.send({ t: 'unequip', slot }));
+      } else if (ghost) {
+        const img = el('img', 'ghost');
+        img.src = `${UI_BASE}/ghost_${slot}.webp`;
+        img.alt = LABELS[slot];
+        node.append(img);
       } else if (!PAINTED.has(slot)) {
         node.append(el('span', 'doll-label', LABELS[slot]));
       }
@@ -1427,7 +1444,7 @@ export class UI {
     const tab = this.socialTab ?? 'party';
     const wrap = el('div', 'social');
     const tabs = el('div', 'social-tabs');
-    for (const [key, label, pic] of [['party', 'ปาร์ตี้', 'fa_group'], ['friends', 'เพื่อน', 'menu_party'], ['guild', 'กิลด์', 'menu_guild']]) {
+    for (const [key, label, pic] of [['party', 'ปาร์ตี้', 'h2_m_party'], ['friends', 'เพื่อน', 'h2_m_friends'], ['guild', 'กิลด์', 'h2_m_guild']]) {
       const b = el('button', 'social-tab' + (tab === key ? ' on' : ''));
       const i = el('img'); i.src = `${UI_BASE}/${pic}.webp`; i.alt = '';
       b.append(i, el('span', '', label));
@@ -3110,7 +3127,10 @@ export class UI {
       spot.style.left = `${(s.x / 780) * 100}%`;
       spot.style.top = `${(s.y / 485) * 100}%`;
       const lr = m.levelRange ? `Lv. ${m.levelRange[0]} - ${m.levelRange[1]}` : m.safe ? 'เมืองปลอดภัย' : '';
-      spot.append(el('b', '', esc(m.nameTh ?? m.name)), el('span', '', lr));
+      const pin = el('img', 'wm-pin');
+      pin.src = `${UI_BASE}/pin_${{ town: 'town', field: 'field', cave: 'dungeon', dungeon: 'dungeon', boss: 'boss' }[m.kind] ?? (s.art === 'harbor' ? 'harbor' : 'field')}.webp`;
+      pin.alt = '';
+      spot.append(pin, el('b', '', esc(m.nameTh ?? m.name)), el('span', '', lr));
       spot.addEventListener('click', () => { this.wmSel = s.id; this.openWorldMap(); });
       board.append(spot);
       if (s.id === here) {
@@ -3143,7 +3163,7 @@ export class UI {
       : !r ? (m?.party ? `เข้าทางประตูเท่านั้น · ต้องมีปาร์ตี้ ${m.party} คนขึ้นไป` : 'เข้าได้ทางประตูเท่านั้น')
       : r.needVisit && !visited.has(sel) ? 'ต้องเดินไปถึงพื้นที่นี้ด้วยตัวเองก่อน'
       : !inTown ? 'วาร์ปได้เฉพาะตอนอยู่ในเมือง' : null;
-    const go = el('button', 'btn primary wm-go', r ? `วาร์ปทันที · ${fmt(r.price)} ออรัม` : 'วาร์ปไม่ได้');
+    const go = el('button', 'btn primary wm-go', r ? `<img src="${UI_BASE}/wm_warp_btn.webp" alt="วาร์ป"><span><i class="cur coin"></i> ${fmt(r.price)}</span>` : 'วาร์ปไม่ได้');
     go.disabled = !!why;
     go.addEventListener('click', () => { this.game.net.send({ t: 'warp', to: sel }); this.close('worldmap'); });
     info.append(go);
@@ -3170,6 +3190,7 @@ export class UI {
   }
 
   openStorage(d) {
+    if (!d) return null;                       // only an NPC opens it, with its contents
     const wrap = el('div', 'grid');
     const grid = el('div', 'grid cols-2');
 
@@ -3303,6 +3324,7 @@ export class UI {
   }
 
   openMarket(d) {
+    if (!d) return null;                       // the broker sends the listings
     const wrap = el('div', 'grid');
     wrap.append(el('div', 'muted', 'ตลาดผู้เล่น — หักภาษี 5% ทั้งตอนลงขายและตอนขายได้ ประกาศหมดอายุใน 24 ชม.'));
     const tabs = el('div', 'opts');
@@ -4016,6 +4038,26 @@ const SHOP_CATS = [['all', 'ทั้งหมด'], ['weapon', 'อาวุธ
 
 /** Status (by key, then by type) -> painted icon from the UI sheet. */
 const STATUS_ART = { food: 'st_plus', buff: 'st_sword', shield: 'st_shield' };
+/**
+ * Which painted icon a status wears (assets/ui/h2_st_*). A buff is drawn by
+ * what it changes: a sword for attack, a shield for defence, a boot for
+ * speed, a heart for life, a swirl for magic, XP for learning, a star else.
+ */
+const BUFF_ICON = [
+  [/^(atk|crit|hit|aspd|str|lifesteal|reflect)/, 'h2_st_buff0'], [/^(def|mdef|dmgTaken|minHpGuard|statusRes|vit)/, 'h2_st_buff1'],
+  [/^(speed|flee|agi|invisible)/, 'h2_st_buff2'], [/^(maxHp|hpRegen)/, 'h2_st_buff3'], [/^(spRegen|spCost)/, 'h2_st_buff4'],
+  [/^(matk|cast|int|shockAura)/, 'h2_st_buff6'], [/^(exp|drop|luk|steal)/, 'h2_st_buff7'],
+];
+function statusArt(s) {
+  if (s.key === 'vhaal_tether') return 'h2_st_debuff7';
+  if (s.type === 'shield') return 'h2_st_buff1';
+  if (s.type === 'food') return 'h2_st_buff4';
+  if (s.type === 'buff') {
+    for (const m of s.mods ?? []) for (const [re, pic] of BUFF_ICON) if (re.test(m)) return pic;
+    return 'h2_st_buff5';
+  }
+  return STATUS_ART[s.key] ?? null;
+}
 /** The harmful ones, in the order of assets/ui/ailments.webp (tools/slice-ui.py). */
 const AILMENTS = ['stun', 'chill', 'root', 'debuff', 'poison', 'burn'];
 const STATUS_TH = {
@@ -4033,8 +4075,6 @@ export function bossPhase(ent) {
   for (const at of ent.pht ?? []) if (pct <= at) phase++;
   return phase;
 }
-/** Empty paper-doll slots that have a grey outline on the sheet. */
-const GHOSTS = new Set(['head', 'torso', 'legs', 'hands', 'armor', 'weapon', 'offhand', 'accessory', 'scarf']);
 
 /** A refined item wears its aura in the bag too, in the same colour it glows. */
 function markRefine(node, refine) {

@@ -146,6 +146,7 @@ class Game {
       this.audio.startBed(m.theme);
       if (this.inWorld) this.audio.play('warp');
       this.renderer.setZone(m);
+      this.ui.updateClock();                 // the new zone may have its own sky
       this.zone = m;
       this.grid = decodeGrid(m.rle, m.width * m.height);
       $('#zone-name').textContent = m.nameTh ?? m.name;
@@ -303,7 +304,7 @@ class Game {
           onMe ? '#ff9a9a' : ev.crit ? elRgba(el, 'core', 1) : mine ? '#ffffff' : '#ffb3b3',
           ev.crit ? 17 : 12, { crit: ev.crit, digits: mine && !onMe });
         if (mine && !onMe) this.ui.comboHit();
-        if (ev.crit) r.floater('CRITICAL', at.x, at.y - 16, '#ff6a4a', 26, { vx: 0, crit: true, img: 'critical' });
+        if (ev.crit) r.floater('CRITICAL', at.x, at.y - 16, '#ff6a4a', 26, { vx: 0, crit: true, img: 'h2_fx_critical' });
         // the blow shoves the body, bursts in its own element, and a crit
         // holds the frame for a moment
         r.impact(ev.id, { x: ent.x, y: ent.y, from: this.entities.get(ev.src), el, crit: !!ev.crit });

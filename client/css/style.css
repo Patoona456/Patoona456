@@ -2055,6 +2055,7 @@ body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="inventory"]::before { 
 body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="skills"]::before { background-image: url(../../assets/ui/h2_m_skills.webp); }
 body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="quests"]::before { background-image: url(../../assets/ui/h2_m_quests.webp); }
 body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="party"]::before { background-image: url(../../assets/ui/h2_m_party.webp); }
+body[data-ui="ember"] #hud #menu-buttons .btn[data-social="friends"]::before { background-image: url(../../assets/ui/h2_m_friends.webp); }
 body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="guild"]::before { background-image: url(../../assets/ui/h2_m_guild.webp); }
 body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="stall"]::before { background-image: url(../../assets/ui/h2_m_stall.webp); }
 body[data-ui="ember"] #hud #menu-buttons .btn[data-panel="settings"]::before { background-image: url(../../assets/ui/h2_m_settings.webp); }
@@ -2576,3 +2577,12 @@ body.landscape-ui .cx-job { display: none; }
 .ca-titles { --x: 0; --y: 361; --w: 377; --h: 194; }
 .ca-wings { --x: 379; --y: 361; --w: 300; --h: 192; }
 /* end char atlas */
+
+/* audit: weather icon on the clock, world map pins, the painted warp button */
+#clock { display: inline-flex; align-items: center; gap: 4px; }
+#clock .wx { width: 16px; height: 16px; object-fit: contain; }
+.wm-spot .wm-pin { width: 22px; height: 22px; object-fit: contain; display: block; margin: 0 auto -2px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .6)); }
+.wm-go:has(img) { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0; border: none; background: none; box-shadow: none; }
+.wm-go img { height: 40px; }
+.wm-go:has(img):disabled img { filter: grayscale(.8) brightness(.6); }
+.cx .doll-slot .ghost { width: 60%; height: 60%; object-fit: contain; opacity: .9; filter: brightness(1.3); }

@@ -314,7 +314,7 @@ const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
 const DIGITS = [];
 if (typeof Image !== 'undefined') {
-  for (const name of ['h2_fx_miss', 'critical', 'h2_fx_levelup', ...ATLAS_FILES]) uiImage(name);
+  for (const name of ['h2_fx_miss', 'h2_fx_critical', 'h2_fx_levelup', ...ATLAS_FILES]) uiImage(name);
   for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
 }
 const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
