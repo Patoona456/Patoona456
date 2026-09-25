@@ -50,6 +50,7 @@ export class Monster {
     this.deadUntil = 0;
     this.lastCombat = 0;
     this.tapped = new Set();      // who has hit it (loot / exp rights)
+    this.dealt = new Map();       // and how hard: player id -> damage
     this.stolen = false;
   }
 

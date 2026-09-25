@@ -99,6 +99,7 @@ export const MONSTERS = {
       { id: 'honey', chance: 0.45, qty: [1, 2] },
       { id: 'bee_stinger', chance: 0.3 },
       { id: 'wind_crystal_s', chance: 0.06 },
+      { id: 'box_weapon_1', chance: 0.001 },
     ],
     aurum: { chance: 0.5, min: 3, max: 6 },
   }),
@@ -120,6 +121,7 @@ export const MONSTERS = {
       { id: 'boar_meat', chance: 0.5, qty: [1, 2] },
       { id: 'boar_hide', chance: 0.3 },
       { id: 'boar_tusk', chance: 0.12 },
+      { id: 'box_weapon_1', chance: 0.001 },
     ],
     aurum: { chance: 0.55, min: 4, max: 8 },
   }),
@@ -150,6 +152,7 @@ export const MONSTERS = {
       { id: 'spirit_leaf', chance: 0.45, qty: [1, 2] },
       { id: 'forest_essence', chance: 0.2 },
       { id: 'nature_crystal_s', chance: 0.09 },
+      { id: 'box_weapon_1', chance: 0.001 },
     ],
     aurum: { chance: 0.6, min: 5, max: 9 },
   }),
@@ -184,6 +187,8 @@ export const MONSTERS = {
       { id: 'alpha_fur', chance: 0.6, qty: [1, 2] },
       { id: 'beast_core', chance: 0.3 },
       { id: 'alpha_emblem', chance: 0.05 },
+      // a sealed weapon box, tradeable like any other: rare on purpose
+      { id: 'box_weapon_1', chance: 0.03 },
       // what every boss pays
       { id: 'revive_potion', chance: 0.1 },
       { id: 'guard_break', chance: 0.08 },
@@ -227,6 +232,7 @@ export const MONSTERS = {
       { id: 'guardian_core', chance: 0.5 },
       { id: 'nature_crystal_l', chance: 0.35 },
       { id: 'ancient_emblem', chance: 0.08 },
+      { id: 'box_weapon_1', chance: 0.1 },
       // what every boss pays
       { id: 'revive_potion', chance: 0.2 },
       { id: 'guard_break', chance: 0.12 },

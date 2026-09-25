@@ -124,6 +124,44 @@ test('an unlocked boss pays every time', (t) => {
   assert.ok(kill() > 0, 'skeleton_king has no lockout and should keep paying');
 });
 
+test('a boss pays only those who fought it: a spare character landing one blow gets nothing', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('greenmire');
+  const main = stubPlayer('MAIN', 10, zone), alt = stubPlayer('ALT', 10, zone);
+  for (const p of [main, alt]) { zone.players.set(p.id, p); zone.entities.set(p.id, p); }
+  const def = MONSTERS.tree_guardian;
+  const kill = (dealt) => {
+    zone.ground.length = 0;
+    zone.awardKill({
+      id: 'b' + Math.random(), kind: 'monster', defId: 'tree_guardian', def, name: 'boss', level: 10,
+      x: main.x, y: main.y, alive: true, boss: true, maxHp: def.hp,
+      tapped: new Set(Object.keys(dealt)), dealt: new Map(Object.entries(dealt)),
+    }, main);
+    return zone.ground;
+  };
+  for (let i = 0; i < 5; i++) {
+    const loot = kill({ MAIN: def.hp - 1, ALT: 1 });
+    assert.ok(loot.length > 0);
+    for (const g of loot) assert.deepEqual(g.owners, ['MAIN'], 'only the one who fought is owed it');
+  }
+  // the same two in a party: the party's damage counts for both
+  main.party = alt.party = 'pt';
+  const loot = kill({ MAIN: def.hp - 1, ALT: 1 });
+  assert.ok(loot.every((g) => g.owners.includes('ALT') && g.owners.includes('MAIN')));
+  // and nobody at all past the line: nothing drops
+  main.party = alt.party = null;
+  assert.equal(kill({ MAIN: 10, ALT: 10 }).length, 0);
+});
+
+test('weapon boxes are rare in Greenmire: a few percent from its bosses, a tenth of a percent in the field', () => {
+  const box = (id) => MONSTERS[id].drops.find((d) => d.id === 'box_weapon_1')?.chance ?? 0;
+  assert.ok(box('alpha_wolf') > 0 && box('alpha_wolf') <= 0.05);
+  assert.ok(box('tree_guardian') > box('alpha_wolf') && box('tree_guardian') <= 0.15);
+  for (const id of ['forest_bee', 'wild_boar', 'forest_spirit']) assert.ok(box(id) > 0 && box(id) <= 0.002, id);
+  for (const id of ['blue_slime', 'mushroom', 'caterpillar']) assert.equal(box(id), 0, `${id} is too easy to farm`);
+});
+
 /* --------------------------------------------------------------- aggro */
 
 test('a monster far above you hunts on sight, and sees you coming from further', (t) => {

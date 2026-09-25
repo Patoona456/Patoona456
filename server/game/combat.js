@@ -81,7 +81,11 @@ export function applyDamage(zone, attacker, target, amount, opts = {}) {
   // threat + loot/exp rights
   if (attacker && target.kind === 'monster') {
     const claimant = attacker.kind === 'player' ? attacker.id : attacker.owner;
-    if (claimant) target.tapped?.add(claimant);
+    if (claimant) {
+      target.tapped?.add(claimant);
+      // how much each one did: a boss's loot goes only to those who fought it
+      target.dealt?.set(claimant, (target.dealt.get(claimant) ?? 0) + remaining);
+    }
     target.threat ??= new Map();
     target.threat.set(attacker.id, (target.threat.get(attacker.id) ?? 0) + remaining + (opts.aggro ?? 0));
     if (!target.target || (target.threat.get(attacker.id) ?? 0) > (target.threat.get(target.target) ?? 0) * 1.25) {

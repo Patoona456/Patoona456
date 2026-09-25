@@ -40,6 +40,8 @@ const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
 /** Animations that play once and then hand back to idle. */
 const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill', 'leap', 'howl', 'enrage', 'spike', 'tornado', 'summon']);
 const SPAWN_MS = 800;
+/** The share of a boss's health a player (or their party) must deal to be owed its loot. */
+export const BOSS_LOOT_SHARE = 0.1;
 
 /**
  * Start a swing that lasts exactly one attack.
@@ -506,6 +508,25 @@ export class Zone {
       if (!ownerIds.length) return;         // everyone had already claimed it
     }
 
+    // A boss's loot goes to those who fought it: at least BOSS_LOOT_SHARE of
+    // its health, alone or with their party. A spare character brought along
+    // to land one blow and stand at the back gets the experience, not the loot.
+    if (m.boss && m.dealt) {
+      const need = m.maxHp * BOSS_LOOT_SHARE;
+      const done = (p) => {
+        const mates = p.party ? share.filter((q) => q.party === p.party) : [p];
+        return mates.reduce((sum, q) => sum + (m.dealt.get(q.id) ?? 0), 0);
+      };
+      const earned = share.filter((p) => done(p) >= need).map((p) => p.id);
+      for (const p of share) {
+        if (ownerIds.includes(p.id) && !earned.includes(p.id)) {
+          p.conn?.send({ t: 'notice', kind: 'warn', text: `${m.name}: ช่วยตีไม่ถึง ${BOSS_LOOT_SHARE * 100}% — ไม่ได้รับของดรอป` });
+        }
+      }
+      ownerIds = ownerIds.filter((id) => earned.includes(id));
+      if (!ownerIds.length) return;
+    }
+
     // drops: the luckiest bottle among the people who earned them counts
     const looters = share.filter((p) => ownerIds.includes(p.id));
     const best = (k) => Math.max(0, ...looters.map((p) => p.mods?.[k] ?? 0)) / 100;
@@ -757,7 +778,7 @@ export class Zone {
       if (target && dist(m, m.anchor) > LEASH * (m.boss ? 2 : 1)) {
         m.target = null; m.threat.clear(); target = null;
         m.hp = m.maxHp;   // full reset, classic leash behaviour
-        m.tapped.clear();
+        m.tapped.clear(); m.dealt?.clear();
         this.calm(m);
         if (m.def.script) resetBoss(this, m);
       }
@@ -1162,7 +1183,7 @@ export class Zone {
       }
       m.target = null;
       m.threat.clear();
-      m.tapped.clear();
+      m.tapped.clear(); m.dealt?.clear();
       m.stolen = false;
       m.statuses = [];
       // whatever move it died in the middle of dies with it
