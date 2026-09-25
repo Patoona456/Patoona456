@@ -52,6 +52,18 @@ MOBS = {
         # a little bigger than the slime: the cap is about thirty-six across
         'show': .58,
     },
+    'caterpillar': {
+        'src': 'assets/mob/source/caterpillar_sheet.png',
+        'alpha': True,
+        # the row labels end at 150; the item panel under the rows is not cut
+        'x0': 150,
+        'rows': [('idle', 12, 105, 9), ('walk', 113, 209, 9), ('run', 216, 312, 8), ('attack', 331, 433, 8),
+                 ('skill', 433, 553, 7), ('hit', 556, 651, 9), ('death', 663, 753, 8), ('spawn', 761, 856, 8)],
+        'faces': 'left',
+        'scale': .5,
+        # long and low: about forty across, a head shorter than the mushroom
+        'show': .56,
+    },
 }
 
 

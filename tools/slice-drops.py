@@ -56,6 +56,14 @@ SHEETS = [
         # blue, green, gold, then all three at once: only the green is new
         ('pickup', (892, 1015), [None] * 3 + ['nature'] * 2 + [None] * 6),
     ]),
+    # The caterpillar's items, from the small panel under its animation sheet
+    # until its own drop sheet comes: four of each, standing in for the tiers.
+    # The panel's boxes are half see-through white; lifting the floor of the
+    # alpha drops them and keeps the items.
+    ('assets/mob/source/caterpillar_sheet.png', 160, [
+        ('icon', (925, 1010), ['leaf_1', 'leaf_2', 'leaf_3', 'leaf_4', 'shell_1', 'shell_2', 'shell_3', 'shell_4'] + [None] * 8, 160),
+        ('ground', (925, 1010), ['leaf_1', 'leaf_2', 'leaf_3', 'leaf_4', 'shell_1', 'shell_2', 'shell_3', 'shell_4'] + [None] * 8),
+    ], {'alpha_floor': 185}),
 ]
 
 
@@ -94,8 +102,12 @@ def split_widest(im, y0, y1, spans, want):
 
 def main():
     pieces = []            # (group, name, rgba crop, scale)
-    for src, label_x, rows in SHEETS:
+    for src, label_x, rows, *opts in SHEETS:
         im = cv2.imread(os.path.join(ROOT, src), cv2.IMREAD_UNCHANGED)
+        floor = (opts[0] if opts else {}).get('alpha_floor')
+        if floor:
+            a = im[..., 3].astype(np.float32)
+            im[..., 3] = np.clip((a - floor) / (250 - floor) * 255, 0, 255).astype(np.uint8)
         mask = (im[..., 3] > 24).astype(np.uint8)
         for group, (y0, y1), names, *rest in rows:
             count = len(names) if isinstance(names, list) else names

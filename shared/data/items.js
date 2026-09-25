@@ -570,6 +570,13 @@ export const MATERIALS = {
   nature_crystal_s: M({ id: 'nature_crystal_s', name: 'Small Nature Crystal', nameTh: 'ผลึกธรรมชาติ (เล็ก)', value: 28, weight: 1,
     rarity: 'uncommon', art: DROP('ncrystal_1'), loot: 'ncrystal',
     desc: 'ผลึกสีเขียวอ่อนที่เห็ดเก็บพลังดินไว้ อุ่น ๆ เมื่อจับ' }),
+  // the caterpillar's (its nature crystal is the mushroom's)
+  caterpillar_leaf: M({ id: 'caterpillar_leaf', name: 'Caterpillar Leaf', nameTh: 'ใบไม้ของหนอน', value: 9, weight: 1,
+    rarity: 'common', art: DROP('leaf_1'), loot: 'leaf',
+    desc: 'ใบไม้สด ๆ ที่หนอนใบไม้พกติดตัว ยังมีรอยกัดอยู่' }),
+  soft_shell: M({ id: 'soft_shell', name: 'Soft Insect Shell', nameTh: 'เปลือกแมลงอ่อน', value: 16, weight: 1,
+    rarity: 'common', art: DROP('shell_1'), loot: 'shell',
+    desc: 'เปลือกนิ่ม ๆ ที่หนอนลอกทิ้ง เบาแต่เหนียว ใช้ทำเกราะเบา' }),
 };
 Object.assign(ITEMS, MATERIALS);
 

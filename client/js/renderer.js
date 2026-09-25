@@ -43,7 +43,8 @@ const DROPS = typeof Image !== 'undefined' ? uiImage(DROP_ART.file) : null;
 const LOOT_SIZE = 32;         // world px a drop-sheet cell is drawn at (loot reads smaller than a slime)
 const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
 // which colour of pick-up swirl each kind of loot goes up in, and for how long
-const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature' };
+const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature',
+  leaf: 'nature', shell: 'nature' };
 const PICKUP_MS = 480;
 const lootKind = (g) => (g.id === '__aurum' ? 'gold' : ITEMS[g.id]?.loot ?? null);
 /** Which of the four piles on the sheet an amount lies as. */

@@ -380,6 +380,7 @@ export function drawSkillFx(ctx, f, age) {
 export function drawWarning(ctx, w, now) {
   const k = Math.max(0, Math.min(1, (now - w.t) / w.ms));
   const el = w.el ?? 'holy';
+  if (w.tx != null) return drawLane(ctx, w, k, el);
   ctx.save();
 
   // the ground inside it, sweeping full as the timer runs out
@@ -410,6 +411,35 @@ export function drawWarning(ctx, w, now) {
     ctx.globalAlpha = (k - 0.8) * 5;
     disc(ctx, el, w.x, w.y, w.r, 0.3);
   }
+  ctx.restore();
+}
+
+/**
+ * A lane about to be charged down: a strip from (x, y) to (tx, ty), `w` wide,
+ * filling from the charger's end as the timer runs, with an arrowhead at the
+ * far end so it reads as a direction and not a patch.
+ */
+function drawLane(ctx, w, k, el) {
+  const len = Math.hypot(w.tx - w.x, w.ty - w.y) || 1;
+  const half = (w.w ?? 40) / 2;
+  ctx.save();
+  ctx.translate(w.x, w.y);
+  ctx.rotate(Math.atan2(w.ty - w.y, w.tx - w.x));
+  ctx.beginPath();
+  ctx.rect(0, -half, len, half * 2);
+  ctx.fillStyle = rgba(el, 'deep', 0.24);
+  ctx.fill();
+  ctx.fillStyle = rgba(el, 'main', 0.30);
+  ctx.fillRect(0, -half, len * k, half * 2);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineWidth = 2 + k * 3;
+  ctx.strokeStyle = rgba(el, k > 0.8 ? 'core' : 'main', 0.55 + k * 0.45);
+  ctx.strokeRect(0, -half, len, half * 2);
+  ctx.beginPath();
+  ctx.moveTo(len - half * 1.2, -half * 0.8);
+  ctx.lineTo(len + half * 0.3, 0);
+  ctx.lineTo(len - half * 1.2, half * 0.8);
+  ctx.stroke();
   ctx.restore();
 }
 

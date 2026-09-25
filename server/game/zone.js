@@ -697,6 +697,7 @@ export class Zone {
       if (m.def.script) tickBoss(this, m, t);
       // an ordinary monster's one area move; it stands its ground while winding up
       if (m.def.burst) this.tickBurst(m, target, t);
+      if (m.def.charge) this.tickCharge(m, target, t, dt);
       if (m.castUntil > t) { if (target) m.dir = dirTo(m, target); continue; }
 
       // acquire
@@ -832,6 +833,59 @@ export class Zone {
     m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
   }
 
+  /**
+   * A monster's charge: it curls up where it stands, a lane is marked from it
+   * through its target, and after the tell it rolls the length of the lane,
+   * hitting everyone it passes once. The lane is fixed when it is marked, so
+   * stepping out of it sideways is how you dodge.
+   */
+  tickCharge(m, target, t, dt) {
+    const c = m.def.charge;
+    const run = m.charging;
+    if (run) {
+      if (!m.alive) { m.charging = null; return; }
+      if (t < run.rollAt) return;                 // still curled up, showing the lane
+      const step = Math.min(run.left, c.speed * dt);
+      const bx = m.x, by = m.y;
+      this.moveTo(m, m.x + run.dx * step, m.y + run.dy * step, true);
+      const moved = Math.hypot(m.x - bx, m.y - by);
+      run.left -= step;
+      for (const p of this.players.values()) {
+        if (!p.alive || run.hit.has(p.id) || dist(m, p) > c.width / 2 + 10) continue;
+        run.hit.add(p.id);
+        const dmg = Math.floor(m.derived.atk * c.power * (0.9 + Math.random() * 0.2));
+        applyDamage(this, m, p, dmg, { element: c.element });
+      }
+      // the end of the lane, or a wall: it bursts out of the ball and unrolls
+      if (run.left <= 0 || moved < step * 0.5) {
+        m.charging = null;
+        this.pushEvent({ t: 'fx', fx: 'aoe', el: c.element, x: Math.round(m.x), y: Math.round(m.y), r: 44 });
+        m.animStart = t - c.lead;
+        m.castUntil = m.animUntil = t + c.recover;
+        m.nextAttackAt = Math.max(m.nextAttackAt, m.castUntil);
+      }
+      return;
+    }
+    if (!m.alive || !target) return;
+    const d = dist(m, target);
+    if (d < c.min || d > c.max) return;
+    if (m.nextChargeAt == null) { m.nextChargeAt = t + c.every / 2; return; }
+    if (t < m.nextChargeAt) return;
+    m.nextChargeAt = t + c.every;
+    const dx = (target.x - m.x) / d, dy = (target.y - m.y) / d;
+    const len = Math.min(c.max + 40, d + 60);         // on through where they stood
+    const x = Math.round(m.x), y = Math.round(m.y);
+    this.pushEvent({ t: 'warn', x, y, tx: Math.round(m.x + dx * len), ty: Math.round(m.y + dy * len),
+      w: c.width, r: c.width / 2, el: c.element, ms: c.tell, label: c.label });
+    m.charging = { dx, dy, left: len, rollAt: t + c.tell, hit: new Set() };
+    m.dir = dirTo(m, target);
+    // curled into the ball from the first frame; the burst frame plays when it stops
+    m.anim = 'skill';
+    m.animSpeed = 1;
+    m.animStart = t + c.tell + (len / c.speed) * 1000 - c.lead;
+    m.castUntil = m.animUntil = Number.MAX_SAFE_INTEGER;
+  }
+
   updateEffects(t) {
     for (let i = this.effects.length - 1; i >= 0; i--) {
       const fx = this.effects[i];
@@ -883,6 +937,9 @@ export class Zone {
       m.tapped.clear();
       m.stolen = false;
       m.statuses = [];
+      // whatever move it died in the middle of dies with it
+      m.charging = null; m.bursts = []; m.castUntil = 0;
+      m.nextChargeAt = m.nextBurstAt = undefined;
     }
   }
 

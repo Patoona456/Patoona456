@@ -58,6 +58,29 @@ export const MONSTERS = {
     aurum: { chance: 0.4, min: 2, max: 4 },
   }),
 
+  // The third step: slow and tough, so a fight with it lasts long enough for
+  // its own trick to matter. Up close it rears and headbutts; from a little
+  // way off it curls into a ball of leaves, a lane is marked through where you
+  // stand, and it rolls down it. Step sideways out of the lane.
+  caterpillar: M({
+    id: 'caterpillar', name: 'Leaf Caterpillar', nameTh: 'หนอนใบไม้', level: 4,
+    hp: 135, atk: 12, def: 6, mdef: 3, hit: 58, flee: 48, exp: 15, jobExp: 9,
+    element: 'earth', race: 'beast', size: 'small', speed: 30, attackRange: 38,
+    attackDelay: 2.2, aggressive: false, aggroRange: 120, respawn: 14,
+    sprite: { kind: 'frames', key: 'caterpillar' },
+    // every: ms between charges; min/max: how far off the target must be;
+    // tell: the lane shows this long before it rolls; speed: px a second;
+    // width: the lane; lead/recover: the burst frame and the unroll (9 fps)
+    charge: { every: 11000, min: 0, max: 180, tell: 900, speed: 300, width: 40,
+      power: 1.7, lead: 444, recover: 350, element: 'earth', label: 'หลบ!' },
+    drops: [
+      { id: 'caterpillar_leaf', chance: 0.5, qty: [1, 2] },
+      { id: 'soft_shell', chance: 0.25 },
+      { id: 'nature_crystal_s', chance: 0.07 },
+    ],
+    aurum: { chance: 0.45, min: 3, max: 5 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,
