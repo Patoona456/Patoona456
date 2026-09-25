@@ -820,9 +820,11 @@ export class Renderer {
     if (!bt) return;
     this.tileCache ??= new Map();
     const k = bt.width / this.terrain.width;          // picture px per world px
-    const worldTile = bt.size / k;
-    const tx0 = Math.max(0, Math.floor(x0 / worldTile)), tx1 = Math.min(bt.cols - 1, Math.floor((x1 - 1) / worldTile));
-    const ty0 = Math.max(0, Math.floor(y0 / worldTile)), ty1 = Math.min(bt.rows - 1, Math.floor((y1 - 1) / worldTile));
+    // a tile is `size` square unless the map gives it a width and height of its own
+    const tw = bt.tileW ?? bt.size, th = bt.tileH ?? bt.size;
+    const worldW = tw / k, worldH = th / k;
+    const tx0 = Math.max(0, Math.floor(x0 / worldW)), tx1 = Math.min(bt.cols - 1, Math.floor((x1 - 1) / worldW));
+    const ty0 = Math.max(0, Math.floor(y0 / worldH)), ty1 = Math.min(bt.rows - 1, Math.floor((y1 - 1) / worldH));
     for (let ty = ty0; ty <= ty1; ty++) {
       for (let tx = tx0; tx <= tx1; tx++) {
         const url = `${bt.dir}/${tx}_${ty}.webp`;
@@ -835,8 +837,8 @@ export class Renderer {
         if (!img.complete || !img.naturalWidth) continue;
         // the bleed is sampled by the filter at the edges but not drawn, so
         // neighbouring tiles meet without a seam
-        ctx.drawImage(img, bt.bleed, bt.bleed, bt.size, bt.size,
-          tx * worldTile, ty * worldTile, worldTile, worldTile);
+        ctx.drawImage(img, bt.bleed, bt.bleed, tw, th,
+          tx * worldW, ty * worldH, worldW, worldH);
       }
     }
   }

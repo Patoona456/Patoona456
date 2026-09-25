@@ -20,4 +20,4 @@ Fields (e.g. Greenmire) go the same way, cut with `tiles.py`:
 
     python3 esrgan.py RealESRGAN_x4plus.pth 4 ../../assets/maps/source/greenmire.png big_x4.png
     # shrink big_x4.png to 3x (4608x3072) - the demo is near its file cap
-    python3 tiles.py big_x3.png ../../assets/maps/greenmire/ground 2304 2
+    python3 tiles.py big_x3.png ../../assets/maps/greenmire/ground 2304x3072 2
