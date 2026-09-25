@@ -35,7 +35,19 @@ export const DROP_ART = {
       "ncrystal_3": 88,
       "ncrystal_4": 89,
       "leaf_1": 132,
-      "shell_1": 146
+      "shell_1": 146,
+      "honey_3": 160,
+      "honey_2": 161,
+      "honey_1": 162,
+      "honey_4": 163,
+      "stinger_1": 168,
+      "stinger_2": 169,
+      "stinger_3": 170,
+      "stinger_4": 171,
+      "wcrystal_1": 176,
+      "wcrystal_2": 177,
+      "wcrystal_3": 178,
+      "wcrystal_4": 179
     },
     "fall_jelly": [
       14,
@@ -115,7 +127,19 @@ export const DROP_ART = {
       "shell_1": 152,
       "shell_2": 153,
       "shell_3": 154,
-      "shell_4": 155
+      "shell_4": 155,
+      "honey_3": 164,
+      "honey_2": 165,
+      "honey_1": 166,
+      "honey_4": 167,
+      "stinger_1": 172,
+      "stinger_2": 173,
+      "stinger_3": 174,
+      "stinger_4": 175,
+      "wcrystal_1": 180,
+      "wcrystal_2": 181,
+      "wcrystal_3": 182,
+      "wcrystal_4": 183
     },
     "pickup": {
       "water": [

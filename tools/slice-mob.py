@@ -64,6 +64,18 @@ MOBS = {
         # long and low: about forty across, a head shorter than the mushroom
         'show': .56,
     },
+    'forest_bee': {
+        'src': 'assets/mob/source/bee_sheet.png',
+        'alpha': True,
+        'x0': 170,
+        # the sheet's FLY and MOVE rows are the walk and run of a flyer
+        'rows': [('idle', 13, 97, 10), ('walk', 118, 206, 12), ('run', 234, 309, 8), ('attack', 332, 428, 11),
+                 ('skill', 428, 550, 8), ('hit', 554, 652, 9), ('death', 657, 737, 10), ('spawn', 744, 859, 9)],
+        'faces': 'left',
+        'scale': .5,
+        # about the slime's size; it flies above its shadow
+        'show': .6,
+    },
 }
 
 

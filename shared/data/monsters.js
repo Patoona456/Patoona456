@@ -81,6 +81,28 @@ export const MONSTERS = {
     aurum: { chance: 0.45, min: 3, max: 5 },
   }),
 
+  // The first flyer, and the lesson in fast attacks. It hovers over its
+  // shadow, darts in to sting and pulls back, and it is hard to hit. Bees
+  // guard their patch: come close and they come for you. Its trick is a
+  // spinning dash with a short tell - the lane shows for barely half a
+  // second, so it teaches reacting, not reading.
+  forest_bee: M({
+    id: 'forest_bee', name: 'Forest Bee', nameTh: 'ผึ้งป่า', level: 5,
+    hp: 105, atk: 15, def: 3, mdef: 4, hit: 66, flee: 72, exp: 18, jobExp: 11,
+    element: 'wind', race: 'beast', size: 'small', speed: 50, attackRange: 56,
+    attackDelay: 1.5, aggressive: true, aggroRange: 100, respawn: 14,
+    // fly: how high it hovers; lunge: how far it darts in when it stings
+    sprite: { kind: 'frames', key: 'forest_bee', fly: 14, lunge: 26 },
+    charge: { every: 8000, min: 0, max: 200, tell: 600, speed: 520, width: 34,
+      power: 1.5, lead: 555, recover: 300, element: 'wind', label: 'หลบ!' },
+    drops: [
+      { id: 'honey', chance: 0.45, qty: [1, 2] },
+      { id: 'bee_stinger', chance: 0.3 },
+      { id: 'wind_crystal_s', chance: 0.06 },
+    ],
+    aurum: { chance: 0.5, min: 3, max: 6 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

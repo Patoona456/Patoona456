@@ -44,8 +44,31 @@ const LOOT_SIZE = 32;         // world px a drop-sheet cell is drawn at (loot re
 const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
 // which colour of pick-up swirl each kind of loot goes up in, and for how long
 const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature',
-  leaf: 'leaf', shell: 'shell' };
+  leaf: 'leaf', shell: 'shell', honey: 'gold', stinger: 'gold', wcrystal: 'gold' };
 const PICKUP_MS = 480;
+/**
+ * Where a painted monster is drawn relative to where it stands. A flyer
+ * (`sprite.fly`) hovers that high over its shadow with a lazy bob, rising
+ * out of the ground as it spawns; a lunger (`sprite.lunge`) darts that far
+ * toward whatever it faces when it strikes, and back.
+ */
+function mobOffset(e, anim, elapsed, now) {
+  let dx = 0, dy = 0;
+  const fly = e.sprite.fly ?? 0;
+  if (fly) {
+    const rise = anim === 'spawn' ? Math.min(1, elapsed / mobAnimMs(e.sprite.key, 'spawn')) : 1;
+    dy -= (fly + Math.sin(now / 190 + (e.id.charCodeAt(e.id.length - 1) ?? 0)) * 2.5) * rise;
+  }
+  const lunge = e.sprite.lunge ?? 0;
+  if (lunge && (anim === 'slash' || anim === 'thrust')) {
+    const k = Math.min(1, elapsed / Math.max(1, mobAnimMs(e.sprite.key, 'attack')));
+    const [vx, vy] = vecOf(e.d ?? 0);
+    const out = Math.sin(Math.PI * k) * lunge;
+    dx += vx * out; dy += vy * out * 0.6;
+  }
+  return { dx, dy };
+}
+
 const lootKind = (g) => (g.id === '__aurum' ? 'gold' : ITEMS[g.id]?.loot ?? null);
 /** Which of the four piles on the sheet an amount lies as. */
 function lootTier(kind, qty) {
@@ -1016,7 +1039,9 @@ export class Renderer {
       if (e._corpse) {
         const c = e._corpse, age = performance.now() - c.t;
         if (age < c.ms + 600) {
-          drawMobFrames(ctx, c.sprite, { x: c.x, y: c.y, anim: 'death', elapsed: age, flip: c.flip,
+          // a flyer comes down to the ground as it dies
+          const lift = (c.sprite.fly ?? 0) * Math.max(0, 1 - age / c.ms);
+          drawMobFrames(ctx, c.sprite, { x: c.x, y: c.y - lift, anim: 'death', elapsed: age, flip: c.flip,
             alpha: age < c.ms ? 1 : 1 - (age - c.ms) / 600 });
         }
         continue;
@@ -1082,8 +1107,9 @@ export class Renderer {
         // a blow that lands between swings plays the flinch over whatever it was doing
         const hitMs = now - (e._hitAt ?? -1e9);
         const flinch = hitMs < mobAnimMs(e.sprite.key, 'hit') && !ONE_SHOT_MOB.has(anim);
+        const { dx, dy } = mobOffset(e, anim, elapsed, now);
         drawMobFrames(ctx, e.sprite, {
-          x: e.x, y: e.y, flip: !e._faceLeft, flash: hurt,
+          x: e.x + dx, y: e.y + dy, flip: !e._faceLeft, flash: hurt,
           anim: flinch ? 'hit' : anim, elapsed: flinch ? hitMs : elapsed,
           alpha: e.inv ? 0.35 : 1,
         });
@@ -1419,7 +1445,7 @@ export class Renderer {
     const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a big head, a little taller than LPC
     const painted = e.k === 'n' && e.look?.pic;   // painted NPCs stand ~52px tall
     const art = e.sprite?.kind === 'frames' ? MOB_ART[e.sprite.key] : null;
-    const top = e.y - (art ? art.top * (e.sprite.scale ?? 1) + 12
+    const top = e.y - (e.sprite?.fly ?? 0) - (art ? art.top * (e.sprite.scale ?? 1) + 12
       : e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : painted ? 56 : 44);
 
     if (isTarget) {

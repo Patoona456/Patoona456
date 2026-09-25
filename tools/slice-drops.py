@@ -69,6 +69,18 @@ SHEETS = [
         ('ground', (488, 577), ['shell_1', 'shell_2', 'shell_3', 'shell_4'], 722, 1062),
         ('pickup', (488, 577), ['shell'] * 4, 1222, 1536),
     ]),
+    # The bee's, from the panel under its animation sheet until its own drop
+    # sheet comes: four of each item, standing in for the tiers. Each is cut
+    # from inside its box, clear of the box's border.
+    ('assets/mob/source/bee_sheet.png', 190, [
+        # pot, drop, drop, comb: one honey is the small drop, a pot is more
+        ('icon', (925, 1004), ['honey_3', 'honey_2', 'honey_1', 'honey_4'], 198, 481),
+        ('ground', (925, 1004), ['honey_3', 'honey_2', 'honey_1', 'honey_4'], 198, 481),
+        ('icon', (925, 1004), ['stinger_1', 'stinger_2', 'stinger_3', 'stinger_4'], 508, 774),
+        ('ground', (925, 1004), ['stinger_1', 'stinger_2', 'stinger_3', 'stinger_4'], 508, 774),
+        ('icon', (925, 1004), ['wcrystal_1', 'wcrystal_2', 'wcrystal_3', 'wcrystal_4'], 801, 1056),
+        ('ground', (925, 1004), ['wcrystal_1', 'wcrystal_2', 'wcrystal_3', 'wcrystal_4'], 801, 1056),
+    ], {'alpha_floor': 90}),
 ]
 
 

@@ -5,5 +5,6 @@
 export const MOB_ART = {
   "blue_slime": {"cell": [201, 60], "foot": 59, "faces": "left", "show": 0.56, "top": 27, "anims": [["idle", 9], ["walk", 9], ["run", 6], ["attack", 7], ["hit", 8], ["death", 8], ["spawn", 10]]},
   "caterpillar": {"cell": [162, 70], "foot": 62, "faces": "left", "show": 0.56, "top": 26, "anims": [["idle", 9], ["walk", 9], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 9], ["death", 8], ["spawn", 8]]},
+  "forest_bee": {"cell": [119, 78], "foot": 60, "faces": "left", "show": 0.6, "top": 24, "anims": [["idle", 10], ["walk", 12], ["run", 8], ["attack", 11], ["skill", 8], ["hit", 9], ["death", 10], ["spawn", 9]]},
   "mushroom": {"cell": [155, 82], "foot": 76, "faces": "left", "show": 0.58, "top": 31, "anims": [["idle", 8], ["walk", 9], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 8], ["death", 9], ["spawn", 10]]}
 };
