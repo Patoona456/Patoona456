@@ -288,6 +288,12 @@ for row, (y0, kind) in enumerate(((312, 'buff'), (405, 'debuff'))):
         ic = solid(crop('c', (x0, y0, x0 + 58, y0 + 50)))
         save(f'st_{kind}{i}', trim(ic), 48)
 
+# ...and all sixteen in one strip (buffs 0-7, then debuffs 0-7) for the page
+strip = Image.new('RGBA', (48 * 16, 41))
+for i, n in enumerate([f'st_buff{k}' for k in range(8)] + [f'st_debuff{k}' for k in range(8)]):
+    strip.alpha_composite(made[n].convert('RGBA').resize((48, 41)), (i * 48, 0))
+strip.save(os.path.join(OUT, 'h2_status.webp'), 'WEBP', quality=90, method=6)
+
 if len(sys.argv) > 1:
     # contact sheet for eyeballing
     cells = list(made.items())

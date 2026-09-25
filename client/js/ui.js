@@ -335,6 +335,12 @@ export class UI {
         const ico = el('i', 'st-ico ail');
         ico.style.backgroundPosition = `${(ail / (AILMENTS.length - 1)) * 100}% 0`;
         node.append(ico);
+      } else if (pic?.startsWith('h2_st_')) {
+        // one cell of the status strip: buffs 0-7, then debuffs 0-7
+        const m = pic.match(/h2_st_(buff|debuff)(\d)/);
+        const ico = el('i', 'st-ico st-strip');
+        ico.style.backgroundPosition = `${((m[1] === 'debuff' ? 8 : 0) + +m[2]) / 15 * 100}% 0`;
+        node.append(ico);
       } else if (pic) {
         const img = el('img', 'st-ico');
         img.src = `${UI_BASE}/${pic}.webp`;

@@ -2586,3 +2586,4 @@ body.landscape-ui .cx-job { display: none; }
 .wm-go img { height: 40px; }
 .wm-go:has(img):disabled img { filter: grayscale(.8) brightness(.6); }
 .cx .doll-slot .ghost { width: 60%; height: 60%; object-fit: contain; opacity: .9; filter: brightness(1.3); }
+#statuses .st-strip { display: block; background: url(../../assets/ui/h2_status.webp) 0 0 / 1600% 100% no-repeat; }
