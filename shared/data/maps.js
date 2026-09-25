@@ -291,8 +291,9 @@ export const MAPS = {
     // far south corners, and the crossroads and the southern meadow are where
     // they meet. Bees (Lv5, the only ones that start a fight) keep to the
     // flowers in the south, away from every way in. Boars (Lv6) hold the
-    // south-east slope, the last stretch before the marsh. The gate meadow
-    // stays quiet.
+    // south-east slope, and forest spirits (Lv8, the first that fight from
+    // range) the path down into the marsh and the far south-west glade. The
+    // gate meadow stays quiet.
     spawns: [
       { mob: 'blue_slime', count: 4, area: [20, 4, 12, 5] },     // below the north stairs
       { mob: 'blue_slime', count: 5, area: [4, 8, 6, 8] },       // the west ledge
@@ -309,6 +310,8 @@ export const MAPS = {
       { mob: 'mushroom', count: 1, area: [36, 20, 12, 12] },     // the south-east slope, on the way to the marsh
       { mob: 'caterpillar', count: 3, area: [36, 20, 12, 12] },
       { mob: 'wild_boar', count: 3, area: [36, 20, 12, 12] },
+      { mob: 'forest_spirit', count: 3, area: [45, 29, 12, 4] },   // the path down to the marsh
+      { mob: 'forest_spirit', count: 2, area: [9, 27, 10, 4] },    // the far south-west glade
     ],
   },
 

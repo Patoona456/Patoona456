@@ -76,6 +76,32 @@ MOBS = {
         # about the slime's size; it flies above its shadow
         'show': .6,
     },
+    'forest_spirit': {
+        'src': 'assets/mob/source/spirit_sheet.png',
+        'alpha': True,
+        'x0': 162,
+        # the bolt and the vines are painted beside the attack and skill rows;
+        # they are cut apart into their own strip (see FX below)
+        'rows': [('idle', 8, 124, 6, (262, 1000)), ('walk', 124, 221, 8, (162, 965)), ('run', 124, 221, 8, (162, 965)),
+                 ('attack', 221, 318, 6, (162, 770)), ('skill', 318, 440, 6, (162, 830)),
+                 ('hit', 440, 540, 6, (162, 810)),
+                 # it melts into a heap of leaves that scatter: no body to find
+                 # in the last frames, so the columns are given
+                 ('death', 540, 626, 9, (162, 1160, [277, 376, 483, 593, 721, 832, 950, 1036])),
+                 ('spawn', 626, 745, 8, (162, 1010))],
+        # Effects painted on the sheet, cut into their own strip,
+        # assets/mob/<key>_fx.webp: top, bottom, left, right, the columns
+        # between frames, and the point of the frame that sits on the spot
+        # (the bolt's middle flies along its path; the vines grow from the ring)
+        'fx': {
+            'bolt': (222, 302, 785, 1536, [866, 992, 1113, 1237, 1340, 1424], 'middle'),
+            'vine': (312, 494, 826, 1536, [924, 1040, 1157, 1249, 1340, 1432], 466),
+        },
+        'faces': 'left',
+        'scale': .5,
+        # a sprout about the mushroom's size, floating a little off the grass
+        'show': .6,
+    },
     'wild_boar': {
         'src': 'assets/mob/source/boar_sheet.png',
         'alpha': True,
@@ -174,15 +200,33 @@ def frames_by_columns(m, count):
     return out
 
 
+def frames_by_cuts(m, cuts):
+    """Frames split at given columns, for a row whose last frames are only
+    loose pieces. A frame stands on the bottom of its biggest piece."""
+    edges = [0] + cuts + [m.shape[1]]
+    out = []
+    for a, b in zip(edges, edges[1:]):
+        sub = np.zeros_like(m)
+        sub[:, a:b] = m[:, a:b]
+        n, lab, st, _ = cv2.connectedComponentsWithStats(sub)
+        big = max(range(1, n), key=lambda i: st[i, cv2.CC_STAT_AREA])
+        xs = np.nonzero(sub.sum(0))[0]
+        x, y, w, h, area = st[big]
+        out.append((big, sub, (xs.min(), y, xs.max() + 1 - xs.min(), h, area)))
+    return out
+
+
 def main(key, preview=None):
     cfg = MOBS[key]
     rgba = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGBA'))
     rgb = rgba[..., :3]
     frames = {}
-    for anim, y0, y1, count in cfg['rows']:
-        band = rgb[y0:y1, cfg['x0']:]
+    for anim, y0, y1, count, *span in cfg['rows']:
+        # a row may carry its own columns, where the sheet puts something else beside it
+        x0, x1, *cuts = span[0] if span else (cfg['x0'], None)
+        band = rgb[y0:y1, x0:x1]
         if cfg.get('alpha'):
-            alpha = rgba[y0:y1, cfg['x0']:, 3]
+            alpha = rgba[y0:y1, x0:x1, 3]
             # solid already: filling "holes" here would wall in the gaps
             # between frames wherever leaves bridge them above and below
             m = (alpha > 100).astype(np.uint8)
@@ -190,6 +234,8 @@ def main(key, preview=None):
             m = mask_of(band, cfg['solid'])
         out = []
         split = frames_by_columns if cfg.get('alpha') else frames_of
+        if cuts:
+            split = lambda m, count: frames_by_cuts(m, [c - x0 for c in cuts[0]])
         for _, sub, (bx, by, bw, bh, _) in split(m, count):
             ys = np.nonzero(sub.sum(1))[0]
             xs = np.nonzero(sub.sum(0))[0]
@@ -238,12 +284,49 @@ def main(key, preview=None):
     entry = {'cell': [round(cw * k), round(ch * k)], 'foot': round(foot * k), 'faces': cfg['faces'], 'show': cfg['show'],
              'top': top,
              'anims': [[a, len(fs)] for a, fs in frames.items()]}
+    if cfg.get('fx'):
+        entry['fx'] = cut_fx(key, rgba, cfg['fx'], k)
     write_manifest(key, entry)
     if preview:
         bg = Image.new('RGBA', im.size, (70, 120, 60, 255))
         bg.alpha_composite(im)
         bg.convert('RGB').save(preview)
     print(key, {a: len(fs) for a, fs in frames.items()}, 'cell', entry['cell'], 'atlas', im.size)
+
+
+def cut_fx(key, rgba, fx, k):
+    """The sheet's own effects as one strip per effect, every frame in a
+    cell of the strip's size with the effect's anchor at the same point."""
+    strips, out = [], {}
+    for name, (y0, y1, x0, x1, cuts, anchor) in fx.items():
+        band = rgba[y0:y1, x0:x1]
+        edges = [0] + [c - x0 for c in cuts] + [x1 - x0]
+        frames = []
+        for a, b in zip(edges, edges[1:]):
+            f = band[:, a:b].copy()
+            xs = np.nonzero((f[..., 3] > 8).sum(0))[0]
+            frames.append(f[:, xs.min():xs.max() + 1])
+        ys = np.nonzero(sum((f[..., 3] > 8).sum(1) for f in frames))[0]
+        top, bot = ys.min(), ys.max() + 1
+        cw, ch = max(f.shape[1] for f in frames) + 2, bot - top
+        strip = np.zeros((ch, cw * len(frames), 4), np.uint8)
+        for i, f in enumerate(frames):
+            ox = i * cw + (cw - f.shape[1]) // 2
+            strip[:, ox:ox + f.shape[1]] = f[top:bot]
+        ay = ch / 2 if anchor == 'middle' else anchor - y0 - top
+        strips.append(strip)
+        out[name] = {'n': len(frames), 'cell': [round(cw * k), round(ch * k)], 'anchor': [round(cw * k / 2), round(ay * k)]}
+    width = max(s.shape[1] for s in strips)
+    sheet = np.zeros((sum(s.shape[0] for s in strips), width, 4), np.uint8)
+    y = 0
+    for (name, o), s in zip(out.items(), strips):
+        sheet[y:y + s.shape[0], :s.shape[1]] = s
+        o['y'] = round(y * k)
+        y += s.shape[0]
+    im = Image.fromarray(sheet)
+    im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+    im.save(os.path.join(ROOT, f'assets/mob/{key}_fx.webp'), 'WEBP', quality=90, method=6)
+    return out
 
 
 def write_manifest(key, entry):

@@ -124,6 +124,36 @@ export const MONSTERS = {
     aurum: { chance: 0.55, min: 4, max: 8 },
   }),
 
+  // The first caster, and the change of pace: it does not come to you. It
+  // floats back to keep its distance and throws Nature Bolts that fly to you
+  // (the hit lands when the bolt does), so the fight is closing the gap. Its
+  // trick is the first move that comes up under *you*: a ring marks your
+  // feet, and vines burst out of it a moment later and hold whoever is
+  // still standing there.
+  forest_spirit: M({
+    id: 'forest_spirit', name: 'Forest Spirit', nameTh: 'ภูตป่า', level: 8,
+    hp: 210, atk: 24, def: 5, mdef: 12, hit: 74, flee: 62, exp: 36, jobExp: 21,
+    element: 'earth', race: 'plant', size: 'small', speed: 52, attackRange: 150,
+    attackDelay: 2.1, aggressive: false, aggroRange: 170, respawn: 16,
+    // fly: it floats a hand above the grass
+    sprite: { kind: 'frames', key: 'forest_spirit', fly: 6 },
+    // kite: closer than this and it backs off between shots
+    kite: 96,
+    // shot: the bolt leaves the hand `lead` ms into the swing and flies at
+    // `speed` px a second; `art` is its strip on the sheet
+    shot: { speed: 340, lead: 300, art: 'bolt' },
+    // at: 'target' - the ring is marked under the target, not the spirit;
+    // root: how long the vines hold whoever they catch
+    burst: { every: 10000, reach: 200, radius: 42, tell: 1200, lead: 555, recover: 300,
+      power: 1.6, element: 'earth', label: 'หลบ!', at: 'target', root: 1500, art: 'vine' },
+    drops: [
+      { id: 'spirit_leaf', chance: 0.45, qty: [1, 2] },
+      { id: 'forest_essence', chance: 0.2 },
+      { id: 'nature_crystal_s', chance: 0.09 },
+    ],
+    aurum: { chance: 0.6, min: 5, max: 9 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

@@ -106,6 +106,18 @@ SHEETS = [
          {'blobs': True, 'thr': 200}),
         ('pickup', (596, 722), ['wcrystal'] * 4, 1190, 1536, {'thr': 150}),
     ]),
+    # The forest spirit's: laid out like the caterpillar's, every piece clear
+    # of its neighbours. Its crystal and gold are ones we have.
+    ('assets/ui/source/spirit_drops.png', 236, [
+        ('icon', (183, 345), ['sleaf_1'], 655, 740),
+        ('fall_sleaf', (183, 345), 6, 236, 750),
+        ('ground', (183, 345), ['sleaf_1', 'sleaf_2', 'sleaf_3', 'sleaf_4'], 760, 1165),
+        ('pickup', (183, 345), ['sleaf'] * 4, 1165, 1536),
+        ('icon', (408, 566), ['essence_1'], 245, 310),
+        ('fall_essence', (408, 566), 6, 245, 760),
+        ('ground', (408, 566), ['essence_1', 'essence_2', 'essence_3', 'essence_4'], 765, 1170),
+        ('pickup', (408, 566), ['essence'] * 4, 1175, 1536),
+    ]),
 ]
 
 

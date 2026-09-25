@@ -6,6 +6,7 @@ export const MOB_ART = {
   "blue_slime": {"cell": [201, 60], "foot": 59, "faces": "left", "show": 0.56, "top": 27, "anims": [["idle", 9], ["walk", 9], ["run", 6], ["attack", 7], ["hit", 8], ["death", 8], ["spawn", 10]]},
   "caterpillar": {"cell": [162, 70], "foot": 62, "faces": "left", "show": 0.56, "top": 26, "anims": [["idle", 9], ["walk", 9], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 9], ["death", 8], ["spawn", 8]]},
   "forest_bee": {"cell": [119, 78], "foot": 60, "faces": "left", "show": 0.6, "top": 24, "anims": [["idle", 10], ["walk", 12], ["run", 8], ["attack", 11], ["skill", 8], ["hit", 9], ["death", 10], ["spawn", 9]]},
+  "forest_spirit": {"cell": [76, 81], "foot": 64, "faces": "left", "show": 0.6, "top": 33, "anims": [["idle", 6], ["walk", 8], ["run", 8], ["attack", 6], ["skill", 6], ["hit", 6], ["death", 9], ["spawn", 8]], "fx": {"bolt": {"n": 7, "cell": [58, 40], "anchor": [29, 20], "y": 0}, "vine": {"n": 7, "cell": [60, 90], "anchor": [30, 77], "y": 40}}},
   "mushroom": {"cell": [155, 82], "foot": 76, "faces": "left", "show": 0.58, "top": 31, "anims": [["idle", 8], ["walk", 9], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 8], ["death", 9], ["spawn", 10]]},
   "wild_boar": {"cell": [122, 60], "foot": 59, "faces": "left", "show": 0.62, "top": 30, "anims": [["idle", 10], ["walk", 10], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 8], ["death", 8], ["spawn", 8]]}
 };

@@ -640,11 +640,34 @@ export function drawBlob(ctx, sprite, { x, y, t, hurt = 0, scale = 1 }) {
   ctx.restore();
 }
 
+/**
+ * One frame of an effect painted on a monster's sheet (its `_fx` strip: a
+ * bolt, vines), with the effect's anchor on (x, y), turned by `angle`.
+ */
+export function drawMobFx(ctx, key, name, frame, x, y, { angle = 0, scale = 1, alpha = 1 } = {}) {
+  const art = MOB_ART[key];
+  const fx = art?.fx?.[name];
+  if (!fx) return false;
+  const s = sheet(`${MOB_BASE}/${key}_fx.webp`);
+  if (!s.ready) return false;
+  const [cw, ch] = fx.cell;
+  const k = art.show * scale;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.translate(x, y);
+  if (angle) ctx.rotate(angle);
+  ctx.scale(k, k);
+  ctx.drawImage(s.img, Math.min(frame, fx.n - 1) * cw, fx.y, cw, ch, -fx.anchor[0], -fx.anchor[1], cw, ch);
+  ctx.restore();
+  return true;
+}
+
 /** Sheets worth having ready before the first frame. */
 export function preloadCommon(look) {
   const urls = [
     layerUrl('body', 'light', 'male'), layerUrl('body', 'light', 'female'),
     ...Object.keys(MOB_ART).map((key) => `${MOB_BASE}/${key}.webp`),
+    ...Object.keys(MOB_ART).filter((key) => MOB_ART[key].fx).map((key) => `${MOB_BASE}/${key}_fx.webp`),
   ];
   if (look) Object.values(playerLayers(look, {})).forEach((u) => urls.push(u));
   preload(urls.filter(Boolean));

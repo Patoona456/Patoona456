@@ -41,7 +41,9 @@ export const DROP_ART = {
       "tusk_1": 187,
       "honey_1": 202,
       "stinger_1": 217,
-      "wcrystal_1": 232
+      "wcrystal_1": 232,
+      "sleaf_1": 247,
+      "essence_1": 262
     },
     "fall_jelly": [
       14,
@@ -145,7 +147,15 @@ export const DROP_ART = {
       "wcrystal_1": 239,
       "wcrystal_2": 240,
       "wcrystal_3": 241,
-      "wcrystal_4": 242
+      "wcrystal_4": 242,
+      "sleaf_1": 254,
+      "sleaf_2": 255,
+      "sleaf_3": 256,
+      "sleaf_4": 257,
+      "essence_1": 269,
+      "essence_2": 270,
+      "essence_3": 271,
+      "essence_4": 272
     },
     "pickup": {
       "water": [
@@ -214,6 +224,18 @@ export const DROP_ART = {
         244,
         245,
         246
+      ],
+      "sleaf": [
+        258,
+        259,
+        260,
+        261
+      ],
+      "essence": [
+        273,
+        274,
+        275,
+        276
       ]
     },
     "fall_cap": [
@@ -309,6 +331,22 @@ export const DROP_ART = {
       236,
       237,
       238
+    ],
+    "fall_sleaf": [
+      248,
+      249,
+      250,
+      251,
+      252,
+      253
+    ],
+    "fall_essence": [
+      263,
+      264,
+      265,
+      266,
+      267,
+      268
     ]
   }
 };

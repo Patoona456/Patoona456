@@ -678,6 +678,7 @@ export class Zone {
       if (m.kind !== 'monster') continue;
       if (m.summon && m.expiresAt && t > m.expiresAt) { this.entities.delete(m.id); continue; }
       if (!m.alive) continue;
+      if (m.shots?.length) this.tickShots(m, t);
 
       const sm = statusMods(m);
       if (sm.stunned) continue;
@@ -764,11 +765,19 @@ export class Zone {
           if (skills.length && Math.random() < 0.3) {
             const sid = skills[Math.floor(Math.random() * skills.length)];
             Skills.begin(this, m, sid, { targetId: target.id, point: { x: target.x, y: target.y } });
+          } else if (m.def.shot) {
+            this.shoot(m, target, t);
           } else {
             basicAttack(this, m, target);
             if (target.kind === 'player') target.wearGear('defend');
           }
           this.pushEvent({ t: 'swing', id: m.id, target: target.id });
+        } else if (m.def.kite && d < m.def.kite && !sm.rooted && !inOneShot(m, t)) {
+          // a caster keeps its distance: it backs off between shots
+          const away = this.chaseStep(m, { x: 2 * m.x - target.x, y: 2 * m.y - target.y }, t);
+          this.moveTo(m, m.x + away.x * speed * dt, m.y + away.y * speed * dt);
+          m.dir = dirTo(m, target);
+          m.anim = 'walk';
         } else if (!inOneShot(m, t)) {
           m.anim = 'idle';
         }
@@ -802,6 +811,34 @@ export class Zone {
    * itself, marks a circle round its own feet and bursts there a moment later.
    * Whoever is still inside is hit - decided here, never by the client.
    */
+  /**
+   * A monster's shot: the bolt leaves its hand as the attack swing lets go
+   * and flies at a set speed, and the hit is only rolled when it arrives.
+   * It follows the target it was loosed at, so it cannot be outrun.
+   */
+  shoot(m, target, t) {
+    const s = m.def.shot;
+    const d = dist(m, target);
+    const flight = s.lead + (d / s.speed) * 1000;
+    m.shots ??= [];
+    m.shots.push({ at: t + flight, target: target.id });
+    this.pushEvent({ t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: s.art, id: m.id, target: target.id,
+      x: Math.round(m.x), y: Math.round(m.y), tx: Math.round(target.x), ty: Math.round(target.y),
+      delay: s.lead, ms: flight - s.lead });
+  }
+
+  tickShots(m, t) {
+    for (let i = m.shots.length - 1; i >= 0; i--) {
+      const q = m.shots[i];
+      if (t < q.at) continue;
+      m.shots.splice(i, 1);
+      const target = this.entities.get(q.target);
+      if (!target?.alive || target.kind === 'player' && target.zone !== this) continue;
+      basicAttack(this, m, target);
+      if (target.kind === 'player') target.wearGear('defend');
+    }
+  }
+
   tickBurst(m, target, t) {
     const b = m.def.burst;
     m.bursts ??= [];
@@ -810,11 +847,14 @@ export class Zone {
       if (t < q.at) continue;
       m.bursts.splice(i, 1);
       if (!m.alive) continue;
-      this.pushEvent({ t: 'fx', fx: 'aoe', el: b.element, x: q.x, y: q.y, r: b.radius });
+      this.pushEvent(b.art
+        ? { t: 'fx', fx: 'mobart', mob: m.def.sprite.key, name: b.art, x: q.x, y: q.y }
+        : { t: 'fx', fx: 'aoe', el: b.element, x: q.x, y: q.y, r: b.radius });
       for (const p of this.players.values()) {
         if (!p.alive || dist2(p, q) > b.radius * b.radius) continue;
         const dmg = Math.floor(m.derived.atk * b.power * (0.9 + Math.random() * 0.2));
         applyDamage(this, m, p, dmg, { element: b.element });
+        if (b.root && p.alive) addStatus(p, { key: 'vine_root', type: 'root', icon: '🌿', until: t + b.root });
       }
     }
     if (!m.alive || !target || dist(m, target) > b.reach) return;
@@ -822,7 +862,9 @@ export class Zone {
     if (m.nextBurstAt == null) { m.nextBurstAt = t + b.every / 2; return; }
     if (t < m.nextBurstAt) return;
     m.nextBurstAt = t + b.every;
-    const x = Math.round(m.x), y = Math.round(m.y);
+    // most go off round the monster's own feet; a caster's comes up under yours
+    const at = b.at === 'target' ? target : m;
+    const x = Math.round(at.x), y = Math.round(at.y);
     this.pushEvent({ t: 'warn', x, y, r: b.radius, el: b.element, ms: b.tell, label: b.label });
     m.bursts.push({ at: t + b.tell, x, y });
     // hold the wind-up pose through the warning; spin and erupt as it lands
@@ -938,7 +980,7 @@ export class Zone {
       m.stolen = false;
       m.statuses = [];
       // whatever move it died in the middle of dies with it
-      m.charging = null; m.bursts = []; m.castUntil = 0;
+      m.charging = null; m.bursts = []; m.shots = []; m.castUntil = 0;
       m.nextChargeAt = m.nextBurstAt = undefined;
     }
   }

@@ -6,7 +6,7 @@ import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
 import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture,
-  drawMobFrames, mobAnimMs } from './sprites.js';
+  drawMobFrames, mobAnimMs, drawMobFx } from './sprites.js';
 import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
@@ -45,7 +45,7 @@ const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
 // which colour of pick-up swirl each kind of loot goes up in, and for how long
 const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature',
   leaf: 'leaf', shell: 'shell', honey: 'honey', stinger: 'stinger', wcrystal: 'wcrystal',
-  meat: 'meat', hide: 'hide', tusk: 'tusk' };
+  meat: 'meat', hide: 'hide', tusk: 'tusk', sleaf: 'sleaf', essence: 'essence' };
 const PICKUP_MS = 480;
 /**
  * Where a painted monster is drawn relative to where it stands. A flyer
@@ -485,6 +485,7 @@ export class Renderer {
     this.grid = null;
     this.floaters = [];
     this.fx = [];
+    this.mobFx = [];
     this.scorch = [];                // floor marks effects leave behind
     this.warnings = [];              // patches of floor about to become lethal
     this.particles = new Particles();
@@ -614,6 +615,8 @@ export class Renderer {
    * a mark that outlives it.
    */
   addFx(fx) {
+    // an effect painted on a monster's own sheet: played from its strip
+    if (fx.fx === 'mobart') { this.mobFx.push({ ...fx, t: performance.now() }); return; }
     const f = { ...fx, t: performance.now(), seed: Math.random() * 6.28, life: fx.life ?? lifeOf(fx) };
     this.fx.push(f);
     const mark = scorchOf(f);
@@ -693,6 +696,7 @@ export class Renderer {
     this.drawGroundItems(ctx, state, now);
     this.drawEntities(ctx, state, now, visibleProps);
     this.drawFx(ctx, now);
+    this.drawMobFx(ctx, state, now);
     this.particles.update(now, view);
     this.particles.draw(ctx, now);
     this.drawAmbience(ctx, view, visibleProps, state, now);
@@ -1582,6 +1586,42 @@ export class Renderer {
       const age = now - f.t;
       if (age > f.life) { this.fx.splice(i, 1); continue; }
       drawSkillFx(ctx, f, age);
+    }
+  }
+
+  /**
+   * Effects cut from a monster's sheet. A bolt waits for the swing to let go,
+   * flies at whoever it was loosed at (following them as they move) and
+   * bursts on arrival; vines grow out of the floor where the ring was.
+   */
+  drawMobFx(ctx, state, now) {
+    for (let i = this.mobFx.length - 1; i >= 0; i--) {
+      const f = this.mobFx[i];
+      const age = now - f.t;
+      if (f.name === 'bolt') {
+        const flown = age - (f.delay ?? 0);
+        if (flown < 0) continue;
+        const to = f.target && (state.ents ?? []).find((e) => e.id === f.target);
+        const tx = to ? to.x : f.tx, ty = (to ? to.y : f.ty) - 18;
+        const sx = f.x, sy = f.y - 24;
+        const p = flown / Math.max(1, f.ms);
+        if (p < 1) {
+          const x = sx + (tx - sx) * p, y = sy + (ty - sy) * p;
+          drawMobFx(ctx, f.mob, 'bolt', Math.floor(flown / 70) % 5, x, y, { angle: Math.atan2(ty - sy, tx - sx) });
+          if (Math.random() < 0.35) this.particles.spark(x, y, { color: '150,255,120', n: 1, power: 0.4 });
+          continue;
+        }
+        const burst = (flown - f.ms) / 220;
+        if (burst >= 1) { this.mobFx.splice(i, 1); continue; }
+        drawMobFx(ctx, f.mob, 'bolt', 5 + Math.floor(burst * 2), tx, ty, { scale: 1.2 });
+        continue;
+      }
+      // anything else plays its strip once at 11 fps where it was put, then fades
+      const n = MOB_ART[f.mob]?.fx?.[f.name]?.n ?? 1;
+      const frame = Math.floor(age / 90);
+      const fade = Math.max(0, (age - n * 90) / 250);
+      if (fade >= 1) { this.mobFx.splice(i, 1); continue; }
+      drawMobFx(ctx, f.mob, f.name, frame, f.x, f.y, { scale: 1.5, alpha: 1 - fade });
     }
   }
 

@@ -597,6 +597,13 @@ export const MATERIALS = {
   boar_tusk: M({ id: 'boar_tusk', name: 'Boar Tusk', nameTh: 'เขี้ยวหมูป่า', value: 34, weight: 1, rarity: 'uncommon',
     art: DROP('tusk_1'), loot: 'tusk',
     desc: 'เขี้ยวโค้งแข็งแรง ช่างตีเหล็กใช้ทำด้ามและเครื่องประดับ' }),
+  // the forest spirit's (its nature crystal is the mushroom's); cut from its sheet
+  spirit_leaf: M({ id: 'spirit_leaf', name: 'Spirit Leaf', nameTh: 'ใบวิญญาณไม้', value: 20, weight: 1,
+    rarity: 'common', art: DROP('sleaf_1'), loot: 'sleaf',
+    desc: 'ใบไม้ที่ยังเรืองแสงจาง ๆ หลังภูตป่าสลายไป ใช้ทำยาฟื้นพลังเวท' }),
+  forest_essence: M({ id: 'forest_essence', name: 'Forest Essence', nameTh: 'หยดพลังธรรมชาติ', value: 38, weight: 1,
+    rarity: 'uncommon', art: DROP('essence_1'), loot: 'essence',
+    desc: 'หยดน้ำสีเขียวใสที่เก็บพลังชีวิตของป่าไว้ นักเวทใช้ปรุงยาและเสริมอาวุธ' }),
 };
 Object.assign(ITEMS, MATERIALS);
 
