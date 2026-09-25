@@ -42,6 +42,9 @@ const RETICLES = typeof Image !== 'undefined' ? uiImage('reticles') : null;
 const DROPS = typeof Image !== 'undefined' ? uiImage(DROP_ART.file) : null;
 const LOOT_SIZE = 32;         // world px a drop-sheet cell is drawn at (loot reads smaller than a slime)
 const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
+// which colour of pick-up swirl each kind of loot goes up in, and for how long
+const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature' };
+const PICKUP_MS = 480;
 const lootKind = (g) => (g.id === '__aurum' ? 'gold' : ITEMS[g.id]?.loot ?? null);
 /** Which of the four piles on the sheet an amount lies as. */
 function lootTier(kind, qty) {
@@ -930,7 +933,7 @@ export class Renderer {
       if (seen.has(uid)) continue;
       this.loot.delete(uid);
       if (l.kind && me && Math.hypot(l.x - me.x, l.y - me.y) < 72) {
-        this.pickups.push({ x: l.x, y: l.y, gold: l.kind === 'gold', start: now });
+        this.pickups.push({ x: l.x, y: l.y, swirl: PICKUP_SWIRL[l.kind] ?? 'water', start: now });
       }
     }
     this.drawPickups(ctx, now);
@@ -967,9 +970,9 @@ export class Renderer {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     this.pickups = this.pickups.filter((p) => {
-      const frames = DROP_ART.cells.pickup[p.gold ? 'gold' : 'water'];
-      // the gold swirl has half the frames: hold each twice as long
-      const f = Math.floor((now - p.start) / (LOOT_FRAME_MS * (p.gold ? 2 : 1)));
+      const frames = DROP_ART.cells.pickup[p.swirl];
+      // every swirl lasts as long, however many frames its sheet drew it in
+      const f = Math.floor((now - p.start) / (PICKUP_MS / frames.length));
       if (f >= frames.length) return false;
       this.drawDropCell(ctx, frames[f], p.x, p.y + 8, LOOT_SIZE * 1.3);
       return true;
