@@ -36,9 +36,12 @@ export const DROP_ART = {
       "ncrystal_4": 89,
       "leaf_1": 132,
       "shell_1": 146,
-      "honey_1": 160,
-      "stinger_1": 175,
-      "wcrystal_1": 190
+      "meat_1": 160,
+      "hide_1": 165,
+      "tusk_1": 169,
+      "honey_1": 174,
+      "stinger_1": 189,
+      "wcrystal_1": 204
     },
     "fall_jelly": [
       14,
@@ -119,18 +122,29 @@ export const DROP_ART = {
       "shell_2": 153,
       "shell_3": 154,
       "shell_4": 155,
-      "honey_2": 167,
-      "honey_1": 168,
-      "honey_3": 169,
-      "honey_4": 170,
-      "stinger_1": 182,
-      "stinger_2": 183,
-      "stinger_3": 184,
-      "stinger_4": 185,
-      "wcrystal_1": 197,
-      "wcrystal_2": 198,
-      "wcrystal_3": 199,
-      "wcrystal_4": 200
+      "meat_1": 161,
+      "meat_2": 162,
+      "meat_3": 163,
+      "meat_4": 164,
+      "hide_1": 166,
+      "hide_2": 167,
+      "hide_3": 168,
+      "tusk_1": 170,
+      "tusk_2": 171,
+      "tusk_3": 172,
+      "tusk_4": 173,
+      "honey_2": 181,
+      "honey_1": 182,
+      "honey_3": 183,
+      "honey_4": 184,
+      "stinger_1": 196,
+      "stinger_2": 197,
+      "stinger_3": 198,
+      "stinger_4": 199,
+      "wcrystal_1": 211,
+      "wcrystal_2": 212,
+      "wcrystal_3": 213,
+      "wcrystal_4": 214
     },
     "pickup": {
       "water": [
@@ -166,22 +180,22 @@ export const DROP_ART = {
         159
       ],
       "honey": [
-        171,
-        172,
-        173,
-        174
-      ],
-      "stinger": [
+        185,
         186,
         187,
-        188,
-        189
+        188
       ],
-      "wcrystal": [
+      "stinger": [
+        200,
         201,
         202,
-        203,
-        204
+        203
+      ],
+      "wcrystal": [
+        215,
+        216,
+        217,
+        218
       ]
     },
     "fall_cap": [
@@ -233,28 +247,28 @@ export const DROP_ART = {
       151
     ],
     "fall_honey": [
-      161,
-      162,
-      163,
-      164,
-      165,
-      166
-    ],
-    "fall_stinger": [
+      175,
       176,
       177,
       178,
       179,
-      180,
-      181
+      180
     ],
-    "fall_wcrystal": [
+    "fall_stinger": [
+      190,
       191,
       192,
       193,
       194,
-      195,
-      196
+      195
+    ],
+    "fall_wcrystal": [
+      205,
+      206,
+      207,
+      208,
+      209,
+      210
     ]
   }
 };

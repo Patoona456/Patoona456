@@ -76,6 +76,17 @@ MOBS = {
         # about the slime's size; it flies above its shadow
         'show': .6,
     },
+    'wild_boar': {
+        'src': 'assets/mob/source/boar_sheet.png',
+        'alpha': True,
+        'x0': 160,
+        'rows': [('idle', 10, 103, 10), ('walk', 113, 208, 10), ('run', 217, 315, 8), ('attack', 330, 435, 8),
+                 ('skill', 445, 562, 7), ('hit', 574, 670, 8), ('death', 676, 765, 8), ('spawn', 772, 875, 8)],
+        'faces': 'left',
+        'scale': .5,
+        # the biggest thing in the field so far: about fifty across
+        'show': .62,
+    },
 }
 
 

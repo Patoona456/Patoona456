@@ -72,6 +72,16 @@ SHEETS = [
     # The bee's: laid out like the caterpillar's. The piles on the ground lie
     # at a slant and share columns, so they are found as separate shapes; the
     # honey icon is the drop in the top row. Its wind crystal is green here.
+    # The boar's, from the panel under its animation sheet until its own drop
+    # sheet comes. Only three hides are drawn: the fourth pile is the third.
+    ('assets/mob/source/boar_sheet.png', 160, [
+        ('icon', (905, 1012), ['meat_1', None, None, None, None], 160, 531, {'blobs': True, 'thr': 150}),
+        ('ground', (905, 1012), ['meat_1', 'meat_2', 'meat_3', None, 'meat_4'], 160, 531, {'blobs': True, 'thr': 150}),
+        ('icon', (905, 1012), ['hide_1', None, None], 532, 802),
+        ('ground', (905, 1012), ['hide_1', 'hide_2', 'hide_3'], 532, 802),
+        ('icon', (905, 1012), ['tusk_1', None, None, None, None], 805, 1113),
+        ('ground', (905, 1012), ['tusk_1', 'tusk_2', None, 'tusk_3', 'tusk_4'], 805, 1113),
+    ]),
     ('assets/ui/source/bee_drops.png', 200, [
         ('icon', (40, 160), ['honey_1'], 850, 925),
         ('fall_honey', (236, 330), 6, 200, 690),

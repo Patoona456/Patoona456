@@ -77,3 +77,20 @@ test('a caterpillar does not charge a target out of reach', () => {
   }
   assert.equal(events.filter((e) => e.t === 'warn').length, 0);
 });
+
+test('a boar stands winded after its charge: the opening to hit back', () => {
+  const { zone, m, target } = setup();
+  m.def = MONSTERS.wild_boar;
+  m.derived.atk = MONSTERS.wild_boar.atk;
+  const b = MONSTERS.wild_boar.charge;
+  const t0 = 3_000_000;
+  zone.tickCharge(m, target, t0, 0.05);                // arms the cooldown
+  const t1 = t0 + b.every / 2;
+  zone.tickCharge(m, target, t1, 0.05);                // shows the lane
+  let t = t1 + 50;
+  while (m.charging && t < t1 + 5000) { zone.tickCharge(m, target, t, 0.05); t += 50; }
+  assert.equal(m.charging, null, 'the charge ended');
+  const winded = m.castUntil - (t - 50);
+  assert.ok(winded >= 800 && winded <= 1200, `winded for ${winded}ms`);
+  assert.ok(m.nextAttackAt >= m.castUntil, 'no tackle while winded');
+});

@@ -103,6 +103,27 @@ export const MONSTERS = {
     aurum: { chance: 0.5, min: 3, max: 6 },
   }),
 
+  // Where the field starts to push back. It gores up close and hits hard;
+  // its charge is the big one - it paws the ground while the lane shows, then
+  // runs it flat out and hard. But a charge that misses leaves it standing
+  // there a full second, winded: the opening to hit back.
+  wild_boar: M({
+    id: 'wild_boar', name: 'Wild Boar', nameTh: 'หมูป่า', level: 6,
+    hp: 190, atk: 20, def: 8, mdef: 3, hit: 70, flee: 55, exp: 26, jobExp: 15,
+    element: 'earth', race: 'beast', size: 'medium', speed: 44, attackRange: 42,
+    attackDelay: 1.8, aggressive: false, aggroRange: 130, respawn: 16,
+    sprite: { kind: 'frames', key: 'wild_boar' },
+    // recover: how long it stands winded after the charge, the time to punish it
+    charge: { every: 10000, min: 0, max: 220, tell: 1000, speed: 420, width: 44,
+      power: 2.2, lead: 444, recover: 1000, element: 'earth', label: 'หลบ!' },
+    drops: [
+      { id: 'boar_meat', chance: 0.5, qty: [1, 2] },
+      { id: 'boar_hide', chance: 0.3 },
+      { id: 'boar_tusk', chance: 0.12 },
+    ],
+    aurum: { chance: 0.55, min: 4, max: 8 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

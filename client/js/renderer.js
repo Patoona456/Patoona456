@@ -44,7 +44,8 @@ const LOOT_SIZE = 32;         // world px a drop-sheet cell is drawn at (loot re
 const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
 // which colour of pick-up swirl each kind of loot goes up in, and for how long
 const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature',
-  leaf: 'leaf', shell: 'shell', honey: 'honey', stinger: 'stinger', wcrystal: 'wcrystal' };
+  leaf: 'leaf', shell: 'shell', honey: 'honey', stinger: 'stinger', wcrystal: 'wcrystal',
+  meat: 'gold', hide: 'gold', tusk: 'gold' };
 const PICKUP_MS = 480;
 /**
  * Where a painted monster is drawn relative to where it stands. A flyer
@@ -983,7 +984,10 @@ export class Renderer {
       this.drawDropCell(ctx, fall[f], g.x, g.y + 6, LOOT_SIZE);
     } else {
       ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
-      this.drawDropCell(ctx, DROP_ART.cells.ground[`${kind}_${lootTier(kind, g.qty)}`], g.x, g.y + 6, LOOT_SIZE);
+      // a sheet may draw fewer than four piles: the biggest it has stands in
+      let t = lootTier(kind, g.qty), cell;
+      while ((cell = DROP_ART.cells.ground[`${kind}_${t}`]) == null && t > 1) t = kind === 'gold' ? t / 10 : t - 1;
+      this.drawDropCell(ctx, cell, g.x, g.y + 6, LOOT_SIZE);
     }
     ctx.restore();
   }
