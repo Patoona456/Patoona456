@@ -28,7 +28,7 @@ ROOT = os.path.join(os.path.dirname(__file__), '..')
 CELL = 96
 COLS = 10
 
-# per sheet: where its row labels end, and (group, band, names or a frame count[, first column])
+# per sheet: where its row labels end, and (group, band, names or a frame count[, first column[, end column]])
 SHEETS = [
     ('assets/ui/source/slime_drops.png', 176, [
         ('icon', (22, 193), ['jelly_1', 'jelly_2', 'jelly_3', 'jelly_3b', 'jelly_4',
@@ -56,19 +56,24 @@ SHEETS = [
         # blue, green, gold, then all three at once: only the green is new
         ('pickup', (892, 1015), [None] * 3 + ['nature'] * 2 + [None] * 6),
     ]),
-    # The caterpillar's items, from the small panel under its animation sheet
-    # until its own drop sheet comes: four of each, standing in for the tiers.
-    # The panel's boxes are half see-through white; lifting the floor of the
-    # alpha drops them and keeps the items.
-    ('assets/mob/source/caterpillar_sheet.png', 160, [
-        ('icon', (925, 1010), ['leaf_1', 'leaf_2', 'leaf_3', 'leaf_4', 'shell_1', 'shell_2', 'shell_3', 'shell_4'] + [None] * 8, 160),
-        ('ground', (925, 1010), ['leaf_1', 'leaf_2', 'leaf_3', 'leaf_4', 'shell_1', 'shell_2', 'shell_3', 'shell_4'] + [None] * 8),
-    ], {'alpha_floor': 185}),
+    # The caterpillar's: one band per item holding its fall, its piles on the
+    # ground and its pick-up swirl side by side between labels, so each is cut
+    # from its own run of columns. The crystal and the gold are ones we have.
+    ('assets/ui/source/caterpillar_drops.png', 190, [
+        ('icon', (150, 255), ['leaf_1'], 245, 330),
+        ('fall_leaf', (267, 355), 5, 190, 570),
+        ('ground', (267, 355), ['leaf_1', 'leaf_2', 'leaf_3', 'leaf_4'], 722, 1062),
+        ('pickup', (267, 355), ['leaf'] * 4, 1222, 1536),
+        ('icon', (377, 475), ['shell_1'], 252, 340),
+        ('fall_shell', (488, 577), 5, 190, 570),
+        ('ground', (488, 577), ['shell_1', 'shell_2', 'shell_3', 'shell_4'], 722, 1062),
+        ('pickup', (488, 577), ['shell'] * 4, 1222, 1536),
+    ]),
 ]
 
 
-def runs(mask, y0, y1, x0, gap=6):
-    col = mask[y0:y1, x0:].sum(0)
+def runs(mask, y0, y1, x0, gap=6, x1=None):
+    col = mask[y0:y1, x0:x1].sum(0)
     out, start = [], None
     for x, v in enumerate(col):
         if v and start is None:
@@ -104,7 +109,7 @@ def main():
     pieces = []            # (group, name, rgba crop, scale)
     for src, label_x, rows, *opts in SHEETS:
         im = cv2.imread(os.path.join(ROOT, src), cv2.IMREAD_UNCHANGED)
-        floor = (opts[0] if opts else {}).get('alpha_floor')
+        floor = (opts[0] if opts else {}).get('alpha_floor')   # a half see-through backing to drop
         if floor:
             a = im[..., 3].astype(np.float32)
             im[..., 3] = np.clip((a - floor) / (250 - floor) * 255, 0, 255).astype(np.uint8)
@@ -113,7 +118,8 @@ def main():
             count = len(names) if isinstance(names, list) else names
             # icons start at the left edge; other rows past the row labels
             x0 = rest[0] if rest else 0 if group == 'icon' else label_x
-            spans = runs(mask, y0, y1, x0)
+            x1 = rest[1] if len(rest) > 1 else None
+            spans = runs(mask, y0, y1, x0, x1=x1)
             if count and len(spans) < count:
                 spans = split_widest(im, y0, y1, spans, count)
             if count:
