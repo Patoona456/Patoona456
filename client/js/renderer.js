@@ -939,6 +939,12 @@ export class Renderer {
         this.loot.set(g.uid, l);
       }
       Object.assign(l, { x: g.x, y: g.y, mine: g.mine });
+      // about to vanish: it blinks, faster as the end nears
+      if (g.fade) {
+        l.fadeAt ??= now;
+        const k = Math.min(1, (now - l.fadeAt) / 5000);
+        if (Math.sin((now - l.fadeAt) / (150 - 90 * k)) < -0.2) continue;
+      }
       if (kind && DROPS?.naturalWidth) {
         this.drawLoot(ctx, g, kind, now - l.start);
         continue;

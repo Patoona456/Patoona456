@@ -33,9 +33,38 @@ function weekKey(at = Date.now()) {
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString().slice(0, 10);
 }
-const LOOT_LOCK_MS = 25000;     // finder keeps priority this long
-const LOOT_LIFE_MS = 120000;
+// Loot belongs to whoever did the most to earn it for a short while, then
+// to anyone, then it is gone - so the ground never fills with leftovers.
+// A boss's gives its owners longer to fight their way to it.
+export const LOOT_LOCK_MS = 10000;
+export const LOOT_LIFE_MS = 30000;
+export const BOSS_LOOT_LOCK_MS = 30000;
+export const BOSS_LOOT_LIFE_MS = 90000;
+export const DROPPED_LIFE_MS = 60000;   // what a player puts down themselves
+export const GROUND_CAP = 200;          // items on one map's floor, oldest go first
+const LOOT_FADE_MS = 5000;              // the last few seconds it blinks
 const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
+
+/**
+ * Who a kill's loot belongs to at first: of the characters allowed any
+ * (`ids`), the ones in the group - a party, or someone alone - that dealt the
+ * monster the most damage. Without a damage record, all of them.
+ */
+export function topDamage(m, share, ids) {
+  if (!m.dealt?.size) return ids;
+  const groups = new Map();
+  for (const p of share) {
+    if (!ids.includes(p.id)) continue;
+    const key = p.party ?? p.id;
+    const g = groups.get(key) ?? { dmg: 0, ids: [] };
+    g.dmg += m.dealt.get(p.id) ?? 0;
+    g.ids.push(p.id);
+    groups.set(key, g);
+  }
+  let top = null;
+  for (const g of groups.values()) if (!top || g.dmg > top.dmg) top = g;
+  return top && top.dmg > 0 ? top.ids : ids;
+}
 
 /** Animations that play once and then hand back to idle. */
 const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn', 'skill', 'leap', 'howl', 'enrage', 'spike', 'tornado', 'summon']);
@@ -346,13 +375,22 @@ export class Zone {
   pushEvent(ev) { this.events.push(ev); }
 
   /* ---------------- loot ---------------- */
-  dropItem(x, y, id, qty, ownerIds = [], extra = null) {
+  dropItem(x, y, id, qty, ownerIds = [], extra = null, { lock = LOOT_LOCK_MS, life = LOOT_LIFE_MS } = {}) {
     const pos = this.walkable(x, y) ? { x, y } : this.randomWalkable();
-    this.ground.push({
-      uid: 'g' + Math.random().toString(36).slice(2, 9),
+    this.putOnGround({
       id, qty, x: pos.x + (Math.random() - 0.5) * 24, y: pos.y + (Math.random() - 0.5) * 24,
-      owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS, born: now(), extra,
+      owners: ownerIds, lockUntil: now() + lock, until: now() + life, extra,
     });
+  }
+
+  /** Onto the floor, pushing the oldest off once the map holds GROUND_CAP. */
+  putOnGround(g) {
+    this.ground.push({ uid: 'g' + Math.random().toString(36).slice(2, 9), born: now(), ...g });
+    if (this.ground.length > GROUND_CAP) {
+      let oldest = 0;
+      for (let i = 1; i < this.ground.length; i++) if (this.ground[i].born < this.ground[oldest].born) oldest = i;
+      this.ground.splice(oldest, 1);
+    }
   }
 
   pickup(p, uid) {
@@ -535,25 +573,31 @@ export class Zone {
       if (!ownerIds.length) return;
     }
 
-    // drops: the luckiest bottle among the people who earned them counts
+    // a jigsaw piece for each of them, rolled on their own: pieces go
+    // straight into the book and cannot be traded, so everyone may earn one
+    for (const p of share.filter((q) => ownerIds.includes(q.id))) this.world.rollPiece?.(p, m);
+
+    // The loot itself is claimed first by whoever dealt the most damage - a
+    // party counts as one - and falls open to everyone after a few seconds.
+    ownerIds = topDamage(m, share, ownerIds);
     const looters = share.filter((p) => ownerIds.includes(p.id));
-    // a jigsaw piece for each of them, rolled on their own
-    for (const p of looters) this.world.rollPiece?.(p, m);
+    const lock = m.boss ? { lock: BOSS_LOOT_LOCK_MS, life: BOSS_LOOT_LIFE_MS } : { lock: LOOT_LOCK_MS, life: LOOT_LIFE_MS };
+    // drops: the luckiest bottle among the people who earned them counts
     const best = (k) => Math.max(0, ...looters.map((p) => p.mods?.[k] ?? 0)) / 100;
     const dropMul = 1 + best('dropPct'), rareMul = 1 + best('rareDropPct'), aurumMul = 1 + best('aurumPct');
     for (const d of m.def.drops ?? []) {
       const chance = Math.min(1, d.chance * dropMul * (d.chance < 0.05 ? rareMul : 1));
       if (Math.random() > chance) continue;
       const qty = Array.isArray(d.qty) ? d.qty[0] + Math.floor(Math.random() * (d.qty[1] - d.qty[0] + 1)) : (d.qty ?? 1);
-      this.dropItem(m.x, m.y, d.id, qty, ownerIds);
+      this.dropItem(m.x, m.y, d.id, qty, ownerIds, null, lock);
     }
     // aurum
     const au = m.def.aurum;
     if (au && Math.random() < au.chance) {
       const amount = Math.round((au.min + Math.floor(Math.random() * (au.max - au.min + 1))) * aurumMul);
-      this.ground.push({
-        uid: 'g' + Math.random().toString(36).slice(2, 9), id: '__aurum', qty: amount,
-        x: m.x, y: m.y, owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS, born: now(),
+      this.putOnGround({
+        id: '__aurum', qty: amount, x: m.x, y: m.y, owners: ownerIds,
+        lockUntil: now() + lock.lock, until: now() + lock.life,
       });
       mint(this.world, amount, 'monster-drop');
     }
@@ -1264,6 +1308,7 @@ export class Zone {
       .map((g) => {
         const out = { uid: g.uid, id: g.id, qty: g.qty, x: Math.round(g.x), y: Math.round(g.y),
           mine: !g.owners.length || g.owners.includes(p.id) || g.lockUntil < now() ? 1 : 0 };
+        if (g.until - now() < LOOT_FADE_MS) out.fade = 1;   // about to vanish
         // how long ago it fell, while that is short: the client plays the drop
         // only for loot it sees land, not for loot it walks up to
         const age = now() - (g.born ?? 0);

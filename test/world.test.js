@@ -5,7 +5,7 @@
 // players, so there is no browser and no network in the way.
 import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
-import { BOSS_LEASH, BOSS_RESET_MS } from '../server/game/zone.js';
+import { BOSS_LEASH, BOSS_RESET_MS, LOOT_LOCK_MS, LOOT_LIFE_MS, BOSS_LOOT_LOCK_MS, BOSS_LOOT_LIFE_MS, GROUND_CAP } from '../server/game/zone.js';
 import { applyDamage } from '../server/game/combat.js';
 import assert from 'node:assert/strict';
 import { World } from '../server/game/world.js';
@@ -154,6 +154,51 @@ test('a boss pays only those who fought it: a spare character landing one blow g
   // and nobody at all past the line: nothing drops
   main.party = alt.party = null;
   assert.equal(kill({ MAIN: 10, ALT: 10 }).length, 0);
+});
+
+test('loot goes first to the top damage dealer, opens to all after a while, then vanishes', (t) => {
+  const w = freshWorld();
+  t.after(() => w.stop());
+  const zone = w.zone('greenmire');
+  const a = stubPlayer('A', 10, zone), b = stubPlayer('B', 10, zone), c = stubPlayer('C', 10, zone);
+  for (const p of [a, b, c]) {
+    Object.assign(p, { overweight: () => false, addItem: () => true });
+    zone.players.set(p.id, p); zone.entities.set(p.id, p);
+  }
+  const def = { ...MONSTERS.wild_boar, drops: [{ id: MONSTERS.wild_boar.drops[0].id, chance: 1 }] };
+  const kill = (dealt, boss = false) => {
+    zone.ground.length = 0;
+    zone.awardKill({
+      id: 'm' + Math.random(), kind: 'monster', defId: 'wild_boar', def, name: 'boar', level: 6,
+      x: a.x, y: a.y, alive: true, boss, maxHp: 100,
+      tapped: new Set(Object.keys(dealt)), dealt: new Map(Object.entries(dealt)),
+    }, a);
+    return zone.ground;
+  };
+  // A landed the last blow, B did most of the work: B is owed it
+  let loot = kill({ A: 30, B: 60, C: 10 });
+  assert.ok(loot.length);
+  for (const g of loot) assert.deepEqual(g.owners, ['B']);
+  const g = loot[0];
+  assert.ok(Math.abs(g.lockUntil - g.born - LOOT_LOCK_MS) < 50 && Math.abs(g.until - g.born - LOOT_LIFE_MS) < 50);
+  Object.assign(g, { x: a.x, y: a.y });
+  assert.ok(zone.pickup(a, g.uid).error, 'A has to wait');
+  g.lockUntil = Date.now() - 1;
+  assert.ok(zone.pickup(a, g.uid).ok, 'then anyone may take it');
+  // a party counts as one: A and C together out-hit B
+  a.party = c.party = 'pt';
+  loot = kill({ A: 30, B: 45, C: 25 });
+  for (const g of loot) assert.deepEqual(g.owners.sort(), ['A', 'C']);
+  a.party = c.party = null;
+  // a boss holds its loot longer
+  const bl = kill({ B: 100 }, true)[0];
+  assert.ok(Math.abs(bl.lockUntil - bl.born - BOSS_LOOT_LOCK_MS) < 50 && Math.abs(bl.until - bl.born - BOSS_LOOT_LIFE_MS) < 50);
+  // and nothing outstays its time
+  zone.updateGround(bl.until + 1);
+  assert.equal(zone.ground.length, 0);
+  // nor piles up past the cap: the oldest goes
+  for (let i = 0; i < GROUND_CAP + 20; i++) zone.dropItem(a.x, a.y, def.drops[0].id, 1);
+  assert.equal(zone.ground.length, GROUND_CAP);
 });
 
 test('boxes in Greenmire: a real chance from its bosses, a small one in the field', () => {

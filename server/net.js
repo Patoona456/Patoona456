@@ -19,6 +19,7 @@ import { SKILLS } from '../shared/data/skills.js';
 import { NPC_DIALOG, WARP_ROUTES, SHOPS } from '../shared/data/npcs.js';
 import { MAPS } from '../shared/data/maps.js';
 import { dist } from './game/monster.js';
+import { DROPPED_LIFE_MS } from './game/zone.js';
 
 const RATE_WINDOW = 1000;
 const RATE_MAX = 60;
@@ -201,7 +202,7 @@ export class Conn {
         if (Object.values(p.record.equipment).includes(m.index | 0)) return this.error('ถอดอุปกรณ์ก่อน');
         if (st.locked) return this.error('ไอเทมถูกล็อกอยู่ ปลดล็อกก่อน');
         const qty = Math.max(1, Math.min(st.qty ?? 1, m.qty | 0 || 1));
-        zone.dropItem(p.x, p.y, st.id, qty, [p.id], st);
+        zone.dropItem(p.x, p.y, st.id, qty, [p.id], st, { life: DROPPED_LIFE_MS });
         p.removeItemAt(m.index | 0, qty);
         this.sendInventory();
         return;
