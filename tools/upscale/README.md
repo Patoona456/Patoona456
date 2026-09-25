@@ -16,8 +16,10 @@ Needs `torch` (CPU is fine), `opencv-python-headless`, `numpy`, and the
 Run buildings.py on the original cut-outs only once; running it again
 doubles them again.
 
-Fields (e.g. Greenmire) go the same way, cut with `tiles.py`:
+Fields painted as pixel art (Greenmire) skip Real-ESRGAN: it repaints the
+grass and cobbles soft. They are blown up 3x nearest-neighbour instead (so a
+lossy WebP cannot smear colour across single pixels), cut with `tiles.py`,
+and drawn unfiltered (`pixelArt: true` on the map):
 
-    python3 esrgan.py RealESRGAN_x4plus.pth 4 ../../assets/maps/source/greenmire.png big_x4.png
-    # shrink big_x4.png to 3x (4608x3072) - the demo is near its file cap
+    python3 -c "from PIL import Image; Image.open('../../assets/maps/source/greenmire.png').convert('RGB').resize((4608, 3072), Image.NEAREST).save('big_x3.png')"
     python3 tiles.py big_x3.png ../../assets/maps/greenmire/ground 2304x3072 2

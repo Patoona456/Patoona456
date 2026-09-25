@@ -673,7 +673,9 @@ export class Renderer {
       // stored upscaled, so a high-quality filter keeps it crisp.
       const k = art.naturalWidth / this.terrain.width;
       ctx.save();
-      ctx.imageSmoothingEnabled = true;
+      // pixel art keeps its pixels: a filter would soften every edge the
+      // painter drew (the tiles are then the same pixels, just blown up)
+      ctx.imageSmoothingEnabled = !this.zone?.pixelArt;
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(art, x0 * k, y0 * k, (x1 - x0) * k, (y1 - y0) * k, x0, y0, x1 - x0, y1 - y0);
       this.drawBackdropTiles(ctx, x0, y0, x1, y1);

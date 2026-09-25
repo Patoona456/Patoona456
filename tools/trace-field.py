@@ -52,6 +52,7 @@ FIELDS = {
             [19, 23, 3, 3],    # down to the south-west stairs
             [7, 6, 3, 3],      # the north-west corner, to the bridge
             [58, 9, 2, 3],     # the east path, out to the edge
+            [50, 31, 8, 2],    # the south-east clearing past the pond (the warp to Ashfen)
         ],
         'force_block': [],
     },

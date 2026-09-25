@@ -115,7 +115,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
     spawnPoint: [40, 32],
     warps: [
-      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
+      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [55, 9], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
       { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [55, 18], label: 'เอมเบอร์โฮลด์' },
@@ -265,18 +265,26 @@ export const MAPS = {
     // may stand is traced off it by tools/trace-field.py into
     // greenmire-obstacles.js; a tile is 25.6px of the painting, as in town.
     backdrop: 'assets/maps/greenmire.webp',
-    // the same picture sharpened 4x (tools/upscale: Real-ESRGAN), shrunk to
-    // 3x and cut in two halves streamed in near the camera (two files, not
-    // six: the demo build is close to its file cap)
+    // Pixel art, drawn without a filter so every edge stays as painted. The
+    // halves streamed in near the camera are the same pixels blown up 3x
+    // (nearest neighbour): a lossy .webp of the 1x picture smears colour
+    // across single pixels, at 3x it cannot. No AI upscale here - it
+    // repainted the grass and cobbles soft.
+    pixelArt: true,
     backdropTiles: { dir: 'assets/maps/greenmire/ground', size: 2304, tileW: 2304, tileH: 3072, bleed: 2, cols: 2, rows: 1, width: 4608, height: 3072 },
     walk: [[0, 0, 60, 40]],
     obstacles: GREENMIRE_OBSTACLES,
     spawnPoint: [30, 5],
-    // the ways out are where the painted paths run off the edge
+    // Three ways out, each on the side you leave the other map by: the town
+    // road comes in at the north stairs (the start meadow), Millhaven's south
+    // road at the north-east stairs, and the way on to the harder marsh sits
+    // in the far south-east clearing, so a new player crosses the field first.
+    // The north-west falls and the south bridge stay closed: the boss will
+    // hold the end of the south path.
     warps: [
       { x: 29, y: 0, w: 2, h: 2, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },    // the north stairs
-      { x: 44, y: 0, w: 1, h: 2, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },          // the north-east track
-      { x: 58, y: 9, w: 2, h: 3, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },             // the east path
+      { x: 55, y: 6, w: 2, h: 1, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },          // top of the north-east stairs
+      { x: 56, y: 31, w: 2, h: 2, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },            // the south-east clearing
     ],
     // Slimes keep to the clearings, a few in each, so there is something to
     // hunt wherever a path leads. The gate meadow stays quiet.
@@ -297,7 +305,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 3003, theme: 'marsh', levelRange: [10, 22],
     spawnPoint: [8, 32],
     warps: [
-      { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [56, 10], label: 'ทุ่งกรีนไมร์' },
+      { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [52, 31], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 18], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
