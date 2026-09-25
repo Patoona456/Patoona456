@@ -15,6 +15,7 @@ export const MERGED_COLS = 8;
 
 export const ATLASES = {
   potions: { cols: 8 },
+  drops: { cols: 10 },        // monster loot: icons, falling, lying, picked up (tools/slice-drops.py)
   scrolls: { cols: 8 },
   swords: { in: 'weapons', cols: 6, row: 0, count: 24 },
   swords_rare: { in: 'weapons', cols: 8, row: 4, count: 25 },

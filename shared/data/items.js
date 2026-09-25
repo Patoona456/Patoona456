@@ -6,6 +6,8 @@
 //
 // sprite: { layer, key, gendered } maps onto assets/lpc/<layer>/<gender|either>/<key>.png
 
+import { DROP_ART } from './dropart.js';
+
 const W = (o) => ({ type: 'weapon', slot: 'weapon', refinable: true, durability: 120, stack: 1, ...o });
 const A = (o) => ({ type: 'armor', refinable: true, durability: 150, stack: 1, ...o });
 const C = (o) => ({ type: 'consumable', stack: 99, weight: 4, ...o });
@@ -549,11 +551,15 @@ export function cardFits(cardDef, gearDef) {
 }
 
 /** Materials, one monster sheet at a time. */
+// `loot` names the drop sheet's row the thing falls, lies and is picked up as.
+const DROP = (name) => 'drops#' + DROP_ART.cells.icon[name];
 export const MATERIALS = {
   slime_jelly: M({ id: 'slime_jelly', name: 'Slime Jelly', nameTh: 'เจลลี่สไลม์', value: 6, weight: 1, rarity: 'common',
+    art: DROP('jelly_1'), loot: 'jelly',
     desc: 'ก้อนเจลใส ๆ จากสไลม์น้ำ ยังเด้งอยู่เลย' }),
   water_crystal_s: M({ id: 'water_crystal_s', name: 'Small Water Crystal', nameTh: 'ผลึกน้ำ (เล็ก)', value: 24, weight: 1,
-    rarity: 'uncommon', desc: 'ผลึกเล็ก ๆ ที่ก่อตัวในตัวสไลม์ เย็นเฉียบเมื่อจับ' }),
+    rarity: 'uncommon', art: DROP('crystal_1'), loot: 'crystal',
+    desc: 'ผลึกเล็ก ๆ ที่ก่อตัวในตัวสไลม์ เย็นเฉียบเมื่อจับ' }),
 };
 Object.assign(ITEMS, MATERIALS);
 

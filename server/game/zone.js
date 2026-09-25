@@ -35,6 +35,7 @@ function weekKey(at = Date.now()) {
 }
 const LOOT_LOCK_MS = 25000;     // finder keeps priority this long
 const LOOT_LIFE_MS = 120000;
+const DROP_ANIM_MS = 1500;     // loot younger than this is sent with its age
 
 /** Animations that play once and then hand back to idle. */
 const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn']);
@@ -340,7 +341,7 @@ export class Zone {
     this.ground.push({
       uid: 'g' + Math.random().toString(36).slice(2, 9),
       id, qty, x: pos.x + (Math.random() - 0.5) * 24, y: pos.y + (Math.random() - 0.5) * 24,
-      owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS, extra,
+      owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS, born: now(), extra,
     });
   }
 
@@ -521,7 +522,7 @@ export class Zone {
       const amount = Math.round((au.min + Math.floor(Math.random() * (au.max - au.min + 1))) * aurumMul);
       this.ground.push({
         uid: 'g' + Math.random().toString(36).slice(2, 9), id: '__aurum', qty: amount,
-        x: m.x, y: m.y, owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS,
+        x: m.x, y: m.y, owners: ownerIds, lockUntil: now() + LOOT_LOCK_MS, until: now() + LOOT_LIFE_MS, born: now(),
       });
       mint(this.world, amount, 'monster-drop');
     }
@@ -875,8 +876,15 @@ export class Zone {
     p.seenIdentity = nowSeen;
     const ground = this.ground
       .filter((g) => dist2(p, g) < AOI_RADIUS * AOI_RADIUS)
-      .map((g) => ({ uid: g.uid, id: g.id, qty: g.qty, x: Math.round(g.x), y: Math.round(g.y),
-        mine: !g.owners.length || g.owners.includes(p.id) || g.lockUntil < now() ? 1 : 0 }));
+      .map((g) => {
+        const out = { uid: g.uid, id: g.id, qty: g.qty, x: Math.round(g.x), y: Math.round(g.y),
+          mine: !g.owners.length || g.owners.includes(p.id) || g.lockUntil < now() ? 1 : 0 };
+        // how long ago it fell, while that is short: the client plays the drop
+        // only for loot it sees land, not for loot it walks up to
+        const age = now() - (g.born ?? 0);
+        if (age < DROP_ANIM_MS) out.age = age;
+        return out;
+      });
     const fx = this.effects
       .filter((f) => dist2(p, f) < AOI_RADIUS * AOI_RADIUS)
       .map((f) => ({ skill: f.skill, x: Math.round(f.x), y: Math.round(f.y), r: Math.round(f.radius), until: f.until, el: f.look ?? f.element }));

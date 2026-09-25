@@ -20,6 +20,7 @@ import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 import { CHIBI_FISTS } from '../../shared/data/chibi.js';
 import { SWING } from '../../shared/data/swing.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
+import { DROP_ART } from '../../shared/data/dropart.js';
 import { atlasFile, atlasRect, ATLAS_FILES } from '../../shared/atlas.js';
 
 const uiImages = new Map();
@@ -34,6 +35,18 @@ function uiImage(name) {
 const STALL_ART = typeof Image !== 'undefined' ? { stall: uiImage('stall'), lantern: uiImage('lantern') } : null;
 // lock-on, picked, and friendly target reticles, side by side in one strip
 const RETICLES = typeof Image !== 'undefined' ? uiImage('reticles') : null;
+
+// Monster loot drawn from the drop sheet (tools/slice-drops.py): an item whose
+// `loot` names a row there falls, lies and is picked up as that row; aurum is gold.
+const DROPS = typeof Image !== 'undefined' ? uiImage(DROP_ART.file) : null;
+const LOOT_SIZE = 32;         // world px a drop-sheet cell is drawn at (loot reads smaller than a slime)
+const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
+const lootKind = (g) => (g.id === '__aurum' ? 'gold' : ITEMS[g.id]?.loot ?? null);
+/** Which of the four piles on the sheet an amount lies as. */
+function lootTier(kind, qty) {
+  if (kind === 'gold') return qty >= 1000 ? 1000 : qty >= 100 ? 100 : qty >= 10 ? 10 : 1;
+  return qty >= 10 ? 4 : qty >= 5 ? 3 : qty >= 2 ? 2 : 1;
+}
 const RETICLE_CELLS = ['lock', 'pick', 'ally'];
 const BOOTH_W = 88;            // world px: a little under three tiles
 const BOOTH_COUNTER = 0.52;    // where the counter top sits, as a share of the art's height
@@ -864,7 +877,22 @@ export class Renderer {
   }
 
   drawGroundItems(ctx, state, now) {
+    this.loot ??= new Map();          // uid -> when it started falling, what it is, where
+    this.pickups ??= [];              // swirls where loot was taken
+    const seen = new Set();
     for (const g of state.ground ?? []) {
+      seen.add(g.uid);
+      const kind = lootKind(g);
+      let l = this.loot.get(g.uid);
+      if (!l) {
+        l = { start: g.age != null ? now - g.age : -Infinity, kind };
+        this.loot.set(g.uid, l);
+      }
+      Object.assign(l, { x: g.x, y: g.y, mine: g.mine });
+      if (kind && DROPS?.naturalWidth) {
+        this.drawLoot(ctx, g, kind, now - l.start);
+        continue;
+      }
       const bob = Math.sin(now / 300 + g.x) * 2;
       const isAurum = g.id === '__aurum';
       const def = ITEMS[g.id];
@@ -887,6 +915,58 @@ export class Renderer {
       } else { ctx.fillRect(-4, -4, 8, 8); ctx.strokeRect(-4, -4, 8, 8); }
       ctx.restore();
     }
+    // Loot that vanished next to us was picked up (by us or the one beside
+    // us): it goes up in a swirl. Loot that left the view far away just goes.
+    const me = state.me;
+    for (const [uid, l] of this.loot) {
+      if (seen.has(uid)) continue;
+      this.loot.delete(uid);
+      if (l.kind && me && Math.hypot(l.x - me.x, l.y - me.y) < 72) {
+        this.pickups.push({ x: l.x, y: l.y, gold: l.kind === 'gold', start: now });
+      }
+    }
+    this.drawPickups(ctx, now);
+  }
+
+  /** One cell of the drop sheet, standing on (x, y), `size` world px square. */
+  drawDropCell(ctx, cell, x, y, size) {
+    const { cell: c, cols, floor } = DROP_ART;
+    const k = size / c;
+    ctx.drawImage(DROPS, (cell % cols) * c, Math.floor(cell / cols) * c, c, c,
+      Math.round(x - size / 2), Math.round(y - size + floor * k), size, size);
+  }
+
+  /** Loot from the drop sheet: it falls in first, then lies there by amount. */
+  drawLoot(ctx, g, kind, age) {
+    const fall = DROP_ART.cells['fall_' + kind];
+    const f = Math.floor(age / LOOT_FRAME_MS);
+    ctx.save();
+    ctx.globalAlpha = g.mine ? 1 : 0.45;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    if (fall && f >= 0 && f < fall.length) {
+      this.drawDropCell(ctx, fall[f], g.x, g.y + 6, LOOT_SIZE);
+    } else {
+      ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+      this.drawDropCell(ctx, DROP_ART.cells.ground[`${kind}_${lootTier(kind, g.qty)}`], g.x, g.y + 6, LOOT_SIZE);
+    }
+    ctx.restore();
+  }
+
+  drawPickups(ctx, now) {
+    if (!this.pickups.length || !DROPS?.naturalWidth) return;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    this.pickups = this.pickups.filter((p) => {
+      const frames = DROP_ART.cells.pickup[p.gold ? 'gold' : 'water'];
+      // the gold swirl has half the frames: hold each twice as long
+      const f = Math.floor((now - p.start) / (LOOT_FRAME_MS * (p.gold ? 2 : 1)));
+      if (f >= frames.length) return false;
+      this.drawDropCell(ctx, frames[f], p.x, p.y + 8, LOOT_SIZE * 1.3);
+      return true;
+    });
+    ctx.restore();
   }
 
   drawProps(ctx, props, tall, now) {
