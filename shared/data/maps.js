@@ -65,7 +65,7 @@ export const MAPS = {
     spawnPoint: [30, 23],
     warps: [
       { x: 28, y: 0, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
-      { x: 28, y: 38, w: 4, h: 2, to: 'greenmire', at: [30, 3], label: 'ทุ่งกรีนไมร์' },
+      { x: 28, y: 38, w: 4, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
       { x: 0, y: 17, w: 1, h: 3, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
       { x: 59, y: 17, w: 1, h: 3, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
     ],
@@ -115,7 +115,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
     spawnPoint: [40, 32],
     warps: [
-      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [55, 9], label: 'ทุ่งกรีนไมร์' },
+      { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [87, 7], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
       { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [55, 18], label: 'เอมเบอร์โฮลด์' },
@@ -259,61 +259,63 @@ export const MAPS = {
 
   greenmire: {
     id: 'greenmire', name: 'Greenmire Flats', nameTh: 'ทุ่งกรีนไมร์', kind: 'field',
-    width: 60, height: 40, seed: 2002, theme: 'grass', levelRange: [1, 10],
-    // One painting (assets/maps/source/greenmire.png, 1536x1024): meadows and
-    // dirt paths between wooded ledges, streams and falls. Where a character
-    // may stand is traced off it by tools/trace-field.py into
-    // greenmire-obstacles.js; a tile is 25.6px of the painting, as in town.
+    width: 90, height: 60, seed: 2002, theme: 'grass', levelRange: [1, 10],
+    // One painting stitched from the full map and five close-ups
+    // (tools/stitch-greenmire.py, 2928x1952, 32.5px a tile): meadows and dirt
+    // paths between wooded ledges and rivers, a hill ringed by cliffs in the
+    // north and an island of old ruins in the south. Where a character may
+    // stand is traced off it by tools/trace-field.py into greenmire-obstacles.js.
     backdrop: 'assets/maps/greenmire.webp',
-    // Pixel art, drawn without a filter so every edge stays as painted. The
-    // halves streamed in near the camera are the same pixels blown up 3x
-    // (nearest neighbour): a lossy .webp of the 1x picture smears colour
-    // across single pixels, at 3x it cannot. No AI upscale here - it
-    // repainted the grass and cobbles soft.
-    pixelArt: true,
-    backdropTiles: { dir: 'assets/maps/greenmire/ground', size: 2304, tileW: 2304, tileH: 3072, bleed: 2, cols: 2, rows: 1, width: 4608, height: 3072 },
-    walk: [[0, 0, 60, 40]],
+    backdropTiles: { dir: 'assets/maps/greenmire/ground', size: 1464, tileW: 1464, tileH: 1952, bleed: 2, cols: 2, rows: 1, width: 2928, height: 1952 },
+    walk: [[0, 0, 90, 60]],
     obstacles: GREENMIRE_OBSTACLES,
-    spawnPoint: [30, 5],
-    // Three ways out, each on the side you leave the other map by: the town
-    // road comes in at the north stairs (the start meadow), Millhaven's south
-    // road at the north-east stairs, and the way on to the harder marsh sits
-    // in the far south-east clearing, so a new player crosses the field first.
-    // The north-west falls and the south bridge stay closed: the boss will
-    // hold the end of the south path.
+    spawnPoint: [44, 4],
+    // Three of the painted gates: the town road comes in at the north stairs,
+    // Millhaven's at the north-east stairs, and the way on to the harder marsh
+    // is the south gate below the ruins, so a new player crosses the whole
+    // field first. The north-west stairs stay closed.
     warps: [
-      { x: 29, y: 0, w: 2, h: 2, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },    // the north stairs
-      { x: 55, y: 6, w: 2, h: 1, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },          // top of the north-east stairs
-      { x: 56, y: 31, w: 2, h: 2, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },            // the south-east clearing
+      { x: 43, y: 0, w: 3, h: 1, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },  // the north stairs
+      { x: 88, y: 2, w: 2, h: 2, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },        // the north-east stairs
+      { x: 44, y: 58, w: 3, h: 2, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },          // the south gate
     ],
-    // The further from the town stairs, the harder: slimes (Lv1) keep to the
-    // north and west, mushrooms (Lv3) hold the south, caterpillars (Lv4) the
-    // far south corners, and the crossroads and the southern meadow are where
-    // they meet. Bees (Lv5, the only ones that start a fight) keep to the
-    // flowers in the south, away from every way in. Boars (Lv6) hold the
-    // south-east slope, and forest spirits (Lv8, the first that fight from
-    // range) the path down into the marsh and the far south-west glade. The
-    // gate meadow stays quiet.
+    // Rings, harder toward the middle and the south: slimes (Lv1) on the
+    // meadows by the two northern gates, mushrooms (Lv3) and caterpillars
+    // (Lv4) down both flanks, bees (Lv5, the only ones that start a fight)
+    // on the crossroads under the hill, boars (Lv6) on the lower flanks and
+    // forest spirits (Lv8) along the south road to the marsh gate. The two
+    // bosses hold the middle: the Alpha Wolf the hilltop, reached only by
+    // its stairs, and the Tree Guardian the ruins island between its two
+    // bridges. The gate meadows stay quiet.
     spawns: [
-      { mob: 'blue_slime', count: 4, area: [20, 4, 12, 5] },     // below the north stairs
-      { mob: 'blue_slime', count: 5, area: [4, 8, 6, 8] },       // the west ledge
-      { mob: 'blue_slime', count: 6, area: [12, 14, 16, 5] },    // the long meadow west of the crossroads
-      { mob: 'blue_slime', count: 3, area: [33, 12, 10, 8] },    // the crossroads
-      { mob: 'mushroom', count: 2, area: [33, 12, 10, 8] },
-      { mob: 'blue_slime', count: 5, area: [45, 8, 13, 6] },     // across the east bridge
-      { mob: 'mushroom', count: 3, area: [3, 23, 16, 9] },       // the south-west hollow
-      { mob: 'caterpillar', count: 2, area: [3, 23, 16, 9] },
-      { mob: 'forest_bee', count: 2, area: [3, 23, 16, 9] },
-      { mob: 'mushroom', count: 3, area: [22, 20, 14, 8] },      // the southern meadow
-      { mob: 'forest_bee', count: 2, area: [22, 20, 14, 8] },
-      { mob: 'blue_slime', count: 2, area: [22, 20, 14, 8] },
-      { mob: 'mushroom', count: 1, area: [36, 20, 12, 12] },     // the south-east slope, on the way to the marsh
-      { mob: 'caterpillar', count: 3, area: [36, 20, 12, 12] },
-      { mob: 'wild_boar', count: 3, area: [36, 20, 12, 12] },
-      { mob: 'forest_spirit', count: 3, area: [45, 29, 12, 4] },   // the path down to the marsh
-      { mob: 'forest_spirit', count: 2, area: [9, 27, 10, 4] },    // the far south-west glade
-      { mob: 'alpha_wolf', count: 1, area: [30, 23, 9, 3] },       // the mini boss, on the clearing mid-field
-      { mob: 'tree_guardian', count: 1, area: [31, 35, 4, 3] },    // the boss, at the end of the south path
+      { mob: 'blue_slime', count: 4, area: [25, 5, 12, 6] },     // west of the north stairs
+      { mob: 'blue_slime', count: 4, area: [50, 6, 10, 5] },     // east of the north stairs
+      { mob: 'blue_slime', count: 5, area: [4, 8, 12, 6] },      // the north-west meadow
+      { mob: 'blue_slime', count: 4, area: [60, 9, 12, 7] },     // the north-east meadow
+      { mob: 'blue_slime', count: 3, area: [80, 12, 9, 7] },     // below Millhaven's stairs
+      { mob: 'mushroom', count: 4, area: [2, 14, 16, 12] },      // the west flank
+      { mob: 'caterpillar', count: 2, area: [2, 14, 16, 12] },
+      { mob: 'mushroom', count: 3, area: [24, 13, 12, 12] },     // between the river and the hill
+      { mob: 'blue_slime', count: 2, area: [24, 13, 12, 12] },
+      { mob: 'mushroom', count: 3, area: [58, 15, 14, 12] },     // the east flank
+      { mob: 'caterpillar', count: 3, area: [58, 15, 14, 12] },
+      { mob: 'caterpillar', count: 2, area: [81, 23, 9, 8] },    // across the east river
+      { mob: 'mushroom', count: 1, area: [81, 23, 9, 8] },
+      { mob: 'forest_bee', count: 3, area: [25, 24, 16, 8] },    // the crossroads under the hill
+      { mob: 'caterpillar', count: 2, area: [25, 24, 16, 8] },
+      { mob: 'forest_bee', count: 3, area: [50, 27, 16, 8] },
+      { mob: 'mushroom', count: 2, area: [50, 27, 16, 8] },
+      { mob: 'wild_boar', count: 3, area: [3, 31, 14, 12] },     // the lower west flank
+      { mob: 'forest_bee', count: 2, area: [3, 31, 14, 12] },
+      { mob: 'wild_boar', count: 3, area: [68, 31, 12, 10] },    // the lower east flank
+      { mob: 'wild_boar', count: 2, area: [4, 44, 20, 8] },      // the south-west woods
+      { mob: 'forest_spirit', count: 2, area: [4, 44, 20, 8] },
+      { mob: 'forest_spirit', count: 3, area: [63, 44, 20, 10] }, // the south-east woods
+      { mob: 'wild_boar', count: 2, area: [63, 44, 20, 10] },
+      { mob: 'forest_spirit', count: 3, area: [16, 52, 24, 6] },  // the south road, both sides of the gate
+      { mob: 'forest_spirit', count: 3, area: [52, 53, 24, 5] },
+      { mob: 'alpha_wolf', count: 1, area: [42, 14, 12, 6] },     // the mini boss, on the hilltop
+      { mob: 'tree_guardian', count: 1, area: [43, 42, 7, 5] },   // the boss, on the ruins island
     ],
   },
 
@@ -322,7 +324,7 @@ export const MAPS = {
     width: 80, height: 64, seed: 3003, theme: 'marsh', levelRange: [10, 22],
     spawnPoint: [8, 32],
     warps: [
-      { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [52, 31], label: 'ทุ่งกรีนไมร์' },
+      { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [45, 56], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 18], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],

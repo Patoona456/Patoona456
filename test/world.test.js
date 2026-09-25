@@ -191,9 +191,17 @@ test('a field boss dragged too far walks home untouchable, keeps its wounds, and
   const zone = w.zone('greenmire');
   const wolf = [...zone.entities.values()].find((e) => e.defId === 'alpha_wolf');
   const home = { ...wolf.anchor };
-  const p = stubPlayer('P', 10, zone, home.x + BOSS_LEASH + 200, home.y);
+  // somewhere past its leash it could really have been dragged to
+  let spot = null;
+  for (let a = 0; a < 64 && !spot; a++) {
+    const x = home.x + Math.cos(a / 64 * Math.PI * 2) * (BOSS_LEASH + 40);
+    const y = home.y + Math.sin(a / 64 * Math.PI * 2) * (BOSS_LEASH + 40);
+    if (zone.walkable(x, y)) spot = { x, y };
+  }
+  assert.ok(spot, 'there is ground past the leash');
+  const p = stubPlayer('P', 10, zone, spot.x, spot.y);
   zone.players.set('P', p); zone.entities.set('P', p);
-  wolf.x = home.x + BOSS_LEASH + 40; wolf.y = home.y;          // dragged past its leash
+  wolf.x = spot.x; wolf.y = spot.y;                             // dragged past its leash
   wolf.target = 'P'; wolf.hp = 500;
   let now = Date.now();
   wolf.lastHurtAt = now;

@@ -86,18 +86,20 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
   await t.test('a fight exchanges damage in both directions', async () => {
     const { page, errors, ctx } = await join(browser);
     // out to the field, then swing at whatever is nearest
-    await page.evaluate(() => window.__game.net.send({ t: 'devWarp', map: 'greenmire' }));
+    // (the slime meadow east of the north stairs: open ground, no river between)
+    await page.evaluate(() => window.__game.net.send({ t: 'devWarp', map: 'greenmire', at: [54, 8] }));
     await page.waitForFunction(() => window.__game.renderer.zone?.id === 'greenmire', null, { timeout: 10000 });
     await page.waitForFunction(() => (window.__game.state.ents ?? []).some((e) => e.k === 'm'), null, { timeout: 15000 });
 
     const hit = await page.evaluate(async () => {
       const g = window.__game;
-      const mob = () => (g.state.ents ?? []).filter((e) => e.k === 'm')
+      const skip = new Set();
+      const mob = () => (g.state.ents ?? []).filter((e) => e.k === 'm' && !skip.has(e.id))
         .sort((a, b) => Math.hypot(a.x - g.predicted.x, a.y - g.predicted.y)
           - Math.hypot(b.x - g.predicted.x, b.y - g.predicted.y))[0];
-      const start = mob();
+      let start = mob();
       if (!start) return { error: 'no monster in range' };
-      const startHp = start.hp;
+      let startHp = start.hp, best = Infinity, stuck = 0;
       g.net.send({ t: 'target', id: start.id });
       // Spawn points are random, so the walk to the nearest monster can be
       // most of the field. A budget tight enough to fail on an unlucky spawn
@@ -107,6 +109,10 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
         if (!m) break;
         const dx = m.x - g.predicted.x, dy = m.y - g.predicted.y;
         const d = Math.hypot(dx, dy) || 1;
+        // a monster behind a tree or across the river cannot be walked to
+        // in a straight line: give up on it and try the next nearest
+        if (m.id !== start.id) { start = m; startHp = m.hp; best = Infinity; stuck = 0; }
+        if (d <= 30 || d < best - 2) { best = Math.min(best, d); stuck = 0; } else if (++stuck > 15) { skip.add(m.id); continue; }
         if (d > 30) g.net.send({ t: 'input', mx: dx / d, my: dy / d });
         else { g.net.send({ t: 'input', mx: 0, my: 0 }); g.net.send({ t: 'attack', on: true, id: m.id }); }
         await new Promise((r) => setTimeout(r, 100));

@@ -26,34 +26,14 @@ ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 FIELDS = {
     'greenmire': {
-        'src': 'assets/maps/source/greenmire.png',
-        'cols': 60, 'rows': 40,
-        # where a character walks in from; everything not joined to it is closed
-        'seed': (30, 3),
-        # Decided by eye where colour cannot tell, as [x, y, w, h] in tiles:
-        # the stairs and bridges (plank shadows read as cliff), and the paths
-        # that pass through a tree's shade.
-        'force_open': [
-            [29, 0, 2, 4],     # north stairs to the top edge
-            [5, 3, 2, 3],      # stairs, north-west ledge
-            [13, 5, 3, 3],     # bridge over the west stream
-            [7, 13, 3, 4],     # stairs down, west
-            [43, 3, 2, 4],     # stairs, north-east ledge
-            [55, 6, 2, 4],     # stairs, east ledge
-            [46, 13, 4, 2],    # bridge over the east stream
-            [30, 13, 2, 3],    # stairs, middle mound
-            [53, 16, 2, 3],    # stairs down to the south-east pool
-            [7, 19, 2, 4],     # bridge, west river
-            [19, 25, 2, 4],    # stairs down, south-west
-            [45, 24, 2, 4],    # stairs down, south-east
-            [32, 30, 2, 3],    # stairs to the south bridge
-            [32, 33, 3, 4],    # the south bridge, and the path below it
-            [9, 16, 4, 2],     # the path west from the middle, under the trees
-            [19, 23, 3, 3],    # down to the south-west stairs
-            [7, 6, 3, 3],      # the north-west corner, to the bridge
-            [58, 9, 2, 3],     # the east path, out to the edge
-            [50, 31, 8, 2],    # the south-east clearing past the pond (the warp to Ashfen)
-        ],
+        # stitched by tools/stitch-greenmire.py from the full picture and its six close-ups
+        'src': 'assets/maps/source/greenmire2/stitched.png',
+        'cols': 90, 'rows': 60,
+        # the picture the game draws under the streamed tiles: half size is plenty
+        'backdrop_scale': 0.5,
+        'seed': (44, 3),
+        # the wooden stairs and bridges: dark planks the colour sort calls cliff
+        'force_open': [(43, 24, 3, 4), (43, 35, 4, 3), (43, 52, 4, 4), (86, 21, 3, 3), (87, 39, 2, 3)],
         'force_block': [],
     },
 }
@@ -116,24 +96,28 @@ def main(key, overlay=None):
         for ln in lines:
             fp.write(f"  '{ln}',\n")
         fp.write('];\n')
-    Image.fromarray(rgb).save(os.path.join(ROOT, f'assets/maps/{key}.webp'), 'WEBP', quality=92, method=6)
+    bk = Image.fromarray(rgb)
+    if cfg.get('backdrop_scale'):
+        bk = bk.resize((round(W * cfg['backdrop_scale']), round(H * cfg['backdrop_scale'])), Image.LANCZOS)
+    bk.save(os.path.join(ROOT, f'assets/maps/{key}.webp'), 'WEBP', quality=90, method=6)
     if overlay:
-        ov = Image.fromarray(rgb).resize((W * 2, H * 2), Image.LANCZOS).convert('RGBA')
+        k = 2 if W < 2000 else 1
+        ov = Image.fromarray(rgb).resize((W * k, H * k), Image.LANCZOS).convert('RGBA')
         lay = np.zeros((rows, cols, 4), np.uint8)
         lay[~open_] = (0, 0, 0, 150)               # blocked by what is painted there
         lay[open_ & ~seen] = (255, 0, 0, 130)      # ground, but cut off from the rest
-        lay = Image.fromarray(lay).resize((W * 2, H * 2), Image.NEAREST)
+        lay = Image.fromarray(lay).resize((W * k, H * k), Image.NEAREST)
         ov.alpha_composite(lay)
         from PIL import ImageDraw
         d = ImageDraw.Draw(ov)
         for x in range(cols + 1):
-            X = round(x * tw * 2)
-            d.line([(X, 0), (X, H * 2)], fill=(255, 255, 255, 90) if x % 5 else (255, 255, 0, 200))
+            X = round(x * tw * k)
+            d.line([(X, 0), (X, H * k)], fill=(255, 255, 255, 90) if x % 5 else (255, 255, 0, 200))
             if x % 5 == 0 and x < cols:
                 d.text((X + 2, 2), str(x), fill=(255, 255, 0))
         for y in range(rows + 1):
-            Y = round(y * th * 2)
-            d.line([(0, Y), (W * 2, Y)], fill=(255, 255, 255, 90) if y % 5 else (255, 255, 0, 200))
+            Y = round(y * th * k)
+            d.line([(0, Y), (W * k, Y)], fill=(255, 255, 255, 90) if y % 5 else (255, 255, 0, 200))
             if y % 5 == 0 and y < rows:
                 d.text((2, Y + 2), str(y), fill=(255, 255, 0))
         ov.convert('RGB').save(overlay)
