@@ -72,15 +72,22 @@ SHEETS = [
     # The bee's: laid out like the caterpillar's. The piles on the ground lie
     # at a slant and share columns, so they are found as separate shapes; the
     # honey icon is the drop in the top row. Its wind crystal is green here.
-    # The boar's, from the panel under its animation sheet until its own drop
-    # sheet comes. Only three hides are drawn: the fourth pile is the third.
-    ('assets/mob/source/boar_sheet.png', 160, [
-        ('icon', (905, 1012), ['meat_1', None, None, None, None], 160, 531, {'blobs': True, 'thr': 150}),
-        ('ground', (905, 1012), ['meat_1', 'meat_2', 'meat_3', None, 'meat_4'], 160, 531, {'blobs': True, 'thr': 150}),
-        ('icon', (905, 1012), ['hide_1', None, None], 532, 802),
-        ('ground', (905, 1012), ['hide_1', 'hide_2', 'hide_3'], 532, 802),
-        ('icon', (905, 1012), ['tusk_1', None, None, None, None], 805, 1113),
-        ('ground', (905, 1012), ['tusk_1', 'tusk_2', None, 'tusk_3', 'tusk_4'], 805, 1113),
+    # The boar's: its labels sit under the pictures, and the hide has a row of
+    # big hides first (the icon comes from it) over the row that animates.
+    ('assets/ui/source/boar_drops.png', 205, [
+        ('icon', (150, 262), ['meat_1', None, None, None, None], 670, 1150, {'blobs': True, 'thr': 150}),
+        ('fall_meat', (150, 262), 5, 205, 690, {'blobs': True, 'thr': 150}),
+        ('ground', (150, 262), ['meat_1', 'meat_2', 'meat_3', None, 'meat_4'], 670, 1150, {'blobs': True, 'thr': 150}),
+        ('pickup', (150, 262), ['meat'] * 4, 1140, 1536, {'blobs': True, 'thr': 150}),
+        ('icon', (340, 470), ['hide_1', None, None, None], 205, 690, {'blobs': True, 'thr': 150}),
+        ('fall_hide', (525, 625), 5, 205, 675, {'blobs': True, 'thr': 150}),
+        ('ground', (525, 625), [None, 'hide_1', 'hide_2', None, 'hide_3', 'hide_4'], 675, 1205,
+         {'blobs': True, 'thr': 150}),
+        ('pickup', (525, 625), ['hide'] * 3, 1205, 1536, {'blobs': True, 'thr': 150}),
+        ('icon', (640, 750), ['tusk_1', None, None, None, None, None], 205, 700, {'blobs': True, 'thr': 150}),
+        ('fall_tusk', (640, 750), 6, 205, 700, {'blobs': True, 'thr': 150}),
+        ('ground', (640, 750), ['tusk_1', 'tusk_2', 'tusk_3', None, 'tusk_4'], 700, 1150, {'blobs': True, 'thr': 150}),
+        ('pickup', (640, 750), ['tusk'] * 4, 1150, 1536, {'blobs': True, 'thr': 150}),
     ]),
     ('assets/ui/source/bee_drops.png', 200, [
         ('icon', (40, 160), ['honey_1'], 850, 925),

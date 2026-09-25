@@ -587,7 +587,7 @@ export const MATERIALS = {
   wind_crystal_s: M({ id: 'wind_crystal_s', name: 'Small Wind Crystal', nameTh: 'ผลึกลม (เล็ก)', value: 30, weight: 1,
     rarity: 'uncommon', art: DROP('wcrystal_1'), loot: 'wcrystal',
     desc: 'ผลึกสีเขียวมรกตที่มีลมหมุนอยู่ข้างใน เบาจนเกือบลอยได้' }),
-  // the boar's; pictures from the panel under its sheet until its drop sheet comes
+  // the boar's; cut from its drop sheet
   boar_meat: M({ id: 'boar_meat', name: 'Boar Meat', nameTh: 'เนื้อหมูป่า', value: 16, weight: 2, rarity: 'common',
     art: DROP('meat_1'), loot: 'meat',
     desc: 'เนื้อหมูป่าสด ๆ ชิ้นหนา พ่อครัวในเมืองรับซื้อเสมอ' }),

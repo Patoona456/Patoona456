@@ -37,11 +37,11 @@ export const DROP_ART = {
       "leaf_1": 132,
       "shell_1": 146,
       "meat_1": 160,
-      "hide_1": 165,
-      "tusk_1": 169,
-      "honey_1": 174,
-      "stinger_1": 189,
-      "wcrystal_1": 204
+      "hide_1": 174,
+      "tusk_1": 187,
+      "honey_1": 202,
+      "stinger_1": 217,
+      "wcrystal_1": 232
     },
     "fall_jelly": [
       14,
@@ -122,29 +122,30 @@ export const DROP_ART = {
       "shell_2": 153,
       "shell_3": 154,
       "shell_4": 155,
-      "meat_1": 161,
-      "meat_2": 162,
-      "meat_3": 163,
-      "meat_4": 164,
-      "hide_1": 166,
-      "hide_2": 167,
-      "hide_3": 168,
-      "tusk_1": 170,
-      "tusk_2": 171,
-      "tusk_3": 172,
-      "tusk_4": 173,
-      "honey_2": 181,
-      "honey_1": 182,
-      "honey_3": 183,
-      "honey_4": 184,
-      "stinger_1": 196,
-      "stinger_2": 197,
-      "stinger_3": 198,
-      "stinger_4": 199,
-      "wcrystal_1": 211,
-      "wcrystal_2": 212,
-      "wcrystal_3": 213,
-      "wcrystal_4": 214
+      "meat_1": 166,
+      "meat_2": 167,
+      "meat_3": 168,
+      "meat_4": 169,
+      "hide_1": 180,
+      "hide_2": 181,
+      "hide_3": 182,
+      "hide_4": 183,
+      "tusk_1": 194,
+      "tusk_2": 195,
+      "tusk_3": 196,
+      "tusk_4": 197,
+      "honey_2": 209,
+      "honey_1": 210,
+      "honey_3": 211,
+      "honey_4": 212,
+      "stinger_1": 224,
+      "stinger_2": 225,
+      "stinger_3": 226,
+      "stinger_4": 227,
+      "wcrystal_1": 239,
+      "wcrystal_2": 240,
+      "wcrystal_3": 241,
+      "wcrystal_4": 242
     },
     "pickup": {
       "water": [
@@ -179,23 +180,40 @@ export const DROP_ART = {
         158,
         159
       ],
-      "honey": [
+      "meat": [
+        170,
+        171,
+        172,
+        173
+      ],
+      "hide": [
+        184,
         185,
-        186,
-        187,
-        188
+        186
+      ],
+      "tusk": [
+        198,
+        199,
+        200,
+        201
+      ],
+      "honey": [
+        213,
+        214,
+        215,
+        216
       ],
       "stinger": [
-        200,
-        201,
-        202,
-        203
+        228,
+        229,
+        230,
+        231
       ],
       "wcrystal": [
-        215,
-        216,
-        217,
-        218
+        243,
+        244,
+        245,
+        246
       ]
     },
     "fall_cap": [
@@ -246,29 +264,51 @@ export const DROP_ART = {
       150,
       151
     ],
-    "fall_honey": [
+    "fall_meat": [
+      161,
+      162,
+      163,
+      164,
+      165
+    ],
+    "fall_hide": [
       175,
       176,
       177,
       178,
-      179,
-      180
+      179
     ],
-    "fall_stinger": [
+    "fall_tusk": [
+      188,
+      189,
       190,
       191,
       192,
-      193,
-      194,
-      195
+      193
     ],
-    "fall_wcrystal": [
+    "fall_honey": [
+      203,
+      204,
       205,
       206,
       207,
-      208,
-      209,
-      210
+      208
+    ],
+    "fall_stinger": [
+      218,
+      219,
+      220,
+      221,
+      222,
+      223
+    ],
+    "fall_wcrystal": [
+      233,
+      234,
+      235,
+      236,
+      237,
+      238
     ]
   }
 };
