@@ -9,6 +9,7 @@ import { SHOPS } from '../shared/data/npcs.js';
 import { Player } from '../server/game/player.js';
 import { useConsumable } from '../server/game/consumables.js';
 import * as Econ from '../server/game/economy.js';
+import { QUESTS, HELD_QUESTS } from '../shared/data/quests.js';
 
 const world = { stats: { minted: 0, burned: 0 }, warpPlayer(p, map, x, y) { p.warpedTo = { map, x, y }; } };
 
@@ -25,7 +26,7 @@ function character(items = [], { level = 50, map = 'greenmire' } = {}) {
   const p = new Player(record, { send() {} });
   p.recompute();
   p.zone = {
-    def: { kind: 'field', width: 60, height: 40, spawns: [{ mob: 'mire_slime', count: 5 }] },
+    def: { kind: 'field', width: 60, height: 40, spawns: [{ mob: 'blue_slime', count: 5 }] },
     entities: new Map(), players: new Map([[p.id, p]]), events: [],
     pushEvent(e) { this.events.push(e); }, walkable: () => true, isHostile: () => true,
     spawnMonster(id, x, y, opts) { const m = { id: 'm' + this.entities.size, def: MONSTERS[id], name: id, x, y, ...opts, alive: true }; this.entities.set(m.id, m); return m; },
@@ -141,6 +142,8 @@ test('a party book reaches the party nearby, and nobody else', () => {
 });
 
 test('the renewal scroll reopens handed-in dailies and nothing else', () => {
+  // the Greenmire daily waits on monsters still to come back; the scroll does not
+  QUESTS.q_daily_greenmire ??= HELD_QUESTS.q_daily_greenmire;
   const p = character(['scroll_daily_reset']);
   p.record.quests = { q_daily_greenmire: { done: true, at: Date.now() }, q_first_blood: { done: true, at: Date.now() } };
   assert.ok(useConsumable(world, p, 0).ok);
@@ -170,7 +173,7 @@ test('a summoning scroll calls this field\'s own monster, once, and only in the 
   const p = character(['scroll_summon']);
   assert.ok(useConsumable(world, p, 0).ok);
   const m = [...p.zone.entities.values()][0];
-  assert.equal(m.def.id, 'mire_slime');
+  assert.equal(m.def.id, 'blue_slime');
   assert.ok(m.oneShot, 'the summoned monster would respawn forever');
   p.cooldowns = {};
   p.zone.def = { kind: 'town', safe: true };

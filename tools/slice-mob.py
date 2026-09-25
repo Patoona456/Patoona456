@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""Cuts a monster animation sheet into one atlas the client plays frame by frame.
+
+    python3 tools/slice-mob.py blue_slime [preview.png]
+
+The sheets are painted: every animation is a row of frames on a soft blue
+backdrop, with a title card above. The creature is told from the backdrop by
+colour (see MOBS[..]['solid']), holes inside it are filled, and each row is
+split into frames where a run of empty columns falls between them.
+
+Every frame of an animation goes into a cell of one size, lined up on the
+creature's feet (the bottom of its largest piece) and the middle of that piece,
+so a frame never jumps against the next. Writes:
+
+    assets/mob/<key>.webp            the atlas, one animation per row
+    shared/data/mobart.js            the cell size and frame counts, per sheet
+"""
+import json
+import os
+import re
+import sys
+import cv2
+import numpy as np
+from PIL import Image
+
+ROOT = os.path.join(os.path.dirname(__file__), '..')
+
+MOBS = {
+    'blue_slime': {
+        'src': 'assets/mob/source/blue_slime_sheet.png',
+        # the slime's blue has almost no red in it; the backdrop's always does
+        'solid': lambda R, G, B: ((R < 34) & (B > 40)) | ((R > 170) & (G > 130) & (B < 150)),
+        'x0': 182,
+        # name, top, bottom, frames
+        'rows': [('idle', 174, 282, 9), ('walk', 294, 396, 9), ('run', 412, 510, 6), ('attack', 524, 652, 7),
+                 ('hit', 660, 768, 8), ('death', 776, 876, 8), ('spawn', 886, 1012, 10)],
+        # the sheet faces left
+        'faces': 'left',
+        'scale': .5,
+        # atlas pixels to world pixels: a body about thirty wide, knee-high to a player
+        'show': .56,
+    },
+}
+
+
+def mask_of(rgb, solid):
+    R, G, B = (rgb[..., i].astype(np.int32) for i in range(3))
+    m = solid(R, G, B).astype(np.uint8)
+    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    # fill what the outline encloses: flood the outside, keep everything else
+    h, w = m.shape
+    flood = m.copy()
+    ff = np.zeros((h + 2, w + 2), np.uint8)
+    cv2.floodFill(flood, ff, (0, 0), 2)
+    return (flood != 2).astype(np.uint8)
+
+
+def frames_of(m, count):
+    """The frames of one row, as a label mask per frame.
+
+    Frames are not evenly spaced and their splashes and bubbles drift into
+    the gaps, so columns cannot be cut blindly. The `count` biggest pieces
+    that stand apart are the bodies; every other piece belongs to the body
+    whose span it is nearest."""
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m)
+    pieces = [i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] >= 14]
+    sep = .55 * m.shape[1] / count
+    cx = lambda i: st[i, 0] + st[i, 2] / 2
+    bodies = []
+    for i in sorted(pieces, key=lambda i: -st[i, cv2.CC_STAT_AREA]):
+        if all(abs(cx(i) - cx(b)) >= sep for b in bodies):
+            bodies.append(i)
+        if len(bodies) == count:
+            break
+    bodies.sort(key=cx)
+    owner = {b: b for b in bodies}
+    for i in pieces:
+        if i in owner:
+            continue
+        c = cx(i)
+        owner[i] = min(bodies, key=lambda b: max(st[b, 0] - c, c - st[b, 0] - st[b, 2], 0))
+    return [(b, np.isin(lab, [i for i, o in owner.items() if o == b]).astype(np.uint8), st[b]) for b in bodies]
+
+
+def main(key, preview=None):
+    cfg = MOBS[key]
+    rgb = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGB'))
+    frames = {}
+    for anim, y0, y1, count in cfg['rows']:
+        band = rgb[y0:y1, cfg['x0']:]
+        m = mask_of(band, cfg['solid'])
+        out = []
+        for _, sub, (bx, by, bw, bh, _) in frames_of(m, count):
+            ys = np.nonzero(sub.sum(1))[0]
+            xs = np.nonzero(sub.sum(0))[0]
+            s, e = xs.min(), xs.max() + 1
+            a = np.zeros((y1 - y0, e - s, 4), np.uint8)
+            a[..., :3] = band[:, s:e]
+            soft = cv2.GaussianBlur(sub[:, s:e].astype(np.float32), (3, 3), 0)
+            a[..., 3] = (np.clip(soft * 1.4, 0, 1) * 255).astype(np.uint8)
+            # the feet: the bottom and middle of the body
+            out.append({'img': a[ys.min():ys.max() + 1], 'fx': bx + bw / 2 - s, 'fy': by + bh - ys.min()})
+        frames[anim] = out
+
+    # one cell for the whole sheet, big enough for any frame placed on its feet
+    left = max(f['fx'] for fs in frames.values() for f in fs)
+    right = max(f['img'].shape[1] - f['fx'] for fs in frames.values() for f in fs)
+    up = max(f['fy'] for fs in frames.values() for f in fs)
+    down = max(f['img'].shape[0] - f['fy'] for fs in frames.values() for f in fs)
+    half = int(np.ceil(max(left, right))) + 2
+    cw, ch = half * 2, int(np.ceil(up + down)) + 4
+    foot = int(np.ceil(up)) + 2
+    cols = max(len(fs) for fs in frames.values())
+    atlas = np.zeros((ch * len(frames), cw * cols, 4), np.uint8)
+    for r, (anim, fs) in enumerate(frames.items()):
+        for c, f in enumerate(fs):
+            h, w = f['img'].shape[:2]
+            ox = int(round(c * cw + half - f['fx']))
+            oy = int(round(r * ch + foot - f['fy']))
+            region = atlas[oy:oy + h, ox:ox + w]
+            src = f['img']
+            keep = src[..., 3:4] > region[..., 3:4]
+            atlas[oy:oy + h, ox:ox + w] = np.where(keep, src, region)
+
+    k = cfg['scale']
+    im = Image.fromarray(atlas)
+    im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+    os.makedirs(os.path.join(ROOT, 'assets/mob'), exist_ok=True)
+    im.save(os.path.join(ROOT, f'assets/mob/{key}.webp'), 'WEBP', quality=90, method=6)
+
+    # how tall it stands at rest, in world pixels: where its name goes
+    top = round(max(f['fy'] for f in frames['idle']) * k * cfg['show'])
+    entry = {'cell': [round(cw * k), round(ch * k)], 'foot': round(foot * k), 'faces': cfg['faces'], 'show': cfg['show'],
+             'top': top,
+             'anims': [[a, len(fs)] for a, fs in frames.items()]}
+    write_manifest(key, entry)
+    if preview:
+        bg = Image.new('RGBA', im.size, (70, 120, 60, 255))
+        bg.alpha_composite(im)
+        bg.convert('RGB').save(preview)
+    print(key, {a: len(fs) for a, fs in frames.items()}, 'cell', entry['cell'], 'atlas', im.size)
+
+
+def write_manifest(key, entry):
+    path = os.path.join(ROOT, 'shared/data/mobart.js')
+    art = {}
+    if os.path.exists(path):
+        m = re.search(r'export const MOB_ART = (\{.*\});', open(path).read(), re.S)
+        if m:
+            art = json.loads(m.group(1))
+    art[key] = entry
+    body = '{\n' + ',\n'.join(f'  {json.dumps(k)}: {json.dumps(v)}' for k, v in sorted(art.items())) + '\n}'
+    open(path, 'w').write(
+        '// Generated by tools/slice-mob.py - do not edit by hand.\n'
+        '// Per sheet: the cell every frame sits in, the row its feet stand on,\n'
+        '// the way the painting faces, how many world pixels one atlas pixel\n'
+        '// covers, how tall it stands at rest, and each animation row with its frame count.\n'
+        f'export const MOB_ART = {body};\n')
+
+
+if __name__ == '__main__':
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)

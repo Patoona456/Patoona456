@@ -5,6 +5,8 @@ import { SWORDS, BOWS, RARE_SWORDS, EPIC_SWORDS, LEGENDARY_SWORDS, MYTHIC_SWORDS
 //   'sheet'    - a single LPC sheet under assets/lpc/mob/<key>.png
 //   'compose'  - a humanoid built from the same layer system players use
 //   'blob'     - drawn procedurally by the client (no LPC art needed)
+//   'frames'   - a painted animation sheet cut by tools/slice-mob.py into
+//                assets/mob/<key>.webp (idle, walk, run, attack, hit, death, spawn)
 //
 // Money design: most monsters drop NO Aurum at all. Income comes from
 // materials that players actually consume (crafting, refining, arrows),
@@ -17,6 +19,22 @@ const M = (o) => ({
 });
 
 export const MONSTERS = {
+  // The first thing outside town, and the lesson in how to fight: little
+  // health, slow on its feet, slow to swing, one plain tackle and nothing else.
+  // The sheet calls it water; the game's nearest element is ice.
+  blue_slime: M({
+    id: 'blue_slime', name: 'Blue Slime', nameTh: 'สไลม์น้ำ', level: 1,
+    hp: 42, atk: 6, def: 1, mdef: 1, hit: 50, flee: 58, exp: 5, jobExp: 3,
+    element: 'ice', race: 'formless', size: 'small', speed: 38, attackRange: 34,
+    attackDelay: 2.3, aggressive: false, aggroRange: 120, respawn: 10,
+    sprite: { kind: 'frames', key: 'blue_slime' },
+    drops: [
+      { id: 'slime_jelly', chance: 0.55, qty: [1, 2] },
+      { id: 'water_crystal_s', chance: 0.06 },
+    ],
+    aurum: { chance: 0.35, min: 1, max: 3 },
+  }),
+
   companion_wolf: M({
     id: 'companion_wolf', name: 'Bonded Wolf', nameTh: 'หมาป่าคู่ใจ', level: 1,
     hp: 300, atk: 40, def: 12, mdef: 8, hit: 66, flee: 83, exp: 0, jobExp: 0,

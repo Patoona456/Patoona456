@@ -29,6 +29,7 @@ for (const f of CLIENT) {
   let src = await readFile(path.join(root, 'client', 'js', `${f}.js`), 'utf8');
   // published artifacts live under a path prefix, so assets are referenced relatively
   src = src.replace("const BASE = '/assets/lpc';", "const BASE = 'assets/lpc';")
+    .replace("const MOB_BASE = '/assets/mob';", "const MOB_BASE = 'assets/mob';")
     .replace("const CHIBI_BASE = '/assets/chibi';", "const CHIBI_BASE = 'assets/chibi';")
     .replace("const NPC_BASE = '/assets/npc';", "const NPC_BASE = 'assets/npc';")
     .replace("export const UI_BASE = '/assets/ui';", "export const UI_BASE = 'assets/ui';");

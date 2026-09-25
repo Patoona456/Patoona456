@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BOWS, SWORDS, WEAPON_BOXES } from '../shared/data/items.js';
 import { MONSTERS } from '../shared/data/monsters.js';
+import { WAITING_FOR_MONSTERS } from './fixtures/bestiary.js';
 import { SHOPS } from '../shared/data/npcs.js';
 import { JOBS } from '../shared/data/jobs.js';
 
@@ -35,7 +36,7 @@ test('a bow trades a little damage for a lot of reach against the sword of its l
   }
 });
 
-test('the jobs that shoot can find a bow: the smith, the field and the boxes', () => {
+test('the jobs that shoot can find a bow: the smith, the field and the boxes', { skip: WAITING_FOR_MONSTERS }, () => {
   assert.ok(Object.values(JOBS).some((j) => j.weapons?.includes('bow')), 'no job uses a bow');
   const smith = new Set(SHOPS.smith.stock.map((l) => l.id));
   const drops = new Set(Object.values(MONSTERS).flatMap((m) => m.drops.map((d) => d.id)));

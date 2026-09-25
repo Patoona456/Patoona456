@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 import { ITEMS, RECIPES, RETIRED_ITEMS } from '../shared/data/items.js';
 import { MONSTERS } from '../shared/data/monsters.js';
+import { MOB_ART } from '../shared/data/mobart.js';
 import { SKILLS } from '../shared/data/skills.js';
 import { JOBS } from '../shared/data/jobs.js';
 import { QUESTS } from '../shared/data/quests.js';
@@ -181,6 +182,10 @@ test('every sprite the game asks for is a file that exists', () => {
   }
   for (const mob of Object.values(MONSTERS)) {
     for (const url of Object.values(monsterLayers(mob.sprite) ?? {})) check(url, `monster ${mob.id}`);
+    if (mob.sprite?.kind === 'frames') {
+      check(`/assets/mob/${mob.sprite.key}.webp`, `monster ${mob.id}`);
+      if (!MOB_ART[mob.sprite.key]) missing.add(`${mob.sprite.key} has no entry in shared/data/mobart.js (monster ${mob.id})`);
+    }
   }
   // Items go through playerLayers, not layerUrl, because that is where the
   // one-gender-only fallback is applied - testing the raw url would report a

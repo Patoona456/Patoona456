@@ -267,11 +267,7 @@ export const MAPS = {
     // the north strip by the town gate stays gentle; anything that bites
     // lives further out, so a brand new character has somewhere to start
     spawns: [
-      { mob: 'mire_slime', count: 24 },
-      { mob: 'ember_wisp', count: 7, area: [4, 26, 72, 34] },
-      { mob: 'dusk_bat', count: 10, area: [4, 30, 72, 30] },
-      { mob: 'bristle_boar', count: 9, area: [4, 26, 72, 34] },
-      { mob: 'thistle_sprite', count: 8, area: [4, 34, 72, 26] },
+      { mob: 'blue_slime', count: 30, area: [4, 6, 72, 34] },
     ],
   },
 
@@ -284,15 +280,7 @@ export const MAPS = {
       { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 18], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
-    spawns: [
-      { mob: 'husk', count: 16 },
-      { mob: 'bandit_scout', count: 14 },
-      { mob: 'marsh_lurker', count: 10 },
-      { mob: 'bog_crawler', count: 12 },
-      { mob: 'fen_spore', count: 9 },
-      { mob: 'thistle_sprite', count: 5 },
-      { mob: 'dusk_bat', count: 5 },
-    ],
+    spawns: [],
   },
 
   gravebound: {
@@ -303,15 +291,7 @@ export const MAPS = {
       { x: 28, y: 2, w: 4, h: 2, to: 'ashfen', at: [40, 56], label: 'หนองเถ้า' },
       { x: 60, y: 64, w: 4, h: 2, to: 'orcwatch', at: [8, 8], label: 'สันเขาออร์ควอช' },
     ],
-    spawns: [
-      { mob: 'gravebound', count: 20 },
-      { mob: 'husk', count: 8 },
-      { mob: 'bone_archer', count: 12 },
-      { mob: 'grave_moth', count: 11 },
-      { mob: 'tomb_robber', count: 9 },
-      { mob: 'cairn_wisp', count: 7 },
-      { mob: 'crypt_warden', count: 6 },
-    ],
+    spawns: [],
   },
 
   orcwatch: {
@@ -322,15 +302,7 @@ export const MAPS = {
       { x: 4, y: 4, w: 4, h: 2, to: 'gravebound', at: [60, 60], label: 'สุสานกราฟบาวด์' },
       { x: 82, y: 60, w: 4, h: 4, to: 'frostvault', at: [14, 14], label: 'ห้องนิรภัยเยือกแข็ง' },
     ],
-    spawns: [
-      { mob: 'orc_scout', count: 20 },
-      { mob: 'dark_raider', count: 14 },
-      { mob: 'orc_shaman', count: 9 },
-      { mob: 'ridge_hound', count: 12 },
-      { mob: 'stone_grub', count: 8 },
-      { mob: 'crypt_warden', count: 4 },
-      { mob: 'orc_warlord', count: 1, area: [70, 20, 14, 14], boss: true },
-    ],
+    spawns: [],
   },
 
   frostvault: {
@@ -342,16 +314,7 @@ export const MAPS = {
       { x: 70, y: 70, w: 4, h: 4, to: 'vhaal', at: [24, 41], label: 'ห้องบัลลังก์วาล' },
       { x: 8, y: 70, w: 4, h: 4, to: 'reliquary1', at: [9, 24], label: 'หีบศพจม (ปาร์ตี้ 2 คน)' },
     ],
-    spawns: [
-      { mob: 'frost_husk', count: 20 },
-      { mob: 'crimson_orc', count: 10 },
-      { mob: 'frost_wight', count: 12 },
-      { mob: 'rime_shard', count: 12 },
-      { mob: 'glacier_maw', count: 8 },
-      { mob: 'hoar_stalker', count: 9 },
-      { mob: 'vault_sentry', count: 6 },
-      { mob: 'ember_revenant', count: 5 },
-    ],
+    spawns: [],
   },
 
   /* ---------------- The Sunken Reliquary: a party dungeon, three floors ----
@@ -381,12 +344,7 @@ export const MAPS = {
       { from: [33, 34], to: [40, 25] },
       { from: [25, 21], to: [25, 29], vfirst: true },    // a shortcut between halls
     ],
-    spawns: [
-      { mob: 'reliquary_sentinel', count: 4, area: [18, 8, 16, 14] },
-      { mob: 'reliquary_shade', count: 5, area: [18, 28, 16, 14] },
-      { mob: 'reliquary_choir', count: 3, area: [40, 18, 18, 14] },
-      { mob: 'reliquary_sentinel', count: 2, area: [40, 18, 18, 14] },
-    ],
+    spawns: [],
   },
   reliquary2: {
     id: 'reliquary2', name: 'Sunken Reliquary - Choir', nameTh: 'หีบศพจม - ห้องสวด',
@@ -415,13 +373,7 @@ export const MAPS = {
     hazards: [
       { x: 33, y: 29, w: 4, h: 4, tile: 'LAVA' },        // the brazier pit in the middle
     ],
-    spawns: [
-      { mob: 'reliquary_choir', count: 5, area: [16, 6, 14, 12] },
-      { mob: 'reliquary_anchor', count: 2, area: [24, 24, 18, 14] },
-      { mob: 'reliquary_shade', count: 6, area: [24, 24, 18, 14] },
-      { mob: 'reliquary_sentinel', count: 4, area: [16, 44, 14, 14] },
-      { mob: 'reliquary_choir', count: 3, area: [46, 26, 12, 12] },
-    ],
+    spawns: [],
   },
   reliquary3: {
     id: 'reliquary3', name: 'Sunken Reliquary - Vault', nameTh: 'หีบศพจม - ห้องหีบ',
@@ -438,9 +390,7 @@ export const MAPS = {
     halls: [
       { from: [25, 49], to: [25, 42], vfirst: true },
     ],
-    spawns: [
-      { mob: 'reliquary_warden', count: 1, area: [22, 18, 8, 8], boss: true },
-    ],
+    spawns: [],
   },
 
   // The only ground in the world where players may swing at each other, and
@@ -462,13 +412,7 @@ export const MAPS = {
     width: 48, height: 48, seed: 7007, theme: 'crypt', levelRange: [60, 70],
     spawnPoint: [24, 44],
     warps: [{ x: 22, y: 45, w: 4, h: 2, to: 'frostvault', at: [70, 68], label: 'ห้องนิรภัยเยือกแข็ง' }],
-    spawns: [
-      { mob: 'skeleton_king', count: 1, area: [16, 10, 16, 16], boss: true },
-      { mob: 'throne_knight', count: 12 },
-      { mob: 'pyre_wisp', count: 10 },
-      { mob: 'crown_thrall', count: 8 },
-      { mob: 'bone_choirmaster', count: 6 },
-    ],
+    spawns: [],
   },
 };
 

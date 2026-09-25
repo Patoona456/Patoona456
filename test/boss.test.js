@@ -8,6 +8,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tickBoss, resetBoss } from '../server/game/boss.js';
 import { MONSTERS } from '../shared/data/monsters.js';
+import { withLegacyBestiary } from './fixtures/bestiary.js';
+
+withLegacyBestiary();          // the scripts under test belong to monsters still waiting on their sheets
 
 const def = MONSTERS.reliquary_warden;
 /** Block for `ms` without a timer, so the boss's wall-clock timers advance. */

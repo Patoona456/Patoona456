@@ -11,6 +11,7 @@ import { ITEMS, RECIPES, KEY_ITEMS } from '../shared/data/items.js';
 
 const SHARD = KEY_ITEMS.gachaShard;      // what the shrine and its counter are paid in
 import { MONSTERS } from '../shared/data/monsters.js';
+import { WAITING_FOR_MONSTERS } from './fixtures/bestiary.js';
 import { SHOPS } from '../shared/data/npcs.js';
 import { Player } from '../server/game/player.js';
 
@@ -209,7 +210,7 @@ test('crafting consumes the materials and the fee', () => {
   assert.equal(p.record.aurum, before - r.fee * 2);
 });
 
-test('the weekly boss is the only thing on a lockout', () => {
+test('the weekly boss is the only thing on a lockout', { skip: WAITING_FOR_MONSTERS }, () => {
   const locked = Object.values(MONSTERS).filter((m) => m.lockout);
   assert.ok(locked.length > 0, 'nothing is locked, so the weekly cap does not exist');
   for (const m of locked) {

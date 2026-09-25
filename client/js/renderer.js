@@ -5,7 +5,8 @@ import { TILES, MAPS, decodeGrid, generateProps, hash2 } from '../../shared/data
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
-import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture } from './sprites.js';
+import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture,
+  drawMobFrames, mobAnimMs } from './sprites.js';
 import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
 import { drawBehind, drawInFront, apparelOf } from './apparel.js';
@@ -17,6 +18,7 @@ import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 import { CHIBI_FISTS } from '../../shared/data/chibi.js';
+import { MOB_ART } from '../../shared/data/mobart.js';
 import { atlasFile, atlasRect, ATLAS_FILES } from '../../shared/atlas.js';
 
 const uiImages = new Map();
@@ -69,6 +71,8 @@ const CHIBI_GRIP = [
  * speed and the feet barely slide.
  */
 const CHIBI_STRIDE = 72;
+// a monster in the middle of these is not interrupted by a flinch
+const ONE_SHOT_MOB = new Set(['slash', 'thrust', 'shoot', 'spellcast', 'spawn']);
 const CHIBI_CYCLE_MS = (CHIBI_WALK.anims.walk.frames / CHIBI_WALK.anims.walk.fps) * 1000;
 /**
  * A bow is gripped by its handle (the middle of the limb, where the riser
@@ -844,10 +848,20 @@ export class Renderer {
 
   drawEntities(ctx, state, now, props = []) {
     // tall scenery shares the painter's-order list so characters walk behind it
-    const ents = [...(state.ents ?? []), ...props.filter((p) => p.tall).map((p) => ({ _prop: p, y: p.y }))]
+    const ents = [...(state.ents ?? []), ...props.filter((p) => p.tall).map((p) => ({ _prop: p, y: p.y })),
+      ...(this.corpses ?? []).map((c) => ({ _corpse: c, y: c.y - 1 }))]
       .sort((a, b) => a.y - b.y);
     for (const e of ents) {
       if (e._prop) { this.drawProp(ctx, e._prop, now); continue; }
+      if (e._corpse) {
+        const c = e._corpse, age = performance.now() - c.t;
+        if (age < c.ms + 600) {
+          drawMobFrames(ctx, c.sprite, { x: c.x, y: c.y, anim: 'death', elapsed: age, flip: c.flip,
+            alpha: age < c.ms ? 1 : 1 - (age - c.ms) / 600 });
+        }
+        continue;
+      }
+      if (e._gone) continue;
       const anim = e.a ?? 'idle';
       // a weapon faster than its animation plays the swing quicker, rather
       // than looping half of it
@@ -902,7 +916,18 @@ export class Renderer {
 
       if (anim === 'walk') this.footstep(e, now);
 
-      if (e.k === 'm' && e.sprite?.kind === 'blob') {
+      if (e.k === 'm' && e.sprite?.kind === 'frames') {
+        const d = e.d ?? 0;
+        e._faceLeft = d >= 1 && d <= 3 ? true : d >= 5 && d <= 7 ? false : e._faceLeft;
+        // a blow that lands between swings plays the flinch over whatever it was doing
+        const hitMs = now - (e._hitAt ?? -1e9);
+        const flinch = hitMs < mobAnimMs(e.sprite.key, 'hit') && !ONE_SHOT_MOB.has(anim);
+        drawMobFrames(ctx, e.sprite, {
+          x: e.x, y: e.y, flip: !e._faceLeft, flash: hurt,
+          anim: flinch ? 'hit' : anim, elapsed: flinch ? hitMs : elapsed,
+          alpha: e.inv ? 0.35 : 1,
+        });
+      } else if (e.k === 'm' && e.sprite?.kind === 'blob') {
         drawBlob(ctx, e.sprite, { x: e.x, y: e.y, t: now + (e.id.charCodeAt(1) * 97), hurt });
       } else {
         const layers = e.k === 'p' ? playerLayers(e.look, e.eq ?? {})
@@ -1193,6 +1218,16 @@ export class Renderer {
     const scale = e.sprite?.scale ?? 1;
     const at = { x: e.x, y: e.y - 16 * scale };
 
+    // painted monsters melt away on their own death row, then fade
+    if (e.k === 'm' && e.sprite?.kind === 'frames') {
+      const ms = mobAnimMs(e.sprite.key, 'death');
+      this.corpses = (this.corpses ?? []).filter((c) => performance.now() - c.t < c.ms + 600);
+      this.corpses.push({ sprite: e.sprite, x: e.x, y: e.y, flip: !e._faceLeft, t: performance.now(), ms });
+      e._gone = true;          // the live body stays in the snapshot a moment longer
+      this.particles.poof(at.x, at.y, L.deep.join(','));
+      return;
+    }
+
     if (boss) {
       this.addFx({ fx: 'nova', el, x: at.x, y: at.y, r: 120, life: 900 });
       this.addFx({ fx: 'impact', el, x: at.x, y: at.y, r: 80, life: 520 });
@@ -1220,7 +1255,9 @@ export class Renderer {
     const isTarget = e.id === state.targetId;
     const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a big head, a little taller than LPC
     const painted = e.k === 'n' && e.look?.pic;   // painted NPCs stand ~52px tall
-    const top = e.y - (e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : painted ? 56 : 44);
+    const art = e.sprite?.kind === 'frames' ? MOB_ART[e.sprite.key] : null;
+    const top = e.y - (art ? art.top * (e.sprite.scale ?? 1) + 12
+      : e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : painted ? 56 : 44);
 
     if (isTarget) {
       // the sheet's reticles: red once you are hitting it, gold while it is

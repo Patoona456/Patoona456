@@ -37,7 +37,8 @@ const LOOT_LOCK_MS = 25000;     // finder keeps priority this long
 const LOOT_LIFE_MS = 120000;
 
 /** Animations that play once and then hand back to idle. */
-const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt']);
+const ONE_SHOT = new Set(['slash', 'thrust', 'shoot', 'hurt', 'spawn']);
+const SPAWN_MS = 800;
 
 /**
  * Start a swing that lasts exactly one attack.
@@ -744,7 +745,8 @@ export class Zone {
           if (!sm.rooted) {
             const step = this.chaseStep(m, target, t);
             this.moveTo(m, m.x + step.x * speed * dt, m.y + step.y * speed * dt);
-            if (!inOneShot(m, t)) m.anim = 'walk';
+            // a painted sheet has a run of its own; the rest walk faster
+            if (!inOneShot(m, t)) m.anim = m.def.sprite?.kind === 'frames' ? 'run' : 'walk';
           }
           m.dir = dirTo(m, target);
         } else if (t >= m.nextAttackAt) {
@@ -766,15 +768,16 @@ export class Zone {
           m.anim = 'idle';
         }
       } else {
-        // wander
-        if (!m.wanderTo || dist(m, m.wanderTo) < 8 || t > (m.wanderUntil ?? 0)) {
+        // wander (but not while still rising out of the ground)
+        const rising = m.anim === 'spawn' && inOneShot(m, t);
+        if (!rising && (!m.wanderTo || dist(m, m.wanderTo) < 8 || t > (m.wanderUntil ?? 0))) {
           if (Math.random() < 0.02 || !m.wanderTo) {
             const a = Math.random() * Math.PI * 2, r = 32 + Math.random() * 96;
             m.wanderTo = { x: m.anchor.x + Math.cos(a) * r, y: m.anchor.y + Math.sin(a) * r };
             m.wanderUntil = t + 4000;
           } else { m.anim = 'idle'; m.wanderTo = null; }
         }
-        if (m.wanderTo) {
+        if (m.wanderTo && !rising) {
           const d = dist(m, m.wanderTo) || 1;
           this.moveTo(m, m.x + (m.wanderTo.x - m.x) / d * speed * 0.5 * dt, m.y + (m.wanderTo.y - m.y) / d * speed * 0.5 * dt);
           m.dir = dirTo(m, m.wanderTo);
@@ -829,6 +832,11 @@ export class Zone {
       m.hp = m.maxHp;
       m.alive = true;
       m.anim = 'idle';
+      if (m.def.sprite?.kind === 'frames') {
+        // a painted sheet has a row for coming back; play it through once
+        m.anim = 'spawn'; m.animStart = t; m.animSpeed = 1; m.animUntil = t + SPAWN_MS;
+        m.wanderTo = null;
+      }
       m.target = null;
       m.threat.clear();
       m.tapped.clear();

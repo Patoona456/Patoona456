@@ -3,8 +3,10 @@
 import { SPRITE, ANIM, SHEET_COLS } from '../../shared/constants.js';
 import { LPC, layoutOf, frameAt, rowAt, frameRect, fits } from '../../shared/sheets.js';
 import { ITEMS } from '../../shared/data/items.js';
+import { MOB_ART } from '../../shared/data/mobart.js';
 
 const BASE = '/assets/lpc';
+const MOB_BASE = '/assets/mob';
 const cache = new Map();      // url -> { img, ready, failed }
 const tinted = new Map();
 
@@ -409,6 +411,56 @@ export function drawPicture(ctx, url, { x, y, alpha = 1, flash = 0, flip = false
   return { dx, dy, w, h };
 }
 
+/**
+ * A monster cut from a painted animation sheet (tools/slice-mob.py): one
+ * atlas row per animation, every frame in a cell of one size standing on the
+ * same foot line.
+ */
+const MOB_ANIM = { idle: 'idle', walk: 'walk', run: 'run', slash: 'attack', thrust: 'attack', shoot: 'attack',
+  spellcast: 'attack', hurt: 'hit', hit: 'hit', death: 'death', spawn: 'spawn' };
+// frames a second; the ones marked once hold their last frame
+const MOB_FPS = { idle: 8, walk: 11, run: 13, attack: 13, hit: 16, death: 11, spawn: 13 };
+const MOB_ONCE = new Set(['attack', 'hit', 'death', 'spawn']);
+
+/** How long one pass of an animation takes, in ms. */
+export function mobAnimMs(key, anim) {
+  const art = MOB_ART[key];
+  const row = art?.anims.find(([a]) => a === anim);
+  return row ? (row[1] / MOB_FPS[anim]) * 1000 : 0;
+}
+
+export function drawMobFrames(ctx, sprite, { x, y, anim = 'idle', elapsed = 0, flip = false,
+  flash = 0, alpha = 1, scale = 1 } = {}) {
+  const art = MOB_ART[sprite.key];
+  if (!art) return false;
+  const s = sheet(`${MOB_BASE}/${sprite.key}.webp`);
+  if (!s.ready) return false;
+  const name = MOB_ANIM[anim] ?? 'idle';
+  let r = art.anims.findIndex(([a]) => a === name);
+  if (r < 0) r = 0;
+  const [row, count] = art.anims[r];
+  let f = Math.floor((Math.max(0, elapsed) / 1000) * MOB_FPS[row]);
+  f = MOB_ONCE.has(row) ? Math.min(f, count - 1) : f % count;
+  const [cw, ch] = art.cell;
+  const k = art.show * (sprite.scale ?? 1) * scale;
+  const w = cw * k, h = ch * k;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.translate(x, y);
+  // the painting faces one way; turn it to face the other
+  if (flip !== (art.faces === 'right')) ctx.scale(-1, 1);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(s.img, f * cw, r * ch, cw, ch, -w / 2, -art.foot * k, w, h);
+  if (flash) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = alpha * Math.min(1, flash) * 0.55;
+    ctx.drawImage(s.img, f * cw, r * ch, cw, ch, -w / 2, -art.foot * k, w, h);
+  }
+  ctx.restore();
+  return true;
+}
+
 /** Procedural blob monster (slimes, wisps, wolves) - no art required. */
 /**
  * Monsters with no LPC sheet, drawn in code.
@@ -563,7 +615,7 @@ export function drawBlob(ctx, sprite, { x, y, t, hurt = 0, scale = 1 }) {
 export function preloadCommon(look) {
   const urls = [
     layerUrl('body', 'light', 'male'), layerUrl('body', 'light', 'female'),
-    layerUrl('mob', 'skeleton'), layerUrl('mob', 'ghoul'), layerUrl('mob', 'orc'), layerUrl('mob', 'red_orc'),
+    ...Object.keys(MOB_ART).map((key) => `${MOB_BASE}/${key}.webp`),
   ];
   if (look) Object.values(playerLayers(look, {})).forEach((u) => urls.push(u));
   preload(urls.filter(Boolean));

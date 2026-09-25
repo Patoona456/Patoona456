@@ -548,6 +548,15 @@ export function cardFits(cardDef, gearDef) {
   return cardDef.fits === 'any' || cardDef.fits === kind;
 }
 
+/** Materials, one monster sheet at a time. */
+export const MATERIALS = {
+  slime_jelly: M({ id: 'slime_jelly', name: 'Slime Jelly', nameTh: 'เจลลี่สไลม์', value: 6, weight: 1, rarity: 'common',
+    desc: 'ก้อนเจลใส ๆ จากสไลม์น้ำ ยังเด้งอยู่เลย' }),
+  water_crystal_s: M({ id: 'water_crystal_s', name: 'Small Water Crystal', nameTh: 'ผลึกน้ำ (เล็ก)', value: 24, weight: 1,
+    rarity: 'uncommon', desc: 'ผลึกเล็ก ๆ ที่ก่อตัวในตัวสไลม์ เย็นเฉียบเมื่อจับ' }),
+};
+Object.assign(ITEMS, MATERIALS);
+
 export const RARITY_COLORS = {
   common: '#cfd8dc', uncommon: '#66bb6a', rare: '#42a5f5', epic: '#ab47bc', legendary: '#ffa726', mythic: '#ff4d5e',
 };

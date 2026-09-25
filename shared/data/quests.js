@@ -1,3 +1,4 @@
+import { MONSTERS } from './monsters.js';
 // Quests: the other Aurum faucet, and the game's map of where to go next.
 //
 // Balance rules the whole list obeys:
@@ -20,15 +21,15 @@ export const QUESTS = {
   q_first_blood: {
     id: 'q_first_blood', name: 'ก้าวแรกในโคลน', giver: 'board', minLevel: 1,
     zone: 'greenmire',
-    desc: 'ล่าสไลม์โคลน 10 ตัวในทุ่งกรีนไมร์',
-    objectives: [{ type: 'kill', mob: 'mire_slime', count: 10 }],
+    desc: 'ล่าสไลม์น้ำ 10 ตัวในทุ่งกรีนไมร์',
+    objectives: [{ type: 'kill', mob: 'blue_slime', count: 10 }],
     rewards: { exp: 120, jobExp: 80, aurum: 300, items: [{ id: 'hp_potion_s', qty: 5 }] },
   },
   q_herbalist: {
     id: 'q_herbalist', name: 'ฝากซื้อสมุนไพร', giver: 'board', minLevel: 3,
     zone: 'greenmire',
-    desc: 'สไลม์โคลนกัดกินแปลงสมุนไพรของนักบวชอีริน ล่าให้ได้ 15 ตัว',
-    objectives: [{ type: 'kill', mob: 'mire_slime', count: 15 }],
+    desc: 'สไลม์น้ำกัดกินแปลงสมุนไพรของนักบวชอีริน ล่าให้ได้ 15 ตัว',
+    objectives: [{ type: 'kill', mob: 'blue_slime', count: 15 }],
     rewards: { exp: 200, jobExp: 140, aurum: 450 },
   },
   q_job_path: {
@@ -327,3 +328,13 @@ export const QUESTS = {
     rewards: { exp: 34000, jobExp: 21000, aurum: 11000 },
   },
 };
+
+// The monsters come back one sheet at a time. A quest that asks for one not
+// back yet is held out until it is, rather than offered and never finishable.
+export const HELD_QUESTS = {};
+for (const [id, q] of Object.entries(QUESTS)) {
+  if (q.objectives.some((o) => o.type === 'kill' && !MONSTERS[o.mob])) {
+    HELD_QUESTS[id] = q;
+    delete QUESTS[id];
+  }
+}

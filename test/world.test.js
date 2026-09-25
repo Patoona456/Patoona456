@@ -8,10 +8,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { World } from '../server/game/world.js';
 import { MONSTERS } from '../shared/data/monsters.js';
+import { withLegacyBestiary } from './fixtures/bestiary.js';
 import { MAPS, buildGrid, BLOCKING, TILES } from '../shared/data/maps.js';
 import { findPath, lineClear } from '../shared/pathfind.js';
 import { TILE, LEVEL_AGGRO_GAP } from '../shared/constants.js';
 import * as Guild from '../server/game/guild.js';
+
+withLegacyBestiary();          // the scripts under test belong to monsters still waiting on their sheets
 
 /** A player-shaped stub: enough for the AI and the reward code to run. */
 function stubPlayer(id, level, zone, x = 1000, y = 1000) {
