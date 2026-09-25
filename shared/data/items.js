@@ -597,18 +597,18 @@ export const MATERIALS = {
   boar_tusk: M({ id: 'boar_tusk', name: 'Boar Tusk', nameTh: 'เขี้ยวหมูป่า', value: 34, weight: 1, rarity: 'uncommon',
     art: DROP('tusk_1'), loot: 'tusk',
     desc: 'เขี้ยวโค้งแข็งแรง ช่างตีเหล็กใช้ทำด้ามและเครื่องประดับ' }),
-  // the alpha wolf's; the art is borrowed until its drop sheet comes
+  // the alpha wolf's; cut from its drop sheet
   wolf_fang: M({ id: 'wolf_fang', name: 'Wolf Fang', nameTh: 'เขี้ยวหมาป่า', value: 30, weight: 1, rarity: 'common',
-    art: DROP('tusk_1'), loot: 'tusk',
+    art: DROP('fang_1'), loot: 'fang',
     desc: 'เขี้ยวแหลมคมของจ่าฝูง ช่างตีเหล็กใช้ทำหัวลูกศรและมีดสั้น' }),
   alpha_fur: M({ id: 'alpha_fur', name: 'Alpha Fur', nameTh: 'ขนจ่าฝูง', value: 45, weight: 2, rarity: 'uncommon',
-    art: DROP('hide_1'), loot: 'hide',
+    art: DROP('fur_1'), loot: 'fur',
     desc: 'ขนสีเงินหนานุ่มของจ่าฝูงหมาป่า อุ่นและเหนียว ใช้ทำเสื้อคลุมชั้นดี' }),
   beast_core: M({ id: 'beast_core', name: 'Beast Core', nameTh: 'แก่นสัตว์ป่า', value: 90, weight: 1, rarity: 'rare',
-    art: DROP('wcrystal_1'), loot: 'wcrystal',
+    art: DROP('core_1'), loot: 'core',
     desc: 'ผลึกพลังที่ก่อตัวในอกของสัตว์ที่แข็งแกร่ง ใช้ตีบวกและเสริมพลังอาวุธ' }),
   alpha_emblem: M({ id: 'alpha_emblem', name: 'Alpha Wolf Emblem', nameTh: 'ตราจ่าฝูงหมาป่า', value: 400, weight: 1,
-    rarity: 'epic', art: DROP('crystal_5'), loot: 'crystal',
+    rarity: 'epic', art: DROP('emblem_1'), loot: 'emblem',
     desc: 'ตราที่ได้จากการล้มจ่าฝูงแห่งทุ่งกรีนไมร์ หลักฐานของนักล่าตัวจริง' }),
   // the forest spirit's (its nature crystal is the mushroom's); cut from its sheet
   spirit_leaf: M({ id: 'spirit_leaf', name: 'Spirit Leaf', nameTh: 'ใบวิญญาณไม้', value: 20, weight: 1,

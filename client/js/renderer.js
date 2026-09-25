@@ -45,7 +45,8 @@ const LOOT_FRAME_MS = 60;     // the fall (13 frames) is over in under a second
 // which colour of pick-up swirl each kind of loot goes up in, and for how long
 const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nature', herb: 'nature', ncrystal: 'nature',
   leaf: 'leaf', shell: 'shell', honey: 'honey', stinger: 'stinger', wcrystal: 'wcrystal',
-  meat: 'meat', hide: 'hide', tusk: 'tusk', sleaf: 'sleaf', essence: 'essence' };
+  meat: 'meat', hide: 'hide', tusk: 'tusk', sleaf: 'sleaf', essence: 'essence',
+  fang: 'fang', fur: 'fur', core: 'core', emblem: 'emblem' };
 const PICKUP_MS = 480;
 /**
  * Where a painted monster is drawn relative to where it stands. A flyer

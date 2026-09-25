@@ -39,11 +39,15 @@ export const DROP_ART = {
       "meat_1": 160,
       "hide_1": 174,
       "tusk_1": 187,
-      "honey_1": 202,
-      "stinger_1": 217,
-      "wcrystal_1": 232,
-      "sleaf_1": 247,
-      "essence_1": 262
+      "fang_1": 202,
+      "fur_1": 219,
+      "core_1": 233,
+      "emblem_1": 248,
+      "honey_1": 263,
+      "stinger_1": 278,
+      "wcrystal_1": 293,
+      "sleaf_1": 308,
+      "essence_1": 323
     },
     "fall_jelly": [
       14,
@@ -136,26 +140,41 @@ export const DROP_ART = {
       "tusk_2": 195,
       "tusk_3": 196,
       "tusk_4": 197,
-      "honey_2": 209,
-      "honey_1": 210,
-      "honey_3": 211,
-      "honey_4": 212,
-      "stinger_1": 224,
-      "stinger_2": 225,
-      "stinger_3": 226,
-      "stinger_4": 227,
-      "wcrystal_1": 239,
-      "wcrystal_2": 240,
-      "wcrystal_3": 241,
-      "wcrystal_4": 242,
-      "sleaf_1": 254,
-      "sleaf_2": 255,
-      "sleaf_3": 256,
-      "sleaf_4": 257,
-      "essence_1": 269,
-      "essence_2": 270,
-      "essence_3": 271,
-      "essence_4": 272
+      "fang_1": 210,
+      "fang_2": 211,
+      "fang_3": 212,
+      "fang_4": 213,
+      "fur_1": 226,
+      "fur_2": 227,
+      "fur_3": 228,
+      "core_1": 240,
+      "core_2": 241,
+      "core_3": 242,
+      "core_4": 243,
+      "emblem_1": 255,
+      "emblem_2": 256,
+      "emblem_3": 257,
+      "emblem_4": 258,
+      "honey_2": 270,
+      "honey_1": 271,
+      "honey_3": 272,
+      "honey_4": 273,
+      "stinger_1": 285,
+      "stinger_2": 286,
+      "stinger_3": 287,
+      "stinger_4": 288,
+      "wcrystal_1": 300,
+      "wcrystal_2": 301,
+      "wcrystal_3": 302,
+      "wcrystal_4": 303,
+      "sleaf_1": 315,
+      "sleaf_2": 316,
+      "sleaf_3": 317,
+      "sleaf_4": 318,
+      "essence_1": 330,
+      "essence_2": 331,
+      "essence_3": 332,
+      "essence_4": 333
     },
     "pickup": {
       "water": [
@@ -207,35 +226,60 @@ export const DROP_ART = {
         200,
         201
       ],
-      "honey": [
-        213,
+      "fang": [
         214,
         215,
-        216
+        216,
+        217,
+        218
       ],
-      "stinger": [
-        228,
+      "fur": [
         229,
         230,
-        231
+        231,
+        232
       ],
-      "wcrystal": [
-        243,
+      "core": [
         244,
         245,
-        246
+        246,
+        247
       ],
-      "sleaf": [
-        258,
+      "emblem": [
         259,
         260,
-        261
+        261,
+        262
       ],
-      "essence": [
-        273,
+      "honey": [
         274,
         275,
-        276
+        276,
+        277
+      ],
+      "stinger": [
+        289,
+        290,
+        291,
+        292
+      ],
+      "wcrystal": [
+        304,
+        305,
+        306,
+        307
+      ],
+      "sleaf": [
+        319,
+        320,
+        321,
+        322
+      ],
+      "essence": [
+        334,
+        335,
+        336,
+        337
       ]
     },
     "fall_cap": [
@@ -308,45 +352,78 @@ export const DROP_ART = {
       192,
       193
     ],
-    "fall_honey": [
+    "fall_fang": [
       203,
       204,
       205,
       206,
       207,
-      208
+      208,
+      209
     ],
-    "fall_stinger": [
-      218,
-      219,
+    "fall_fur": [
       220,
       221,
       222,
-      223
+      223,
+      224,
+      225
     ],
-    "fall_wcrystal": [
-      233,
+    "fall_core": [
       234,
       235,
       236,
       237,
-      238
+      238,
+      239
     ],
-    "fall_sleaf": [
-      248,
+    "fall_emblem": [
       249,
       250,
       251,
       252,
-      253
+      253,
+      254
     ],
-    "fall_essence": [
-      263,
+    "fall_honey": [
       264,
       265,
       266,
       267,
-      268
+      268,
+      269
+    ],
+    "fall_stinger": [
+      279,
+      280,
+      281,
+      282,
+      283,
+      284
+    ],
+    "fall_wcrystal": [
+      294,
+      295,
+      296,
+      297,
+      298,
+      299
+    ],
+    "fall_sleaf": [
+      309,
+      310,
+      311,
+      312,
+      313,
+      314
+    ],
+    "fall_essence": [
+      324,
+      325,
+      326,
+      327,
+      328,
+      329
     ]
   }
 };

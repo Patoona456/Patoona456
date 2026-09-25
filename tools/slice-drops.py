@@ -89,6 +89,27 @@ SHEETS = [
         ('ground', (640, 750), ['tusk_1', 'tusk_2', 'tusk_3', None, 'tusk_4'], 700, 1150, {'blobs': True, 'thr': 150}),
         ('pickup', (640, 750), ['tusk'] * 4, 1150, 1536, {'blobs': True, 'thr': 150}),
     ]),
+    # The alpha wolf's: laid out like the spirit's. Its icons are the first
+    # of each item lying on the ground; its gold is one we have. The emblems
+    # glow into one another, so that row is cut where the glow is solid.
+    ('assets/ui/source/wolf_drops.png', 185, [
+        ('icon', (55, 198), ['fang_1'], 775, 860),
+        ('fall_fang', (55, 198), 7, 185, 735),
+        ('ground', (55, 198), ['fang_1', 'fang_2', 'fang_3', 'fang_4'], 770, 1135),
+        ('pickup', (55, 198), ['fang'] * 5, 1135, 1536),
+        ('icon', (262, 400), ['fur_1'], 745, 875),
+        ('fall_fur', (262, 400), 6, 185, 730),
+        ('ground', (262, 400), ['fur_1', 'fur_2', 'fur_3'], 740, 1132),
+        ('pickup', (262, 400), ['fur'] * 4, 1132, 1536),
+        ('icon', (462, 588), ['core_1'], 750, 860),
+        ('fall_core', (462, 588), 6, 185, 730),
+        ('ground', (462, 588), ['core_1', 'core_2', 'core_3', 'core_4'], 745, 1165),
+        ('pickup', (462, 588), ['core'] * 4, 1165, 1536),
+        ('icon', (838, 990), ['emblem_1'], 745, 840, {'thr': 200}),
+        ('fall_emblem', (838, 990), 6, 185, 735, {'thr': 200}),
+        ('ground', (838, 990), ['emblem_1', 'emblem_2', 'emblem_3', 'emblem_4'], 740, 1150, {'thr': 200}),
+        ('pickup', (838, 990), ['emblem'] * 4, 1150, 1536, {'thr': 200}),
+    ]),
     ('assets/ui/source/bee_drops.png', 200, [
         ('icon', (40, 160), ['honey_1'], 850, 925),
         ('fall_honey', (236, 330), 6, 200, 690),
