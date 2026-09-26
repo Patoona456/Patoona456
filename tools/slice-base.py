@@ -118,8 +118,8 @@ SIDE_ROWS = (1, 3)
 HIP_Y = {0: 150, 1: 146, 2: 150, 3: 146}      # where the legs are cut off, per row
 # both fists on the base frames, where they hang near the hip line
 HANDS = {0: [(40, 148), (87, 148)], 1: [(84, 145)], 2: [(41, 141), (87, 144)], 3: [(43, 142)]}
-FOOT_LIFT = {'side': 6.0, 'front': 4.0}         # frame px at the top of a step
-FRONT_BOB, FRONT_SWAY = 1.5, 1.0
+FOOT_LIFT = {'side': 6.0, 'front': 10.0}         # frame px at the top of a step
+FRONT_BOB, FRONT_SWAY = 2.0, 2.0
 
 
 def shorts_mask(f):
@@ -168,8 +168,12 @@ def split_legs(f, r):
         cv2.watershed(cv2.cvtColor(f[:, :, :3], cv2.COLOR_RGB2BGR), markers)
         sides = [(markers == 1) & legs, (markers == 2) & legs]
     else:
-        # facing the camera or away the legs stand side by side: split down the middle
-        mid = CELL_W // 2
+        # facing the camera or away the legs stand side by side: split in
+        # the gap between them (the thinnest column near the middle), so
+        # neither piece carries a sliver of the other leg
+        cols = legs.sum(0)
+        c0 = CELL_W // 2
+        mid = c0 - 20 + int(np.argmin(cols[c0 - 20:c0 + 21]))
         left = legs.copy(); left[:, mid:] = False
         right = legs.copy(); right[:, :mid] = False
         sides = [left, right]
@@ -302,8 +306,9 @@ def walk_front(f, r):
         sn = 0.0 if idle else np.sin(phi)
         lift_l = FOOT_LIFT['front'] * max(0.0, sn) ** 1.2
         lift_r = FOOT_LIFT['front'] * max(0.0, -sn) ** 1.2
-        # the body rides up over the foot on the ground and leans onto it
-        bob = -round(FRONT_BOB * abs(sn))
+        # the body settles onto the foot on the ground and leans over it
+        # (settling, not rising: rising would lift the hem off the legs' cut)
+        bob = round(FRONT_BOB * abs(sn))
         sway = round(FRONT_SWAY * sn)                 # left foot up: weight on the right
         cell = np.zeros((CELL_H, CELL_W, 4), np.uint8)
         cell = over(cell, transform(left, shift(0, -lift_l)))
