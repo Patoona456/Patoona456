@@ -203,6 +203,12 @@ export const NPC_DIALOG = {
       { label: 'ล้างสถานะผิดปกติ (ฟรี)', action: 'cleanse' },
     ],
   },
+  // the town trainers of old: job changes, the trials and respecs are the
+  // castle's now, and they send you there
+  guide: {
+    greet: 'เรื่องเปลี่ยนอาชีพ บททดสอบของแต่ละสาย และการรีเซ็ต ตอนนี้ต้องไปที่ปราสาทเอมเบอร์โฮลด์แล้ว ปรมาจารย์เอเลนเดียรออยู่ที่ปีกตะวันตก เข้าทางประตูใหญ่ทางเหนือของเมือง',
+    options: [],
+  },
   trainer: {
     greet: 'พร้อมจะเลือกทางของตัวเองหรือยัง?',
     options: [

@@ -377,3 +377,12 @@ test('every painted HUD piece the stylesheet and icons ask for is on disk', () =
   assert.ok(names.size > 20, `only found ${names.size} references`);
   for (const n of names) assert.ok(existsSync(path.join(root, 'assets/ui', n + '.webp')), `assets/ui/${n}.webp is missing`);
 });
+
+test('job changes happen in the castle only: its one trainer, and no other anywhere', () => {
+  const trainers = Object.entries(MAPS).flatMap(([id, m]) => (m.npcs ?? []).filter((n) => n.role === 'trainer').map((n) => `${id}/${n.id}`));
+  assert.deepEqual(trainers, ['castle/royal_trainer']);
+  const src = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../server/net.js'), 'utf8');
+  for (const a of ['jobChange', 'resetStats', 'resetSkills']) {
+    assert.match(src, new RegExp(`case '${a}': return this\\.guardNpc\\(\\['trainer'\\]`), `${a} must be the trainer's alone`);
+  }
+});

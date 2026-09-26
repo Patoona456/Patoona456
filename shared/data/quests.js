@@ -35,7 +35,7 @@ export const QUESTS = {
   q_job_path: {
     id: 'q_job_path', name: 'เลือกทางของตัวเอง', giver: 'trainer', minLevel: 1,
     zone: 'emberhold',
-    desc: 'ไปถึงเลเวล 10 แล้วกลับมาหาครูฝึกฮาลด์เพื่อเลือกอาชีพ',
+    desc: 'ไปถึงเลเวล 10 แล้วไปหาปรมาจารย์เอเลนเดียในปราสาทเอมเบอร์โฮลด์เพื่อเลือกอาชีพ',
     objectives: [{ type: 'level', count: 10 }],
     rewards: { exp: 300, jobExp: 200, aurum: 500, unlock: 'jobChange' },
   },

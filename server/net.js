@@ -627,7 +627,7 @@ export class Conn {
       case 'gacha': return this.send({ t: OP.SHOP, mode: 'gacha', name: npc.name, ...Econ.shardShop(p) });
       case 'gachaDraw': return this.guardNpc(['gacha'], () => this.gachaDraw(m.times | 0 || 1, npc.name));
       case 'gachaClaim': return this.guardNpc(['gacha'], () => this.gachaClaim(npc.name));
-      case 'jobChange': {
+      case 'jobChange': return this.guardNpc(['trainer'], () => {
         const r = p.changeJob(m.job);
         if (r.error) return this.error(r.error);
         const name = JOBS[r.job]?.nameTh ?? r.job;
@@ -640,19 +640,19 @@ export class Conn {
         this.world.broadcastChat({ ch: 'system', text: `${p.name} ก้าวสู่เส้นทาง${name}` });
         this.sendInventory();
         return this.send({ t: OP.SELF, self: p.selfState() });
-      }
-      case 'resetStats': {
+      });
+      case 'resetStats': return this.guardNpc(['trainer'], () => {
         const r = Econ.resetStats(this.world, p);
         if (r.error) return this.error(r.error);
         this.notice(`คืนแต้มสเตตัส ${r.refund} แต้ม`, 'good');
         return this.send({ t: OP.SELF, self: p.selfState() });
-      }
-      case 'resetSkills': {
+      });
+      case 'resetSkills': return this.guardNpc(['trainer'], () => {
         const r = Econ.resetSkills(this.world, p);
         if (r.error) return this.error(r.error);
         this.notice(`คืนแต้มสกิล ${r.refund} แต้ม`, 'good');
         return this.send({ t: OP.SELF, self: p.selfState() });
-      }
+      });
       case 'quests': return this.send({ t: OP.QUEST_STATE, quests: Quests.available(p) });
       default: return this.error('ไม่รองรับคำสั่งนี้');
     }

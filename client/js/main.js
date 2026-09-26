@@ -540,7 +540,8 @@ class Game {
     // finished: go and hand it in
     if (done || nav.phase === 'return') {
       const giverRole = GIVER_ROLE[q.giver] ?? 'quests';
-      return { map: q.giverMap ?? 'emberhold', role: giverRole, kind: 'turnin' };
+      // (the trainer - job changes and the path's trials - is in the castle only)
+      return { map: q.giverMap ?? (q.giver === 'trainer' ? 'castle' : 'emberhold'), role: giverRole, kind: 'turnin' };
     }
 
     // a kill or collect objective: go where that monster lives
@@ -1048,7 +1049,7 @@ class Game {
           <div class="cc-derived" id="derived"></div>
         </div>
       </div>
-      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ <b>เลเวล 10</b> ไปหาครูฝึกฮาลด์ที่เอมเบอร์โฮลด์เพื่อเลือกอาชีพ
+      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ <b>เลเวล 10</b> ไปหาปรมาจารย์เอเลนเดียในปราสาทเอมเบอร์โฮลด์เพื่อเลือกอาชีพ
         สถิติที่แจกตอนนี้แค่ทำให้ช่วงต้นถนัดมือ ไม่ได้ล็อกอาชีพในอนาคต</p>
       <div class="opts"><button class="btn primary" id="btn-create">สร้าง</button><button class="btn" id="btn-back">ย้อนกลับ</button></div>`;
 

@@ -154,7 +154,7 @@ export const MAPS = {
       { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 52, y: 26, look: { pic: 'shrinemaiden' } },
       { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 38, y: 28, look: { pic: 'postman' } },
       { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 52, y: 34, look: { pic: 'wizard' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 41, y: 8, look: { pic: 'knight' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'guide', x: 41, y: 8, look: { pic: 'knight' } },
     ],
     // people out and about; they wander near home and stop to rest
     walkers: [
@@ -238,7 +238,7 @@ export const MAPS = {
       { id: 'mh_smith', name: 'ช่างตีเหล็กกอร์ด', role: 'smith', x: 60, y: 14, look: { pic: 'blacksmith' } },
       // Central plaza (Services)
       { id: 'mh_healer', name: 'พยาบาลแมร์', role: 'healer', x: 40, y: 24, look: { pic: 'florist' } },
-      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'trainer', x: 40, y: 18, look: { pic: 'ranger' } },
+      { id: 'mh_trainer', name: 'มาสเตอร์ ยูเร', role: 'guide', x: 40, y: 18, look: { pic: 'ranger' } },
       { id: 'mh_banker', name: 'คำนายตัง', role: 'banker', x: 40, y: 40, look: { pic: 'grandma' } },
       { id: 'mh_board', name: 'กระดานภารกิจ', role: 'board', x: 36, y: 28, look: { pic: 'postman' } },
       { id: 'mh_warper', name: 'นักท่องเที่ยวเลิน', role: 'warper', x: 44, y: 28, look: { pic: 'traveller' } },
@@ -305,7 +305,7 @@ export const MAPS = {
       { id: 'rh_vendor', name: 'ผู้ค้าเมืองอลฮัลลา', role: 'vendor', x: 24, y: 16, shop: 'general', look: { pic: 'chef' } },
       { id: 'rh_smith', name: 'หลักแรงแห่งเรเวนโฮล์ม', role: 'smith', x: 64, y: 16, look: { pic: 'dwarf' } },
       // Central North: Training & jobs
-      { id: 'rh_trainer', name: 'คุณพ่อแก่วยืนกราน', role: 'trainer', x: 44, y: 12, look: { pic: 'swordmaiden' } },
+      { id: 'rh_trainer', name: 'คุณพ่อแก่วยืนกราน', role: 'guide', x: 44, y: 12, look: { pic: 'swordmaiden' } },
       // Central plaza: Services
       { id: 'rh_healer', name: 'บาทหลวงอิเรน', role: 'healer', x: 24, y: 36, look: { pic: 'maid' } },
       { id: 'rh_banker', name: 'ผู้เฝ้าธนคลังแองเชล', role: 'banker', x: 64, y: 36, look: { pic: 'panda' } },
