@@ -62,8 +62,10 @@ test('finishing all of Greenmire pays the region too, and the book stays modest'
   assert.ok(b.sets.includes('greenmire'));
   assert.equal(b.expPct, set.reward.expPct);
   assert.ok(!bookBonus({ ...jigsaw, tree_guardian: FULL >> 1 }).sets.length, 'every piece of every one, boss included');
+  // the whole book grows with every field; what stays modest is what a page pays
   const all = bookBonus(Object.fromEntries(bookEntries().map((m) => [m.id, FULL])));
-  assert.ok(all.atk <= 20 && all.maxHp <= 300, JSON.stringify(all));
+  const pages = all.pages.length;
+  assert.ok(all.atk <= pages * 1.5 && all.maxHp <= pages * 25, JSON.stringify(all));
 });
 
 test('the piece that finishes a picture tells the player and pays at once', (t) => {

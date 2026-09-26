@@ -53,6 +53,7 @@ export function bookReward(m) {
 /** Finishing every monster that lives in a region. (A boss's summons are not counted.) */
 export const BOOK_SETS = [
   { id: 'greenmire', zone: 'greenmire', name: 'นักล่าแห่งกรีนไมร์', reward: { expPct: 3 } },
+  { id: 'amberwood', zone: 'amberwood', name: 'นักล่าแห่งป่าอำพัน', reward: { expPct: 3 } },
 ];
 export function setMembers(set) {
   return [...new Set((MAPS[set.zone]?.spawns ?? []).map((s) => s.mob))].filter((id) => MONSTERS[id]);

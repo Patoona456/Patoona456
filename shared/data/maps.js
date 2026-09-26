@@ -6,6 +6,7 @@ import { ARTARIS_FINE } from './artaris-fine.js';
 import { ARTARIS_SOLIDS } from './artaris-solids.js';
 import { ARTARIS_OBSTACLES } from './artaris-obstacles.js';
 import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
+import { AMBERWOOD_OBSTACLES } from './amberwood-obstacles.js';
 
 export const TILES = {
   GRASS: 0, PATH: 1, WATER: 2, TREE: 3, ROCK: 4, SAND: 5,
@@ -73,6 +74,7 @@ export const MAPS = {
     // stair up to the lists. The north-west stair and the south-east landing
     // stay closed for now (a harbour, later).
     warps: [
+      { x: 88, y: 29, w: 2, h: 2, to: 'amberwood', at: [85, 42], label: 'ป่าอำพัน' },
       { x: 44, y: 6, w: 2, h: 2, to: 'castle', at: [23, 27], label: 'ปราสาท' },   // on the paving before the door
       { x: 42, y: 58, w: 5, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
     ],
@@ -249,6 +251,7 @@ export const MAPS = {
     // field first. The north-west stairs stay closed.
     warps: [
       { x: 43, y: 0, w: 3, h: 1, to: 'artaris', at: [45, 55], label: 'อาร์ทาริส' },  // the north stairs
+      { x: 43, y: 58, w: 3, h: 2, to: 'amberwood', at: [4, 28], label: 'ป่าอำพัน' },      // the south gate
     ],
     // Rings, harder toward the middle and the south: slimes (Lv1) on the
     // meadows by the two northern gates, mushrooms (Lv3) and caterpillars
@@ -287,6 +290,73 @@ export const MAPS = {
       { mob: 'forest_spirit', count: 3, area: [52, 53, 24, 5] },
       { mob: 'alpha_wolf', count: 1, area: [42, 14, 12, 6] },     // the mini boss, on the hilltop
       { mob: 'tree_guardian', count: 1, area: [43, 42, 7, 5] },   // the boss, on the ruins island
+    ],
+  },
+
+  amberwood: {
+    id: 'amberwood', name: 'Amberwood Frontier', nameTh: 'ป่าอำพันชายแดน', kind: 'field',
+    width: 90, height: 60, seed: 3003, theme: 'autumn', levelRange: [11, 20],
+    // Monster Field 02, one 1536x1024 painting upscaled 4x by Real-ESRGAN
+    // (tools/upscale/esrgan.py) and cut into 2048px tiles: autumn woods cut
+    // by rivers and falls, clearings joined by dirt roads and plank bridges,
+    // a plateau up stone stairs in the north and a ruined plaza on arches in
+    // the north-east. Where a character may stand is traced off the painting
+    // by tools/trace-field.py into amberwood-obstacles.js.
+    backdrop: 'assets/maps/amberwood.webp',
+    backdropTiles: { dir: 'assets/maps/amberwood/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
+    waterFx: {
+      falls: [
+        { x: 5.2, y: 0.3, w: 1.3, h: 4.5 },      // the north-west falls
+        { x: 3.8, y: 15.5, w: 1.3, h: 2.5 },
+        { x: 3.6, y: 31, w: 1.6, h: 3 },         // under the west bridge
+        { x: 5.5, y: 39.5, w: 1.4, h: 3 },
+        { x: 83.3, y: 0, w: 1.5, h: 5 },         // the north-east falls
+        { x: 81.5, y: 10, w: 1.5, h: 2.5 },
+        { x: 83.3, y: 27, w: 1.5, h: 4.5 },      // below the plaza's arches
+        { x: 82, y: 35, w: 1.5, h: 3 },
+        { x: 81, y: 44.5, w: 1.5, h: 4 },        // under the east bridge
+        { x: 79.2, y: 50.5, w: 1.5, h: 3 },
+      ],
+    },
+    walk: [[0, 0, 90, 60]],
+    obstacles: AMBERWOOD_OBSTACLES,
+    spawnPoint: [4, 28],
+    // In from Greenmire over the west bridge, and back to Artaris's east gate
+    // over the east one, so the two fields and the town make a round. The
+    // plaza's east arches and the north road wait for the next field.
+    warps: [
+      { x: 0, y: 27, w: 1, h: 3, to: 'greenmire', at: [44, 55], label: 'ทุ่งกรีนไมร์' },   // the west bridge
+      { x: 89, y: 41, w: 1, h: 3, to: 'artaris', at: [85, 29], label: 'อาร์ทาริส' },     // the east bridge
+    ],
+    // Harder going east and south: slimes (Lv11) and caps (Lv12) on the
+    // western meadows by the bridge, crawlers (Lv13) in the north and south-
+    // west clearings, hornets (Lv15, the ones that start a fight) over the
+    // middle road and the stairs path, boars (Lv16) in the south-east
+    // clearing and along the south road, wisps (Lv18) round the ruins in the
+    // east. The Ember Alpha holds the plateau up the stairs; the Amber
+    // Warden the plaza.
+    spawns: [
+      { mob: 'amber_slime', count: 5, area: [8, 18, 10, 9] },      // the meadows over the west bridge
+      { mob: 'crimson_cap', count: 2, area: [8, 18, 10, 9] },
+      { mob: 'amber_slime', count: 3, area: [15, 6, 8, 13] },      // the north-west path loop
+      { mob: 'crimson_cap', count: 3, area: [15, 6, 8, 13] },
+      { mob: 'crimson_cap', count: 3, area: [27, 12, 14, 8] },     // the north clearing
+      { mob: 'autumn_crawler', count: 3, area: [27, 12, 14, 8] },
+      { mob: 'autumn_crawler', count: 4, area: [21, 35, 13, 10] }, // the south-west clearing
+      { mob: 'crimson_cap', count: 2, area: [21, 35, 13, 10] },
+      { mob: 'autumn_crawler', count: 2, area: [10, 34, 6, 14] },  // the west road south
+      { mob: 'amber_slime', count: 2, area: [10, 34, 6, 14] },
+      { mob: 'amber_hornet', count: 3, area: [40, 25, 12, 5] },    // the middle road
+      { mob: 'amber_hornet', count: 3, area: [46, 14, 7, 12] },    // the stairs path
+      { mob: 'ember_boar', count: 4, area: [51, 35, 15, 12] },     // the south-east clearing
+      { mob: 'amber_hornet', count: 2, area: [51, 35, 15, 12] },
+      { mob: 'ember_boar', count: 3, area: [20, 48, 42, 4] },      // the south road
+      { mob: 'autumn_crawler', count: 2, area: [20, 48, 42, 4] },
+      { mob: 'dusk_wisp', count: 3, area: [66, 32, 14, 14] },      // the east loop round the ruins
+      { mob: 'ember_boar', count: 2, area: [66, 32, 14, 14] },
+      { mob: 'dusk_wisp', count: 3, area: [56, 21, 11, 6] },       // under the plaza's west arches
+      { mob: 'ember_alpha', count: 1, area: [52, 5, 5, 3] },       // the mini boss, on the plateau
+      { mob: 'amber_warden', count: 1, area: [71, 17, 6, 6] },     // the boss, in the plaza
     ],
   },
 
