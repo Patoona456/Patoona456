@@ -1,18 +1,26 @@
-// Moving water over a painted map. The painting's rivers are still; this adds
-// what a still picture cannot: light drifting across the surface, twinkles
-// that come and go, and falls that pour. Everything is cut from the water
-// sheets by tools/slice-water.py; where the water is comes from the map's
-// mask (white where the painting is water), and where each fall is from the
-// map's `waterFx.falls`, in tiles.
+// What moves in a painted scene: water that shimmers, twinkles and pours,
+// and flames that flicker. The painting stays still; these are drawn over it.
+// All the pieces sit in one atlas, assets/fx/ambient.webp, cut and packed by
+// tools/slice-ambient.py (the demo counts its files, so it is one).
+//
+// Water: where it is is read off the map's own painting (the blue in it), so
+// a map needs no mask file; where each fall is comes from `waterFx.falls`, in
+// tiles. Flames: a map's structure with `flame: 'brazier' | 'blue'` plays the
+// strip where it stands.
 import { TILE } from '../../shared/constants.js';
 
-// Where each piece sits in assets/fx/water.webp (tools/slice-water.py packs it)
+// Where each piece sits in the atlas: [x, y, w, h], or for a strip [x, y] and its cell
 const ATLAS = {
   caustic: [0, 0, 256, 256],
   curtain: [256, 0, 186, 76],
   splash: [0, 256],
   bubbles: [0, 370],
   sparkle: [0, 484],
+};
+/** The flames: where the strip starts, its cell, how many frames, and ms a frame. */
+export const FLAMES = {
+  brazier: { at: [450, 0], cell: [88, 150], frames: 7, ms: 90 },
+  blue: { at: [1066, 0], cell: [84, 156], frames: 4, ms: 120 },
 };
 const SPLASH_CELL = [145, 114], SPLASH_FRAMES = 7;
 const BUBBLE_CELL = [55, 114], BUBBLE_FRAMES = 7;
@@ -29,38 +37,99 @@ function img(url) {
   return im;
 }
 const ready = (im) => im?.complete && im.naturalWidth > 0;
+const ATLAS_URL = 'assets/fx/ambient.webp';
+
+/** One frame of a flame, standing on (x, y) in world px, `h` tall. */
+export function drawFlame(ctx, kind, x, y, h, now, phase = 0) {
+  const f = FLAMES[kind];
+  const atlas = img(ATLAS_URL);
+  if (!f || !ready(atlas)) return;
+  const [cw, ch] = f.cell;
+  const fr = Math.floor(now / f.ms + phase) % f.frames;
+  const w = h * cw / ch;
+  ctx.drawImage(atlas, f.at[0] + fr * cw, f.at[1], cw, ch, x - w / 2, y - h, w, h);
+}
+
+/**
+ * Where a painting is water, as a canvas at half its size (white,
+ * alpha = water) and the same as bytes. The blue of rivers and moats; the
+ * blue-grey of stone passes in specks, so only real stretches are kept.
+ */
+function waterMask(art) {
+  const w = Math.max(1, Math.round(art.naturalWidth / 2)), h = Math.max(1, Math.round(art.naturalHeight / 2));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(art, 0, 0, w, h);
+  const img = g.getImageData(0, 0, w, h), d = img.data;
+  let m = new Uint8Array(w * h);
+  for (let i = 0; i < m.length; i++) {
+    const r = d[i * 4], gg = d[i * 4 + 1], b = d[i * 4 + 2];
+    m[i] = b > r + 40 && b > gg + 5 && b > 120 ? 1 : 0;
+  }
+  // keep off the banks: a water pixel needs water all round it
+  const e = new Uint8Array(w * h);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      e[i] = m[i] & m[i - 1] & m[i + 1] & m[i - w] & m[i + w] & m[i - w - 1] & m[i - w + 1] & m[i + w - 1] & m[i + w + 1];
+    }
+  }
+  m = e;
+  // drop the specks: flood each patch and keep the big ones
+  const MIN = Math.round(w * h / 2400);
+  const seen = new Uint8Array(w * h), stack = [], patch = [];
+  for (let s = 0; s < m.length; s++) {
+    if (!m[s] || seen[s]) continue;
+    patch.length = 0; stack.push(s); seen[s] = 1;
+    while (stack.length) {
+      const i = stack.pop(); patch.push(i);
+      const x = i % w;
+      for (const n of [i - w, i + w, x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1]) {
+        if (n >= 0 && n < m.length && m[n] && !seen[n]) { seen[n] = 1; stack.push(n); }
+      }
+    }
+    if (patch.length < MIN) for (const i of patch) m[i] = 0;
+  }
+  for (let i = 0; i < m.length; i++) {
+    d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = 255;
+    d[i * 4 + 3] = m[i] ? 255 : 0;
+  }
+  g.putImageData(img, 0, 0);
+  const a = new Uint8Array(w * h);
+  for (let i = 0; i < a.length; i++) a[i] = m[i] ? 255 : 0;
+  return { canvas: c, w, h, a };
+}
 
 export class WaterFx {
-  /** `cfg` is a map's `waterFx`: { mask, falls: [{ x, y, w, h }] }; `worldW` the map's width in world px. */
-  constructor(cfg, worldW) {
+  /** `cfg` is a map's `waterFx`: { falls: [{ x, y, w, h }] }; `art` the map's painting; `worldW` its width in world px. */
+  constructor(cfg, art, worldW) {
     this.cfg = cfg;
+    this.art = art;
     this.worldW = worldW;
-    this.mask = img(cfg.mask);
-    this.atlas = img('assets/fx/water.webp');
+    this.atlas = img(ATLAS_URL);
     this.twinkles = [];
     this.layer = document.createElement('canvas');
     this.fallCanvas = document.createElement('canvas');
-    this.pixels = null;              // the mask's alpha, read once it has loaded
+    this.mask = null;                // read off the painting once it has loaded
+  }
+
+  /** The water mask, made the first time the painting is there to read. */
+  get water() {
+    if (!this.mask && ready(this.art)) {
+      try { this.mask = waterMask(this.art); } catch { this.mask = { canvas: null, w: 1, h: 1, a: new Uint8Array(1) }; }
+    }
+    return this.mask;
   }
 
   /** Is (x, y), in world px, open water? */
   isWater(x, y) {
-    if (!this.pixels) {
-      if (!ready(this.mask)) return false;
-      try {
-        const c = document.createElement('canvas');
-        c.width = this.mask.naturalWidth; c.height = this.mask.naturalHeight;
-        const g = c.getContext('2d');
-        g.drawImage(this.mask, 0, 0);
-        const d = g.getImageData(0, 0, c.width, c.height).data;
-        this.pixels = { w: c.width, h: c.height, a: new Uint8Array(c.width * c.height) };
-        for (let i = 0; i < this.pixels.a.length; i++) this.pixels.a[i] = d[i * 4 + 3];
-      } catch { this.pixels = { w: 1, h: 1, a: new Uint8Array(1) }; }
-    }
-    const k = this.pixels.w / this.worldW;
+    const m = this.water;
+    if (!m) return false;
+    const k = m.w / this.worldW;
     const px = Math.floor(x * k), py = Math.floor(y * k);
-    if (px < 0 || py < 0 || px >= this.pixels.w || py >= this.pixels.h) return false;
-    return this.pixels.a[py * this.pixels.w + px] > 200;
+    if (px < 0 || py < 0 || px >= m.w || py >= m.h) return false;
+    return m.a[py * m.w + px] > 200;
   }
 
   draw(ctx, x0, y0, x1, y1, now, saver = false) {
@@ -75,7 +144,8 @@ export class WaterFx {
 
   /** Two sheets of light sliding across each other, only where there is water. */
   drawLight(ctx, x0, y0, x1, y1, now) {
-    if (!ready(this.atlas) || !ready(this.mask)) return;
+    const water = this.water;
+    if (!ready(this.atlas) || !water?.canvas) return;
     const w = x1 - x0, h = y1 - y0;
     const W = Math.ceil(w * CAUSTIC_RES), H = Math.ceil(h * CAUSTIC_RES);
     const c = this.layer;
@@ -104,11 +174,11 @@ export class WaterFx {
     o.globalAlpha = 0.8;
     o.fillRect(x0, y0, w, h);
     // then cut it to the water
-    const k = this.mask.naturalWidth / this.worldW;
+    const k = water.w / this.worldW;
     o.globalAlpha = 1;
     o.globalCompositeOperation = 'destination-in';
     o.imageSmoothingEnabled = true;
-    o.drawImage(this.mask, x0 * k, y0 * k, w * k, h * k, x0, y0, w, h);
+    o.drawImage(water.canvas, x0 * k, y0 * k, w * k, h * k, x0, y0, w, h);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = 0.8 + Math.sin(t * 0.9) * 0.15;     // the light breathes a little

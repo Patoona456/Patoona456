@@ -14,7 +14,7 @@ import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
 import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from './skillfx.js';
 import { Weather } from './weather.js';
-import { WaterFx } from './water.js';
+import { WaterFx, drawFlame } from './ambient.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
@@ -565,7 +565,7 @@ export class Renderer {
     this.backdrop = painted.backdrop ?? null;
     // a painted map's rivers and falls, set moving
     const waterFx = MAPS[zonePayload.id]?.waterFx;
-    this.waterFx = waterFx ? new WaterFx(waterFx, zonePayload.width * TILE) : null;
+    this.waterFx = waterFx && this.backdrop ? new WaterFx(waterFx, this.backdrop, zonePayload.width * TILE) : null;
 
     const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
@@ -928,7 +928,8 @@ export class Renderer {
     const smooth = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(pic, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
+    if (p.crop) ctx.drawImage(pic, ...p.crop, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
+    else ctx.drawImage(pic, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
     ctx.imageSmoothingEnabled = smooth;
   }
 
@@ -1043,6 +1044,13 @@ export class Renderer {
 
   drawProp(ctx, p, now) {
     if (p.img) return this.drawPictureProp(ctx, p);
+    if (p.flame) {
+      const smooth = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = true;
+      drawFlame(ctx, p.flame, p.x, p.y, p.h, now, p.x % 7);   // out of step with its neighbour
+      ctx.imageSmoothingEnabled = smooth;
+      return;
+    }
     const img = propSprite(p.w ? p : p.kind);
     const w = img.width * (p.w ? 1 : p.scale), h = img.height * (p.w ? 1 : p.scale);
     ctx.save();
@@ -1677,6 +1685,7 @@ export class Renderer {
     const tint = {
       crypt: 'rgba(12,10,26,0.52)', ice: 'rgba(90,150,200,0.20)', marsh: 'rgba(48,66,44,0.22)',
       rock: 'rgba(80,60,40,0.12)', grass: 'rgba(30,50,70,0.06)', town: 'rgba(255,205,140,0.05)',
+      hall: 'rgba(255,190,120,0.04)',
     }[theme];
     if (tint) {
       ctx.save();
@@ -1687,7 +1696,8 @@ export class Renderer {
 
     // time of day on top of it, skipped underground where there is no sky
     const sky = skyAt(Date.now());
-    const underground = theme === 'crypt';
+    // indoors has no sky either: a hall is lit the same at any hour
+    const underground = theme === 'crypt' || theme === 'hall';
     // The full-strength night grade was tuned for the code-drawn tiles; over
     // painted art it just muddies everything. Towns have lit streets, so
     // night there is a touch of blue; out in the wilds it is darker.
@@ -1712,13 +1722,15 @@ export class Renderer {
     const lights = [];
     for (const p of props) {
       if (GLOWING.has(p.kind)) lights.push({ x: p.x, y: p.y - 22 * p.scale, r: 90 + 40 * lampNeed, c: '255,190,120', i: 0.34 * (0.45 + lampNeed) });
+      // a fire lights the floor round it, in its own colour
+      if (p.flame) lights.push({ x: p.x, y: p.y - p.h * 0.55, r: 110, c: p.flame === 'blue' ? '120,180,255' : '255,170,90', i: 0.3 });
     }
     for (const w2 of this.zone.warps ?? []) {
       lights.push({ x: (w2.x + w2.w / 2) * TILE, y: (w2.y + w2.h / 2) * TILE, r: 120, c: '150,215,255', i: 0.34 });
     }
     const me = state.me;
     // a lantern of your own, once it is dark enough to need one
-    const carry = underground || theme === 'ice' ? 1 : lampNeed;
+    const carry = theme === 'hall' ? 0 : underground || theme === 'ice' ? 1 : lampNeed;
     if (me && carry > 0.3) lights.push({ x: me.x, y: me.y - 16, r: 120 + 50 * carry, c: '255,225,180', i: 0.30 * carry });
     if (!lights.length) return;
 

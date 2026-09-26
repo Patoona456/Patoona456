@@ -16,6 +16,7 @@ const WEATHER = {
   town:  { n: 34, kind: 'mote', color: '255,225,180', size: [0.6, 1.4], vy: [-5, -14], vx: [-6, 6], life: [4, 9], alpha: 0.30 },
   grass: { n: 40, kind: 'leaf', color: '150,200,120', size: [1.0, 2.2], vy: [4, 14], vx: [10, 26], life: [5, 10], alpha: 0.42, spin: true },
   marsh: { n: 30, kind: 'fly', color: '180,255,170', size: [0.8, 1.6], vy: [-4, 4], vx: [-8, 8], life: [3, 7], alpha: 0.6, blink: true },
+  hall:  { n: 18, kind: 'mote', color: '255,220,170', size: [0.6, 1.2], vy: [-3, -8], vx: [-3, 3], life: [5, 10], alpha: 0.22 },
   crypt: { n: 26, kind: 'mote', color: '190,180,220', size: [0.7, 1.6], vy: [-3, -10], vx: [-4, 4], life: [5, 11], alpha: 0.22 },
   rock:  { n: 30, kind: 'ash', color: '210,170,120', size: [0.7, 1.8], vy: [-2, 8], vx: [14, 34], life: [4, 8], alpha: 0.26 },
   ice:   { n: 64, kind: 'snow', color: '235,245,255', size: [1.0, 2.4], vy: [16, 34], vx: [-14, 10], life: [6, 12], alpha: 0.65, sway: true },

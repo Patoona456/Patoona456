@@ -603,7 +603,9 @@ export class UI {
     const art = renderer.backdrop?.complete && renderer.backdrop.naturalWidth ? renderer.backdrop : null;
     const src = art ?? this._miniCache;
     const kx = (art ? art.naturalWidth : z.width) / z.width;
-    const ky = (art ? art.naturalHeight : z.height) / z.height;
+    // tiles are square, so the width gives both: a painting may carry more
+    // below the map (an atlas of its props) that the minimap must not squash in
+    const ky = art ? kx : 1;
     g.imageSmoothingEnabled = !!art;
     // The round frame shows a square window around the player that the +/-
     // buttons widen or narrow; the square card shows the whole zone.

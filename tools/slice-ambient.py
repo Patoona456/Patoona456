@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-"""Cut the water sheet into the pieces the renderer animates over a painted map.
+"""Cut the water and fire sheets into what the renderer animates over a painted map.
 
-    python3 tools/slice-water.py
+    python3 tools/slice-ambient.py
 
-All in one atlas, assets/fx/water.webp (the layout is ATLAS in
-client/js/water.js), from assets/fx/source/water-sheet.png (1536x1024,
-transparent ground) and water-sparkle-sheet.png:
+All in one atlas, assets/fx/ambient.webp (the layout is ATLAS and FLAMES in
+client/js/ambient.js; the demo counts its files, so it is one). From
+assets/fx/source/water-sheet.png, water-sparkle-sheet.png and fire-sheet.png:
   caustic   256x256 at (0, 0): the light on the water, from the nine surface
             patches, stamped round a torus so it repeats without a seam
   curtain   at (256, 0): falling streaks from the widest curtain, cut so the
             bottom runs on into the top - scrolled down over a painted fall
+  brazier   a strip at (450, 0): seven frames of a burning brazier
+  blue      a strip at (1066, 0): four frames of a blue flame on its pedestal
   splash    a strip at (0, 256): the seven splashes where a fall lands
   bubbles   a strip under it: the seven bubble puffs
   sparkle   under that: four rows of eight twinkles (stars, a net of light,
             long glints, another net), light only, lifted off the sheet's blue
-And for each map listed in MAPS, the map's water as a mask:
-  assets/maps/<id>/water.webp   quarter size, white where the painting is water
+Where a map's water is, the client reads off its painting (the blue in it).
 """
 import os
 
@@ -41,7 +42,14 @@ SPARKLE_X = [120 + 185 * i for i in range(8)]     # frame centres, left to right
 SPARKLE_Y = [160, 399, 632, 873]                   # row centres
 SPARKLE_CELL = (184, 150)
 
-MAPS = {'greenmire': 'assets/maps/source/greenmire2/stitched.png'}
+FIRE_SHEET = 'assets/fx/source/fire-sheet.png'
+# the frames on the fire sheet, as x, y, w, h boxes: the flicker is in the flame,
+# so each is stood on the middle of its base to keep the stand still
+BRAZIER = [(23, 336, 86, 146), (143, 349, 85, 133), (258, 344, 81, 138), (372, 346, 81, 136),
+           (481, 357, 77, 127), (584, 354, 74, 129), (684, 352, 72, 131)]
+BRAZIER_CELL = (88, 150)
+BLUE = [(391, 829, 67, 151), (467, 832, 68, 148), (540, 826, 68, 154), (613, 836, 74, 144)]
+BLUE_CELL = (84, 156)
 
 
 def strip(sheet, boxes, y0, y1):
@@ -116,22 +124,24 @@ def sparkle():
     return Image.fromarray(out)
 
 
-def water_mask(src):
-    img = cv2.GaussianBlur(np.array(Image.open(src).convert('RGB')), (0, 0), 1.6)
-    R, G, B = [img[..., i].astype(np.int32) for i in range(3)]
-    water = ((B > R + 40) & (B > G + 5) & (B > 120)).astype(np.uint8) * 255
-    water = cv2.morphologyEx(water, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    water = cv2.erode(water, np.ones((7, 7), np.uint8))     # keep off the banks
-    # the blue-grey cliff stones pass the colour test in specks: only real
-    # stretches of water are kept
-    n, lab, stats, _ = cv2.connectedComponentsWithStats(water)
-    keep = np.zeros(n, bool)
-    keep[1:] = stats[1:, cv2.CC_STAT_AREA] >= 3000
-    water = np.where(keep[lab], 255, 0).astype(np.uint8)
-    h, w = water.shape
-    small = cv2.resize(water, (w // 4, h // 4), interpolation=cv2.INTER_AREA)
-    small = cv2.GaussianBlur(small, (0, 0), 1.2)
-    return Image.fromarray(np.dstack([np.full_like(small, 255)] * 3 + [small]))
+def flames(sheet, boxes, cell):
+    """A strip of equal cells, each frame on the middle of its base."""
+    cw, ch = cell
+    out = Image.new('RGBA', (cw * len(boxes), ch))
+    # the frames were drawn a little bigger or smaller each; brought to one
+    # width, the stand keeps its size and only the flame moves
+    width = sorted(w for _, _, w, _ in boxes)[len(boxes) // 2]
+    for i, (x, y, w, h) in enumerate(boxes):
+        piece = sheet.crop((x, y, x + w, y + h))
+        k = width / w
+        w, h = width, min(ch, round(h * k))
+        piece = piece.resize((w, h), Image.LANCZOS)
+        # the sheet's glow round each piece is too faint to keep, and would show as a box
+        a = np.array(piece)
+        a[..., 3] = np.where(a[..., 3] < 50, 0, a[..., 3])
+        piece = Image.fromarray(a)
+        out.alpha_composite(piece, (i * cw + (cw - w) // 2, ch - h))
+    return out
 
 
 def main():
@@ -141,21 +151,20 @@ def main():
     s, sw = strip(sheet, SPLASH, *SPLASH_Y)
     b, bw = strip(sheet, BUBBLES, *BUBBLES_Y)
     k, sp = caustic(sheet), sparkle()
-    # one atlas, one file: the demo counts its files. ATLAS in client/js/water.js must match.
-    atlas = Image.new('RGBA', (max(sp.size[0], s.size[0]), 256 + s.size[1] + b.size[1] + sp.size[1]))
+    fire = Image.open(os.path.join(ROOT, FIRE_SHEET)).convert('RGBA')
+    br, bl = flames(fire, BRAZIER, BRAZIER_CELL), flames(fire, BLUE, BLUE_CELL)
+    # one atlas, one file. ATLAS and FLAMES in client/js/ambient.js must match.
+    width = max(sp.size[0], s.size[0], 1066 + bl.size[0])
+    atlas = Image.new('RGBA', (width, 256 + s.size[1] + b.size[1] + sp.size[1]))
     atlas.alpha_composite(k, (0, 0))
     atlas.alpha_composite(c, (256, 0))
+    atlas.alpha_composite(br, (450, 0))
+    atlas.alpha_composite(bl, (1066, 0))
     atlas.alpha_composite(s, (0, 256))
     atlas.alpha_composite(b, (0, 256 + s.size[1]))
     atlas.alpha_composite(sp, (0, 256 + s.size[1] + b.size[1]))
-    save(atlas, 'water.webp')
-    print('atlas', atlas.size, 'curtain', c.size, 'splash', s.size, 'cell', sw, 'bubbles', b.size, 'cell', bw,
-          'sparkle', sp.size, 'at y', 256 + s.size[1] + b.size[1])
-    for key, src in MAPS.items():
-        m = water_mask(os.path.join(ROOT, src))
-        os.makedirs(os.path.join(ROOT, 'assets/maps', key), exist_ok=True)
-        m.save(os.path.join(ROOT, 'assets/maps', key, 'water.webp'), 'WEBP', quality=85, method=6)
-        print(key, 'water mask', m.size)
+    save(atlas, 'ambient.webp')
+    print('atlas', atlas.size, 'brazier', br.size, 'blue', bl.size, 'sparkle at y', 256 + s.size[1] + b.size[1])
 
 
 if __name__ == '__main__':

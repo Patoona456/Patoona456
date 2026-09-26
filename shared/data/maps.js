@@ -110,6 +110,54 @@ export const MAPS = {
     spawns: [],
   },
 
+  castle: {
+    id: 'castle', name: 'Emberhold Castle', nameTh: 'ปราสาทเอมเบอร์โฮลด์', kind: 'town',
+    width: 48, height: 32, seed: 1002, safe: true, theme: 'hall',
+    // The throne hall, one painting (assets/maps/source/castle/hall.png) at a
+    // world px a pixel. castle.webp is that painting with the dressing cut
+    // from the decor sheet packed underneath (tools/build-castle.py); the
+    // floor is drawn from its top and each piece from its `crop`.
+    backdrop: 'assets/maps/castle.webp',
+    walk: [
+      [5, 6, 38, 18],                                   // the hall floor
+      [22, 24, 4, 8],                                   // the steps down to the door
+      [22, 4, 4, 2],                                    // the steps up to the throne
+    ],
+    block: [
+      [16, 8, 5, 5], [27, 8, 5, 5], [16, 16, 5, 6], [27, 16, 5, 6],   // the four banner pillars and their candles
+      [17, 6, 2, 1], [29, 6, 2, 1],                                   // the armour either side of the throne
+      [5, 6, 1, 1], [42, 6, 1, 1], [5, 22, 1, 2], [42, 22, 1, 2],     // the potted trees in the corners
+      [6, 6, 4, 2], [6, 21, 4, 3], [38, 6, 5, 2],                     // spear rack, sword table, bookcase
+      [6, 12, 2, 2], [13, 12, 2, 2],                                  // the blue flames
+      [20, 22, 2, 2], [26, 22, 2, 2],                                 // the braziers by the door
+    ],
+    spawnPoint: [23, 27],
+    warps: [
+      { x: 22, y: 30, w: 4, h: 2, to: 'emberhold', at: [30, 21], label: 'ออกสู่เมือง' },
+    ],
+    // Not much: the hall is the picture. The west wing is where a path is
+    // chosen (arms on the walls, the blue fire of the oath), the east wing
+    // is the royal library with the quests of the crown, and two braziers
+    // light the door. Every piece stands on footing blocked above.
+    structures: [
+      { kind: 'decor', img: 'assets/maps/castle.webp', crop: [370, 1024, 141, 158], x: 8.3, y: 12.22, w: 4.41, h: 4.94, flat: true, walk: true },
+      { kind: 'decor', img: 'assets/maps/castle.webp', crop: [515, 1024, 149, 84], x: 35.17, y: 13.38, w: 4.66, h: 2.63, flat: true, walk: true },
+      { kind: 'decor', img: 'assets/maps/castle.webp', crop: [0, 1024, 102, 96], x: 6.22, y: 4.81, w: 3.19, h: 3.0, walk: true },
+      { kind: 'decor', img: 'assets/maps/castle.webp', crop: [106, 1024, 132, 98], x: 5.91, y: 21.0, w: 4.13, h: 3.06, walk: true },
+      { kind: 'decor', img: 'assets/maps/castle.webp', crop: [242, 1024, 124, 82], x: 38.37, y: 5.25, w: 3.88, h: 2.56, walk: true },
+      { kind: 'flame', flame: 'blue', x: 6.62, y: 10.94, w: 1.52, h: 2.81, walk: true },
+      { kind: 'flame', flame: 'blue', x: 13.24, y: 10.94, w: 1.52, h: 2.81, walk: true },
+      { kind: 'flame', flame: 'brazier', x: 20.52, y: 21.72, w: 1.47, h: 2.5, walk: true },
+      { kind: 'flame', flame: 'brazier', x: 26.02, y: 21.72, w: 1.47, h: 2.5, walk: true },
+    ],
+    npcs: [
+      { id: 'princess', name: 'เจ้าหญิงเซเลน่า', role: 'townsfolk', x: 23, y: 5, look: { pic: 'princess' } },
+      { id: 'royal_trainer', name: 'ปรมาจารย์ออลริค', role: 'trainer', x: 10, y: 14, look: { pic: 'knight' } },
+      { id: 'royal_board', name: 'บรรณารักษ์หลวงเอลวิน', role: 'quests', x: 37, y: 14, look: { pic: 'wizard' } },
+    ],
+    spawns: [],
+  },
+
   millhaven: {
     id: 'millhaven', name: 'Millhaven', nameTh: 'มิลเฮเวน', kind: 'town',
     width: 80, height: 64, seed: 1002, safe: true, theme: 'town', levelRange: [1, 20],
@@ -267,10 +315,9 @@ export const MAPS = {
     // stand is traced off it by tools/trace-field.py into greenmire-obstacles.js.
     backdrop: 'assets/maps/greenmire.webp',
     backdropTiles: { dir: 'assets/maps/greenmire/ground', size: 1464, tileW: 1464, tileH: 1952, bleed: 2, cols: 2, rows: 1, width: 2928, height: 1952 },
-    // its rivers set moving (client/js/water.js): the mask marks the water,
-    // and the falls, in tiles, are where the painting pours
+    // its rivers set moving (client/js/ambient.js): the water is read off the
+    // painting's blue, and the falls, in tiles, are where the painting pours
     waterFx: {
-      mask: 'assets/maps/greenmire/water.webp',
       falls: [
         { x: 11.1, y: 0.4, w: 1.8, h: 3.3 },    // the north-west falls
         { x: 14.1, y: 1.0, w: 0.9, h: 2.4 },    // and the thin one beside them
@@ -692,6 +739,7 @@ export function buildGrid(map) {
   // buildings last: a doorway or an NPC pad must never eat a wall
   if (map.kind === 'town') {
     for (const st of map.structures ?? []) {
+      if (st.walk) continue;              // dressing whose footing is in the map's own blocks
       for (let y2 = st.y; y2 < st.y + st.h; y2++) {
         for (let x2 = st.x; x2 < st.x + st.w; x2++) {
           if (x2 < 1 || y2 < 1 || x2 >= w - 1 || y2 >= h - 1) continue;
@@ -766,11 +814,13 @@ export function generateProps(map, grid) {
     sign: st.sign,
     variant: st.variant ?? 0,
     img: st.img,
+    crop: st.crop,           // [x, y, w, h] of a picture that holds several
+    flame: st.flame,         // a flame strip that plays where it stands
     scale: 1,
     flip: 0,
     // a wall is ground-level stone; sorting a long one by its foot would put
-    // it over the tower standing on its end
-    tall: st.kind !== 'fountain' && st.kind !== 'rampart',
+    // it over the tower standing on its end. A rug lies under everyone.
+    tall: !st.flat && st.kind !== 'fountain' && st.kind !== 'rampart',
   }));
   // a tower stands on the wall, so where they share a bottom edge it goes on top
   for (const st of structures) if (st.kind === 'tower') st.y += 1;

@@ -18,6 +18,7 @@ const SKIES = {
   rock:  { kind: 'fog', banks: 3, speed: 8, color: '120,96,70', alpha: 0.10 },
   grass: null,
   town: null,
+  hall: null,
 };
 
 // One lightning strike per cycle, at a fixed offset, so it is the same for
