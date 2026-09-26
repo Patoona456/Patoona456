@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Emberhold's ground, and the buildings lifted off it so people walk behind them.
+"""Artaris's ground, and the buildings lifted off it so people walk behind them.
 
     python3 tools/build-town.py TOWN_X4.png
 
-TOWN_X4.png is assets/maps/source/emberhold3/full.png (1536x1024) upscaled 4x
+TOWN_X4.png is assets/maps/source/artaris3/full.png (1536x1024) upscaled 4x
 by Real-ESRGAN (tools/upscale/esrgan.py). Writes:
-  assets/maps/emberhold.webp          the 1x picture: placeholder while tiles load, and the minimap
-  assets/maps/emberhold/ground/*.webp the 4x picture in 2048px tiles, 2px bleed
-  assets/maps/emberhold/roofs.webp    each building (and the fountain's statue) cut out of
+  assets/maps/artaris.webp          the 1x picture: placeholder while tiles load, and the minimap
+  assets/maps/artaris/ground/*.webp the 4x picture in 2048px tiles, 2px bleed
+  assets/maps/artaris/roofs.webp    each building (and the fountain's statue) cut out of
                                       the 4x picture, packed in one sheet
 and prints the `structures` for shared/data/maps.js. The town is one
 painting, so a house on it would be drawn under whoever walks behind it; the
@@ -23,7 +23,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
-TOWN = 'assets/maps/source/emberhold3/full.png'
+TOWN = 'assets/maps/source/artaris3/full.png'
 COLS, ROWS = 90, 60
 K = 4                                   # the upscale
 SHEET_W = 4096
@@ -60,18 +60,18 @@ POST_W = 26
 
 
 def obstacles():
-    rows = [ln.split("'")[1] for ln in open(os.path.join(ROOT, 'shared/data/emberhold-obstacles.js')) if ln.startswith("  '")]
+    rows = [ln.split("'")[1] for ln in open(os.path.join(ROOT, 'shared/data/artaris-obstacles.js')) if ln.startswith("  '")]
     return np.array([[c == '#' for c in r] for r in rows])
 
 
 def main(big):
     small = np.array(Image.open(os.path.join(ROOT, TOWN)).convert('RGB'))
     H, W = small.shape[:2]
-    Image.fromarray(small).save(os.path.join(ROOT, 'assets/maps/emberhold.webp'), 'WEBP', quality=90, method=6)
+    Image.fromarray(small).save(os.path.join(ROOT, 'assets/maps/artaris.webp'), 'WEBP', quality=90, method=6)
     x4 = Image.open(big).convert('RGB')
     assert x4.size == (W * K, H * K), x4.size
     # the ground, in tiles the renderer streams in
-    tiles = os.path.join(ROOT, 'assets/maps/emberhold/ground')
+    tiles = os.path.join(ROOT, 'assets/maps/artaris/ground')
     os.makedirs(tiles, exist_ok=True)
     a = np.array(x4)
     pad = cv2.copyMakeBorder(a, 2, 2, 2, 2, cv2.BORDER_REPLICATE)
@@ -109,10 +109,10 @@ def main(big):
         rgb = np.array(x4.crop((x0 * K, y0 * K, x1 * K, y1 * K)))
         piece = np.dstack([rgb, (np.clip(m * 1.3, 0, 1) * 255).astype(np.uint8)])
         sheet.alpha_composite(Image.fromarray(piece), (sx, sy))
-        print(f"      {{ kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [{sx}, {sy}, {w}, {hh}], "
+        print(f"      {{ kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [{sx}, {sy}, {w}, {hh}], "
               f"x: {x0 / tile:.2f}, y: {y0 / tile:.2f}, w: {(x1 - x0) / tile:.2f}, h: {(y1 - y0) / tile:.2f}, walk: true }},   // {name}")
     print('    ],')
-    sheet.save(os.path.join(ROOT, 'assets/maps/emberhold/roofs.webp'), 'WEBP', quality=88, method=6)
+    sheet.save(os.path.join(ROOT, 'assets/maps/artaris/roofs.webp'), 'WEBP', quality=88, method=6)
     print('roofs.webp', sheet.size)
 
 

@@ -143,8 +143,8 @@ const BOOK = (art, el, nameTh, name) => S(art, {
 export const SCROLLS = {
   scroll_fly: S(0, { id: 'scroll_fly', name: 'Fly Scroll', nameTh: 'ม้วนเคลื่อนย้ายสุ่ม', randomTeleport: true, value: 60,
     desc: 'ย้ายไปจุดสุ่มในแผนที่เดียวกัน (ใช้ในดันเจียนและสนามรบไม่ได้)' }),
-  scroll_capital: S(1, { id: 'scroll_capital', name: 'Capital Warp', nameTh: 'ม้วนวาร์ปเมืองหลวง', warpTo: 'emberhold', value: 700, cooldown: 60,
-    desc: 'วาร์ปไปเอมเบอร์โฮลด์ทันที' }),
+  scroll_capital: S(1, { id: 'scroll_capital', name: 'Capital Warp', nameTh: 'ม้วนวาร์ปเมืองหลวง', warpTo: 'artaris', value: 700, cooldown: 60,
+    desc: 'วาร์ปไปอาร์ทาริสทันที' }),
   scroll_return: S(2, { id: 'scroll_return', name: 'Return Scroll', nameTh: 'ม้วนกลับบ้าน', warp: 'save', value: 500, cooldown: 60,
     desc: 'กลับจุดบันทึกล่าสุด' }),
   treasure_map: S(3, { id: 'treasure_map', name: 'Treasure Map', nameTh: 'แผนที่สมบัติ', value: 2500, rarity: 'uncommon', box: true,

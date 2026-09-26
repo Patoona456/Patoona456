@@ -14,7 +14,7 @@ For town maps:
 
 ### Recommended Town Sizes
 - **Small towns** (starting/satellite): 56x44 tiles = 1,792x1,408 pixels (Millhaven model)
-- **Medium towns** (hubs): 64x48 tiles = 2,048x1,536 pixels (Emberhold model)  
+- **Medium towns** (hubs): 64x48 tiles = 2,048x1,536 pixels (Artaris model)  
 - **Large towns** (endgame): 72x56 tiles = 2,304x1,792 pixels (not yet implemented)
 
 Smaller towns feel more intimate and manageable for low-level players; larger towns provide more NPCs and services for high-level players.
@@ -46,7 +46,7 @@ Each town declares its `theme` in the map definition. The theme affects:
 - **Atmosphere**: Player expectation of environment
 
 Currently available themes:
-- `town` - Generic settlement (used by Emberhold, Millhaven)
+- `town` - Generic settlement (used by Artaris, Millhaven)
 - `grass` - Wilderness/meadow (used by field maps)
 - `marsh` - Swampy terrain (used by Ashfen)
 - `rock` - Rocky highlands (used by Orcwatch)

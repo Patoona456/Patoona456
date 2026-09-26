@@ -65,8 +65,8 @@ test('the party door counts who is actually standing here', (t) => {
 
   B.alive = true;
   zone.players.delete('B');
-  w.zone('emberhold').players.set('B', B);
-  B.zone = w.zone('emberhold');
+  w.zone('artaris').players.set('B', B);
+  B.zone = w.zone('artaris');
   assert.ok(w.partyGate(A, 'reliquary1'), 'a party member in another town is not here');
 
   assert.equal(w.partyGate(A, 'greenmire'), null, 'ordinary zones have no door');
@@ -441,7 +441,7 @@ test('the dungeon is the only thing that asks for a party', () => {
 test('a guild costs real money to found, and only once per name', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const zone = w.zone('emberhold');
+  const zone = w.zone('artaris');
   const rich = stubPlayer('R', 60, zone);
   rich.record.aurum = 1_000_000;
   rich.inventory = [];
@@ -459,7 +459,7 @@ test('a guild costs real money to found, and only once per name', (t) => {
 test('rank decides who may take from the vault', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const zone = w.zone('emberhold');
+  const zone = w.zone('artaris');
   const boss = stubPlayer('B', 60, zone);
   boss.record.aurum = 1_000_000;
   boss.inventory = [{ id: 'lesser_salve', qty: 10 }];
@@ -484,7 +484,7 @@ test('rank decides who may take from the vault', (t) => {
 test('the vault moves goods without creating any', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const zone = w.zone('emberhold');
+  const zone = w.zone('artaris');
   const p = stubPlayer('V', 60, zone);
   p.record.aurum = 1_000_000;
   p.inventory = [{ id: 'lesser_salve', qty: 8 }];
@@ -505,7 +505,7 @@ test('the vault moves goods without creating any', (t) => {
 test('a guild that cannot pay its dues is locked, not deleted', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const zone = w.zone('emberhold');
+  const zone = w.zone('artaris');
   const p = stubPlayer('U', 60, zone);
   p.record.aurum = 1_000_000;
   p.inventory = [];
@@ -533,7 +533,7 @@ test('a guild that cannot pay its dues is locked, not deleted', (t) => {
 test('the leader cannot simply walk out on a guild with members in it', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const zone = w.zone('emberhold');
+  const zone = w.zone('artaris');
   const p = stubPlayer('L', 60, zone);
   p.record.aurum = 1_000_000;
   p.inventory = [];
@@ -551,7 +551,7 @@ test('the leader cannot simply walk out on a guild with members in it', (t) => {
 test('townsfolk wander, but never into a tree, a wall or a building', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const zone = w.zone('emberhold');
+  const zone = w.zone('artaris');
   assert.ok(zone.walkers.length > 0, 'the square has nobody walking about');
   const start = zone.walkers.map((e) => ({ x: e.x, y: e.y }));
   let clock = Date.now();
@@ -579,10 +579,10 @@ test('townsfolk wander, but never into a tree, a wall or a building', (t) => {
   }
 });
 
-test('every open spot in Emberhold can be walked to from the spawn', (t) => {
+test('every open spot in Artaris can be walked to from the spawn', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
-  const z = w.zone('emberhold');
+  const z = w.zone('artaris');
   // at the fine grid's own size: 8 world px a step
   const S = 8, cols = z.width * 4, rows = z.height * 4;   // 8px steps are enough to find the ways
   const fits = (x, y) => z.walkable(x * S + 4, y * S + 4, 6);

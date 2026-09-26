@@ -541,7 +541,7 @@ class Game {
     if (done || nav.phase === 'return') {
       const giverRole = GIVER_ROLE[q.giver] ?? 'quests';
       // (the trainer - job changes and the path's trials - is in the castle only)
-      return { map: q.giverMap ?? (q.giver === 'trainer' ? 'castle' : 'emberhold'), role: giverRole, kind: 'turnin' };
+      return { map: q.giverMap ?? (q.giver === 'trainer' ? 'castle' : 'artaris'), role: giverRole, kind: 'turnin' };
     }
 
     // a kill or collect objective: go where that monster lives
@@ -551,7 +551,7 @@ class Game {
       const map = homeOf(mob) ?? q.zone ?? this.zone?.id;
       return { map, mob, kind: 'hunt' };
     }
-    return { map: q.zone ?? 'emberhold', kind: 'travel' };
+    return { map: q.zone ?? 'artaris', kind: 'travel' };
   }
 
   /** Lay out the next leg: a path in this zone, or the warp that leaves it. */
@@ -1049,7 +1049,7 @@ class Game {
           <div class="cc-derived" id="derived"></div>
         </div>
       </div>
-      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ <b>เลเวล 10</b> ไปหาปรมาจารย์เอเลนเดียในปราสาทเอมเบอร์โฮลด์เพื่อเลือกอาชีพ
+      <p class="muted">เริ่มเป็น "ผู้แรกเริ่ม" — พอ <b>เลเวล 10</b> ไปหาปรมาจารย์เอเลนเดียในปราสาทอาร์ทาริสเพื่อเลือกอาชีพ
         สถิติที่แจกตอนนี้แค่ทำให้ช่วงต้นถนัดมือ ไม่ได้ล็อกอาชีพในอนาคต</p>
       <div class="opts"><button class="btn primary" id="btn-create">สร้าง</button><button class="btn" id="btn-back">ย้อนกลับ</button></div>`;
 
@@ -1111,8 +1111,8 @@ class Game {
     markStyle();
 
     /* ---- starting location ---- */
-    let startMap = 'emberhold';
-    const startOpts = [['emberhold', 'เอมเบอร์โฮลด์ (ศูนย์รวม)'], ['millhaven', 'มิลเฮเวน (เมืองเล็ก)']];
+    let startMap = 'artaris';
+    const startOpts = [['artaris', 'อาร์ทาริส (ศูนย์รวม)'], ['millhaven', 'มิลเฮเวน (เมืองเล็ก)']];
     const startBox = $('#o-start');
     for (const [id, label] of startOpts) {
       const b = document.createElement('button');

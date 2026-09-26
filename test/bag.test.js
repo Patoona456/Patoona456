@@ -12,7 +12,7 @@ function character({ aurum = 1_000_000, items = [] } = {}) {
     id: 'b1', name: 'ผู้ทดสอบ', level: 40, jobLevel: 20, job: 'novice',
     str: 20, agi: 20, vit: 20, int: 20, dex: 20, luk: 20,
     exp: 0, jobExp: 0, statPoints: 0, skillPoints: 0, aurum,
-    map: 'emberhold', x: 1000, y: 1000,
+    map: 'artaris', x: 1000, y: 1000,
     look: { gender: 'male', body: 'light', eyes: 'brown', hair: 'plain', hairColor: 'brown' },
     inventory: items.map((id) => ({ id, qty: 3 })),
     equipment: {}, skills: {}, hotbar: [], quests: {}, storage: [],

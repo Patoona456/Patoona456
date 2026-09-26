@@ -3265,7 +3265,7 @@ export class UI {
     const here = this.game.zone?.id;
     const visited = new Set(self.visited ?? []);
     const route = (id) => WARP_ROUTES.find((r) => r.to === id);
-    const sel = this.wmSel ?? here ?? 'emberhold';
+    const sel = this.wmSel ?? here ?? 'artaris';
     const wrap = el('div', 'wmap');
 
     const board = el('div', 'wm-board');
@@ -4104,7 +4104,7 @@ export function loadTheme() {
 /* ---------------- helpers ---------------- */
 /** Where each of our areas sits on the painted continent (map pixels, 780x485). */
 const WORLD_SPOTS = [
-  { id: 'emberhold', x: 395, y: 292, art: 'kingdom' },
+  { id: 'artaris', x: 395, y: 292, art: 'kingdom' },
   { id: 'greenmire', x: 100, y: 267, art: 'forest' },
   { id: 'millhaven', x: 666, y: 315, art: 'harbor' },
   { id: 'ashfen', x: 170, y: 413, art: 'desert' },

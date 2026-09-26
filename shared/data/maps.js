@@ -2,9 +2,9 @@
 // The server builds the tile grid at boot and ships it to clients RLE-encoded,
 // so the generator only has to be right once.
 
-import { EMBERHOLD_FINE } from './emberhold-fine.js';
-import { EMBERHOLD_SOLIDS } from './emberhold-solids.js';
-import { EMBERHOLD_OBSTACLES } from './emberhold-obstacles.js';
+import { ARTARIS_FINE } from './artaris-fine.js';
+import { ARTARIS_SOLIDS } from './artaris-solids.js';
+import { ARTARIS_OBSTACLES } from './artaris-obstacles.js';
 import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
 
 export const TILES = {
@@ -47,24 +47,24 @@ function noise2d(w, h, scale, seed) {
 }
 
 export const MAPS = {
-  emberhold: {
-    id: 'emberhold', name: 'Emberhold', nameTh: 'เอมเบอร์โฮลด์', kind: 'town',
+  artaris: {
+    id: 'artaris', name: 'Artaris', nameTh: 'อาร์ทาริส', kind: 'town',
     width: 90, height: 60, seed: 1001, safe: true, theme: 'town',
-    // One painting of the walled town (assets/maps/source/emberhold3/full.png,
+    // One painting of the walled town (assets/maps/source/artaris3/full.png,
     // 1536x1024, 17px a tile) on the walk plan it was drawn over
-    // (emberhold2/layout.png); tools/trace-town.py traces where people may
+    // (artaris2/layout.png); tools/trace-town.py traces where people may
     // stand from the two. The 1x picture is the placeholder and minimap; the
     // ground drawn up close is the same picture upscaled 4x by Real-ESRGAN,
     // in 2048px tiles fetched near the camera (tools/build-town.py).
-    backdrop: 'assets/maps/emberhold.webp',
-    backdropTiles: { dir: 'assets/maps/emberhold/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
+    backdrop: 'assets/maps/artaris.webp',
+    backdropTiles: { dir: 'assets/maps/artaris/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
     walk: [[0, 0, 90, 60]],
-    obstacles: EMBERHOLD_OBSTACLES,
+    obstacles: ARTARIS_OBSTACLES,
     // what stands on that ground - house walls, stall counters, lamp posts,
     // the fountain basin - finer than a tile (tools/solids-town.py)
-    solids: EMBERHOLD_SOLIDS,
+    solids: ARTARIS_SOLIDS,
     // and where there is ground at all, 4px a cell (tools/trace-town.py)
-    fine: EMBERHOLD_FINE,
+    fine: ARTARIS_FINE,
     // the moat and the canals shimmer; no falls in town
     waterFx: { falls: [] },
     spawnPoint: [45, 35],
@@ -83,64 +83,64 @@ export const MAPS = {
     // these are the same cut out of it (tools/build-town.py), drawn again over
     // whoever walks behind them.
     structures: [
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 0, 760, 900], x: 17.58, y: 4.39, w: 11.13, h: 13.18, walk: true },   // nw_house
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [762, 0, 792, 708], x: 22.27, y: 17.29, w: 11.60, h: 10.37, walk: true },   // w_house
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1556, 0, 1172, 768], x: 57.71, y: 6.45, w: 17.17, h: 11.25, walk: true },   // ne_row
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2730, 0, 840, 768], x: 56.13, y: 17.58, w: 12.30, h: 11.25, walk: true },   // e_hall
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 902, 612, 576], x: 11.43, y: 32.70, w: 8.96, h: 8.44, walk: true },   // sw_cottages
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [614, 902, 452, 808], x: 17.29, y: 39.84, w: 6.62, h: 11.84, walk: true },   // sw_house
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1068, 902, 856, 848], x: 28.01, y: 39.84, w: 12.54, h: 12.42, walk: true },   // s_row
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1926, 902, 480, 736], x: 51.09, y: 41.72, w: 7.03, h: 10.78, walk: true },   // s_house
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2408, 902, 964, 1056], x: 62.99, y: 33.87, w: 14.12, h: 15.47, walk: true },   // chapel
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 1960, 728, 824], x: 39.84, y: 20.62, w: 10.66, h: 12.07, walk: true },   // fountain
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [730, 1960, 392, 728], x: 84.26, y: 2.34, w: 5.74, h: 10.66, walk: true },   // e_edge
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1124, 1960, 248, 416], x: 0.00, y: 5.16, w: 3.63, h: 6.09, walk: true },   // w_edge
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1374, 1960, 104, 348], x: 39.43, y: 6.15, w: 1.52, h: 5.10, walk: true },   // post0
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1480, 1960, 104, 348], x: 49.10, y: 6.15, w: 1.52, h: 5.10, walk: true },   // post1
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1586, 1960, 104, 328], x: 39.55, y: 13.01, w: 1.52, h: 4.80, walk: true },   // post2
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1692, 1960, 104, 328], x: 48.34, y: 13.01, w: 1.52, h: 4.80, walk: true },   // post3
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1798, 1960, 104, 228], x: 40.72, y: 2.64, w: 1.52, h: 3.34, walk: true },   // post4
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1904, 1960, 104, 228], x: 47.29, y: 2.64, w: 1.52, h: 3.34, walk: true },   // post5
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2010, 1960, 104, 368], x: 35.16, y: 26.66, w: 1.52, h: 5.39, walk: true },   // post6
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2116, 1960, 104, 368], x: 53.44, y: 26.66, w: 1.52, h: 5.39, walk: true },   // post7
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2222, 1960, 104, 208], x: 35.10, y: 33.69, w: 1.52, h: 3.05, walk: true },   // post8
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2328, 1960, 104, 208], x: 53.44, y: 33.69, w: 1.52, h: 3.05, walk: true },   // post9
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2434, 1960, 104, 328], x: 40.08, y: 37.03, w: 1.52, h: 4.80, walk: true },   // post10
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2540, 1960, 104, 328], x: 48.52, y: 37.03, w: 1.52, h: 4.80, walk: true },   // post11
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2646, 1960, 104, 348], x: 41.19, y: 48.81, w: 1.52, h: 5.10, walk: true },   // post12
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2752, 1960, 104, 348], x: 47.29, y: 48.81, w: 1.52, h: 5.10, walk: true },   // post13
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2858, 1960, 104, 308], x: 39.43, y: 55.37, w: 1.52, h: 4.51, walk: true },   // post14
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2964, 1960, 104, 308], x: 49.04, y: 55.37, w: 1.52, h: 4.51, walk: true },   // post15
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3070, 1960, 104, 308], x: 49.10, y: 44.36, w: 1.52, h: 4.51, walk: true },   // post16
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3176, 1960, 104, 288], x: 39.55, y: 53.03, w: 1.52, h: 4.22, walk: true },   // post17
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3282, 1960, 104, 288], x: 48.93, y: 53.03, w: 1.52, h: 4.22, walk: true },   // post18
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3388, 1960, 104, 268], x: 11.72, y: 17.99, w: 1.52, h: 3.93, walk: true },   // post19
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3494, 1960, 104, 368], x: 11.37, y: 22.27, w: 1.52, h: 5.39, walk: true },   // post20
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3600, 1960, 104, 308], x: 11.72, y: 27.36, w: 1.52, h: 4.51, walk: true },   // post21
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3706, 1960, 104, 308], x: 18.34, y: 17.40, w: 1.52, h: 4.51, walk: true },   // post22
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3812, 1960, 104, 328], x: 18.34, y: 23.91, w: 1.52, h: 4.80, walk: true },   // post23
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [3918, 1960, 104, 208], x: 18.46, y: 30.47, w: 1.52, h: 3.05, walk: true },   // post24
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 2786, 104, 308], x: 11.07, y: 2.29, w: 1.52, h: 4.51, walk: true },   // post25
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [106, 2786, 104, 248], x: 16.58, y: 1.88, w: 1.52, h: 3.63, walk: true },   // post26
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [212, 2786, 104, 328], x: 29.47, y: 4.98, w: 1.52, h: 4.80, walk: true },   // post27
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [318, 2786, 104, 348], x: 30.76, y: 9.20, w: 1.52, h: 5.10, walk: true },   // post28
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [424, 2786, 104, 308], x: 70.14, y: 17.99, w: 1.52, h: 4.51, walk: true },   // post29
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [530, 2786, 104, 388], x: 72.19, y: 23.26, w: 1.52, h: 5.68, walk: true },   // post30
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [636, 2786, 104, 428], x: 79.98, y: 15.06, w: 1.52, h: 6.27, walk: true },   // post31
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [742, 2786, 104, 288], x: 78.75, y: 2.34, w: 1.52, h: 4.22, walk: true },   // post32
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [848, 2786, 104, 248], x: 73.36, y: 3.22, w: 1.52, h: 3.63, walk: true },   // post33
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [954, 2786, 104, 228], x: 0.00, y: 33.11, w: 1.52, h: 3.34, walk: true },   // post34
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1060, 2786, 104, 248], x: 7.15, y: 31.76, w: 1.52, h: 3.63, walk: true },   // post35
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1166, 2786, 104, 248], x: 74.53, y: 31.17, w: 1.52, h: 3.63, walk: true },   // post36
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1272, 2786, 104, 248], x: 81.39, y: 31.17, w: 1.52, h: 3.63, walk: true },   // post37
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1378, 2786, 104, 368], x: 68.44, y: 51.86, w: 1.52, h: 5.39, walk: true },   // post38
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1484, 2786, 104, 168], x: 68.38, y: 57.54, w: 1.52, h: 2.46, walk: true },   // post39
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1590, 2786, 104, 188], x: 18.52, y: 51.74, w: 1.52, h: 2.75, walk: true },   // post40
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1696, 2786, 104, 188], x: 31.88, y: 50.98, w: 1.52, h: 2.75, walk: true },   // post41
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1802, 2786, 104, 248], x: 85.37, y: 14.36, w: 1.52, h: 3.63, walk: true },   // post42
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1908, 2786, 104, 288], x: 78.46, y: 22.27, w: 1.52, h: 4.22, walk: true },   // post43
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2014, 2786, 104, 228], x: 8.73, y: 4.98, w: 1.52, h: 3.34, walk: true },   // post44
-      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2120, 2786, 104, 208], x: 9.79, y: 8.09, w: 1.52, h: 3.05, walk: true },   // post45
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [0, 0, 760, 900], x: 17.58, y: 4.39, w: 11.13, h: 13.18, walk: true },   // nw_house
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [762, 0, 792, 708], x: 22.27, y: 17.29, w: 11.60, h: 10.37, walk: true },   // w_house
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1556, 0, 1172, 768], x: 57.71, y: 6.45, w: 17.17, h: 11.25, walk: true },   // ne_row
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2730, 0, 840, 768], x: 56.13, y: 17.58, w: 12.30, h: 11.25, walk: true },   // e_hall
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [0, 902, 612, 576], x: 11.43, y: 32.70, w: 8.96, h: 8.44, walk: true },   // sw_cottages
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [614, 902, 452, 808], x: 17.29, y: 39.84, w: 6.62, h: 11.84, walk: true },   // sw_house
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1068, 902, 856, 848], x: 28.01, y: 39.84, w: 12.54, h: 12.42, walk: true },   // s_row
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1926, 902, 480, 736], x: 51.09, y: 41.72, w: 7.03, h: 10.78, walk: true },   // s_house
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2408, 902, 964, 1056], x: 62.99, y: 33.87, w: 14.12, h: 15.47, walk: true },   // chapel
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [0, 1960, 728, 824], x: 39.84, y: 20.62, w: 10.66, h: 12.07, walk: true },   // fountain
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [730, 1960, 392, 728], x: 84.26, y: 2.34, w: 5.74, h: 10.66, walk: true },   // e_edge
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1124, 1960, 248, 416], x: 0.00, y: 5.16, w: 3.63, h: 6.09, walk: true },   // w_edge
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1374, 1960, 104, 348], x: 39.43, y: 6.15, w: 1.52, h: 5.10, walk: true },   // post0
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1480, 1960, 104, 348], x: 49.10, y: 6.15, w: 1.52, h: 5.10, walk: true },   // post1
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1586, 1960, 104, 328], x: 39.55, y: 13.01, w: 1.52, h: 4.80, walk: true },   // post2
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1692, 1960, 104, 328], x: 48.34, y: 13.01, w: 1.52, h: 4.80, walk: true },   // post3
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1798, 1960, 104, 228], x: 40.72, y: 2.64, w: 1.52, h: 3.34, walk: true },   // post4
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1904, 1960, 104, 228], x: 47.29, y: 2.64, w: 1.52, h: 3.34, walk: true },   // post5
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2010, 1960, 104, 368], x: 35.16, y: 26.66, w: 1.52, h: 5.39, walk: true },   // post6
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2116, 1960, 104, 368], x: 53.44, y: 26.66, w: 1.52, h: 5.39, walk: true },   // post7
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2222, 1960, 104, 208], x: 35.10, y: 33.69, w: 1.52, h: 3.05, walk: true },   // post8
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2328, 1960, 104, 208], x: 53.44, y: 33.69, w: 1.52, h: 3.05, walk: true },   // post9
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2434, 1960, 104, 328], x: 40.08, y: 37.03, w: 1.52, h: 4.80, walk: true },   // post10
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2540, 1960, 104, 328], x: 48.52, y: 37.03, w: 1.52, h: 4.80, walk: true },   // post11
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2646, 1960, 104, 348], x: 41.19, y: 48.81, w: 1.52, h: 5.10, walk: true },   // post12
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2752, 1960, 104, 348], x: 47.29, y: 48.81, w: 1.52, h: 5.10, walk: true },   // post13
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2858, 1960, 104, 308], x: 39.43, y: 55.37, w: 1.52, h: 4.51, walk: true },   // post14
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2964, 1960, 104, 308], x: 49.04, y: 55.37, w: 1.52, h: 4.51, walk: true },   // post15
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3070, 1960, 104, 308], x: 49.10, y: 44.36, w: 1.52, h: 4.51, walk: true },   // post16
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3176, 1960, 104, 288], x: 39.55, y: 53.03, w: 1.52, h: 4.22, walk: true },   // post17
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3282, 1960, 104, 288], x: 48.93, y: 53.03, w: 1.52, h: 4.22, walk: true },   // post18
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3388, 1960, 104, 268], x: 11.72, y: 17.99, w: 1.52, h: 3.93, walk: true },   // post19
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3494, 1960, 104, 368], x: 11.37, y: 22.27, w: 1.52, h: 5.39, walk: true },   // post20
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3600, 1960, 104, 308], x: 11.72, y: 27.36, w: 1.52, h: 4.51, walk: true },   // post21
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3706, 1960, 104, 308], x: 18.34, y: 17.40, w: 1.52, h: 4.51, walk: true },   // post22
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3812, 1960, 104, 328], x: 18.34, y: 23.91, w: 1.52, h: 4.80, walk: true },   // post23
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [3918, 1960, 104, 208], x: 18.46, y: 30.47, w: 1.52, h: 3.05, walk: true },   // post24
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [0, 2786, 104, 308], x: 11.07, y: 2.29, w: 1.52, h: 4.51, walk: true },   // post25
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [106, 2786, 104, 248], x: 16.58, y: 1.88, w: 1.52, h: 3.63, walk: true },   // post26
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [212, 2786, 104, 328], x: 29.47, y: 4.98, w: 1.52, h: 4.80, walk: true },   // post27
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [318, 2786, 104, 348], x: 30.76, y: 9.20, w: 1.52, h: 5.10, walk: true },   // post28
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [424, 2786, 104, 308], x: 70.14, y: 17.99, w: 1.52, h: 4.51, walk: true },   // post29
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [530, 2786, 104, 388], x: 72.19, y: 23.26, w: 1.52, h: 5.68, walk: true },   // post30
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [636, 2786, 104, 428], x: 79.98, y: 15.06, w: 1.52, h: 6.27, walk: true },   // post31
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [742, 2786, 104, 288], x: 78.75, y: 2.34, w: 1.52, h: 4.22, walk: true },   // post32
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [848, 2786, 104, 248], x: 73.36, y: 3.22, w: 1.52, h: 3.63, walk: true },   // post33
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [954, 2786, 104, 228], x: 0.00, y: 33.11, w: 1.52, h: 3.34, walk: true },   // post34
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1060, 2786, 104, 248], x: 7.15, y: 31.76, w: 1.52, h: 3.63, walk: true },   // post35
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1166, 2786, 104, 248], x: 74.53, y: 31.17, w: 1.52, h: 3.63, walk: true },   // post36
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1272, 2786, 104, 248], x: 81.39, y: 31.17, w: 1.52, h: 3.63, walk: true },   // post37
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1378, 2786, 104, 368], x: 68.44, y: 51.86, w: 1.52, h: 5.39, walk: true },   // post38
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1484, 2786, 104, 168], x: 68.38, y: 57.54, w: 1.52, h: 2.46, walk: true },   // post39
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1590, 2786, 104, 188], x: 18.52, y: 51.74, w: 1.52, h: 2.75, walk: true },   // post40
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1696, 2786, 104, 188], x: 31.88, y: 50.98, w: 1.52, h: 2.75, walk: true },   // post41
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1802, 2786, 104, 248], x: 85.37, y: 14.36, w: 1.52, h: 3.63, walk: true },   // post42
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [1908, 2786, 104, 288], x: 78.46, y: 22.27, w: 1.52, h: 4.22, walk: true },   // post43
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2014, 2786, 104, 228], x: 8.73, y: 4.98, w: 1.52, h: 3.34, walk: true },   // post44
+      { kind: 'decor', img: 'assets/maps/artaris/roofs.webp', crop: [2120, 2786, 104, 208], x: 9.79, y: 8.09, w: 1.52, h: 3.05, walk: true },   // post45
     ],
     npcs: [
       { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 31, y: 17, look: { anim: 'blacksmith' } },
@@ -168,7 +168,7 @@ export const MAPS = {
   },
 
   castle: {
-    id: 'castle', name: 'Emberhold Castle', nameTh: 'ปราสาทเอมเบอร์โฮลด์', kind: 'town',
+    id: 'castle', name: 'Artaris Castle', nameTh: 'ปราสาทอาร์ทาริส', kind: 'town',
     width: 48, height: 32, seed: 1002, safe: true, theme: 'hall',
     // The throne hall, one painting (assets/maps/source/castle/hall.png) at a
     // world px a pixel. castle.webp is that painting with the dressing cut
@@ -197,7 +197,7 @@ export const MAPS = {
     ],
     spawnPoint: [23, 27],
     warps: [
-      { x: 22, y: 30, w: 4, h: 2, to: 'emberhold', at: [45, 11], label: 'ออกสู่เมือง' },
+      { x: 22, y: 30, w: 4, h: 2, to: 'artaris', at: [45, 11], label: 'ออกสู่เมือง' },
     ],
     // Not much: the hall is the picture. The west wing is where a path is
     // chosen (arms on the walls, the blue fire of the oath), the east wing
@@ -230,7 +230,7 @@ export const MAPS = {
       { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [87, 7], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
-      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [86, 30], label: 'เอมเบอร์โฮลด์' },
+      { x: 38, y: 2, w: 4, h: 2, to: 'artaris', at: [86, 30], label: 'อาร์ทาริส' },
     ],
     npcs: [
       // North district (Merchant area)
@@ -398,7 +398,7 @@ export const MAPS = {
     // is the south gate below the ruins, so a new player crosses the whole
     // field first. The north-west stairs stay closed.
     warps: [
-      { x: 43, y: 0, w: 3, h: 1, to: 'emberhold', at: [45, 55], label: 'เอมเบอร์โฮลด์' },  // the north stairs
+      { x: 43, y: 0, w: 3, h: 1, to: 'artaris', at: [45, 55], label: 'อาร์ทาริส' },  // the north stairs
       { x: 88, y: 2, w: 2, h: 2, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },        // the north-east stairs
       { x: 44, y: 58, w: 3, h: 2, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },          // the south gate
     ],
@@ -448,7 +448,7 @@ export const MAPS = {
     spawnPoint: [8, 32],
     warps: [
       { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [45, 56], label: 'ทุ่งกรีนไมร์' },
-      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 30], label: 'เอมเบอร์โฮลด์' },
+      { x: 76, y: 38, w: 2, h: 4, to: 'artaris', at: [3, 30], label: 'อาร์ทาริส' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
     spawns: [],
@@ -574,7 +574,7 @@ export const MAPS = {
     width: 44, height: 44, seed: 4411, theme: 'ember', levelRange: [40, 70],
     pvp: true,
     spawnPoint: [22, 40],
-    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [76, 5], label: 'เอมเบอร์โฮลด์' }],
+    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'artaris', at: [76, 5], label: 'อาร์ทาริส' }],
     spawns: [],
   },
 

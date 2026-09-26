@@ -21,7 +21,7 @@ function character({ level = 60, aurum = 1_000_000, items = [] } = {}) {
     id: 'c1', name: 'ผู้ทดสอบ', level, jobLevel: 40, job: 'novice',
     str: 40, agi: 40, vit: 40, int: 40, dex: 40, luk: 40,
     exp: 0, jobExp: 0, statPoints: 0, skillPoints: 0, aurum,
-    map: 'emberhold', x: 1000, y: 1000,
+    map: 'artaris', x: 1000, y: 1000,
     look: { gender: 'male', body: 'light', eyes: 'brown', hair: 'plain', hairColor: 'brown' },
     inventory: items.map((i) => (typeof i === 'string' ? { id: i, qty: 1 } : i)),
     equipment: {}, skills: {}, hotbar: [], quests: {}, storage: [],
@@ -320,11 +320,11 @@ test('milestone chests pay once, and the track restarts after the last', () => {
 
 test('fast travel to a field needs a first visit on foot; towns do not', () => {
   const p = character({ items: [] });
-  p.record.map = 'emberhold';
-  p.record.visited = ['emberhold'];
+  p.record.map = 'artaris';
+  p.record.visited = ['artaris'];
   assert.match(Econ.warpService(world, p, 'orcwatch').error ?? '', /เคยเดินไป/);
   assert.ok(Econ.warpService(world, p, 'millhaven').ok, 'a town was locked');
   p.record.visited.push('orcwatch');
   assert.ok(Econ.warpService(world, p, 'orcwatch').ok);
-  assert.ok(Econ.warpService(world, p, 'emberhold').error, 'warped to where you already are');
+  assert.ok(Econ.warpService(world, p, 'artaris').error, 'warped to where you already are');
 });

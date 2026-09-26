@@ -8,7 +8,7 @@ import { db } from '../server/persistence.js';
 let nextId = 9000;
 function person(name) {
   const id = String(nextId++);
-  const record = { id, name, level: 20, job: 'novice', map: 'emberhold', friends: [], blocked: [] };
+  const record = { id, name, level: 20, job: 'novice', map: 'artaris', friends: [], blocked: [] };
   db.characters[id] = record;
   const sent = [];
   return { id: 'p' + id, name, record, party: null, conn: { send: (m) => sent.push(m) }, sent };

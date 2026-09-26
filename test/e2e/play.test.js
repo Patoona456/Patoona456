@@ -19,7 +19,7 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
   await t.test('a new player can register, make a character and enter the world', async () => {
     const { page, errors, ctx } = await join(browser);
     const s = await snapshot(page);
-    assert.equal(s.zone, 'emberhold', 'new characters should start in town');
+    assert.equal(s.zone, 'artaris', 'new characters should start in town');
     assert.equal(s.level, 1);
     assert.ok(s.maxHp > 0 && s.hp === s.maxHp, 'a new character should be at full health');
     assert.deepEqual(errors, [], 'the client logged errors while starting up');
@@ -33,7 +33,7 @@ test('browser tests', skipWithoutPlaywright.skip && !pw ? skipWithoutPlaywright 
       return g.entities.get(g.state.myId)?.n ?? null;
     });
     const expected = await page.evaluate(() => window.__game.self?.name);
-    for (const map of ['greenmire', 'emberhold']) {
+    for (const map of ['greenmire', 'artaris']) {
       await page.evaluate((m) => window.__game.net.send({ t: 'devWarp', map: m }), map);
       await page.waitForFunction((m) => window.__game.renderer.zone?.id === m, map, { timeout: 5000 });
       await page.waitForTimeout(400);

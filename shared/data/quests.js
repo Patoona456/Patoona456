@@ -34,8 +34,8 @@ export const QUESTS = {
   },
   q_job_path: {
     id: 'q_job_path', name: 'เลือกทางของตัวเอง', giver: 'trainer', minLevel: 1,
-    zone: 'emberhold',
-    desc: 'ไปถึงเลเวล 10 แล้วไปหาปรมาจารย์เอเลนเดียในปราสาทเอมเบอร์โฮลด์เพื่อเลือกอาชีพ',
+    zone: 'artaris',
+    desc: 'ไปถึงเลเวล 10 แล้วไปหาปรมาจารย์เอเลนเดียในปราสาทอาร์ทาริสเพื่อเลือกอาชีพ',
     objectives: [{ type: 'level', count: 10 }],
     rewards: { exp: 300, jobExp: 200, aurum: 500, unlock: 'jobChange' },
   },
@@ -142,7 +142,7 @@ export const QUESTS = {
     rewards: { exp: 1800, jobExp: 1100, aurum: 1800 },
   },
   q_first_refine: {
-    id: 'q_first_refine', name: 'บทเรียนแรกของการตีบวก', giver: 'smith', minLevel: 12, zone: 'emberhold',
+    id: 'q_first_refine', name: 'บทเรียนแรกของการตีบวก', giver: 'smith', minLevel: 12, zone: 'artaris',
     desc: 'ตีบวกอุปกรณ์ชิ้นไหนก็ได้ให้ถึง +4 แล้วกลับมาอวดบอร์ก',
     objectives: [{ type: 'refine', count: 4 }],
     rewards: { exp: 2000, jobExp: 1200, aurum: 2000 },

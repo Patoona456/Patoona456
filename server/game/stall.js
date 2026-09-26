@@ -38,7 +38,7 @@ export function isOpen(p) { return open.has(p?.id); }
  * per snapshot: snapshots are built per player, and calling this inside that
  * loop made drawing shop signs quadratic in the number of people standing in
  * a town - which is the one place they all stand. At two hundred players in
- * Emberhold that was four hundred thousand iterations a second to report,
+ * Artaris that was four hundred thousand iterations a second to report,
  * almost always, that nobody had a stall open.
  */
 export function signs(zone) {

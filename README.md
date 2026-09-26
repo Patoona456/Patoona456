@@ -22,7 +22,7 @@ npm run import-lpc -- ./Universal-LPC-spritesheet
 
 ![HUD แบบ MMO มือถือ](docs/img/hud-desktop.png)
 ![กระเป๋าแบบตารางไอคอน](docs/img/ui-inventory.png)
-![เมืองเอมเบอร์โฮลด์](docs/img/town.png)
+![เมืองอาร์ทาริส](docs/img/town.png)
 ![ลานกลางเมืองที่ปูหิน](docs/img/town-square.png)
 ![ออร่าอาวุธตีบวก +10](docs/img/refine-glow.png)
 ![เมืองยามค่ำคืน](docs/img/town-night.png)

@@ -11,7 +11,7 @@ function archer(zone) {
     id: 'a1', name: 'นักธนู', level: 40, jobLevel: 30, job: 'marksman',
     str: 20, agi: 30, vit: 20, int: 10, dex: 40, luk: 10,
     exp: 0, jobExp: 0, statPoints: 0, skillPoints: 0, aurum: 0,
-    map: zone.id, x: 1000, y: 1000, savePoint: { map: 'emberhold', x: 960, y: 736 },
+    map: zone.id, x: 1000, y: 1000, savePoint: { map: 'artaris', x: 960, y: 736 },
     look: { gender: 'male' }, inventory: [{ id: 'ranger_bow', qty: 1 }], equipment: {},
     skills: { aimed_shot: 3 }, hotbar: [], quests: {}, storage: [], npcSales: {}, salesDay: 0, lockouts: {},
   };
@@ -55,7 +55,7 @@ test('whatever is in the first bag slot can be worn: a new character holds its s
   const record = {
     id: 'n1', name: 'มือใหม่', level: 1, jobLevel: 1, job: 'novice',
     str: 5, agi: 5, vit: 5, int: 5, dex: 5, luk: 5, exp: 0, jobExp: 0, statPoints: 0, skillPoints: 1, aurum: 500,
-    map: 'emberhold', x: 0, y: 0, savePoint: { map: 'emberhold', x: 0, y: 0 }, look: {},
+    map: 'artaris', x: 0, y: 0, savePoint: { map: 'artaris', x: 0, y: 0 }, look: {},
     inventory: [{ id: 'wooden_sword', qty: 1, refine: 0, dur: 120 }, { id: 'hp_potion_s', qty: 5 }],
     equipment: { weapon: 0 },
     skills: {}, hotbar: [], quests: {}, storage: [], npcSales: {}, salesDay: 0, lockouts: {},

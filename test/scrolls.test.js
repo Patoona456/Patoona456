@@ -18,7 +18,7 @@ function character(items = [], { level = 50, map = 'greenmire' } = {}) {
     id: 'c1', name: 'นักอ่าน', level, jobLevel: 30, job: 'novice',
     str: 30, agi: 30, vit: 30, int: 30, dex: 30, luk: 30,
     exp: 0, jobExp: 0, statPoints: 0, skillPoints: 0, aurum: 1_000_000,
-    map, x: 1000, y: 1000, savePoint: { map: 'emberhold', x: 960, y: 736 },
+    map, x: 1000, y: 1000, savePoint: { map: 'artaris', x: 960, y: 736 },
     look: { gender: 'male', body: 'light', eyes: 'brown', hair: 'plain', hairColor: 'brown' },
     inventory: items.map((i) => (typeof i === 'string' ? { id: i, qty: 3 } : i)), equipment: {}, skills: {}, hotbar: [],
     quests: {}, storage: [], npcSales: {}, salesDay: 0, lockouts: {},

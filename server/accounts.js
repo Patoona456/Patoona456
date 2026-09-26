@@ -110,9 +110,9 @@ export function createCharacter(acc, { name, gender, body, hair, chibiHair, hair
     if (total === 30) for (const k of Object.keys(base)) base[k] = Math.floor(Number(stats[k]));
   }
 
-  // Starting location: either emberhold (hub) or millhaven (intimate town)
-  const validStarts = ['emberhold', 'millhaven'];
-  const mapId = validStarts.includes(startMap) ? startMap : 'emberhold';
+  // Starting location: either artaris (hub) or millhaven (intimate town)
+  const validStarts = ['artaris', 'millhaven'];
+  const mapId = validStarts.includes(startMap) ? startMap : 'artaris';
   const start = MAPS[mapId];
   const id = String(db.nextCharId++);
   const c = {

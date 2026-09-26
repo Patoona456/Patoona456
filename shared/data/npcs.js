@@ -8,7 +8,7 @@ import { KEY_ITEMS } from './items.js';
 
 export const SHOPS = {
   general: {
-    id: 'general', name: 'ร้านค้าทั่วไปเอมเบอร์โฮลด์',
+    id: 'general', name: 'ร้านค้าทั่วไปอาร์ทาริส',
     buysAnything: true,
     stock: [
       { id: 'hp_potion_s', stock: 40, restock: 300 },
@@ -162,7 +162,7 @@ export const NPC_DIALOG = {
     options: [],
   },
   vendor: {
-    greet: 'ยินดีต้อนรับสู่เอมเบอร์โฮลด์ ของที่นี่ไม่ถูกหรอกนะ แต่ของจริงทั้งนั้น',
+    greet: 'ยินดีต้อนรับสู่อาร์ทาริส ของที่นี่ไม่ถูกหรอกนะ แต่ของจริงทั้งนั้น',
     options: [{ label: 'ดูของขาย', action: 'shop', shop: 'general' }, { label: 'ขายของ', action: 'sell' }],
   },
   apothecary: {
@@ -206,7 +206,7 @@ export const NPC_DIALOG = {
   // the town trainers of old: job changes, the trials and respecs are the
   // castle's now, and they send you there
   guide: {
-    greet: 'เรื่องเปลี่ยนอาชีพ บททดสอบของแต่ละสาย และการรีเซ็ต ตอนนี้ต้องไปที่ปราสาทเอมเบอร์โฮลด์แล้ว ปรมาจารย์เอเลนเดียรออยู่ที่ปีกตะวันตก เข้าทางประตูใหญ่ทางเหนือของเมือง',
+    greet: 'เรื่องเปลี่ยนอาชีพ บททดสอบของแต่ละสาย และการรีเซ็ต ตอนนี้ต้องไปที่ปราสาทอาร์ทาริสแล้ว ปรมาจารย์เอเลนเดียรออยู่ที่ปีกตะวันตก เข้าทางประตูใหญ่ทางเหนือของเมือง',
     options: [],
   },
   trainer: {
@@ -222,7 +222,7 @@ export const NPC_DIALOG = {
     options: [{ label: 'ดูปลายทาง', action: 'warpMenu' }],
   },
   princess: {
-    greet: 'ยินดีต้อนรับสู่ปราสาทเอมเบอร์โฮลด์ ถ้าจะเลือกเส้นทางของตัวเอง ไปหาท่านเอเลนเดียทางปีกตะวันตก ส่วนงานของราชวังอยู่กับเอลวินทางปีกตะวันออก',
+    greet: 'ยินดีต้อนรับสู่ปราสาทอาร์ทาริส ถ้าจะเลือกเส้นทางของตัวเอง ไปหาท่านเอเลนเดียทางปีกตะวันตก ส่วนงานของราชวังอยู่กับเอลวินทางปีกตะวันออก',
     options: [],
   },
   royal_board: {
@@ -248,10 +248,10 @@ export const NPC_DIALOG = {
 // foot the first time. Dungeons and the boss room are never on the list -
 // their doors are the point.
 export const WARP_ROUTES = [
-  { to: 'emberhold', at: [45, 35], price: 100, label: 'เอมเบอร์โฮลด์', kind: 'town' },
+  { to: 'artaris', at: [45, 35], price: 100, label: 'อาร์ทาริส', kind: 'town' },
   { to: 'millhaven', at: [40, 32], price: 300, label: 'มิลเฮเวน', kind: 'town' },
   { to: 'ravenholm', at: [44, 36], price: 1200, label: 'เรเวนโฮล์ม', kind: 'town' },
-  { to: 'castle', at: [23, 27], price: 50, label: 'ปราสาทเอมเบอร์โฮลด์', kind: 'town' },
+  { to: 'castle', at: [23, 27], price: 50, label: 'ปราสาทอาร์ทาริส', kind: 'town' },
   { to: 'greenmire', at: [44, 4], price: 150, label: 'ทุ่งกรีนไมร์', kind: 'field', needVisit: true },
   { to: 'ashfen', at: [8, 32], price: 400, label: 'หนองเถ้า', kind: 'field', needVisit: true },
   { to: 'gravebound', at: [30, 6], price: 900, label: 'สุสานกราฟบาวด์', kind: 'field', needVisit: true },

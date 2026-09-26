@@ -17,7 +17,7 @@ function character() {
   const record = {
     id: 'g1', name: 'ผู้ดูแล', level: 10, jobLevel: 1, job: 'novice',
     str: 5, agi: 5, vit: 5, int: 5, dex: 5, luk: 5, exp: 0, jobExp: 0, statPoints: 0, skillPoints: 0, aurum: 100,
-    map: 'emberhold', x: 0, y: 0, savePoint: { map: 'emberhold', x: 0, y: 0 }, look: {},
+    map: 'artaris', x: 0, y: 0, savePoint: { map: 'artaris', x: 0, y: 0 }, look: {},
     inventory: [], equipment: {}, skills: {}, hotbar: [], quests: {}, storage: [], npcSales: {}, salesDay: 0, lockouts: {},
   };
   const p = new Player(record, { send() {} });

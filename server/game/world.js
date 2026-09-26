@@ -97,7 +97,11 @@ export class World {
   addPlayer(p) {
     this.players.set(p.id, p);
     this.byCharId.set(p.record.id, p);
-    const zone = this.zone(p.record.map) ?? this.zone('emberhold');
+    const zone = this.zone(p.record.map) ?? this.zone('artaris');
+    // a map that no longer exists (renamed, or gone) sends them home, and
+    // a save point on one is moved there too, or dying would lose them
+    if (zone.id !== p.record.map) p.record.map = zone.id;
+    if (p.record.savePoint && !MAPS[p.record.savePoint.map]) p.record.savePoint = { ...p.record.savePoint, map: zone.id };
     // a character logging in where the map has since grown a wall would be
     // stuck there forever: put them on the nearest ground they fit on
     const spot = zone.nearestWalkable(p.x, p.y);
@@ -192,7 +196,7 @@ export class World {
   }
 
   respawn(p) {
-    const sp = p.record.savePoint ?? { map: 'emberhold', x: 45 * TILE, y: 35 * TILE };
+    const sp = p.record.savePoint ?? { map: 'artaris', x: 45 * TILE, y: 35 * TILE };
     p.alive = true;
     p.hp = Math.max(1, Math.floor(p.maxHp * 0.3));
     p.sp = Math.max(1, Math.floor(p.maxSp * 0.3));
@@ -281,7 +285,7 @@ export class World {
     this.lastTick = t;
 
     for (const zone of this.zones.values()) {
-      if (!zone.players.size && zone.id !== 'emberhold') {
+      if (!zone.players.size && zone.id !== 'artaris') {
         // idle zones still respawn + expire loot, but skip AI work
         zone.updateRespawns(t);
         zone.updateGround(t);

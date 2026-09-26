@@ -16,7 +16,7 @@ function character(items = [], { level = 40, alive = true } = {}) {
     id: 'c1', name: 'นักดื่ม', level, jobLevel: 30, job: 'novice',
     str: 30, agi: 30, vit: 30, int: 30, dex: 30, luk: 30,
     exp: 0, jobExp: 0, statPoints: 0, skillPoints: 0, aurum: 1000,
-    map: 'emberhold', x: 1000, y: 1000, savePoint: { map: 'emberhold', x: 960, y: 736 },
+    map: 'artaris', x: 1000, y: 1000, savePoint: { map: 'artaris', x: 960, y: 736 },
     look: { gender: 'male', body: 'light', eyes: 'brown', hair: 'plain', hairColor: 'brown' },
     inventory: items.map((id) => ({ id, qty: 3 })), equipment: {}, skills: { first_aid: 3 }, hotbar: [],
     quests: {}, storage: [], npcSales: {}, salesDay: 0, lockouts: {},
@@ -156,7 +156,7 @@ test('reset bottles are free resets, and the cooldown bottle clears skills only'
 test('a teleport potion takes you to your save point', () => {
   const p = character(['teleport_potion']);
   assert.ok(useConsumable(world, p, 0).ok);
-  assert.deepEqual(p.warpedTo, { map: 'emberhold', x: 960, y: 736 });
+  assert.deepEqual(p.warpedTo, { map: 'artaris', x: 960, y: 736 });
 });
 
 test('every monster drops bottles that exist, and every boss pays the rare ones', () => {

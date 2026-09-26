@@ -98,7 +98,7 @@ This document describes the three-tier town system designed to support player pr
 
 ---
 
-### Tier 3: Emberhold (Hub/All Levels)
+### Tier 3: Artaris (Hub/All Levels)
 **Role:** Central universal hub connecting all zones
 
 - **Map Size:** 64×48 tiles (2,048×1,536 pixels)
@@ -113,7 +113,7 @@ This document describes the three-tier town system designed to support player pr
 - **PvP Arena Access:** Gateway to Ashen Lists
 
 #### Design Note:
-Emberhold serves as the **world hub** - players of any level can reach any zone from here. Designed for versatility rather than tier-specific progression.
+Artaris serves as the **world hub** - players of any level can reach any zone from here. Designed for versatility rather than tier-specific progression.
 
 ---
 
@@ -121,7 +121,7 @@ Emberhold serves as the **world hub** - players of any level can reach any zone 
 
 ### New Player Journey (Level 1-10):
 
-1. **Millhaven** or **Emberhold** (pick at character creation)
+1. **Millhaven** or **Artaris** (pick at character creation)
    - Learn combat basics
    - Farm starter gear
    - Access job change trainer (at level 10)
@@ -141,13 +141,13 @@ Emberhold serves as the **world hub** - players of any level can reach any zone 
 
 2. **Ashfen Marsh** (level 10-22 field)
    - Mid-tier monsters (10-15)
-   - Return to Millhaven/Emberhold between sessions
+   - Return to Millhaven/Artaris between sessions
    - Build experience for level 10 job class
 
 ### Mid-Game Transition (Level 20-30):
 
-1. **Emberhold** OR **Ravenholm** (hub choice)
-   - Emberhold: Traditional central hub (all zones accessible)
+1. **Artaris** OR **Ravenholm** (hub choice)
+   - Artaris: Traditional central hub (all zones accessible)
    - Ravenholm: Advanced capital (better services, more NPCs)
 
 2. **Ashfen Marsh** → **Gravebound Hollow**
@@ -189,7 +189,7 @@ Emberhold serves as the **world hub** - players of any level can reach any zone 
 ### 3. Progression Signaling
 - **Millhaven:** Cozy, intimate (signifies "starting zone")
 - **Ravenholm:** Grand, organized (signifies "advancement")
-- **Emberhold:** Central hub (signifies "connection point")
+- **Artaris:** Central hub (signifies "connection point")
 
 ### 4. Visual Density
 - Town density: 0.07 props/tile (sparse, clear sightlines)
@@ -224,7 +224,7 @@ MILL    |    GRAVE (level 18-32 cave)
 haven   |
 (1-20)  ASHFEN (level 10-22 marsh)
     \    |    /
-    EMBERHOLD (hub - all levels)
+    ARTARIS (hub - all levels)
          |
       GREENMIRE (level 1-10 field)
 ```
@@ -235,7 +235,7 @@ haven   |
 - Millhaven ↔ Ravenholm (tier advancement)
 - Ravenholm ↔ Orcwatch (late-game)
 - Ravenholm ↔ Gravebound (dungeon access)
-- Emberhold ↔ All major zones (universal hub)
+- Artaris ↔ All major zones (universal hub)
 
 ---
 
@@ -267,7 +267,7 @@ haven   |
 
 ### Character Creation Starting Point
 Players now choose their starting town:
-- **Emberhold** (classic hub): Fast access to all zones
+- **Artaris** (classic hub): Fast access to all zones
 - **Millhaven** (intimate): Focused early-game experience
 
 ### Warp Pad Safety
