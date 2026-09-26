@@ -137,7 +137,8 @@ export const MAPS = {
     ],
     npcs: [
       { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 31, y: 17, look: { anim: 'blacksmith' } },
-      { id: 'apothecary', name: 'แม่ค้าโรซ่า', role: 'shop', x: 28, y: 28, shop: 'apothecary', look: { pic: 'maid' } },
+      { id: 'apothecary', name: 'แม่ค้าโรซ่า', role: 'shop', x: 28, y: 28, shop: 'apothecary', look: { anim: 'potion' } },
+      { id: 'weaponer', name: 'พ่อค้าอาวุธเรนัลด์', role: 'shop', x: 66, y: 34, shop: 'smith', look: { anim: 'weapon' } },
       { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 64, y: 19, shop: 'general', look: { pic: 'alchemist' } },
       { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 62, y: 29, look: { pic: 'dwarf' } },
       { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 69, y: 49, look: { pic: 'nun' } },

@@ -180,6 +180,10 @@ export const NPC_DIALOG = {
       { label: 'ขายของ', action: 'sell' },
     ],
   },
+  weaponer: {
+    greet: 'ดาบ ธนู ของดีทั้งนั้น! ถ้าจะตีบวกหรือซ่อม ไปหาบอร์กที่โรงตีเหล็กนะ',
+    options: [{ label: 'ดูอาวุธ', action: 'shop', shop: 'smith' }, { label: 'ขายของ', action: 'sell' }],
+  },
   banker: {
     greet: 'ฝากของไว้กับข้าได้ ค่าธรรมเนียมครั้งละนิดหน่อยเท่านั้น',
     options: [{ label: 'เปิดคลังเก็บของ', action: 'storage' }],
