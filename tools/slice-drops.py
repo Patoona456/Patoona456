@@ -28,6 +28,16 @@ ROOT = os.path.join(os.path.dirname(__file__), '..')
 CELL = 96
 COLS = 10
 
+def autumn_item(key, icon, band):
+    """One item row of a sheet laid out like the autumn slime's."""
+    return [
+        ('icon', icon, [f'{key}_1'], 0, 215, {'cuts': (0, 215)}),
+        (f'fall_{key}', band, 6, 222, 748, {'cuts': (222, 300, 385, 468, 552, 645, 748)}),
+        ('ground', band, [f'{key}_{i}' for i in range(1, 5)], 755, 1165, {'cuts': (755, 855, 955, 1060, 1165)}),
+        ('pickup', band, [key] * 4, 1172, 1530, {'cuts': (1172, 1263, 1354, 1445, 1530)}),
+    ]
+
+
 # per sheet: where its row labels end, and (group, band, names or a frame count[, first column[, end column]])
 SHEETS = [
     ('assets/ui/source/slime_drops.png', 176, [
@@ -159,6 +169,15 @@ SHEETS = [
         ('ground', (408, 566), ['essence_1', 'essence_2', 'essence_3', 'essence_4'], 765, 1170),
         ('pickup', (408, 566), ['essence'] * 4, 1175, 1536),
     ]),
+    # The autumn slime's: painted over a glowing backdrop, lifted off it by
+    # tools/matte-drops.py. Each item's fall, piles and pick-up (ending in a
+    # sparkle) share one band, cut at set columns - their stray leaves and
+    # grit sit between the frames. Its gold is one we have.
+    ('assets/ui/source/autumn_slime_drops.png', 215, [
+        *autumn_item('ajelly', (20, 150), (85, 245)),
+        *autumn_item('mleaf', (255, 400), (330, 490)),
+        *autumn_item('ecrystal', (500, 655), (580, 745)),
+    ]),
 ]
 
 
@@ -224,13 +243,18 @@ def main():
             # a trailing dict tunes one row: `thr` the opacity a piece starts
             # at, `blobs` to find pieces as separate shapes rather than runs of
             # columns (for pieces lying at a slant that share columns)
+            # (or `cuts`, the columns between frames, where loose bits lie
+            # between them)
             tune = rest.pop() if rest and isinstance(rest[-1], dict) else {}
             count = len(names) if isinstance(names, list) else names
             # icons start at the left edge; other rows past the row labels
             x0 = rest[0] if rest else 0 if group == 'icon' else label_x
             x1 = rest[1] if len(rest) > 1 else im.shape[1]
             thr = tune.get('thr', 24)
-            if tune.get('blobs'):
+            if tune.get('cuts'):
+                xs = tune['cuts']
+                cuts = [im[y0:y1, a:b] for a, b in zip(xs, xs[1:])]
+            elif tune.get('blobs'):
                 cuts = blobs(im, y0, y1, x0, x1, thr)
             else:
                 spans = runs((im[..., 3] > thr).astype(np.uint8) if thr != 24 else mask, y0, y1, x0, x1=x1)

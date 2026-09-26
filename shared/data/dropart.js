@@ -51,7 +51,10 @@ export const DROP_ART = {
       "stinger_1": 338,
       "wcrystal_1": 353,
       "sleaf_1": 368,
-      "essence_1": 383
+      "essence_1": 383,
+      "ajelly_1": 398,
+      "mleaf_1": 413,
+      "ecrystal_1": 428
     },
     "fall_jelly": [
       14,
@@ -194,7 +197,19 @@ export const DROP_ART = {
       "essence_1": 390,
       "essence_2": 391,
       "essence_3": 392,
-      "essence_4": 393
+      "essence_4": 393,
+      "ajelly_1": 405,
+      "ajelly_2": 406,
+      "ajelly_3": 407,
+      "ajelly_4": 408,
+      "mleaf_1": 420,
+      "mleaf_2": 421,
+      "mleaf_3": 422,
+      "mleaf_4": 423,
+      "ecrystal_1": 435,
+      "ecrystal_2": 436,
+      "ecrystal_3": 437,
+      "ecrystal_4": 438
     },
     "pickup": {
       "water": [
@@ -324,6 +339,24 @@ export const DROP_ART = {
         395,
         396,
         397
+      ],
+      "ajelly": [
+        409,
+        410,
+        411,
+        412
+      ],
+      "mleaf": [
+        424,
+        425,
+        426,
+        427
+      ],
+      "ecrystal": [
+        439,
+        440,
+        441,
+        442
       ]
     },
     "fall_cap": [
@@ -500,6 +533,30 @@ export const DROP_ART = {
       387,
       388,
       389
+    ],
+    "fall_ajelly": [
+      399,
+      400,
+      401,
+      402,
+      403,
+      404
+    ],
+    "fall_mleaf": [
+      414,
+      415,
+      416,
+      417,
+      418,
+      419
+    ],
+    "fall_ecrystal": [
+      429,
+      430,
+      431,
+      432,
+      433,
+      434
     ]
   }
 };

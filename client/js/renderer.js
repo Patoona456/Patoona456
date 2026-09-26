@@ -49,7 +49,8 @@ const PICKUP_SWIRL = { jelly: 'water', crystal: 'water', gold: 'gold', cap: 'nat
   leaf: 'leaf', shell: 'shell', honey: 'honey', stinger: 'stinger', wcrystal: 'wcrystal',
   meat: 'meat', hide: 'hide', tusk: 'tusk', sleaf: 'sleaf', essence: 'essence',
   fang: 'fang', fur: 'fur', core: 'core', emblem: 'emblem',
-  bark: 'bark', gcore: 'gcore', lcrystal: 'lcrystal', aemblem: 'aemblem' };
+  bark: 'bark', gcore: 'gcore', lcrystal: 'lcrystal', aemblem: 'aemblem',
+  ajelly: 'ajelly', mleaf: 'mleaf', ecrystal: 'ecrystal' };
 const PICKUP_MS = 480;
 /**
  * Where a painted monster is drawn relative to where it stands. A flyer

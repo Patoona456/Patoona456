@@ -560,16 +560,15 @@ export const MATERIALS = {
   water_crystal_s: M({ id: 'water_crystal_s', name: 'Small Water Crystal', nameTh: 'ผลึกน้ำ (เล็ก)', value: 24, weight: 1,
     rarity: 'uncommon', art: DROP('crystal_1'), loot: 'crystal',
     desc: 'ผลึกเล็ก ๆ ที่ก่อตัวในตัวสไลม์ เย็นเฉียบเมื่อจับ' }),
-  // the autumn leaf slime's (Amberwood); drawn with the slime's and the
-  // caterpillar's drop art until the autumn drop sheet comes
+  // the autumn leaf slime's (Amberwood)
   autumn_jelly: M({ id: 'autumn_jelly', name: 'Autumn Jelly', nameTh: 'เจลลี่ใบไม้ร่วง', value: 14, weight: 1, rarity: 'common',
-    art: DROP('jelly_2'), loot: 'jelly',
+    art: DROP('ajelly_1'), loot: 'ajelly',
     desc: 'เจลลี่สีอำพันจากสไลม์ใบไม้ร่วง หอมกลิ่นใบไม้แห้ง' }),
   red_maple_leaf: M({ id: 'red_maple_leaf', name: 'Red Maple Leaf', nameTh: 'ใบเมเปิลแดง', value: 18, weight: 1, rarity: 'common',
-    art: DROP('leaf_1'), loot: 'leaf',
+    art: DROP('mleaf_1'), loot: 'mleaf',
     desc: 'ใบเมเปิลแดงสดที่ติดอยู่บนตัวสไลม์ ไม่ยอมเหี่ยวเลย' }),
   earth_crystal_s: M({ id: 'earth_crystal_s', name: 'Small Earth Crystal', nameTh: 'ผลึกดิน (เล็ก)', value: 40, weight: 1,
-    rarity: 'uncommon', art: DROP('ncrystal_1'), loot: 'ncrystal',
+    rarity: 'uncommon', art: DROP('ecrystal_1'), loot: 'ecrystal',
     desc: 'ผลึกเล็ก ๆ ที่สะสมพลังดินใต้กองใบไม้ อุ่นเหมือนแดดบ่าย' }),
   // the mushroom's
   mushroom_cap: M({ id: 'mushroom_cap', name: 'Mushroom Cap', nameTh: 'หมวกเห็ด', value: 8, weight: 1, rarity: 'common',
