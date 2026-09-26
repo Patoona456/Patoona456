@@ -6,8 +6,8 @@ FROM node:22-alpine
 ENV NODE_ENV=production \
     PORT=8080 \
     HOST=0.0.0.0 \
-    EMBERFALL_DATA=/data \
-    EMBERFALL_STORE=sqlite
+    AFO_DATA=/data \
+    AFO_STORE=sqlite
 
 WORKDIR /app
 

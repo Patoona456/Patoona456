@@ -5,14 +5,14 @@
 // `world.stats` counted minted and burned from the first day and nothing ever
 // read them back.
 //
-// Off by default. It only answers when EMBERFALL_ADMIN_TOKEN is set and the
+// Off by default. It only answers when AFO_ADMIN_TOKEN is set and the
 // request carries it, because this is a page about the whole server's
 // finances and it has no business being public.
 import { db } from './persistence.js';
 import { MAPS } from '../shared/data/maps.js';
 import { ITEMS } from '../shared/data/items.js';
 
-const TOKEN = process.env.EMBERFALL_ADMIN_TOKEN ?? '';
+const TOKEN = process.env.AFO_ADMIN_TOKEN ?? '';
 export const adminEnabled = () => TOKEN.length > 0;
 
 /** Constant-time-ish compare, so the token cannot be guessed a byte at a time. */
@@ -101,7 +101,7 @@ export function handle(req, res, world) {
 
   if (!adminEnabled()) {
     res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('แดชบอร์ดปิดอยู่ — ตั้ง EMBERFALL_ADMIN_TOKEN เพื่อเปิด');
+    res.end('แดชบอร์ดปิดอยู่ — ตั้ง AFO_ADMIN_TOKEN เพื่อเปิด');
     return true;
   }
   const token = url.searchParams.get('token') ?? (req.headers.authorization ?? '').replace(/^Bearer /, '');

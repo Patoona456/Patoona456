@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-export const PORT = Number(process.env.EMBERFALL_TEST_PORT ?? 8199);
+export const PORT = Number(process.env.AFO_TEST_PORT ?? 8199);
 export const BASE = `http://127.0.0.1:${PORT}`;
 
 /** Playwright, or null when it is not installed. */
@@ -31,14 +31,14 @@ export const skipWithoutPlaywright = {
 
 /** Start the game server on a scratch database, and stop it again afterwards. */
 export async function startServer() {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-test-'));
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-test-'));
   const proc = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
     env: {
-      ...process.env, PORT: String(PORT), EMBERFALL_DATA: data, EMBERFALL_DEV: '1',
+      ...process.env, PORT: String(PORT), AFO_DATA: data, AFO_DEV: '1',
       // the tests all register from 127.0.0.1; the per-address cap is proved
       // on purpose in security.test.js, not tripped over by everything else
-      EMBERFALL_MAX_ACCOUNTS_PER_IP: '0',
+      AFO_MAX_ACCOUNTS_PER_IP: '0',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -70,9 +70,9 @@ export async function startServer() {
   };
 }
 
-/** Launch a browser. Honours EMBERFALL_CHROMIUM for sandboxed CI images. */
+/** Launch a browser. Honours AFO_CHROMIUM for sandboxed CI images. */
 export async function startBrowser(pw) {
-  const executablePath = process.env.EMBERFALL_CHROMIUM || undefined;
+  const executablePath = process.env.AFO_CHROMIUM || undefined;
   return pw.chromium.launch({ executablePath, args: ['--no-sandbox'] });
 }
 
@@ -81,7 +81,7 @@ export async function startBrowser(pw) {
  * the errors it has collected, which every test asserts on.
  */
 export async function join(browser, { viewport = { width: 1280, height: 800 }, touch = false } = {}) {
-  const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: Number(process.env.EMBERFALL_DPR ?? 1) });
+  const ctx = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: Number(process.env.AFO_DPR ?? 1) });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`PAGEERROR: ${e.message}`));

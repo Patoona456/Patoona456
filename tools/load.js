@@ -36,8 +36,8 @@ async function boot(port, data) {
   const proc = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
     env: {
-      ...process.env, PORT: String(port), EMBERFALL_DATA: data, EMBERFALL_DEV: '1',
-      EMBERFALL_MAX_ACCOUNTS_PER_IP: '0',
+      ...process.env, PORT: String(port), AFO_DATA: data, AFO_DEV: '1',
+      AFO_MAX_ACCOUNTS_PER_IP: '0',
     },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
@@ -91,7 +91,7 @@ function client(port, tag) {
 }
 
 export async function run({ clients = 150, seconds = 30, port = 8300 } = {}) {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-load-'));
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-load-'));
   const proc = await boot(port, data);
   const all = [];
   try {

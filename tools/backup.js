@@ -9,7 +9,7 @@ import { copyFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-const DIR = process.env.EMBERFALL_DATA ?? path.resolve('data');
+const DIR = process.env.AFO_DATA ?? path.resolve('data');
 const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
 const outDir = process.argv[2] ?? path.join(DIR, 'backups');
 await mkdir(outDir, { recursive: true });

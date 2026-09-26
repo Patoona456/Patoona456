@@ -15,13 +15,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { ROOT } from './harness.js';
 
-const PORT = Number(process.env.EMBERFALL_TEST_PORT ?? 8199) + 1;
+const PORT = Number(process.env.AFO_TEST_PORT ?? 8199) + 1;
 const BASE = `http://127.0.0.1:${PORT}`;
 
 async function boot(data) {
   const proc = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(PORT), EMBERFALL_DATA: data, EMBERFALL_DEV: '1', EMBERFALL_MAX_ACCOUNTS_PER_IP: '0' },
+    env: { ...process.env, PORT: String(PORT), AFO_DATA: data, AFO_DEV: '1', AFO_MAX_ACCOUNTS_PER_IP: '0' },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
   const deadline = Date.now() + 20000;
@@ -80,7 +80,7 @@ async function play(account, charName, run) {
 }
 
 test('a guild and a party outlive the server process', { timeout: 120000 }, async (t) => {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-persist-'));
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-persist-'));
   let proc = await boot(data);
   t.after(async () => { await stop(proc); await rm(data, { recursive: true, force: true }); });
 

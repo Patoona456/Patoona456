@@ -4,7 +4,7 @@
 // Three buses: master -> (sfx | music). Volumes live in localStorage.
 // The context starts suspended until the first gesture, which browsers require.
 
-const KEY = 'emberfall-audio';
+const KEY = 'afo-audio';
 const DEFAULTS = { master: 0.7, sfx: 0.8, music: 0.45, muted: false };
 
 // Pentatonic-ish scale, so anything we arpeggiate lands in key.

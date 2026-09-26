@@ -381,18 +381,18 @@ export class Conn {
         this.sendInventory();
         this.send(Econ.marketList({}));
       });
-      // dev-only teleport, for screenshots and QA. Off unless EMBERFALL_DEV=1.
+      // dev-only teleport, for screenshots and QA. Off unless AFO_DEV=1.
       case 'devWarp': {
-        if (process.env.EMBERFALL_DEV !== '1') return this.error('ปิดใช้งานอยู่');
+        if (process.env.AFO_DEV !== '1') return this.error('ปิดใช้งานอยู่');
         const map = MAPS[m.map];
         if (!map) return this.error('ไม่พบแผนที่');
         const [tx, ty] = m.at ?? map.spawnPoint;
         this.world.warpPlayer(p, m.map, tx * TILE, ty * TILE);
         return;
       }
-      // dev-only power-up, so high level content can be tested. EMBERFALL_DEV=1.
+      // dev-only power-up, so high level content can be tested. AFO_DEV=1.
       case 'devBoost': {
-        if (process.env.EMBERFALL_DEV !== '1') return this.error('ปิดใช้งานอยู่');
+        if (process.env.AFO_DEV !== '1') return this.error('ปิดใช้งานอยู่');
         const r = p.record;
         r.level = Math.min(99, m.level ?? 60);
         r.jobLevel = 45;
@@ -425,7 +425,7 @@ export class Conn {
       }
       // dev-only: set the equipped weapon's refine, to look at the auras
       case 'devRefine': {
-        if (process.env.EMBERFALL_DEV !== '1') return this.error('ปิดใช้งานอยู่');
+        if (process.env.AFO_DEV !== '1') return this.error('ปิดใช้งานอยู่');
         const eq = p.equippedItem('weapon');
         if (!eq) return this.error('ไม่ได้ถืออาวุธ');
         eq.stack.refine = Math.max(0, Math.min(15, m.level | 0));

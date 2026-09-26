@@ -1,7 +1,7 @@
 // Browser stand-in for server/persistence.js.
 // The whole world lives in memory and is mirrored into localStorage so a
 // single-player demo remembers your character between visits.
-const KEY = 'emberfall-demo-world-v1';
+const KEY = 'afo-demo-world-v1';
 
 const empty = () => ({
   version: 1, accounts: {}, characters: {}, market: [], storage: {},

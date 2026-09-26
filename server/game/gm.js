@@ -1,8 +1,8 @@
 // The game master's tools: spawn any item, set a level, top up aurum, warp.
 //
 // Only an admin account may use them. An account is an admin when its name is
-// in EMBERFALL_ADMINS (comma-separated), or when someone logged into it has
-// typed `/admin <EMBERFALL_ADMIN_TOKEN>` in chat; `/admin off` gives it back.
+// in AFO_ADMINS (comma-separated), or when someone logged into it has
+// typed `/admin <AFO_ADMIN_TOKEN>` in chat; `/admin off` gives it back.
 // With neither variable set nobody is an admin, which is the safe default.
 // Everything here goes through the same inventory and warp code as play does,
 // and aurum an admin creates is counted as minted, so the economy dashboard
@@ -19,13 +19,13 @@ const env = (k) => (globalThis.process?.env?.[k] ?? '');
 export function isAdmin(account) {
   if (!account) return false;
   if (account.admin === true) return true;
-  const list = env('EMBERFALL_ADMINS').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const list = env('AFO_ADMINS').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
   return list.includes(account.key ?? String(account.name ?? '').toLowerCase());
 }
 
 /** `/admin <token>`: true when the token is right. Constant-time-ish compare. */
 export function tokenOk(given) {
-  const token = env('EMBERFALL_ADMIN_TOKEN');
+  const token = env('AFO_ADMIN_TOKEN');
   if (!token || typeof given !== 'string' || given.length !== token.length) return false;
   let diff = 0;
   for (let i = 0; i < token.length; i++) diff |= token.charCodeAt(i) ^ given.charCodeAt(i);

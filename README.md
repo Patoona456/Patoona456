@@ -87,11 +87,11 @@ docker compose up -d --build     # เปิด http://localhost:8080
 
 | ตัวแปร | ค่าเริ่มต้น | ทำอะไร |
 |---|---|---|
-| `EMBERFALL_ADMIN_TOKEN` | *(ปิด)* | เปิดแดชบอร์ดเศรษฐกิจที่ `/admin?token=...` |
-| `EMBERFALL_MAX_ACCOUNTS_PER_IP` | `5` | จำกัดการสมัครต่อ IP ต่อวัน · `0` = ไม่จำกัด (เกม LAN) |
-| `EMBERFALL_STORE` | `sqlite` | `sqlite` หรือ `json` |
-| `EMBERFALL_DATA` | `./data` | ที่เก็บฐานข้อมูล |
-| `EMBERFALL_DEV` | *(ปิด)* | เปิดคำสั่ง `devWarp` / `devBoost` / `devRefine` |
+| `AFO_ADMIN_TOKEN` | *(ปิด)* | เปิดแดชบอร์ดเศรษฐกิจที่ `/admin?token=...` |
+| `AFO_MAX_ACCOUNTS_PER_IP` | `5` | จำกัดการสมัครต่อ IP ต่อวัน · `0` = ไม่จำกัด (เกม LAN) |
+| `AFO_STORE` | `sqlite` | `sqlite` หรือ `json` |
+| `AFO_DATA` | `./data` | ที่เก็บฐานข้อมูล |
+| `AFO_DEV` | *(ปิด)* | เปิดคำสั่ง `devWarp` / `devBoost` / `devRefine` |
 
 process เดียวจบ: เสิร์ฟไฟล์ไคลเอนต์และรับ WebSocket บนพอร์ตเดียวกัน ไม่มีขั้นตอน
 build ข้อมูลโลกอยู่ใน SQLite ไฟล์เดียวที่ `/data` (ผูก volume ไว้แล้ว)
@@ -156,7 +156,7 @@ server/
   index.js       static server + websocket
   net.js         โปรโตคอลต่อหนึ่งการเชื่อมต่อ
   accounts.js    สมัคร/ล็อกอิน/สร้างตัวละคร (scrypt)
-  persistence.js เก็บสถานะลง SQLite (หรือ JSON) สลับได้ด้วย EMBERFALL_STORE
+  persistence.js เก็บสถานะลง SQLite (หรือ JSON) สลับได้ด้วย AFO_STORE
   store-sqlite.js แบ็กเอนด์ SQLite ที่ใช้ node:sqlite ในตัว Node
   admin.js       แดชบอร์ดเศรษฐกิจที่ /admin (ปิดไว้จนกว่าจะตั้ง token)
   game/          world, zone, player, monster, combat, skills, economy,
@@ -182,12 +182,12 @@ docs/            เอกสารออกแบบเกม เศรษฐ�
 สำหรับทดสอบเนื้อหาเลเวลสูง เปิดโหมดพัฒนา:
 
 ```
-EMBERFALL_DEV=1 npm start
+AFO_DEV=1 npm start
 ```
 
 แล้วในคอนโซลเบราว์เซอร์: `__game.net.send({t:'devWarp', map:'frostvault'})`
 หรือ `__game.net.send({t:'devBoost', level:70, job:'vanguard'})`
-(ปิดสนิทเมื่อไม่ได้ตั้ง `EMBERFALL_DEV=1`)
+(ปิดสนิทเมื่อไม่ได้ตั้ง `AFO_DEV=1`)
 
 ดูงานที่เหลือและลำดับความสำคัญได้ที่ `docs/ROADMAP.md`
 

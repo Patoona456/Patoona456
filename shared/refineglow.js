@@ -57,7 +57,7 @@ export const GLOW_TIERS = [
   { at: 14, band: 'everember', name: 'เพลิงมังกร',   nameEn: 'Dragonfire',  color: [255, 108, 52],  aura: 1.08, pulse: 3.0,  sparks: 4.4,  light: 160, trail: 1.05, layers: OVERLAYS },
   // Named after the world, and reachable by roughly one weapon in a
   // thousand attempts from +0. If anybody ever gets one, everybody sees it.
-  { at: 15, band: 'everember', name: 'เอมเบอร์ฟอลล์', nameEn: 'Emberfall',   color: [255, 236, 214], aura: 1.20, pulse: 3.3,  sparks: 5.2,  light: 180, trail: 1.20, layers: OVERLAYS },
+  { at: 15, band: 'everember', name: 'อาร์ทาเรีย', nameEn: 'Artaria',      color: [255, 236, 214], aura: 1.20, pulse: 3.3,  sparks: 5.2,  light: 180, trail: 1.20, layers: OVERLAYS },
 ];
 
 /**

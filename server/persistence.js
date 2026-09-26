@@ -7,15 +7,15 @@
 //                      written in a transaction, only what changed
 //   json             - one file, atomic rename, whole world each save
 //
-// Pick with EMBERFALL_STORE=sqlite|json. A world.json left over from the
+// Pick with AFO_STORE=sqlite|json. A world.json left over from the
 // JSON backend is imported once, so upgrading does not lose anyone.
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-const DIR = process.env.EMBERFALL_DATA ?? path.resolve('data');
+const DIR = process.env.AFO_DATA ?? path.resolve('data');
 const FILE = path.join(DIR, 'world.json');
-const WANT = (process.env.EMBERFALL_STORE ?? 'sqlite').toLowerCase();
+const WANT = (process.env.AFO_STORE ?? 'sqlite').toLowerCase();
 
 const empty = () => ({
   version: 1,

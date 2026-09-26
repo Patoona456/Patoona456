@@ -12,8 +12,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { run, TARGET } from '../../tools/load.js';
 
-const CLIENTS = Number(process.env.EMBERFALL_LOAD_CLIENTS ?? 40);
-const SECONDS = Number(process.env.EMBERFALL_LOAD_SECONDS ?? 8);
+const CLIENTS = Number(process.env.AFO_LOAD_CLIENTS ?? 40);
+const SECONDS = Number(process.env.AFO_LOAD_SECONDS ?? 8);
 /** Static appearance is sent once, so the steady state is small. */
 const KB_PER_CLIENT_PER_SECOND = 140;
 

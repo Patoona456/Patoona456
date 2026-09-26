@@ -1,17 +1,17 @@
 # Bring the whole game up with: docker compose up -d
 services:
-  emberfall:
+  afo:
     build: .
     image: artaria-frontier-online
     restart: unless-stopped
     ports:
-      - "${EMBERFALL_PORT:-8080}:8080"
+      - "${AFO_PORT:-8080}:8080"
     volumes:
-      - emberfall-data:/data      # accounts, characters, market - keep this
+      - afo-data:/data      # accounts, characters, market - keep this
     environment:
-      EMBERFALL_STORE: sqlite
+      AFO_STORE: sqlite
       # set to 1 only while testing: it enables the dev warp/boost commands
-      EMBERFALL_DEV: "0"
+      AFO_DEV: "0"
 
 volumes:
-  emberfall-data:
+  afo-data:

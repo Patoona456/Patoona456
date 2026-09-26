@@ -23,7 +23,7 @@ const emptyWorld = () => ({
 });
 
 async function scratch(t) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'emberfall-store-'));
+  const dir = await mkdtemp(path.join(tmpdir(), 'afo-store-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   return dir;
 }

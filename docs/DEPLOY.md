@@ -32,7 +32,7 @@ docker compose up -d --build
 # เปิด http://localhost:8080
 ```
 
-`docker-compose.yml` ผูก volume ชื่อ `emberfall-data` ไว้ที่ `/data`
+`docker-compose.yml` ผูก volume ชื่อ `afo-data` ไว้ที่ `/data`
 ซึ่งเป็นที่อยู่ของบัญชี ตัวละคร และตลาด — **อย่าลบ volume นี้**
 
 อัปเดตเวอร์ชันใหม่:
@@ -45,7 +45,7 @@ git pull && docker compose up -d --build     # ข้อมูลใน volume �
 
 ```bash
 npm ci --omit=dev
-EMBERFALL_DATA=/var/lib/emberfall PORT=8080 npm start
+AFO_DATA=/var/lib/afo PORT=8080 npm start
 ```
 
 ต้องใช้ **Node 22 ขึ้นไป** เพราะใช้ `node:sqlite` ที่ติดมากับ Node เอง
@@ -59,10 +59,10 @@ Description=Artaria Frontier Online
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/node /srv/emberfall/server/index.js
-Environment=PORT=8080 EMBERFALL_DATA=/var/lib/emberfall EMBERFALL_STORE=sqlite
-WorkingDirectory=/srv/emberfall
-User=emberfall
+ExecStart=/usr/bin/node /srv/afo/server/index.js
+Environment=PORT=8080 AFO_DATA=/var/lib/afo AFO_STORE=sqlite
+WorkingDirectory=/srv/afo
+User=afo
 Restart=always
 KillSignal=SIGINT
 
@@ -78,9 +78,9 @@ WantedBy=multi-user.target
 |---|---|---|
 | `PORT` | `8080` | พอร์ตของทั้ง HTTP และ WebSocket |
 | `HOST` | `0.0.0.0` | อินเทอร์เฟซที่ผูก |
-| `EMBERFALL_DATA` | `./data` | โฟลเดอร์เก็บโลก |
-| `EMBERFALL_STORE` | `sqlite` | `sqlite` หรือ `json` |
-| `EMBERFALL_DEV` | ไม่ตั้ง | ตั้งเป็น `1` เพื่อเปิดคำสั่งทดสอบ (วาร์ปข้ามโซน/ปลุกพลัง) — **ห้ามเปิดบนเซิร์ฟเวอร์จริง** |
+| `AFO_DATA` | `./data` | โฟลเดอร์เก็บโลก |
+| `AFO_STORE` | `sqlite` | `sqlite` หรือ `json` |
+| `AFO_DEV` | ไม่ตั้ง | ตั้งเป็น `1` เพื่อเปิดคำสั่งทดสอบ (วาร์ปข้ามโซน/ปลุกพลัง) — **ห้ามเปิดบนเซิร์ฟเวอร์จริง** |
 
 ## 4. Reverse proxy + HTTPS
 
@@ -90,7 +90,7 @@ proxy ส่ง `Upgrade` ผ่านไปได้
 Caddy (ได้ใบรับรองให้อัตโนมัติ):
 
 ```
-emberfall.example.com {
+afo.example.com {
     reverse_proxy 127.0.0.1:8080
 }
 ```
@@ -111,7 +111,7 @@ location / {
 ## 5. สำรองข้อมูล
 
 ```bash
-EMBERFALL_DATA=/var/lib/emberfall node tools/backup.js /backup/emberfall
+AFO_DATA=/var/lib/afo node tools/backup.js /backup/afo
 ```
 
 ใช้กลไก online backup ของ SQLite เอง จึงรันตอนเซิร์ฟเวอร์เปิดอยู่ได้
@@ -121,7 +121,7 @@ EMBERFALL_DATA=/var/lib/emberfall node tools/backup.js /backup/emberfall
 ตั้ง cron รายวัน:
 
 ```cron
-0 4 * * * cd /srv/emberfall && EMBERFALL_DATA=/var/lib/emberfall node tools/backup.js /backup/emberfall
+0 4 * * * cd /srv/afo && AFO_DATA=/var/lib/afo node tools/backup.js /backup/afo
 ```
 
 ## 6. ย้ายจากไฟล์ JSON เดิม

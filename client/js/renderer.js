@@ -452,7 +452,7 @@ export const ZOOM_STEPS = [
   { key: 'mid', label: 'กลาง', note: 'ระยะมาตรฐาน', mul: 0.80 },
   { key: 'near', label: 'ใกล้', note: 'เห็นตัวละครชัดที่สุด', mul: 1.00 },
 ];
-const ZOOM_KEY = 'emberfall-zoom';
+const ZOOM_KEY = 'afo-zoom';
 
 /** Blend two [r,g,b] triples; `t` is how far toward `b` to go. */
 function mixRgb(a, b, t) {

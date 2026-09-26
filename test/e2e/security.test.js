@@ -19,14 +19,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { ROOT } from './harness.js';
 
-const PORT = Number(process.env.EMBERFALL_TEST_PORT ?? 8199) + 2;
+const PORT = Number(process.env.AFO_TEST_PORT ?? 8199) + 2;
 const BASE = `http://127.0.0.1:${PORT}`;
 
 async function boot(data, env = {}) {
   const proc = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
-    // deliberately NOT EMBERFALL_DEV: the dev commands must be refused here
-    env: { ...process.env, PORT: String(PORT), EMBERFALL_DATA: data, EMBERFALL_DEV: '', ...env },
+    // deliberately NOT AFO_DEV: the dev commands must be refused here
+    env: { ...process.env, PORT: String(PORT), AFO_DATA: data, AFO_DEV: '', ...env },
     stdio: ['ignore', 'ignore', 'pipe'],
   });
   const deadline = Date.now() + 20000;
@@ -72,7 +72,7 @@ async function enter(c, tag) {
 }
 
 test('the server refuses a client that lies to it', { timeout: 120000 }, async (t) => {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-sec-'));
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-sec-'));
   const proc = await boot(data);
   t.after(async () => { await stop(proc); await rm(data, { recursive: true, force: true }); });
 
@@ -156,8 +156,8 @@ test('the server refuses a client that lies to it', { timeout: 120000 }, async (
 });
 
 test('one address cannot open unlimited accounts', { timeout: 120000 }, async (t) => {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-ip-'));
-  const proc = await boot(data, { EMBERFALL_MAX_ACCOUNTS_PER_IP: '3' });
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-ip-'));
+  const proc = await boot(data, { AFO_MAX_ACCOUNTS_PER_IP: '3' });
   t.after(async () => { await stop(proc); await rm(data, { recursive: true, force: true }); });
 
   const results = [];
@@ -173,14 +173,14 @@ test('one address cannot open unlimited accounts', { timeout: 120000 }, async (t
 });
 
 test('the admin dashboard is shut unless a token is configured', { timeout: 120000 }, async (t) => {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-adm-'));
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-adm-'));
   let proc = await boot(data);
   t.after(async () => { await stop(proc); await rm(data, { recursive: true, force: true }); });
 
   assert.equal((await fetch(`${BASE}/admin`)).status, 404, 'the dashboard answered with no token configured');
 
   await stop(proc);
-  proc = await boot(data, { EMBERFALL_ADMIN_TOKEN: 's3cret' });
+  proc = await boot(data, { AFO_ADMIN_TOKEN: 's3cret' });
   assert.equal((await fetch(`${BASE}/admin`)).status, 401, 'it served the page with no token');
   assert.equal((await fetch(`${BASE}/admin?token=wrong`)).status, 401, 'it accepted the wrong token');
   assert.equal((await fetch(`${BASE}/admin?token=s3cret`)).status, 200, 'it refused the right token');

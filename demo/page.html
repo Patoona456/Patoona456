@@ -57,7 +57,7 @@
   // The server half of this page was written for Node; these two globals are
   // all it needs from that environment. There are no dev shortcuts here: an
   // account becomes a game master by typing "/admin <token>" in chat.
-  globalThis.process = globalThis.process ?? { env: { EMBERFALL_ADMIN_TOKEN: 'emberfall-gm' } };
+  globalThis.process = globalThis.process ?? { env: { AFO_ADMIN_TOKEN: 'afo-gm' } };
   globalThis.Buffer = globalThis.Buffer ?? {
     from(value) {
       if (typeof value !== 'string') return Uint8Array.from(value);

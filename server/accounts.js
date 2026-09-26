@@ -15,10 +15,10 @@ function hashPassword(password, salt = randomBytes(16).toString('hex')) {
  *
  * The point is not to stop a determined person - an address is cheap - but to
  * stop the *easy* version: a loop that opens a hundred characters to farm
- * starting Aurum, or to sit on names. Set EMBERFALL_MAX_ACCOUNTS_PER_IP=0 to
+ * starting Aurum, or to sit on names. Set AFO_MAX_ACCOUNTS_PER_IP=0 to
  * turn it off for a LAN game, where every player shares one address.
  */
-const MAX_PER_IP = Number(process.env.EMBERFALL_MAX_ACCOUNTS_PER_IP ?? 5);
+const MAX_PER_IP = Number(process.env.AFO_MAX_ACCOUNTS_PER_IP ?? 5);
 const IP_WINDOW_MS = 24 * 3600000;
 
 export function register(name, password, ip = null) {

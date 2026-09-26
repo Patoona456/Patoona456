@@ -12,7 +12,7 @@ const until = (test, ms = 8000) => new Promise((res, rej) => {
   tick();
 });
 
-const ACC_KEY = 'emberfall-demo-account';
+const ACC_KEY = 'afo-demo-account';
 
 async function quickStart(button) {
   const g = window.__game;

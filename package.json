@@ -7,11 +7,11 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "EMBERFALL_DEV=1 node --watch server/index.js",
+    "dev": "AFO_DEV=1 node --watch server/index.js",
     "import-lpc": "node tools/import-lpc.js",
     "build:demo": "node tools/build-demo.js",
     "docker:build": "docker build -t artaria-frontier-online .",
-    "docker:run": "docker run --rm -p 8080:8080 -v emberfall-data:/data emberfall-online",
+    "docker:run": "docker run --rm -p 8080:8080 -v afo-data:/data artaria-frontier-online",
     "backup": "node tools/backup.js",
     "test": "node --test test/*.test.js",
     "test:e2e": "node --test --test-concurrency=1 test/e2e/*.test.js",

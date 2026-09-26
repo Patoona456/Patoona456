@@ -27,17 +27,17 @@ function character() {
 const world = { stats: { minted: 0, burned: 0 }, warpPlayer(p, map) { p.warped = map; } };
 
 test('nobody is an admin unless the server says so', () => {
-  withEnv({ EMBERFALL_ADMINS: null, EMBERFALL_ADMIN_TOKEN: null }, () => {
+  withEnv({ AFO_ADMINS: null, AFO_ADMIN_TOKEN: null }, () => {
     assert.equal(isAdmin({ key: 'someone' }), false);
     assert.equal(isAdmin(null), false);
     assert.equal(tokenOk(''), false, 'an unset token let an empty guess in');
     assert.equal(tokenOk(undefined), false);
   });
-  withEnv({ EMBERFALL_ADMINS: 'Boss, other' }, () => {
+  withEnv({ AFO_ADMINS: 'Boss, other' }, () => {
     assert.equal(isAdmin({ key: 'boss' }), true);
     assert.equal(isAdmin({ key: 'someone' }), false);
   });
-  withEnv({ EMBERFALL_ADMIN_TOKEN: 'sesame' }, () => {
+  withEnv({ AFO_ADMIN_TOKEN: 'sesame' }, () => {
     assert.equal(tokenOk('sesame'), true);
     assert.equal(tokenOk('sesamE'), false);
     assert.equal(tokenOk('sesame!'), false);

@@ -81,12 +81,12 @@ function bot(port, tag, stats) {
 }
 
 export async function run({ bots = 10, minutes = 3, port = 8320 } = {}) {
-  const data = await mkdtemp(path.join(tmpdir(), 'emberfall-soak-'));
+  const data = await mkdtemp(path.join(tmpdir(), 'afo-soak-'));
   const proc = spawn(process.execPath, ['--expose-gc', path.join(ROOT, 'server', 'index.js')], {
     cwd: ROOT,
     env: {
-      ...process.env, PORT: String(port), EMBERFALL_DATA: data, EMBERFALL_DEV: '1',
-      EMBERFALL_MAX_ACCOUNTS_PER_IP: '0', EMBERFALL_ADMIN_TOKEN: 'soak',
+      ...process.env, PORT: String(port), AFO_DATA: data, AFO_DEV: '1',
+      AFO_MAX_ACCOUNTS_PER_IP: '0', AFO_ADMIN_TOKEN: 'soak',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
