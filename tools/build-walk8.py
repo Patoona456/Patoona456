@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""The chibi's eight-way walk, Ragnarok style, from the walk sheet.
+"""The chibi's eight-way walk, Ragnarok style.
 
     python3 tools/build-walk8.py
 
-assets/chibi/source/walk8-sheet.png: the bald base walking, twelve frames a
-facing - down, up, left and right in full rows, the four diagonals smaller,
-two to a row - on a transparent ground, a number tag under each frame.
-
-Each frame is cut out (the tags cleared first), a duplicate the sheet drew
-twice dropped, and set on the game's 192x224 grid: every facing brought to
-the old body's height, its head over the cell's middle, its bob kept (each
-frame's feet stay where they were against the row's baseline). A thirteenth
-column is the standing frame - the one with the feet closest together.
+assets/chibi/source/walk8-sheet.png is the bald base in eight facings, but
+its legs barely move from frame to frame: played, the figure glides. So only
+its standing pose is used per facing (the body, the head, the arms), and the
+legs are the old four-way walk's (assets/chibi/body/base_male.png, whose legs
+really step): each of its eight frames' legs cut below the shorts, brought to
+this body's size and skin tone, hung from this body's hem, and the body
+raised and lowered on them as the old body was - so a foot is always on the
+ground and never below it. The diagonals take the side walk's legs. A ninth
+column is the standing frame.
 
 The spiky hair of the old eight-way board is set on every head, scaled to
 the skull, in each colour; and the weapon fist is carried along with the
 head from the standing pose of the old sheet.
 
 Output:
-  assets/chibi/body/base_male_walk8.png   13 cols x 8 rows (down, dl, left, ul, up, ur, right, dr)
+  assets/chibi/body/base_male_walk8.png   9 cols x 8 rows (down, dl, left, ul, up, ur, right, dr)
   assets/chibi/hair/spiky_<colour>_walk8.png
   shared/data/chibi-walk8.js              the fist per facing and frame
 """
@@ -36,7 +36,7 @@ spec.loader.exec_module(sb)
 
 SRC = os.path.join(ROOT, 'assets/chibi/source/walk8-sheet.png')
 W, H, BASE = 192, 224, 217
-FRAMES = 12
+FRAMES = 8
 HEIGHT = 146                     # crown to heel, as the old body
 # which sheet row (by the height of its middle) and half holds each facing, in game order
 FACINGS = ['down', 'dl', 'left', 'ul', 'up', 'ur', 'right', 'dr']
@@ -96,45 +96,131 @@ def crop(a, f):
     return c
 
 
-def twelve(a, fs):
-    """Drop the frames the sheet drew twice, most alike to the one before first."""
-    fs = list(fs)
-    while len(fs) > FRAMES:
-        crops = [cv2.resize(crop(a, f), (48, 96), interpolation=cv2.INTER_AREA).astype(np.float32) for f in fs]
-        d = [np.abs(crops[i] - crops[i - 1]).mean() for i in range(1, len(fs))]
-        fs.pop(1 + int(np.argmin(d)))
-    return fs
+OLD = os.path.join(ROOT, 'assets/chibi/body/base_male.png')
+# the old four-way walk whose legs each facing borrows (its rows: down, left, up, right)
+LEG_ROW = {'down': 0, 'dl': 1, 'left': 1, 'ul': 1, 'up': 2, 'ur': 3, 'right': 3, 'dr': 3}
+
+
+def standing(a, f, s):
+    """The standing figure set in a cell: head over the middle, feet on BASE."""
+    piece = crop(a, f)
+    pw, ph = max(1, round(piece.shape[1] * s)), max(1, round(piece.shape[0] * s))
+    piece = np.array(Image.fromarray(piece).resize((pw, ph), Image.LANCZOS))
+    piece[..., 3] = np.where(piece[..., 3] < 24, 0, piece[..., 3])
+    hd = sb.head_of(piece[..., 3])
+    ys = np.nonzero((piece[..., 3] > 60).any(1))[0]
+    cell = np.zeros((H, W, 4), np.uint8)
+    sb.place(cell, piece, round(W / 2 - hd['cx']), BASE - 1 - int(ys[-1]))
+    return cell
+
+
+def split(fig, grey_v=190):
+    """The hem of the shorts, and what hangs below it and reaches the ground
+    (the legs, not a fist)."""
+    al = fig[..., 3]
+    hsv = cv2.cvtColor(fig[..., :3], cv2.COLOR_RGB2HSV).astype(int)
+    ys = np.nonzero((al > 60).any(1))[0]
+    top, bot = ys[0], ys[-1]
+    grey = (hsv[..., 1] < 50) & (hsv[..., 2] > 40) & (hsv[..., 2] < grey_v) & (al > 150)
+    grey[:top + int((bot - top) * 0.5)] = False
+    hem = int(np.nonzero(grey.sum(1) > 4)[0].max())
+    below = (al > 20).astype(np.uint8)
+    below[:hem + 1] = 0
+    n, lab, st, _ = cv2.connectedComponentsWithStats(below)
+    leg = np.zeros(al.shape, bool)
+    for i in range(1, n):
+        if st[i][1] + st[i][3] > hem + 10 and st[i][4] > 60:
+            leg |= lab == i
+        elif st[i][4] <= 60:
+            leg |= lab == i               # scraps of the leg's edge go with it
+    return hem, leg
+
+
+def skin(img, m):
+    """The lit skin's colour: bright, warm, solid pixels."""
+    hsv = cv2.cvtColor(img[..., :3], cv2.COLOR_RGB2HSV)
+    ok = m & (img[..., 3] > 220) & (hsv[..., 2] > 150) & (hsv[..., 1] > 40)
+    return np.median(img[..., :3][ok].astype(np.float32), 0)
+
+
+def legs(old, row, col, mask_fn=split):
+    """One frame of the old walk: its legs alone (tucked a few rows up under
+    the shorts) and its hem."""
+    f = old[row * H:(row + 1) * H, col * W:(col + 1) * W]
+    hem, leg = mask_fn(f, 235)
+    piece = f.copy()
+    piece[..., 3] = np.where(leg, piece[..., 3], 0)
+    # the first rows under the hem carry the old shorts' pale fringe: they
+    # are painted over with the leg a little lower, and carried up under the hem
+    src = piece[hem + 4]
+    for y in range(hem - 3, hem + 4):
+        piece[y] = np.where((src[:, 3:4] > 0) & ((piece[y, :, 3:4] > 0) | (y <= hem)), src, piece[y])
+    return piece, hem, leg
 
 
 def main():
     a = np.array(Image.open(SRC).convert('RGBA'))
+    old = np.array(Image.open(OLD).convert('RGBA'))
     groups = frames_of(a)
     body = np.zeros((H * 8, W * (FRAMES + 1), 4), np.uint8)
     heads = {}
     for r, face in enumerate(FACINGS):
-        fs = twelve(a, groups[face])
-        assert len(fs) == FRAMES, (face, len(fs))
-        base = float(np.median([f[1] + f[3] for f in fs]))
-        s = HEIGHT / float(np.median([f[3] for f in fs]))
-        spread = []
+        fs = groups[face]
+        fig = standing(a, fs[0], HEIGHT / float(np.median([f[3] for f in fs])))
+        hd = sb.head_of(fig[..., 3])
+        hem, leg = split(fig)
+        upper = fig.copy()
+        upper[..., 3] = np.where(leg, 0, upper[..., 3])
+        lr = LEG_ROW[face]
+        # The walk is the old one's, step for step: its legs, brought to this
+        # body's size and skin, hang from this body's hem; and the body rides
+        # up and down on them as the old body did.
+        ref_piece, ref, ref_leg = legs(old, lr, 0)
+        oys, oxs = np.nonzero(ref_leg)
+        nys, nxs = np.nonzero(leg)
+        k = (BASE - 1 - hem) / float(oys.max() - ref)
+        idle_piece, _, idle_leg = legs(old, lr, FRAMES)
+        ix = np.nonzero(idle_leg.any(0))[0]
+        kx = k * 1.1                     # a touch stockier, as this body is
+        ocx, ncx = (ix[0] + ix[-1]) / 2, (nxs.min() + nxs.max()) / 2
+        gain = skin(fig, leg) / skin(old[lr * H:(lr + 1) * H, :W], ref_leg)
         heads[face] = []
-        for c, f in enumerate(fs):
-            piece = crop(a, f)
-            pw, ph = max(1, round(piece.shape[1] * s)), max(1, round(piece.shape[0] * s))
-            piece = np.array(Image.fromarray(piece).resize((pw, ph), Image.LANCZOS))
-            hd = sb.head_of(piece[..., 3])
-            x0 = round(W / 2 - hd['cx'])
-            y0 = round(BASE - (base - f[1]) * s)
-            cell = body[r * H:(r + 1) * H, c * W:(c + 1) * W]
-            sb.place(cell, piece, x0, y0)
-            heads[face].append({'cx': W / 2, 'top': y0 + hd['top'], 'w': hd['w']})
-            feet = piece[int(ph * 0.85):, :, 3] > 60
-            xs = np.nonzero(feet.any(0))[0]
-            spread.append(int(np.ptp(xs)) if len(xs) else 999)
-        # standing: the frame with the feet closest together
-        k = int(np.argmin(spread))
-        body[r * H:(r + 1) * H, FRAMES * W:(FRAMES + 1) * W] = body[r * H:(r + 1) * H, k * W:(k + 1) * W]
-        heads[face].append(heads[face][k])
+        for c in range(FRAMES + 1):
+            piece, ohem, _ = legs(old, lr, c)
+            # the colour of this body's skin
+            rgb = piece[..., :3].astype(np.float32) * gain
+            piece[..., :3] = rgb.clip(0, 255).astype(np.uint8)
+            M = np.float32([[kx, 0, ncx - ocx * kx], [0, k, hem - ref * k]])
+            pm = piece.astype(np.float32)
+            pm[..., :3] *= pm[..., 3:4] / 255
+            out = cv2.warpAffine(pm, M, (W, H), flags=cv2.INTER_AREA, borderValue=0)
+            al = out[..., 3:4]
+            out[..., :3] = np.where(al > 0, out[..., :3] * 255 / np.maximum(al, 1e-3), 0)
+            out = out.clip(0, 255).astype(np.uint8)
+            # the leg was cut square at the old hem; where its top shows past
+            # the shorts (a leg swung back) the corners are rounded off
+            bob = round((ohem - ref) * k)
+            top = hem + bob + 9
+            rounded = cv2.morphologyEx(out[..., 3], cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+            out[:top, :, 3] = np.minimum(out[:top, :, 3], rounded[:top])
+            # what is tucked up under the hem stays under the shorts
+            cover = np.roll(upper[..., 3], bob, 0) > 0
+            out[:hem + bob + 1, :, 3] = np.where(cover[:hem + bob + 1], out[:hem + bob + 1, :, 3], 0)
+            # and the shorts shade the top of the leg
+            for d in range(6):
+                y = hem + bob + 1 + d
+                out[y, :, :3] = (out[y, :, :3] * (0.72 + 0.28 * d / 6)).astype(np.uint8)
+            bob = round((ohem - ref) * k)
+            cell = np.zeros((H, W, 4), np.uint8)
+            sb.place(cell, out, 0, 0)
+            sb.place(cell, upper, 0, bob)
+            # feet on the ground, never under it
+            ys = np.nonzero((cell[..., 3] > 60).any(1))[0]
+            if ys[-1] > BASE - 1:
+                cell = np.roll(cell, BASE - 1 - ys[-1], 0)
+                bob += BASE - 1 - ys[-1]
+            body[r * H:(r + 1) * H, c * W:(c + 1) * W] = cell
+            heads[face].append({'cx': W / 2, 'top': hd['top'] + bob, 'w': hd['w']})
     Image.fromarray(body).save(os.path.join(ROOT, 'assets/chibi/body/base_male_walk8.png'), optimize=True)
 
     # hair
@@ -167,7 +253,7 @@ def main():
     with open(os.path.join(ROOT, 'shared/data/chibi-walk8.js'), 'w') as fp:
         fp.write('// Generated by tools/build-walk8.py - do not edit by hand.\n')
         fp.write('// The weapon fist on the eight-way walk: per facing (down, dl, left, ul, up,\n')
-        fp.write('// ur, right, dr), 12 steps and the standing frame, in the 192x224 cell.\n')
+        fp.write('// ur, right, dr), 8 steps and the standing frame, in the 192x224 cell.\n')
         fp.write('export const CHIBI_FISTS8 = [\n')
         for face, row in zip(FACINGS, rows_out):
             fp.write('  [' + ', '.join(f'[{x}, {y}]' for x, y in row) + f'],   // {face}\n')

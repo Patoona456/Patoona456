@@ -1203,19 +1203,21 @@ export class Renderer {
       }
       if (ox || oy) { ctx.save(); ctx.translate(ox, oy); }
 
-      // shadow: sized with the sprite, softened at the rim
+      // shadow: sized with the sprite, softened at the rim, and centred
+      // under the soles - lower, and the feet read as off the ground
       const sc = e.sprite?.scale ?? 1;
       const rx = (e.k === 'n' ? 9 : 10) * sc;
+      const sy = e.y - 0.5;
       ctx.save();
       ctx.globalAlpha = e.inv ? 0.10 : 0.30;
-      const sg = ctx.createRadialGradient(e.x, e.y + 2, 0, e.x, e.y + 2, rx);
+      const sg = ctx.createRadialGradient(e.x, sy, 0, e.x, sy, rx);
       sg.addColorStop(0, '#000');
       sg.addColorStop(0.65, 'rgba(0,0,0,0.75)');
       sg.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = sg;
       ctx.save();
-      ctx.translate(e.x, e.y + 2); ctx.scale(1, 0.4); ctx.translate(-e.x, -(e.y + 2));
-      ctx.beginPath(); ctx.arc(e.x, e.y + 2, rx, 0, Math.PI * 2); ctx.fill();
+      ctx.translate(e.x, sy); ctx.scale(1, 0.4); ctx.translate(-e.x, -sy);
+      ctx.beginPath(); ctx.arc(e.x, sy, rx, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
       ctx.restore();
 
