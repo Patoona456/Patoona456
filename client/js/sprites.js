@@ -117,6 +117,7 @@ const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_WALK_ORDER }
 export function orderFor(layout) { return ORDERS[layout?.id] ?? ORDER; }
 
 const CHIBI_BASE = '/assets/chibi';
+const GEAR_UI_BASE = '/assets/ui';     // helmets share the icon atlas
 /** The chibi bodies that exist; a look naming anything else gets the first. */
 export const CHIBI_BODIES = ['base_male'];
 /** Chibi hair: one cut so far, in the four colours the creator offers. */
@@ -144,7 +145,7 @@ export function playerLayers(look, equipment = {}) {
       if (c.headgear != null) {
         // a helmet is one picture per facing, set on the skull frame by frame
         // (drawHeadgear); it covers the hair, and has hair painted under it
-        layers.head = { url: `/assets/ui/${HEADGEAR.file}.webp`, headgear: c.headgear };
+        layers.head = { url: `${GEAR_UI_BASE}/${HEADGEAR.file}.webp`, headgear: c.headgear };
         delete layers.hair;
         continue;
       }

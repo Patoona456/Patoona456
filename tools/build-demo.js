@@ -32,7 +32,12 @@ for (const f of CLIENT) {
     .replace("const MOB_BASE = '/assets/mob';", "const MOB_BASE = 'assets/mob';")
     .replace("const CHIBI_BASE = '/assets/chibi';", "const CHIBI_BASE = 'assets/chibi';")
     .replace("const NPC_BASE = '/assets/npc';", "const NPC_BASE = 'assets/npc';")
-    .replace("export const UI_BASE = '/assets/ui';", "export const UI_BASE = 'assets/ui';");
+    .replace("export const UI_BASE = '/assets/ui';", "export const UI_BASE = 'assets/ui';")
+    .replace("const GEAR_UI_BASE = '/assets/ui';", "const GEAR_UI_BASE = 'assets/ui';");
+  // a root-relative asset path left in the code 404s under the artifact's
+  // prefix and the picture silently never draws: refuse to build instead
+  const rooted = src.match(/['"`]\/assets\/[^'"`]*/g);
+  if (rooted) throw new Error(`client/js/${f}.js: root-relative asset path ${rooted.join(', ')} - give it a base constant the demo rewrites`);
   await writeFile(path.join(out, 'client', 'js', `${f}.js`), src);
 }
 await cp(path.join(root, 'shared'), path.join(out, 'shared'), { recursive: true });
