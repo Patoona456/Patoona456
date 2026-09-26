@@ -66,7 +66,7 @@ export const MAPS = {
     // stair up to the lists. The north-west stair and the south-east landing
     // stay closed for now (a harbour, later).
     warps: [
-      { x: 44, y: 7, w: 3, h: 2, to: 'castle', at: [23, 27], label: 'ปราสาท' },   // on the paving before the door
+      { x: 44, y: 6, w: 2, h: 2, to: 'castle', at: [23, 27], label: 'ปราสาท' },   // on the paving before the door
       { x: 42, y: 58, w: 5, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
       { x: 0, y: 29, w: 1, h: 2, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
       { x: 88, y: 29, w: 2, h: 2, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
