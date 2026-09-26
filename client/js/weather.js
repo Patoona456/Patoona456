@@ -10,10 +10,21 @@
 // the storm rhythm runs off the wall clock, so every client in the marsh sees
 // the same flash within a frame of everyone else - the same trick the day and
 // night cycle uses.
+import { FROST_ATLAS } from './ambient.js';
+
+const frostImg = new Image();
+let frostAsked = false;
+function frostAtlas() {
+  if (!frostAsked) { frostAsked = true; frostImg.src = 'assets/fx/frost.webp'; }
+  return frostImg.complete && frostImg.naturalWidth > 0 ? frostImg : null;
+}
 
 const SKIES = {
   marsh: { kind: 'rain', drops: 150, speed: 950, slant: -0.34, len: 26, color: '170,200,220', alpha: 0.30, storm: true },
-  ice:   { kind: 'snow', drops: 190, speed: 190, slant: 0.5, len: 0, color: '235,248,255', alpha: 0.55, gust: true },
+  // the frost pass: a blizzard - snow driven on the wind, flakes turning in
+  // it, drifts of blown snow sweeping across, frost creeping in at the edges
+  ice:   { kind: 'snow', drops: 230, speed: 200, slant: 0.9, len: 0, color: '235,248,255', alpha: 0.6, gust: true,
+    blizzard: { flakes: 22, gusts: 3, frost: 0.35 } },
   crypt: { kind: 'fog', banks: 5, speed: 12, color: '90,80,120', alpha: 0.20 },
   rock:  { kind: 'fog', banks: 3, speed: 8, color: '120,96,70', alpha: 0.10 },
   // the lava highlands: grey ash and dust drifting down across the screen,
@@ -45,6 +56,8 @@ export class Weather {
     this.drops = [];
     this.banks = [];
     this.embers = [];
+    this.flakes = [];
+    this.gusts = [];
   }
 
   /** How bright the sky is right now, 0..1. The zone tint reads this. */
@@ -74,6 +87,23 @@ export class Weather {
         d.y += sky.speed * d.z * dt;
         d.x += sky.speed * d.z * (sky.slant + gust) * dt;
         if (d.y > h + 20 || d.x < -40 || d.x > w + 40) Object.assign(d, this.spawn(w, h, false));
+      }
+      const bz = sky.blizzard;
+      if (bz) {
+        // the wind: a steady push with gusts on top, the flakes and drifts ride it
+        this.wind = 0.9 + Math.max(0, Math.sin(now / 4200)) * 1.4 + Math.sin(now / 1300) * 0.3;
+        this.flakes ??= [];
+        while (this.flakes.length < bz.flakes) this.flakes.push(this.spawnFlake(w, h, true));
+        for (const f of this.flakes) {
+          f.y += f.v * dt;
+          f.x += (f.v * this.wind + Math.sin(now / 800 + f.seed * 4) * 20) * dt;
+          f.rot += f.spin * dt;
+          if (f.y > h + 30 || f.x > w + 40) Object.assign(f, this.spawnFlake(w, h, false));
+        }
+        this.gusts ??= [];
+        this.gusts = this.gusts.filter((g) => g.x < w + g.w);
+        if (this.gusts.length < bz.gusts && Math.random() < dt * 0.8 * this.wind) this.gusts.push(this.spawnGust(w, h));
+        for (const g of this.gusts) g.x += g.v * this.wind * dt;
       }
     } else if (sky.kind === 'ash') {
       while (this.drops.length < sky.drops) this.drops.push(this.spawn(w, h, true));
@@ -109,6 +139,21 @@ export class Weather {
       r: 0.8 + Math.random() * 1.4,
       seed: Math.random() * 10,
     };
+  }
+
+  spawnFlake(w, h, anywhere) {
+    return {
+      x: anywhere ? Math.random() * w : -40 - Math.random() * w * 0.3,
+      y: anywhere ? Math.random() * h : Math.random() * h * 0.8 - 40,
+      v: 40 + Math.random() * 70, size: 0.25 + Math.random() * 0.35,
+      rot: Math.random() * 6, spin: (Math.random() - 0.5) * 2, f: Math.floor(Math.random() * 10), seed: Math.random() * 10,
+    };
+  }
+
+  spawnGust(w, h) {
+    const k = 2 + Math.random() * 2.5;
+    return { x: -192 * k, y: Math.random() * h * 0.9, w: 192 * k, h: 72 * k, v: 260 + Math.random() * 220,
+      f: Math.floor(Math.random() * 6), alpha: 0.25 + Math.random() * 0.25, flip: Math.random() < 0.5 };
   }
 
   spawnEmber(w, h, anywhere) {
@@ -155,6 +200,39 @@ export class Weather {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+      const bz = sky.blizzard, at = bz && frostAtlas();
+      if (at) {
+        // the drifts of blown snow, swept across the screen
+        const G = FROST_ATLAS.gust, F = FROST_ATLAS.flake;
+        for (const g of this.gusts ?? []) {
+          ctx.save();
+          ctx.globalAlpha = g.alpha;
+          ctx.translate(g.x + g.w / 2, g.y);
+          if (g.flip) ctx.scale(1, -1);
+          ctx.drawImage(at, G.at[0] + g.f * G.cell[0], G.at[1], G.cell[0], G.cell[1], -g.w / 2, -g.h / 2, g.w, g.h);
+          ctx.restore();
+        }
+        // flakes, turning as they go
+        for (const f of this.flakes ?? []) {
+          const s = F.cell[0] * f.size;
+          ctx.save();
+          ctx.globalAlpha = 0.85;
+          ctx.translate(f.x, f.y);
+          ctx.rotate(f.rot);
+          ctx.drawImage(at, F.at[0] + f.f * F.cell[0], F.at[1], F.cell[0], F.cell[1], -s / 2, -s / 2, s, s);
+          ctx.restore();
+        }
+        // frost at the edges of the screen, breathing with the wind
+        const a = bz.frost * (0.8 + (this.wind ?? 1) * 0.12);
+        const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.hypot(w, h) * 0.55);
+        g.addColorStop(0, 'rgba(200,225,255,0)');
+        g.addColorStop(1, `rgba(215,235,255,${a})`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+        // and a cold cast over everything
+        ctx.fillStyle = 'rgba(120,160,220,0.06)';
+        ctx.fillRect(0, 0, w, h);
+      }
     } else if (sky.kind === 'ash') {
       // the haze: warm from below, where the lava is
       const g = ctx.createLinearGradient(0, h * 0.55, 0, h);

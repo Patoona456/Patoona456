@@ -383,6 +383,8 @@ export const MAPS = {
     // the plaza opened by hand).
     backdrop: 'assets/maps/frostfall.webp',
     backdropTiles: { dir: 'assets/maps/frostfall/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
+    // its ice glints (client/js/ambient.js, FrostFx), read off the painting's pale blue
+    frostFx: {},
     walk: [[0, 0, 90, 60]],
     obstacles: FROSTFALL_OBSTACLES,
     spawnPoint: [4, 19],

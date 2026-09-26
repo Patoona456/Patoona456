@@ -478,3 +478,94 @@ export class LavaFx {
     ctx.restore();
   }
 }
+
+/*
+ * Frost: the ice glints. Where the ice is is read off the painting (its pale
+ * blue); glints and frost stars (assets/fx/frost.webp, tools/slice-frost.py)
+ * flare up on it and fade, turning a little as they go, and now and then on
+ * the snow. A map asks for it with `frostFx: {}`.
+ */
+const FROST_URL = 'assets/fx/frost.webp';
+export const FROST_ATLAS = {
+  glint: { at: [0, 0], cell: [48, 48], frames: 12 },
+  star: { at: [0, 48], cell: [64, 64], frames: 8 },
+  flake: { at: [0, 112], cell: [48, 48], frames: 10 },
+  gust: { at: [0, 160], cell: [192, 72], frames: 6 },
+};
+const FROST_DENSITY = 1 / 3500;          // glints alive per world px² of ice in view
+
+function iceMask(art) {
+  const w = Math.max(1, Math.round(art.naturalWidth / 2)), h = Math.max(1, Math.round(art.naturalHeight / 2));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(art, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data;
+  const a = new Uint8Array(w * h);
+  for (let i = 0; i < a.length; i++) {
+    const r = d[i * 4], gg = d[i * 4 + 1], b = d[i * 4 + 2];
+    // ice is blue and fairly bright; snow is white (2), both glint
+    if (b > r + 35 && b > 130) a[i] = 1;
+    else if (r > 215 && gg > 215 && b > 220) a[i] = 2;
+  }
+  return { w, h, a };
+}
+
+export class FrostFx {
+  constructor(cfg, art, worldW) {
+    this.cfg = cfg;
+    this.art = art;
+    this.worldW = worldW;
+    this.atlas = img(FROST_URL);
+    this.glints = [];
+    this.mask = null;
+  }
+
+  get ice() {
+    if (!this.mask && ready(this.art)) {
+      try { this.mask = iceMask(this.art); } catch { this.mask = { w: 1, h: 1, a: new Uint8Array(1) }; }
+    }
+    return this.mask;
+  }
+
+  kindAt(x, y) {
+    const m = this.ice;
+    if (!m) return 0;
+    const k = m.w / this.worldW;
+    const px = Math.floor(x * k), py = Math.floor(y * k);
+    if (px < 0 || py < 0 || px >= m.w || py >= m.h) return 0;
+    return m.a[py * m.w + px];
+  }
+
+  draw(ctx, x0, y0, x1, y1, now) {
+    if (!ready(this.atlas)) return;
+    this.glints = this.glints.filter((s) => now - s.start < s.life && s.x > x0 - 40 && s.x < x1 + 40 && s.y > y0 - 40 && s.y < y1 + 40);
+    const want = (x1 - x0) * (y1 - y0) * FROST_DENSITY;
+    for (let i = 0; i < 8 && this.glints.length < want; i++) {
+      const x = x0 + Math.random() * (x1 - x0), y = y0 + Math.random() * (y1 - y0);
+      const kind = this.kindAt(x, y);
+      // on the ice mostly; on the snow now and then
+      if (!kind || (kind === 2 && Math.random() < 0.75)) continue;
+      const big = kind === 1 && Math.random() < 0.18;
+      const piece = big ? FROST_ATLAS.star : FROST_ATLAS.glint;
+      this.glints.push({ x, y, piece, f: Math.floor(Math.random() * piece.frames), start: now,
+        life: 700 + Math.random() * 900, size: (big ? 0.45 : 0.3) + Math.random() * 0.25, spin: (Math.random() - 0.5) * 1.2 });
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.imageSmoothingEnabled = true;
+    for (const s of this.glints) {
+      const u = (now - s.start) / s.life;
+      const k = Math.sin(u * Math.PI);                 // flares up, then fades
+      const [cw, ch] = s.piece.cell;
+      const w = cw * s.size * (0.6 + k * 0.6), h = ch * s.size * (0.6 + k * 0.6);
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.spin * u);
+      ctx.globalAlpha = k;
+      ctx.drawImage(this.atlas, s.piece.at[0] + s.f * cw, s.piece.at[1], cw, ch, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+}
