@@ -72,7 +72,58 @@ FIELDS = {
                        (43, 51, 3, 2), (61, 50, 3, 2)],  # the south road's two ends in the shade
         'force_block': [],
     },
+    'obsidian': {
+        # Monster Field 03, one 1536x1024 painting: black rock over lava,
+        # ash-brown clearings joined by dirt roads, stone stairs and bridges,
+        # a horned arena in the south-east
+        'src': 'assets/maps/source/obsidian/full.png',
+        'cols': 90, 'rows': 60,
+        'backdrop_scale': 1,
+        'seed': (25, 22),
+        'classify': 'ash',
+        'close_gaps': 0.25,
+        # the stone stairs and bridges (grey, sorted as rock), and roads
+        # darkened by the lava's glow
+        # the grey stone stairs and bridges sort as rock: the gaps they leave in
+        # the roads are closed across anything that is not lava (bridge_gaps)
+        'bridge_gaps': 7,
+        'force_open': [(0, 15, 11, 3), (11, 13, 3, 3),          # the west road in, and up to the north loop
+                       (12, 31, 3, 3), (14, 32, 6, 3), (18, 34, 3, 2),                  # the south-west bridge
+                       (35, 25, 6, 3), (39, 22, 3, 5),                                  # the middle bridge and stairs
+                       (38, 8, 5, 2), (37, 10, 3, 5),                                   # the north clearing's west stairs
+                       (50, 8, 3, 4), (51, 11, 3, 4), (52, 14, 3, 3),                   # ...and its east stairs
+                       (79, 15, 11, 3),                                                 # the east bridge out
+                       (66, 24, 4, 3), (69, 26, 4, 3), (72, 27, 4, 3), (74, 28, 3, 6),  # down to the arena's north stairs
+                       (45, 33, 4, 3), (47, 34, 4, 3), (50, 35, 4, 3), (53, 36, 4, 3), (56, 37, 4, 3), (58, 38, 3, 3),  # the long bridge
+                       (36, 33, 3, 4), (38, 32, 6, 2),                                  # the stairs up from the south-west clearing
+                       (24, 46, 3, 3), (26, 48, 6, 3), (31, 49, 8, 3), (38, 50, 8, 3), (45, 51, 5, 3),  # the south road
+                       (79, 45, 4, 3), (81, 47, 4, 3), (83, 49, 4, 3), (85, 51, 4, 3), (87, 52, 3, 3),  # the arena's south-east gate
+                       (77, 43, 4, 4),                                                  # ...from the arena floor
+                       (60, 16, 5, 4),                                                  # the road into the east clearing
+                       (13, 12, 5, 2), (39, 18, 3, 3),                                  # the north loop's two ends
+                       (41, 7, 3, 3),                                                   # the west stairs' top
+                       (48, 52, 4, 4)],                                                 # the south road's end
+        'lava_after': 0.5,     # and whatever of those stands over lava is shut again,
+        # but for the bridge heads, where the lava glows up round the planks
+        'force_after': [(45, 33, 4, 2), (62, 20, 3, 3), (63, 22, 2, 2), (29, 13, 3, 2), (38, 7, 4, 2),
+                        (70, 26, 4, 3), (52, 35, 4, 3), (80, 45, 4, 4)],
+        'force_block': [],
+    },
 }
+
+
+def classify_ash(rgb):
+    """Per pixel, for the lava highlands: the ash-brown dirt and the arena's
+    cracked stone are ground - warm, middling in saturation and light, and
+    smooth; the lava is too saturated or too dark, the rock too rough."""
+    img = cv2.GaussianBlur(rgb, (0, 0), 1.2)
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(np.int32)
+    h, s, v = hsv[..., 0] * 2, hsv[..., 1], hsv[..., 2]
+    lum = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+    mu = cv2.blur(lum, (9, 9))
+    sd = np.sqrt(np.maximum(cv2.blur(lum * lum, (9, 9)) - mu * mu, 0))
+    g = (h >= 12) & (h <= 48) & (s >= 55) & (s <= 160) & (v >= 105) & (v <= 215) & (sd < 20)
+    return g.astype(np.float32)
 
 
 def classify_autumn(rgb):
@@ -114,7 +165,7 @@ def main(key, overlay=None):
     rgb = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGB'))
     H, W = rgb.shape[:2]
     cols, rows = cfg['cols'], cfg['rows']
-    g = classify_autumn(rgb) if cfg.get('classify') == 'autumn' else classify(rgb)
+    g = {'autumn': classify_autumn, 'ash': classify_ash}.get(cfg.get('classify'), classify)(rgb)
     share = cv2.resize(g, (cols, rows), interpolation=cv2.INTER_AREA)
     # the middle of a tile is where the feet are; weigh it over the corners
     core = np.zeros((rows, cols), np.float32)
@@ -131,8 +182,25 @@ def main(key, overlay=None):
         # tile has some ground in it
         closed = cv2.morphologyEx(open_.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)) > 0
         open_ |= closed & ((share * 0.4 + core * 0.6) >= cfg['close_gaps'])
+    if cfg.get('bridge_gaps'):
+        img = cv2.GaussianBlur(rgb, (0, 0), 1.2)
+        hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(np.int32)
+        lava = ((hsv[..., 1] > 150) & (hsv[..., 2] > 140)) | ((hsv[..., 0] * 2 < 25) & (hsv[..., 1] > 120) & (hsv[..., 2] > 110))
+        lava_share = cv2.resize(lava.astype(np.float32), (cols, rows), interpolation=cv2.INTER_AREA)
+        # and the black rock: a stair or bridge is grey stone, lighter than it
+        dark_share = cv2.resize((hsv[..., 2] < 85).astype(np.float32), (cols, rows), interpolation=cv2.INTER_AREA)
+        span = (lava_share < 0.3) & (dark_share < 0.4)
+        k = cfg['bridge_gaps']
+        for _ in range(2):
+            for ker in (np.ones((1, k), np.uint8), np.ones((k, 1), np.uint8)):
+                closed = cv2.morphologyEx(open_.astype(np.uint8), cv2.MORPH_CLOSE, ker) > 0
+                open_ |= closed & span
     for x, y, w, h in cfg['force_open']:
         open_[y:y + h, x:x + w] = True
+    if cfg.get('lava_after'):
+        open_ &= lava_share < cfg['lava_after']
+        for x, y, w, h in cfg.get('force_after', []):
+            open_[y:y + h, x:x + w] = True
     for x, y, w, h in cfg['force_block']:
         open_[y:y + h, x:x + w] = False
     # keep only the ground joined to where people arrive

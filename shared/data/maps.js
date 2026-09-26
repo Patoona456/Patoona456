@@ -7,6 +7,7 @@ import { ARTARIS_SOLIDS } from './artaris-solids.js';
 import { ARTARIS_OBSTACLES } from './artaris-obstacles.js';
 import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
 import { AMBERWOOD_OBSTACLES } from './amberwood-obstacles.js';
+import { OBSIDIAN_OBSTACLES } from './obsidian-obstacles.js';
 
 export const TILES = {
   GRASS: 0, PATH: 1, WATER: 2, TREE: 3, ROCK: 4, SAND: 5,
@@ -322,11 +323,34 @@ export const MAPS = {
     obstacles: AMBERWOOD_OBSTACLES,
     spawnPoint: [4, 28],
     // In from Greenmire over the west bridge, and back to Artaris's east gate
-    // over the east one, so the two fields and the town make a round. The
-    // plaza's east arches and the north road wait for the next field.
+    // over the east one, so the two fields and the town make a round; the
+    // plaza's east aqueduct goes on up to the Obsidian Highlands.
     warps: [
       { x: 0, y: 27, w: 1, h: 3, to: 'greenmire', at: [44, 55], label: 'ทุ่งกรีนไมร์' },   // the west bridge
       { x: 89, y: 41, w: 1, h: 3, to: 'artaris', at: [85, 29], label: 'อาร์ทาริส' },     // the east bridge
+      { x: 89, y: 21, w: 1, h: 2, to: 'obsidian', at: [4, 16], label: 'ที่ราบสูงออบซิเดียน' },  // the plaza's east aqueduct
+    ],
+    // its monsters come with their own sheets
+    spawns: [],
+  },
+
+  obsidian: {
+    id: 'obsidian', name: 'Obsidian Ember Highlands', nameTh: 'ที่ราบสูงออบซิเดียน', kind: 'field',
+    width: 90, height: 60, seed: 4004, theme: 'ash', levelRange: [30, 40],
+    // Monster Field 03, one 1536x1024 painting upscaled 4x by Real-ESRGAN and
+    // cut into 2048px tiles: black rock over rivers of lava, ash-brown
+    // clearings joined by dirt roads, stone stairs and bridges, a horned
+    // arena in the south-east. Its walk grid is traced by tools/trace-field.py
+    // (the 'ash' sort; the stairs and bridges opened by hand, lava shut).
+    backdrop: 'assets/maps/obsidian.webp',
+    backdropTiles: { dir: 'assets/maps/obsidian/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
+    walk: [[0, 0, 90, 60]],
+    obstacles: OBSIDIAN_OBSTACLES,
+    spawnPoint: [4, 16],
+    // In from Amberwood on the forest road in the west. The east bridge and
+    // the arena's south-east gate wait for the next field.
+    warps: [
+      { x: 0, y: 15, w: 1, h: 3, to: 'amberwood', at: [85, 21], label: 'ป่าอำพันชายแดน' },   // the west road
     ],
     // its monsters come with their own sheets
     spawns: [],

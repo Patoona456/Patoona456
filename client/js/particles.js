@@ -16,6 +16,8 @@ const WEATHER = {
   town:  { n: 34, kind: 'mote', color: '255,225,180', size: [0.6, 1.4], vy: [-5, -14], vx: [-6, 6], life: [4, 9], alpha: 0.30 },
   grass: { n: 40, kind: 'leaf', color: '150,200,120', size: [1.0, 2.2], vy: [4, 14], vx: [10, 26], life: [5, 10], alpha: 0.42, spin: true },
   // the autumn woods: more leaves, larger, in the canopy's orange
+  // the lava highlands: embers drifting up
+  ash: { n: 44, kind: 'mote', color: '255,140,60', size: [0.8, 1.8], vy: [-6, -18], vx: [-6, 6], life: [3, 7], alpha: 0.6 },
   autumn: { n: 56, kind: 'leaf', color: '232,128,48', size: [1.2, 2.6], vy: [6, 16], vx: [8, 22], life: [5, 10], alpha: 0.55, spin: true },
   marsh: { n: 30, kind: 'fly', color: '180,255,170', size: [0.8, 1.6], vy: [-4, 4], vx: [-8, 8], life: [3, 7], alpha: 0.6, blink: true },
   hall:  { n: 18, kind: 'mote', color: '255,220,170', size: [0.6, 1.2], vy: [-3, -8], vx: [-3, 3], life: [5, 10], alpha: 0.22 },

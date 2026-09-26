@@ -4107,6 +4107,7 @@ const WORLD_SPOTS = [
   { id: 'artaris', x: 395, y: 292, art: 'kingdom' },
   { id: 'greenmire', x: 100, y: 267, art: 'forest' },
   { id: 'amberwood', x: 590, y: 330, art: 'forest' },
+  { id: 'obsidian', x: 405, y: 110, art: 'volcano' },
 ];
 
 const GRADE_TH = { R: 'ธรรมดา', SR: 'หายาก', SSR: 'หายากมาก', UR: 'ยอดเยี่ยม', LR: 'ตำนาน' };
