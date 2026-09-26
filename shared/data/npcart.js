@@ -25,4 +25,16 @@ export const NPC_ART = {
     cell: [192, 192], frames: 24, height: 84, fps: 4.5,
     seq: [...range(0, 8), ...range(0, 24)],
   },
+  // among her racks: greets, reads the order book (1-8), shines helmets and
+  // a breastplate, shows a shield (9-16), dresses a stand, opens a chest (17-24)
+  armor: {
+    cell: [213, 192], frames: 24, height: 84, fps: 4.5,
+    seq: [...range(0, 8), ...range(0, 24)],
+  },
+  // under her striped awning: waves, weighs goods (1-8), fetches potions,
+  // scrolls and herbs to order (9-16), wraps a gift, counts coin (17-24)
+  general: {
+    cell: [197, 192], frames: 24, height: 90, fps: 4.5,
+    seq: [...range(0, 8), ...range(0, 24)],
+  },
 };

@@ -180,6 +180,10 @@ export const NPC_DIALOG = {
       { label: 'ขายของ', action: 'sell' },
     ],
   },
+  armorer: {
+    greet: 'ชุดเกราะล็อตใหม่กำลังเดินทางมาจากเมืองหลวง! ระหว่างนี้มีของจะขายก็เอามาได้นะ ราคาดี',
+    options: [{ label: 'ขายของ', action: 'sell' }],
+  },
   weaponer: {
     greet: 'ดาบ ธนู ของดีทั้งนั้น! ถ้าจะตีบวกหรือซ่อม ไปหาบอร์กที่โรงตีเหล็กนะ',
     options: [{ label: 'ดูอาวุธ', action: 'shop', shop: 'smith' }, { label: 'ขายของ', action: 'sell' }],

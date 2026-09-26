@@ -23,7 +23,11 @@ SHEETS = {
     'blacksmith': ('assets/npc/source/blacksmith-sheet.png', 78, 'stump'),   # lined up on the anvil's stump
     'potion': ('assets/npc/source/potion-sheet.png', 80, None),
     'weapon': ('assets/npc/source/weapon-sheet.png', 82, None),
+    'armor': ('assets/npc/source/armor-sheet.png', 82, None),
+    'general': ('assets/npc/source/general-sheet.png', 86, None),
 }
+# sheets whose frame numbers are bare white digits: the y bands they sit in
+NUMBERS = {'general': [(247, 270), (517, 540), (766, 792)]}
 OUT_H = 192                              # stored frame height, px
 
 
@@ -76,9 +80,47 @@ def main(key):
                 cell = pill[ty:ty + th, tx:tx + tw]
                 if cell.size and cell.mean() > 0.5:
                     a[ty - 4:ty + th + 4, tx - 6:tx + tw + 6, 3] = 0
+    # ...or with plain numbers: white, outlined in black, in a band under
+    # each row (NUMBERS gives the bands' y ranges on the sheet). In a band,
+    # the ink that sits under a frame's middle is the number.
+    mn, mx_ = rgb.min(2), rgb.max(2)
+    for y0_, y1_ in NUMBERS.get(key, ()):
+        # the white fill of each digit pair, grown over its black outline
+        white = ((mn > 200) & (a[..., 3] > 120)).astype(np.uint8)
+        white[:y0_] = 0
+        white[y1_:] = 0
+        blob = cv2.dilate(white, np.ones((1, 9), np.uint8))      # the two digits of a number as one
+        n2, lab2, st2, _ = cv2.connectedComponentsWithStats(blob)
+        for i in range(1, n2):
+            x, y, w, h, ar = st2[i]
+            if 8 <= h <= 30 and w <= 50:
+                a[y - 4:y + h + 4, x - 4:x + w + 4, 3] = 0
     m = a[..., 3] > 40
     n, lab, st, _ = cv2.connectedComponentsWithStats(m.astype(np.uint8))
     boxes = [st[i] for i in range(1, n) if st[i][4] > 5000]
+    # two frames drawn touching come out as one box twice as wide: cut it
+    # at the thinnest column near its middle
+    med = np.median([b_[2] for b_ in boxes])
+    split = []
+    for x, y, w, h, ar in boxes:
+        if w > 1.6 * med:
+            cols = m[y:y + h, x:x + w].sum(0)
+            lo, hi = int(w * 0.35), int(w * 0.65)
+            cut = lo + int(np.argmin(cols[lo:hi]))
+            split += [(x, y, cut, h, ar), (x + cut, y, w - cut, h, ar)]
+            # a scrap of one frame left on the other's side of the cut goes
+            for sx, sw in ((x, cut), (x + cut, w - cut)):
+                part = m[y:y + h, sx:sx + sw].astype(np.uint8)
+                k2, l2, s2, _ = cv2.connectedComponentsWithStats(part)
+                if k2 > 2:
+                    big = 1 + int(np.argmax(s2[1:, 4]))
+                    for j in range(1, k2):
+                        if j != big and s2[j][4] > 40 and (s2[j][0] == 0 or s2[j][0] + s2[j][2] == sw):
+                            a[y:y + h, sx:sx + sw, 3][l2 == j] = 0
+            m = a[..., 3] > 40
+        else:
+            split.append((x, y, w, h, ar))
+    boxes = split
     # read in rows: a frame belongs to the row its middle is in
     band = max(b[3] for b in boxes) * 0.8
     boxes.sort(key=lambda b: (round((b[1] + b[3] / 2) / band), b[0]))
