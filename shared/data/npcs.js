@@ -234,7 +234,7 @@ export const NPC_DIALOG = {
 // foot the first time. Dungeons and the boss room are never on the list -
 // their doors are the point.
 export const WARP_ROUTES = [
-  { to: 'emberhold', at: [30, 23], price: 100, label: 'เอมเบอร์โฮลด์', kind: 'town' },
+  { to: 'emberhold', at: [45, 35], price: 100, label: 'เอมเบอร์โฮลด์', kind: 'town' },
   { to: 'millhaven', at: [40, 32], price: 300, label: 'มิลเฮเวน', kind: 'town' },
   { to: 'ravenholm', at: [44, 36], price: 1200, label: 'เรเวนโฮล์ม', kind: 'town' },
   { to: 'castle', at: [23, 27], price: 50, label: 'ปราสาทเอมเบอร์โฮลด์', kind: 'town' },

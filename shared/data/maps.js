@@ -47,65 +47,66 @@ function noise2d(w, h, scale, seed) {
 export const MAPS = {
   emberhold: {
     id: 'emberhold', name: 'Emberhold', nameTh: 'เอมเบอร์โฮลด์', kind: 'town',
-    width: 60, height: 40, seed: 1001, safe: true, theme: 'town',
-    // The ground is one painting (1536x1024) of the walled square with empty
-    // lots, stretched 1.25x; the buildings are separate pictures standing on
-    // those lots, so people walk behind them. A tile is 25.6px of the painting.
+    width: 90, height: 60, seed: 1001, safe: true, theme: 'town',
+    // One painting of the walled town (assets/maps/source/emberhold3/full.png,
+    // 1536x1024, 17px a tile) on the walk plan it was drawn over
+    // (emberhold2/layout.png); tools/trace-town.py traces where people may
+    // stand from the two. The 1x picture is the placeholder and minimap; the
+    // ground drawn up close is the same picture upscaled 4x by Real-ESRGAN,
+    // in 2048px tiles fetched near the camera (tools/build-town.py).
     backdrop: 'assets/maps/emberhold.webp',
-    // the same picture at 4x, cut into 512px tiles (2px bleed each side) that
-    // are fetched only once the camera is near them
     backdropTiles: { dir: 'assets/maps/emberhold/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
-    walk: [
-      [4, 5, 52, 27],                                         // inside the walls
-      [28, 0, 4, 5], [28, 32, 4, 8],                          // north gate road, south stairs
-      [0, 17, 4, 3], [56, 17, 4, 3],                          // the moat bridges
-    ],
-    block: [[28, 17, 4, 3]],                                  // the fountain bowl
-    obstacles: EMBERHOLD_OBSTACLES,                           // painted trees and lamps
-    spawnPoint: [30, 23],
+    walk: [[0, 0, 90, 60]],
+    obstacles: EMBERHOLD_OBSTACLES,
+    // the moat and the canals shimmer; no falls in town
+    waterFx: { falls: [] },
+    spawnPoint: [45, 35],
+    // Five ways out: the castle gate at the head of the avenue, the grand
+    // stair south to the fields, the two canal bridges, and the north-east
+    // stair up to the lists. The north-west stair and the south-east landing
+    // stay closed for now (a harbour, later).
     warps: [
-      { x: 28, y: 0, w: 4, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
-      { x: 28, y: 38, w: 4, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
-      { x: 0, y: 17, w: 1, h: 3, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
-      { x: 59, y: 17, w: 1, h: 3, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
+      { x: 43, y: 3, w: 5, h: 1, to: 'castle', at: [23, 27], label: 'ปราสาท' },
+      { x: 42, y: 58, w: 5, h: 2, to: 'greenmire', at: [44, 3], label: 'ทุ่งกรีนไมร์' },
+      { x: 0, y: 29, w: 1, h: 2, to: 'ashfen', at: [72, 40], label: 'หนองเถ้า' },
+      { x: 88, y: 29, w: 2, h: 2, to: 'millhaven', at: [40, 6], label: 'มิลเฮเวน' },
+      { x: 75, y: 1, w: 3, h: 2, to: 'ashen_lists', at: [22, 39], label: 'ลานประลองเถ้า (PvP)' },
     ],
-    // two to a lot; their walls are traced into emberhold-obstacles.js
+    // The houses are part of the painting; these are the same houses cut out
+    // of it (tools/build-town.py), drawn again over whoever walks behind them.
     structures: [
-      { kind: 'building', img: 'assets/maps/emberhold/smith.webp', x: 6.54, y: 6.47, w: 6.45, h: 7.28 },
-      { kind: 'building', img: 'assets/maps/emberhold/potion.webp', x: 12.9, y: 7.56, w: 6.61, h: 6.19 },
-      { kind: 'building', img: 'assets/maps/emberhold/healer.webp', x: 40.94, y: 6.92, w: 6.0, h: 6.83 },
-      { kind: 'building', img: 'assets/maps/emberhold/storehouse.webp', x: 47.58, y: 7.88, w: 5.63, h: 5.87 },
-      { kind: 'building', img: 'assets/maps/emberhold/market.webp', x: 7.35, y: 26.27, w: 4.83, h: 4.12 },
-      { kind: 'building', img: 'assets/maps/emberhold/inn.webp', x: 12.81, y: 24.48, w: 6.8, h: 5.91 },
-      { kind: 'building', img: 'assets/maps/emberhold/chapel.webp', x: 40.74, y: 22.55, w: 6.4, h: 7.84 },
-      { kind: 'building', img: 'assets/maps/emberhold/guildhouse.webp', x: 46.99, y: 23.94, w: 6.8, h: 6.45 },
-      // the side lots either side of the north road and the south stair
-      { kind: 'building', img: 'assets/maps/emberhold/tavern.webp', x: 21.18, y: 6.82, w: 4.9, h: 4.32 },
-      { kind: 'building', img: 'assets/maps/emberhold/scribe.webp', x: 21.69, y: 10.37, w: 3.89, h: 5.25 },
-      { kind: 'building', img: 'assets/maps/emberhold/grocer.webp', x: 33.96, y: 6.25, w: 5.12, h: 4.88 },
-      { kind: 'building', img: 'assets/maps/emberhold/cottage.webp', x: 34.22, y: 11.88, w: 4.61, h: 3.75 },
-      { kind: 'building', img: 'assets/maps/emberhold/wellhouse.webp', x: 21.84, y: 24.62, w: 3.6, h: 4.2 },
-      { kind: 'building', img: 'assets/maps/emberhold/windmill.webp', x: 34.57, y: 24.05, w: 3.9, h: 4.77 },
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 0, 760, 900], x: 17.58, y: 4.39, w: 11.13, h: 13.18, walk: true },   // nw_house
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [762, 0, 792, 708], x: 22.27, y: 17.29, w: 11.60, h: 10.37, walk: true },   // w_house
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1556, 0, 1172, 768], x: 57.71, y: 6.45, w: 17.17, h: 11.25, walk: true },   // ne_row
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2730, 0, 840, 768], x: 56.13, y: 17.58, w: 12.30, h: 11.25, walk: true },   // e_hall
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 902, 612, 576], x: 11.43, y: 32.70, w: 8.96, h: 8.44, walk: true },   // sw_cottages
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [614, 902, 452, 808], x: 17.29, y: 39.84, w: 6.62, h: 11.84, walk: true },   // sw_house
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1068, 902, 856, 848], x: 28.01, y: 39.84, w: 12.54, h: 12.42, walk: true },   // s_row
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1926, 902, 480, 736], x: 51.09, y: 41.72, w: 7.03, h: 10.78, walk: true },   // s_house
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2408, 902, 964, 1056], x: 62.99, y: 33.87, w: 14.12, h: 15.47, walk: true },   // chapel
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [0, 1960, 728, 824], x: 39.84, y: 20.62, w: 10.66, h: 12.07, walk: true },   // fountain
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [730, 1960, 392, 728], x: 84.26, y: 2.34, w: 5.74, h: 10.66, walk: true },   // e_edge
+      { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [1124, 1960, 248, 416], x: 0.00, y: 5.16, w: 3.63, h: 6.09, walk: true },   // w_edge
     ],
     npcs: [
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 11, y: 15, look: { pic: 'blacksmith' } },
-      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 45, y: 15, look: { pic: 'nun' } },
-      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 14, y: 15, shop: 'general', look: { pic: 'alchemist' } },
-      { id: 'apothecary', name: 'แม่ค้าโรซ่า', role: 'shop', x: 32, y: 11, shop: 'apothecary', look: { pic: 'maid' } },
-      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 48, y: 15, look: { pic: 'dwarf' } },
-      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 39, y: 28, look: { pic: 'shrinemaiden' } },
-      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 11, y: 30, look: { pic: 'peddler' } },
-      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 54, y: 24, look: { pic: 'knight' } },
-      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 25, y: 18, look: { pic: 'postman' } },
-      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 36, y: 18, look: { pic: 'wizard' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 18, y: 18, look: { pic: 'blacksmith' } },
+      { id: 'apothecary', name: 'แม่ค้าโรซ่า', role: 'shop', x: 28, y: 28, shop: 'apothecary', look: { pic: 'maid' } },
+      { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 64, y: 19, shop: 'general', look: { pic: 'alchemist' } },
+      { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 62, y: 29, look: { pic: 'dwarf' } },
+      { id: 'healer', name: 'นักบวชอีริน', role: 'healer', x: 69, y: 49, look: { pic: 'nun' } },
+      { id: 'broker', name: 'นายหน้าคาสเซล', role: 'market', x: 26, y: 30, look: { pic: 'peddler' } },
+      { id: 'oracle', name: 'ผู้ดูแลศาลรุ่งอรุณ', role: 'gacha', x: 52, y: 26, look: { pic: 'shrinemaiden' } },
+      { id: 'board', name: 'กระดานภารกิจ', role: 'quests', x: 38, y: 28, look: { pic: 'postman' } },
+      { id: 'warper', name: 'นักเดินทางวิน', role: 'warp', x: 52, y: 34, look: { pic: 'wizard' } },
+      { id: 'guide', name: 'ครูฝึกฮาลด์', role: 'trainer', x: 41, y: 8, look: { pic: 'knight' } },
     ],
-    // people out and about in the square; they wander near home and stop to rest
+    // people out and about; they wander near home and stop to rest
     walkers: [
-      { name: 'ชาวนาทอม', pic: 'farmer', x: 20, y: 20, range: 6 },
-      { name: 'หนูมีมี่', pic: 'bunnygirl', x: 39, y: 21, range: 6 },
-      { name: 'เนโกะ', pic: 'catgirl', x: 30, y: 26, range: 5 },
-      { name: 'นักเดินทางคาอิ', pic: 'traveller', x: 9, y: 19, range: 4 },
-      { name: 'พ่อครัวบิน', pic: 'chef', x: 51, y: 19, range: 4 },
+      { name: 'ชาวนาทอม', pic: 'farmer', x: 20, y: 30, range: 5 },
+      { name: 'หนูมีมี่', pic: 'bunnygirl', x: 55, y: 30, range: 5 },
+      { name: 'เนโกะ', pic: 'catgirl', x: 36, y: 31, range: 4 },
+      { name: 'นักเดินทางคาอิ', pic: 'traveller', x: 70, y: 30, range: 5 },
+      { name: 'พ่อครัวบิน', pic: 'chef', x: 45, y: 15, range: 4 },
     ],
     spawns: [],
   },
@@ -133,7 +134,7 @@ export const MAPS = {
     ],
     spawnPoint: [23, 27],
     warps: [
-      { x: 22, y: 30, w: 4, h: 2, to: 'emberhold', at: [30, 21], label: 'ออกสู่เมือง' },
+      { x: 22, y: 30, w: 4, h: 2, to: 'emberhold', at: [45, 6], label: 'ออกสู่เมือง' },
     ],
     // Not much: the hall is the picture. The west wing is where a path is
     // chosen (arms on the walls, the blue fire of the oath), the east wing
@@ -166,7 +167,7 @@ export const MAPS = {
       { x: 40, y: 61, w: 4, h: 2, to: 'greenmire', at: [87, 7], label: 'ทุ่งกรีนไมร์' },
       { x: 76, y: 32, w: 2, h: 4, to: 'ashfen', at: [8, 32], label: 'หนองเถ้า' },
       { x: 2, y: 32, w: 2, h: 4, to: 'ravenholm', at: [4, 36], label: 'เรเวนโฮล์ม' },
-      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [55, 18], label: 'เอมเบอร์โฮลด์' },
+      { x: 38, y: 2, w: 4, h: 2, to: 'emberhold', at: [86, 30], label: 'เอมเบอร์โฮลด์' },
     ],
     npcs: [
       // North district (Merchant area)
@@ -334,7 +335,7 @@ export const MAPS = {
     // is the south gate below the ruins, so a new player crosses the whole
     // field first. The north-west stairs stay closed.
     warps: [
-      { x: 43, y: 0, w: 3, h: 1, to: 'emberhold', at: [30, 35], label: 'เอมเบอร์โฮลด์' },  // the north stairs
+      { x: 43, y: 0, w: 3, h: 1, to: 'emberhold', at: [45, 55], label: 'เอมเบอร์โฮลด์' },  // the north stairs
       { x: 88, y: 2, w: 2, h: 2, to: 'millhaven', at: [40, 59], label: 'มิลเฮเวน' },        // the north-east stairs
       { x: 44, y: 58, w: 3, h: 2, to: 'ashfen', at: [5, 32], label: 'หนองเถ้า' },          // the south gate
     ],
@@ -384,7 +385,7 @@ export const MAPS = {
     spawnPoint: [8, 32],
     warps: [
       { x: 2, y: 30, w: 2, h: 4, to: 'greenmire', at: [45, 56], label: 'ทุ่งกรีนไมร์' },
-      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 18], label: 'เอมเบอร์โฮลด์' },
+      { x: 76, y: 38, w: 2, h: 4, to: 'emberhold', at: [3, 30], label: 'เอมเบอร์โฮลด์' },
       { x: 40, y: 60, w: 4, h: 2, to: 'gravebound', at: [30, 6], label: 'สุสานกราฟบาวด์' },
     ],
     spawns: [],
@@ -510,7 +511,7 @@ export const MAPS = {
     width: 44, height: 44, seed: 4411, theme: 'ember', levelRange: [40, 70],
     pvp: true,
     spawnPoint: [22, 40],
-    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [30, 4], label: 'เอมเบอร์โฮลด์' }],
+    warps: [{ x: 20, y: 41, w: 4, h: 2, to: 'emberhold', at: [76, 5], label: 'เอมเบอร์โฮลด์' }],
     spawns: [],
   },
 
