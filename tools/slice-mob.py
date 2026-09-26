@@ -157,9 +157,13 @@ MOBS = {
             'rage': (680, 833, 905, 1520, [984, 1051, 1163, 1323], 825),
         },
         'faces': 'left',
-        'scale': .5,
+        # painted small and drawn large: grown by Real-ESRGAN and stored at
+        # twice the sheet's size, so it is sharp on screen (the same size as
+        # before: 0.5 x 1.9 = 2 x 0.475)
+        'esrgan': True,
+        'scale': 2,
         # the boss: towers over the wolf
-        'show': 1.9,
+        'show': .475,
     },
     # The trees the guardian calls up: they grow out of the ground and mend it
     # while they stand. Cut from the same sheet's summon row.
@@ -175,8 +179,9 @@ MOBS = {
         # it withers back the way it grew
         'reverse': ['death'],
         'faces': 'left',
-        'scale': .5,
-        'show': 1.1,
+        'esrgan': True,
+        'scale': 2,
+        'show': .275,
     },
     'wild_boar': {
         'src': 'assets/mob/source/boar_sheet.png',
@@ -294,6 +299,28 @@ def frames_by_cuts(m, cuts):
     return out
 
 
+def resize(atlas, k, cfg):
+    """The atlas brought to its stored size. A sheet painted small and drawn
+    big (`esrgan: True`) is first grown 4x by Real-ESRGAN (tools/upscale;
+    the weights path in ESRGAN_WEIGHTS), so it is sharp rather than
+    stretched; the alpha is grown smoothly beside it."""
+    im = Image.fromarray(atlas)
+    size = (round(im.width * k), round(im.height * k))
+    if not cfg.get('esrgan') or k <= 1:
+        return im.resize(size, Image.LANCZOS)
+    import sys
+    sys.path.insert(0, os.path.join(ROOT, 'tools/upscale'))
+    from esrgan import load, run
+    net = load(os.environ.get('ESRGAN_WEIGHTS', 'RealESRGAN_x4plus.pth'), 4)
+    a = atlas[..., 3:4].astype(np.float32) / 255
+    # on a neutral grey, so the edges do not grow a coloured halo
+    rgb = (atlas[..., :3] * a + 128 * (1 - a)).astype(np.uint8)[..., ::-1]
+    big = run(net, np.ascontiguousarray(rgb), 4, tile=200)[..., ::-1]
+    big = cv2.resize(big, size, interpolation=cv2.INTER_AREA)
+    al = cv2.resize(atlas[..., 3], size, interpolation=cv2.INTER_CUBIC)
+    return Image.fromarray(np.dstack([big, al]))
+
+
 def main(key, preview=None):
     cfg = MOBS[key]
     rgba = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGBA'))
@@ -359,8 +386,7 @@ def main(key, preview=None):
             atlas[oy:oy + h, ox:ox + w] = np.where(keep, src, region)
 
     k = cfg['scale']
-    im = Image.fromarray(atlas)
-    im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+    im = resize(atlas, k, cfg)
     os.makedirs(os.path.join(ROOT, 'assets/mob'), exist_ok=True)
     im.save(os.path.join(ROOT, f'assets/mob/{key}.webp'), 'WEBP', quality=90, method=6)
 
@@ -370,7 +396,7 @@ def main(key, preview=None):
              'top': top,
              'anims': [[a, len(fs)] for a, fs in frames.items()]}
     if cfg.get('fx'):
-        entry['fx'] = cut_fx(key, rgba, cfg['fx'], k)
+        entry['fx'] = cut_fx(key, rgba, cfg['fx'], k, cfg)
     write_manifest(key, entry)
     if preview:
         bg = Image.new('RGBA', im.size, (70, 120, 60, 255))
@@ -379,7 +405,7 @@ def main(key, preview=None):
     print(key, {a: len(fs) for a, fs in frames.items()}, 'cell', entry['cell'], 'atlas', im.size)
 
 
-def cut_fx(key, rgba, fx, k):
+def cut_fx(key, rgba, fx, k, cfg={}):
     """The sheet's own effects as one strip per effect, every frame in a
     cell of the strip's size with the effect's anchor at the same point."""
     strips, out = [], {}
@@ -408,8 +434,7 @@ def cut_fx(key, rgba, fx, k):
         sheet[y:y + s.shape[0], :s.shape[1]] = s
         o['y'] = round(y * k)
         y += s.shape[0]
-    im = Image.fromarray(sheet)
-    im = im.resize((round(im.width * k), round(im.height * k)), Image.LANCZOS)
+    im = resize(sheet, k, cfg)
     im.save(os.path.join(ROOT, f'assets/mob/{key}_fx.webp'), 'WEBP', quality=90, method=6)
     return out
 
