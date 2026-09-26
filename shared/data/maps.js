@@ -345,6 +345,20 @@ export const MAPS = {
     // (the 'ash' sort; the stairs and bridges opened by hand, lava shut).
     backdrop: 'assets/maps/obsidian.webp',
     backdropTiles: { dir: 'assets/maps/obsidian/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
+    // its lava set moving (client/js/ambient.js, LavaFx): the lava is read off
+    // the painting's orange, and the falls, in tiles, are where it pours
+    lavaFx: {
+      falls: [
+        { x: 23.5, y: 5.5, w: 1.5, h: 6.5 }, { x: 27.5, y: 5, w: 1.8, h: 5 },       // north-west, under the stairs
+        { x: 36.3, y: 19.5, w: 1.3, h: 4 }, { x: 37.5, y: 28.5, w: 1.8, h: 4 },     // by the middle stairs and bridge
+        { x: 25.2, y: 30.5, w: 1.3, h: 3.5 }, { x: 13.2, y: 34.8, w: 2.8, h: 6.5 }, // under the south-west bridge
+        { x: 6.8, y: 45.5, w: 2.2, h: 10 }, { x: 14.8, y: 45.5, w: 3, h: 10 },      // the south-west cliffs
+        { x: 22.3, y: 48.5, w: 2.4, h: 7 },
+        { x: 48.2, y: 38, w: 2.3, h: 5 }, { x: 54.5, y: 40.5, w: 1.8, h: 4.5 },     // under the long bridge
+        { x: 69.2, y: 27, w: 1.8, h: 3.5 },                                          // by the arena's stairs
+        { x: 77.5, y: 0, w: 1.8, h: 6 }, { x: 83.8, y: 17.5, w: 1.8, h: 6 },        // the north-east
+      ],
+    },
     walk: [[0, 0, 90, 60]],
     obstacles: OBSIDIAN_OBSTACLES,
     spawnPoint: [4, 16],

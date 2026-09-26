@@ -14,7 +14,7 @@ import { Particles } from './particles.js';
 import { skyAt } from '../../shared/daycycle.js';
 import { drawSkillFx, lifeOf, scorchOf, drawScorch, debrisOf, drawWarning } from './skillfx.js';
 import { Weather } from './weather.js';
-import { WaterFx, drawFlame } from './ambient.js';
+import { WaterFx, LavaFx, drawFlame } from './ambient.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
 import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
@@ -580,6 +580,8 @@ export class Renderer {
     // a painted map's rivers and falls, set moving
     const waterFx = MAPS[zonePayload.id]?.waterFx;
     this.waterFx = waterFx && this.backdrop ? new WaterFx(waterFx, this.backdrop, zonePayload.width * TILE) : null;
+    const lavaFx = MAPS[zonePayload.id]?.lavaFx;
+    this.lavaFx = lavaFx && this.backdrop ? new LavaFx(lavaFx, this.backdrop, zonePayload.width * TILE) : null;
 
     const scenery = generateProps(
       { width: zonePayload.width, height: zonePayload.height, seed: zonePayload.seed ?? 1,
@@ -767,6 +769,7 @@ export class Renderer {
       ctx.drawImage(this.terrain, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
     }
     // the saver setting keeps the falls and the twinkles but not the sliding light
+    if (this.lavaFx) this.lavaFx.draw(ctx, x0, y0, x1, y1, now, prefs.quality === 'saver');
     if (this.waterFx) this.waterFx.draw(ctx, x0, y0, x1, y1, now, prefs.quality === 'saver');
     else this.drawWaterShimmer(ctx, x0, y0, x1, y1, now);
   }

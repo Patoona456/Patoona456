@@ -293,3 +293,188 @@ export class WaterFx {
     ctx.restore();
   }
 }
+
+/*
+ * Lava: the same idea as the water, in another atlas (assets/fx/lava.webp,
+ * tools/slice-lava.py). Where the lava is is read off the painting (bright
+ * orange and yellow); a flow texture slides over it in two layers, sparks
+ * twinkle on it, now and then it erupts, and the painted falls pour. A map
+ * asks for it with `lavaFx: { falls: [{ x, y, w, h }] }`, in tiles.
+ */
+const LAVA_URL = 'assets/fx/lava.webp';
+const LAVA_ATLAS = {
+  flow: { at: [0, 0], cell: [256, 256] },
+  fall: { at: [0, 256], cell: [113, 180], frames: 8 },
+  burst: { at: [0, 436], cell: [117, 120], frames: 8 },
+  spark: { at: [0, 556], cell: [79, 120], frames: 8 },
+};
+const LAVA_SPARK_DENSITY = 1 / 7000;     // sparks alive per world px² of lava in view
+const LAVA_BURST_EVERY = 900;            // ms between tries at an eruption somewhere in view
+
+function lavaMask(art) {
+  const w = Math.max(1, Math.round(art.naturalWidth / 2)), h = Math.max(1, Math.round(art.naturalHeight / 2));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(art, 0, 0, w, h);
+  const im = g.getImageData(0, 0, w, h), d = im.data;
+  const a = new Uint8Array(w * h);
+  for (let i = 0; i < a.length; i++) {
+    const r = d[i * 4], gg = d[i * 4 + 1], b = d[i * 4 + 2];
+    // molten: red high, blue low, green between (orange to yellow)
+    const lava = r > 190 && b < 110 && r - b > 120 && gg > 50;
+    a[i] = lava ? 255 : 0;
+    d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = 255;
+    d[i * 4 + 3] = a[i];
+  }
+  g.putImageData(im, 0, 0);
+  // softened, so the flow does not stop at a hard pixel edge
+  const s = document.createElement('canvas');
+  s.width = w; s.height = h;
+  const sg = s.getContext('2d');
+  sg.filter = 'blur(1.5px)';
+  sg.drawImage(c, 0, 0);
+  return { canvas: s, w, h, a };
+}
+
+export class LavaFx {
+  constructor(cfg, art, worldW) {
+    this.cfg = cfg;
+    this.art = art;
+    this.worldW = worldW;
+    this.atlas = img(LAVA_URL);
+    this.layer = document.createElement('canvas');
+    this.sparks = [];
+    this.bursts = [];
+    this.nextBurst = 0;
+    this.mask = null;
+    this.share = 0.3;
+  }
+
+  get lava() {
+    if (!this.mask && ready(this.art)) {
+      try { this.mask = lavaMask(this.art); } catch { this.mask = { canvas: null, w: 1, h: 1, a: new Uint8Array(1) }; }
+    }
+    return this.mask;
+  }
+
+  isLava(x, y) {
+    const m = this.lava;
+    if (!m) return false;
+    const k = m.w / this.worldW;
+    const px = Math.floor(x * k), py = Math.floor(y * k);
+    if (px < 0 || py < 0 || px >= m.w || py >= m.h) return false;
+    return m.a[py * m.w + px] > 200;
+  }
+
+  draw(ctx, x0, y0, x1, y1, now, saver = false) {
+    if (!ready(this.atlas)) return;
+    if (!saver) this.drawFlow(ctx, x0, y0, x1, y1, now);
+    for (const f of this.cfg.falls ?? []) {
+      const fx = f.x * TILE, fy = f.y * TILE, fw = f.w * TILE, fh = f.h * TILE;
+      if (fx + fw < x0 || fx > x1 || fy + fh < y0 || fy > y1) continue;
+      this.drawFall(ctx, fx, fy, fw, fh, now, f);
+    }
+    this.drawSparks(ctx, x0, y0, x1, y1, now);
+  }
+
+  /** The molten surface moving: two layers of the flow texture sliding past each other, only on the lava. */
+  drawFlow(ctx, x0, y0, x1, y1, now) {
+    const lava = this.lava;
+    if (!lava?.canvas) return;
+    const R = CAUSTIC_RES;
+    const w = x1 - x0, h = y1 - y0;
+    const W = Math.ceil(w * R), H = Math.ceil(h * R);
+    const c = this.layer;
+    if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+    const o = c.getContext('2d');
+    o.setTransform(1, 0, 0, 1, 0, 0);
+    o.globalCompositeOperation = 'source-over';
+    o.globalAlpha = 1;
+    o.clearRect(0, 0, W, H);
+    o.setTransform(R, 0, 0, R, -x0 * R, -y0 * R);
+    if (!this.pattern) {
+      const [sx, sy] = LAVA_ATLAS.flow.at, [sw, sh] = LAVA_ATLAS.flow.cell;
+      const tile = document.createElement('canvas');
+      tile.width = sw; tile.height = sh;
+      tile.getContext('2d').drawImage(this.atlas, sx, sy, sw, sh, 0, 0, sw, sh);
+      this.pattern = o.createPattern(tile, 'repeat');
+    }
+    const p = this.pattern, t = now / 1000;
+    o.fillStyle = p;
+    if (p.setTransform) p.setTransform(new DOMMatrix().translate(t * 9, t * 5).scale(0.8));
+    o.fillRect(x0, y0, w, h);
+    if (p.setTransform) p.setTransform(new DOMMatrix().translate(-t * 6 + 131, t * 8 + 57).rotate(40).scale(1.3));
+    o.globalAlpha = 0.6;
+    o.fillRect(x0, y0, w, h);
+    const k = lava.w / this.worldW;
+    o.globalAlpha = 1;
+    o.globalCompositeOperation = 'destination-in';
+    o.imageSmoothingEnabled = true;
+    o.drawImage(lava.canvas, x0 * k, y0 * k, w * k, h * k, x0, y0, w, h);
+    ctx.save();
+    // overlay: the bright seams brighten it, the darker crust darkens it, so
+    // the lava moves without washing out to white
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.55 + Math.sin(t * 1.3) * 0.1;    // and it pulses, slowly
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(c, 0, 0, W, H, x0, y0, w, h);
+    ctx.restore();
+  }
+
+  /** Sparks on the lava, and now and then an eruption. */
+  drawSparks(ctx, x0, y0, x1, y1, now) {
+    const inView = (s) => s.x > x0 - 80 && s.x < x1 + 80 && s.y > y0 - 80 && s.y < y1 + 80;
+    this.sparks = this.sparks.filter((s) => now - s.start < s.life && inView(s));
+    this.bursts = this.bursts.filter((s) => now - s.start < s.life && inView(s));
+    let hits = 0;
+    const tries = 6;
+    for (let i = 0; i < tries; i++) {
+      const x = x0 + Math.random() * (x1 - x0), y = y0 + Math.random() * (y1 - y0);
+      if (!this.isLava(x, y)) continue;
+      hits++;
+      if (this.sparks.length < (x1 - x0) * (y1 - y0) * this.share * LAVA_SPARK_DENSITY) {
+        this.sparks.push({ x, y, start: now, life: 900 + Math.random() * 700, size: 0.35 + Math.random() * 0.25, flip: Math.random() < 0.5 });
+      } else if (now > this.nextBurst && this.bursts.length < 3) {
+        this.nextBurst = now + LAVA_BURST_EVERY * (0.6 + Math.random());
+        this.bursts.push({ x, y, start: now, life: 1100, size: 0.4 + Math.random() * 0.25, flip: Math.random() < 0.5 });
+      }
+    }
+    this.share = this.share * 0.97 + (hits / tries) * 0.03;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.imageSmoothingEnabled = true;
+    for (const [list, piece, alpha] of [[this.sparks, LAVA_ATLAS.spark, 0.8], [this.bursts, LAVA_ATLAS.burst, 0.85]]) {
+      const [cw, ch] = piece.cell;
+      for (const s of list) {
+        const u = (now - s.start) / s.life;
+        const f = Math.min(piece.frames - 1, Math.floor(u * piece.frames));
+        const w = cw * s.size, h = ch * s.size;
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        if (s.flip) ctx.scale(-1, 1);
+        ctx.globalAlpha = alpha * Math.min(1, (1 - u) * 4);
+        ctx.drawImage(this.atlas, piece.at[0] + f * cw, piece.at[1], cw, ch, -w / 2, -h * 0.8, w, h);
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  /** The lava fall poured over the painted one, glowing, soft at its lip and foot. */
+  drawFall(ctx, fx, fy, fw, fh, now, f) {
+    const piece = LAVA_ATLAS.fall;
+    const [cw, ch] = piece.cell;
+    const fr = Math.floor(now / 110 + (f.x * 7) % piece.frames) % piece.frames;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = 0.75;
+    // the sheet's fall is a column 60% of its cell: stretched to the painted one
+    const w = fw / 0.6;
+    ctx.drawImage(this.atlas, piece.at[0] + fr * cw, piece.at[1], cw, ch, fx + fw / 2 - w / 2, fy - fh * 0.05, w, fh * 1.1);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.25 + Math.sin(now / 300 + f.y) * 0.08;
+    ctx.drawImage(this.atlas, piece.at[0] + ((fr + 4) % piece.frames) * cw, piece.at[1], cw, ch, fx + fw / 2 - w / 2, fy, w, fh);
+    ctx.restore();
+  }
+}

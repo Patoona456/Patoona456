@@ -16,6 +16,9 @@ const SKIES = {
   ice:   { kind: 'snow', drops: 190, speed: 190, slant: 0.5, len: 0, color: '235,248,255', alpha: 0.55, gust: true },
   crypt: { kind: 'fog', banks: 5, speed: 12, color: '90,80,120', alpha: 0.20 },
   rock:  { kind: 'fog', banks: 3, speed: 8, color: '120,96,70', alpha: 0.10 },
+  // the lava highlands: grey ash and dust drifting down across the screen,
+  // embers rising through it, and a warm haze at the bottom
+  ash:   { kind: 'ash', drops: 150, embers: 40, speed: 34, color: '175,165,160', ember: '255,150,60', alpha: 0.75, gust: true },
   grass: null,
   town: null,
   hall: null,
@@ -41,6 +44,7 @@ export class Weather {
     this.sky = SKIES[theme] ?? null;
     this.drops = [];
     this.banks = [];
+    this.embers = [];
   }
 
   /** How bright the sky is right now, 0..1. The zone tint reads this. */
@@ -71,6 +75,23 @@ export class Weather {
         d.x += sky.speed * d.z * (sky.slant + gust) * dt;
         if (d.y > h + 20 || d.x < -40 || d.x > w + 40) Object.assign(d, this.spawn(w, h, false));
       }
+    } else if (sky.kind === 'ash') {
+      while (this.drops.length < sky.drops) this.drops.push(this.spawn(w, h, true));
+      this.embers ??= [];
+      while (this.embers.length < sky.embers) this.embers.push(this.spawnEmber(w, h, true));
+      const gust = Math.sin(now / 3100) * 0.7 + Math.sin(now / 1100) * 0.3;
+      for (const d of this.drops) {
+        // ash falls slowly and wanders, each flake on its own sway
+        d.y += sky.speed * d.z * dt;
+        d.x += (sky.speed * (0.5 + gust) * d.z + Math.sin(now / 700 + d.seed * 6) * 14) * dt;
+        if (d.y > h + 20 || d.x < -40 || d.x > w + 40) Object.assign(d, this.spawn(w, h, false));
+      }
+      for (const e of this.embers) {
+        e.y -= e.v * dt;
+        e.x += (Math.sin(now / 500 + e.seed * 5) * 18 + gust * 12) * dt;
+        e.life -= dt;
+        if (e.life <= 0 || e.y < -20) Object.assign(e, this.spawnEmber(w, h, false));
+      }
     } else if (sky.kind === 'fog') {
       while (this.banks.length < sky.banks) this.banks.push(this.spawnBank(w, h));
       for (const b of this.banks) {
@@ -87,6 +108,15 @@ export class Weather {
       z: 0.6 + Math.random() * 0.7,          // depth: near drops fall faster
       r: 0.8 + Math.random() * 1.4,
       seed: Math.random() * 10,
+    };
+  }
+
+  spawnEmber(w, h, anywhere) {
+    const life = 3 + Math.random() * 4;
+    return {
+      x: Math.random() * w, y: anywhere ? Math.random() * h : h + 10,
+      v: 30 + Math.random() * 60, r: 0.8 + Math.random() * 1.6,
+      life, max: life, seed: Math.random() * 10,
     };
   }
 
@@ -124,6 +154,37 @@ export class Weather {
         ctx.arc(d.x, d.y, d.r * d.z, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.globalAlpha = 1;
+    } else if (sky.kind === 'ash') {
+      // the haze: warm from below, where the lava is
+      const g = ctx.createLinearGradient(0, h * 0.55, 0, h);
+      g.addColorStop(0, 'rgba(255,90,30,0)');
+      g.addColorStop(1, 'rgba(255,90,30,0.10)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      // the ash: small grey flakes, a little flattened and turning
+      ctx.fillStyle = `rgb(${sky.color})`;
+      for (const d of this.drops) {
+        ctx.globalAlpha = sky.alpha * (0.3 + d.z * 0.5);
+        const rx = d.r * d.z * 1.9, ry = rx * (0.4 + Math.abs(Math.sin(now / 600 + d.seed)) * 0.6);
+        ctx.beginPath();
+        ctx.ellipse(d.x, d.y, rx, ry, d.seed, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // the embers, glowing, fading as they rise
+      ctx.globalCompositeOperation = 'lighter';
+      for (const e of this.embers ?? []) {
+        const k = Math.min(1, e.life / e.max * 2) * (0.6 + Math.sin(now / 90 + e.seed * 9) * 0.4);
+        const rr = e.r * 3;
+        const gg = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, rr);
+        gg.addColorStop(0, `rgba(255,230,160,${0.9 * k})`);
+        gg.addColorStop(0.35, `rgba(${sky.ember},${0.6 * k})`);
+        gg.addColorStop(1, `rgba(${sky.ember},0)`);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = gg;
+        ctx.fillRect(e.x - rr, e.y - rr, rr * 2, rr * 2);
+      }
+      ctx.globalCompositeOperation = 'source-over';
       ctx.globalAlpha = 1;
     } else if (sky.kind === 'fog') {
       for (const b of this.banks) {
