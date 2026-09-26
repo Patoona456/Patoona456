@@ -5,7 +5,7 @@ import { TILES, MAPS, decodeGrid, generateProps, hash2 } from '../../shared/data
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
-import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture, drawNpcFrames, walk8,
+import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture, drawNpcFrames,
   drawMobFrames, mobAnimMs, drawMobFx } from './sprites.js';
 import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
@@ -17,8 +17,7 @@ import { Weather } from './weather.js';
 import { WaterFx, drawFlame } from './ambient.js';
 import { look as elLook, rgba as elRgba } from '../../shared/elements.js';
 import { UI_BASE } from './icons.js';
-import { CHIBI_WALK, CHIBI_WALK8, frameAt } from '../../shared/sheets.js';
-import { CHIBI_FISTS8 } from '../../shared/data/chibi-walk8.js';
+import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 import { CHIBI_FISTS } from '../../shared/data/chibi.js';
 import { SWING } from '../../shared/data/swing.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
@@ -206,15 +205,6 @@ function drawSwingArc(ctx, from, to, len, t, rgb, sweep) {
 
 /** The fist's centre on screen, following the arm through the walk. */
 function chibiFist(e, anim, elapsed) {
-  // walking and standing are on the eight-way sheet: its own fist table
-  if ((anim === 'walk' || anim === 'idle') && e._walk8) {
-    const d = ((e.d ?? 0) % 8 + 8) % 8;
-    const col = anim === 'walk' ? frameAt(CHIBI_WALK8, 'walk', elapsed) : CHIBI_WALK8.anims.idle.start;
-    const [fx, fy] = CHIBI_FISTS8[d][col] ?? CHIBI_FISTS8[d][0];
-    const { w, h } = CHIBI_WALK8.frame;
-    const sc = (e.sprite?.scale ?? 1) * CHIBI_WALK8.drawScale;
-    return { x: e.x + (fx - w / 2) * sc, y: e.y + (fy - CHIBI_WALK8.anchor * h) * sc, r: FIST_R * sc };
-  }
   const row = chibiRow(e);
   const col = anim === 'walk' ? frameAt(CHIBI_WALK, 'walk', elapsed)
     : anim === 'shoot' || anim === 'slash' ? CHIBI_WALK.anims[anim].start + frameAt(CHIBI_WALK, anim, elapsed, false)
@@ -1203,21 +1193,19 @@ export class Renderer {
       }
       if (ox || oy) { ctx.save(); ctx.translate(ox, oy); }
 
-      // shadow: sized with the sprite, softened at the rim, and centred
-      // under the soles - lower, and the feet read as off the ground
+      // shadow: sized with the sprite, softened at the rim
       const sc = e.sprite?.scale ?? 1;
       const rx = (e.k === 'n' ? 9 : 10) * sc;
-      const sy = e.y - 0.5;
       ctx.save();
       ctx.globalAlpha = e.inv ? 0.10 : 0.30;
-      const sg = ctx.createRadialGradient(e.x, sy, 0, e.x, sy, rx);
+      const sg = ctx.createRadialGradient(e.x, e.y + 2, 0, e.x, e.y + 2, rx);
       sg.addColorStop(0, '#000');
       sg.addColorStop(0.65, 'rgba(0,0,0,0.75)');
       sg.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = sg;
       ctx.save();
-      ctx.translate(e.x, sy); ctx.scale(1, 0.4); ctx.translate(-e.x, -sy);
-      ctx.beginPath(); ctx.arc(e.x, sy, rx, 0, Math.PI * 2); ctx.fill();
+      ctx.translate(e.x, e.y + 2); ctx.scale(1, 0.4); ctx.translate(-e.x, -(e.y + 2));
+      ctx.beginPath(); ctx.arc(e.x, e.y + 2, rx, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
       ctx.restore();
 
@@ -1291,7 +1279,6 @@ export class Renderer {
           // a bow always goes on after the body, gripped by the fist painted
           // over it; in a sword swing each frame says which side of the body
           // the blade is on
-          e._walk8 = !!walk8(layers, anim);   // the fist follows whichever sheet the body is drawn from
           const sf = swingFrame(e, anim, elapsed, held);
           const over = held && (sf >= 0 ? !SWING.behind[chibiRow(e)].includes(sf) : held.bow || chibiHand(e).over);
           if (held && !over) drawHeld(ctx, held, e, anim, elapsed, now);

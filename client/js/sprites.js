@@ -111,7 +111,7 @@ export const CHIBI_ORDER = [
  *  body and a hat over the hair. The cape hangs behind a body facing the
  *  camera and over one facing away, so it is two sheets, one either side. */
 const CHIBI_WALK_ORDER = ['cape_under', 'body', 'bottom', 'boots', 'top', 'belt', 'gloves', 'hair', 'head', 'cape_over'];
-const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_WALK_ORDER, chibi_walk8: CHIBI_WALK_ORDER };
+const ORDERS = { lpc: ORDER, chibi8: CHIBI_ORDER, chibi_walk: CHIBI_WALK_ORDER };
 export function orderFor(layout) { return ORDERS[layout?.id] ?? ORDER; }
 
 const CHIBI_BASE = '/assets/chibi';
@@ -334,29 +334,7 @@ function figureCtx(w, h) {
   return g;
 }
 
-/**
- * A chibi walking or standing is drawn from its eight-way walk sheets when
- * they are there (the body and hair have one: <sheet>_walk8.png); anything
- * else it wears is drawn for the four-way sheet and would not fit, so it
- * keeps to that one until it has an eight-way cut of its own.
- */
-export function walk8(layers, anim) {
-  if (anim !== 'walk' && anim !== 'idle') return null;
-  if (layoutFor(urlOf(layers.body))?.id !== 'chibi_walk') return null;
-  const out = {};
-  for (const [layer, entry] of Object.entries(layers)) {
-    const url = urlOf(entry);
-    if (layer !== 'body' && layer !== 'hair') return null;
-    const url8 = url.replace(/\.png$/, '_walk8.png');
-    if (layoutFor(url8)?.id !== 'chibi_walk8') declareLayout(url8, 'chibi_walk8');
-    if (!sheet(url8).ready) return null;
-    out[layer] = typeof entry === 'string' ? url8 : { ...entry, url: url8 };
-  }
-  return out;
-}
-
 export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elapsed = 0, scale = 1, alpha = 1, tint = null, flash = 0 }) {
-  layers = walk8(layers, anim) ?? layers;
   // Geometry comes from whichever layout the body sheet follows, so a
   // character drawn on a different grid lines up with its own equipment.
   const layout = layoutFor(urlOf(layers.body));
