@@ -1038,7 +1038,6 @@ class Game {
           <div class="field chibi-only"><label>ทรงผม</label><div class="opts" id="o-chibiHair"></div></div>
           <div class="field"><label>สีผม</label><div class="opts" id="o-hairColor"></div></div>
           <div class="field lpc-only"><label>สีตา</label><div class="opts" id="o-eyes"></div></div>
-          <div class="field"><label>เมืองเริ่มต้น</label><div class="opts" id="o-start"></div></div>
           <hr>
           <div class="field"><label>แนวทางเริ่มต้น <span class="muted">แจกแต้มให้ก่อน ปรับเองได้</span></label>
             <div class="opts" id="o-path"></div></div>
@@ -1110,22 +1109,8 @@ class Game {
     markLook();
     markStyle();
 
-    /* ---- starting location ---- */
-    let startMap = 'artaris';
-    const startOpts = [['artaris', 'อาร์ทาริส (ศูนย์รวม)'], ['millhaven', 'มิลเฮเวน (เมืองเล็ก)']];
-    const startBox = $('#o-start');
-    for (const [id, label] of startOpts) {
-      const b = document.createElement('button');
-      b.className = 'opt' + (id === startMap ? ' sel' : '');
-      b.textContent = label;
-      b.onclick = () => {
-        startMap = id;
-        [...startBox.children].forEach((x) => x.classList.remove('sel'));
-        b.classList.add('sel');
-        this.audio.play('ui');
-      };
-      startBox.append(b);
-    }
+    /* ---- starting location: Artaris, the one town there is ---- */
+    const startMap = 'artaris';
 
     /* ---- camera-ish controls for the preview ---- */
     const dirBox = $('#o-dir');

@@ -4106,12 +4106,6 @@ export function loadTheme() {
 const WORLD_SPOTS = [
   { id: 'artaris', x: 395, y: 292, art: 'kingdom' },
   { id: 'greenmire', x: 100, y: 267, art: 'forest' },
-  { id: 'millhaven', x: 666, y: 315, art: 'harbor' },
-  { id: 'ashfen', x: 170, y: 413, art: 'desert' },
-  { id: 'gravebound', x: 557, y: 418, art: 'shadow' },
-  { id: 'orcwatch', x: 405, y: 110, art: 'volcano' },
-  { id: 'frostvault', x: 168, y: 118, art: 'snow' },
-  { id: 'ravenholm', x: 670, y: 175, art: 'sky' },
 ];
 
 const GRADE_TH = { R: 'ธรรมดา', SR: 'หายาก', SSR: 'หายากมาก', UR: 'ยอดเยี่ยม', LR: 'ตำนาน' };

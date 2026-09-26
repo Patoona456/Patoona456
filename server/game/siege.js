@@ -26,6 +26,9 @@
 import { db, markDirty } from '../persistence.js';
 import * as Guild from './guild.js';
 
+// The fort's map. The old arena it stood in is gone with the old maps; until
+// a new one is drawn there is no zone by this name, and the siege sleeps
+// (world.js skips it when the zone is missing).
 export const SIEGE_MAP = 'ashen_lists';
 /** Where the throne stands, in tiles, and how close counts as standing on it. */
 export const THRONE = { x: 22, y: 14, r: 96 };

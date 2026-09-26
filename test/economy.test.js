@@ -3,6 +3,7 @@
 // docs/ECONOMY.md is a set of promises: money is hard to come by, the shrine
 // is a sink and never a shortcut, the gacha's pity is real, and nothing in it
 // can be had for cash. Those promises live in this file's assertions.
+import './fixtures/maps.js';           // the old maps the systems under test were built on
 import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -322,9 +323,11 @@ test('fast travel to a field needs a first visit on foot; towns do not', () => {
   const p = character({ items: [] });
   p.record.map = 'artaris';
   p.record.visited = ['artaris'];
-  assert.match(Econ.warpService(world, p, 'orcwatch').error ?? '', /เคยเดินไป/);
-  assert.ok(Econ.warpService(world, p, 'millhaven').ok, 'a town was locked');
-  p.record.visited.push('orcwatch');
-  assert.ok(Econ.warpService(world, p, 'orcwatch').ok);
+  assert.match(Econ.warpService(world, p, 'greenmire').error ?? '', /เคยเดินไป/);
+  assert.ok(Econ.warpService(world, p, 'castle').ok, 'a town was locked');
+  p.record.map = 'artaris';
+  p.record.visited.push('greenmire');
+  assert.ok(Econ.warpService(world, p, 'greenmire').ok);
+  p.record.map = 'artaris';
   assert.ok(Econ.warpService(world, p, 'artaris').error, 'warped to where you already are');
 });

@@ -3,6 +3,7 @@
 // Each of these was a bug once, or guards a rule the design documents make a
 // promise about. They run against the real World and Zone objects, with stub
 // players, so there is no browser and no network in the way.
+import './fixtures/maps.js';           // the old maps the systems under test were built on
 import './fixtures/items.js';          // the item systems need items to work on
 import test from 'node:test';
 import { BOSS_LEASH, BOSS_RESET_MS, LOOT_LOCK_MS, LOOT_LIFE_MS, BOSS_LOOT_LOCK_MS, BOSS_LOOT_LIFE_MS, GROUND_CAP } from '../server/game/zone.js';

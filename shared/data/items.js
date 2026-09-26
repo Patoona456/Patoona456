@@ -18,7 +18,11 @@ const M = (o) => ({ type: 'material', stack: 999, weight: 2, ...o });
  * instead. Anything held that is neither here nor in ITEMS is dropped when
  * the character loads (server/game/player.js purgeUnknownItems).
  */
-export const RETIRED_ITEMS = {};
+export const RETIRED_ITEMS = {
+  // their harbour and arena went with the old maps: a travel ticket instead
+  scroll_voyage: 'warp_ticket',
+  arena_ticket: 'warp_ticket',
+};
 
 /**
  * Every item in the game. The old set was cleared for the new item sheets;
@@ -160,8 +164,6 @@ export const SCROLLS = {
     rarity: 'rare', cooldown: 20, desc: 'ชุบเพื่อนที่ล้มอยู่ใกล้ตัว (ในระยะ 5 ช่อง) ให้ลุกพร้อม HP 30%' }),
   scroll_beast: S(6, { id: 'scroll_beast', name: 'Beast Call', nameTh: 'ม้วนเรียกสัตว์คู่ใจ', summonPet: { id: 'companion_wolf', levelPct: 90, secs: 180 },
     level: 5, value: 800, cooldown: 60, desc: 'เรียกหมาป่าคู่ใจมาช่วยสู้ 3 นาที' }),
-  scroll_voyage: S(7, { id: 'scroll_voyage', name: 'Voyage Scroll', nameTh: 'ม้วนเดินเรือ', warpTo: 'millhaven', value: 900, cooldown: 60,
-    desc: 'ล่องเรือไปท่ามิลเฮเวนทันที' }),
 
   scroll_exp: S(8, { id: 'scroll_exp', name: 'EXP Scroll', nameTh: 'ม้วนเพิ่ม EXP', value: 3000, rarity: 'rare', cooldown: 10,
     ...buff(60 * MIN, { expPct: 25 }, '📜'), desc: 'EXP +25% นาน 1 ชั่วโมง (ใช้ร่วมกับยา EXP ได้)' }),
@@ -243,8 +245,6 @@ export const SCROLLS = {
     desc: 'ยื่นให้ผู้ดูแลวาร์ปแทนค่าเดินทางได้หนึ่งเที่ยว ไปที่ไหนก็ได้' }),
   boss_ticket: S(45, { id: 'boss_ticket', name: 'Challenge Writ', nameTh: 'บัตรท้าบอส', lockoutReset: true, value: 30000, rarity: 'epic', cooldown: 0,
     desc: 'ล้างการรับรางวัลบอสประจำสัปดาห์ของคุณ — ตีบอสรับรางวัลได้อีกรอบ' }),
-  arena_ticket: S(46, { id: 'arena_ticket', name: 'Arena Pass', nameTh: 'บัตรสนามรบ', warpTo: 'ashen_lists', level: 40, value: 500, cooldown: 60,
-    desc: 'พาไปลานประลองเถ้า (เขต PvP) ทันที' }),
   dungeon_pass: S(47, { id: 'dungeon_pass', name: 'Reliquary Pass', nameTh: 'บัตรผ่านประตูหีบศพ', dungeonPass: true, level: 60, value: 8000, rarity: 'rare',
     desc: 'ผ่านประตูหีบศพได้แม้ไม่มีปาร์ตี้ครบ (ใช้แล้วหาย) — ข้างในยังโหดเท่าเดิม' }),
 };

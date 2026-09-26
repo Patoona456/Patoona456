@@ -3,6 +3,7 @@
 // Everything about a siege is a schedule and a rule about who is standing
 // where, and both are the kind of thing that breaks without anybody noticing
 // until a Sunday evening goes wrong in front of forty people.
+import './fixtures/maps.js';           // the old maps the systems under test were built on
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { db } from '../server/persistence.js';

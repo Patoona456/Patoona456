@@ -800,7 +800,7 @@ export class Renderer {
   warpStyle(to) {
     const m = MAPS[to];
     if (!m) return 'city';
-    if (m.pvp || to === 'ashen_lists') return 'holy';
+    if (m.pvp) return 'holy';
     if (m.kind === 'town') return 'town';          // the magic circle
     if (m.kind === 'boss') return 'boss';
     if (m.kind === 'dungeon') return 'void';

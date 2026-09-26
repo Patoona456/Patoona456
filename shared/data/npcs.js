@@ -19,7 +19,6 @@ export const SHOPS = {
       { id: 'scroll_fly', stock: 60, restock: 300 },
       { id: 'scroll_return', stock: 20, restock: 600 },
       { id: 'scroll_capital', stock: 10, restock: 600 },
-      { id: 'scroll_voyage', stock: 10, restock: 600 },
       { id: 'scroll_save', stock: 10, restock: 600 },
       { id: 'scroll_identify', stock: 30, restock: 300 },
       { id: 'warp_ticket', stock: 10, restock: 900 },
@@ -249,14 +248,8 @@ export const NPC_DIALOG = {
 // their doors are the point.
 export const WARP_ROUTES = [
   { to: 'artaris', at: [45, 35], price: 100, label: 'อาร์ทาริส', kind: 'town' },
-  { to: 'millhaven', at: [40, 32], price: 300, label: 'มิลเฮเวน', kind: 'town' },
-  { to: 'ravenholm', at: [44, 36], price: 1200, label: 'เรเวนโฮล์ม', kind: 'town' },
   { to: 'castle', at: [23, 27], price: 50, label: 'ปราสาทอาร์ทาริส', kind: 'town' },
   { to: 'greenmire', at: [44, 4], price: 150, label: 'ทุ่งกรีนไมร์', kind: 'field', needVisit: true },
-  { to: 'ashfen', at: [8, 32], price: 400, label: 'หนองเถ้า', kind: 'field', needVisit: true },
-  { to: 'gravebound', at: [30, 6], price: 900, label: 'สุสานกราฟบาวด์', kind: 'field', needVisit: true },
-  { to: 'orcwatch', at: [8, 8], price: 1800, label: 'สันเขาออร์ควอช', kind: 'field', needVisit: true },
-  { to: 'frostvault', at: [14, 14], price: 3200, label: 'ห้องนิรภัยเยือกแข็ง', kind: 'field', needVisit: true },
 ];
 
 export const HEAL_PRICE_PER_LEVEL = 18;

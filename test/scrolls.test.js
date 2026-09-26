@@ -1,5 +1,6 @@
 // The scroll sheet: refine luck and wards at the smith, tickets at the
 // warper and the shrine, and everything that is read from the bag.
+import './fixtures/maps.js';           // the old maps the systems under test were built on
 import './fixtures/items.js';          // a sword to refine
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,10 +37,13 @@ function character(items = [], { level = 50, map = 'greenmire' } = {}) {
 }
 const slot = (p, id) => p.inventory.findIndex((s) => s.id === id);
 
-test('the sheet is forty-eight pieces, each on its own cell', () => {
+test('the sheet is forty-eight pieces, each scroll on its own cell', () => {
+  // (two of the forty-eight - the voyage scroll and the arena pass - went
+  // with the maps they led to; their cells stand empty)
   const cells = Object.values(SCROLLS).map((d) => d.art);
-  assert.equal(cells.length, 48);
-  assert.equal(new Set(cells).size, 48);
+  assert.equal(cells.length, 46);
+  assert.equal(new Set(cells).size, 46);
+  assert.ok(cells.every((c) => Number(c.split('#')[1]) < 48));
   for (const d of Object.values(SCROLLS)) assert.ok(d.nameTh && d.desc && d.value > 0, `${d.id} is incomplete`);
 });
 
@@ -94,10 +98,10 @@ test('refine scrolls and wards are not read from the bag', () => {
 });
 
 test('a travel ticket pays the warper instead of aurum', () => {
-  const p = character(['warp_ticket']);
-  p.record.visited = ['greenmire', 'millhaven'];
+  const p = character(['warp_ticket'], { map: 'artaris' });
+  p.record.visited = ['greenmire'];
   const before = p.record.aurum;
-  const r = Econ.warpService(world, p, 'millhaven');
+  const r = Econ.warpService(world, p, 'greenmire');
   assert.ok(r.ok, r.error);
   assert.equal(r.ticket, 'warp_ticket');
   assert.equal(p.record.aurum, before);
