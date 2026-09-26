@@ -1,0 +1,34 @@
+{
+  "name": "artaria-frontier-online",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Artaria Frontier Online (AFO) - 2D MMORPG (browser + mobile, gamepad-first) built on Universal LPC spritesheets",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "AFO_DEV=1 node --watch server/index.js",
+    "import-lpc": "node tools/import-lpc.js",
+    "build:demo": "node tools/build-demo.js",
+    "docker:build": "docker build -t artaria-frontier-online .",
+    "docker:run": "docker run --rm -p 8080:8080 -v afo-data:/data artaria-frontier-online",
+    "backup": "node tools/backup.js",
+    "test": "node --test test/*.test.js",
+    "test:e2e": "node --test --test-concurrency=1 test/e2e/*.test.js",
+    "test:all": "npm test && npm run test:e2e",
+    "balance": "node tools/balance.js",
+    "load": "node tools/load.js",
+    "soak": "node tools/soak.js",
+    "sheet": "node tools/inspect-sheet.js"
+  },
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

@@ -1,0 +1,520 @@
+<meta charset="utf-8">
+<title>Greenmire Bestiary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #edf0ea; --surface: #f8faf6; --sunk: #e3e8e1; --ink: #18211b; --muted: #5b6960; --line: #d3dbd2;
+  --accent: #2f6b45; --accent-soft: #dcebdf; --amber: #a86a14; --amber-soft: #f4e6cc; --danger: #b2432e;
+  --stage: #26332a; --stage-2: #1f2a22;
+  --common: #6b7a70; --uncommon: #2f8a4a; --rare: #2f6fb8; --epic: #8a45b0; --legendary: #b8741a; --mythic: #c23a4a;
+  --display: "Chakra Petch", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0f1411; --surface: #161d18; --sunk: #1c251f; --ink: #e1e8e2; --muted: #93a198; --line: #28332c;
+    --accent: #7bc08e; --accent-soft: #1d3325; --amber: #e0a85a; --amber-soft: #33271a; --danger: #e07a63;
+    --stage: #1b241e; --stage-2: #141b16;
+    --common: #9aa89f; --uncommon: #6fcf86; --rare: #6fa8ec; --epic: #c08be0; --legendary: #e8a65a; --mythic: #f07a88;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0f1411; --surface: #161d18; --sunk: #1c251f; --ink: #e1e8e2; --muted: #93a198; --line: #28332c;
+  --accent: #7bc08e; --accent-soft: #1d3325; --amber: #e0a85a; --amber-soft: #33271a; --danger: #e07a63;
+  --stage: #1b241e; --stage-2: #141b16;
+  --common: #9aa89f; --uncommon: #6fcf86; --rare: #6fa8ec; --epic: #c08be0; --legendary: #e8a65a; --mythic: #f07a88;
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 15px/1.65 var(--body); padding-inline: 16px; padding-block: 0 64px; }
+h1, h2, h3, h4 { font-family: var(--display); line-height: 1.2; text-wrap: balance; margin: 0; }
+.wrap { max-width: 1180px; margin-inline: auto; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.label { font-family: var(--display); font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+a { color: var(--accent); }
+code { font-family: var(--mono); font-size: .88em; background: var(--sunk); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+/* ---------- header ---------- */
+.top { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; padding-block: 36px 22px; border-bottom: 2px solid var(--ink); }
+.top h1 { font-size: clamp(34px, 6vw, 56px); font-weight: 700; letter-spacing: -.01em; }
+.top h1 span { color: var(--accent); }
+.top p { margin: 8px 0 0; color: var(--muted); max-width: 62ch; }
+.facts { display: grid; grid-template-columns: repeat(3, auto); gap: 4px 22px; text-align: right; }
+.facts b { font-family: var(--display); font-size: 22px; display: block; }
+@media (max-width: 720px) { .top { grid-template-columns: 1fr; } .facts { text-align: left; } }
+
+/* ---------- ladder ---------- */
+.layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; margin-top: 28px; }
+.layout > main, .ladder { min-width: 0; }
+.ladder a > span:last-child, .ladder a { overflow-wrap: anywhere; }
+.ladder { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); align-self: start; display: grid; gap: 2px; }
+.ladder a { display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: baseline; padding: 7px 10px; border-radius: 6px; color: var(--ink); text-decoration: none; font-size: 14px; }
+.ladder a:hover, .ladder a:focus-visible { background: var(--surface); outline: none; }
+.ladder a .num { color: var(--muted); font-size: 12px; }
+.ladder a.boss .num { color: var(--amber); font-weight: 500; }
+.ladder .sep { height: 1px; background: var(--line); margin-block: 8px; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .ladder { position: static; display: flex; flex-wrap: wrap; gap: 6px; }
+  .ladder a { display: inline-flex; gap: 6px; background: var(--surface); border: 1px solid var(--line); padding: 4px 10px; }
+  .ladder .sep, .ladder .label { display: none; }
+}
+
+/* ---------- specimen ---------- */
+.mob { padding-block: 36px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+.mob-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; margin-bottom: 18px; }
+.mob-head h2 { font-size: clamp(26px, 4vw, 34px); font-weight: 700; }
+.mob-head .th { font-size: 18px; color: var(--muted); font-family: var(--body); }
+.tag { font-family: var(--display); font-size: 12px; font-weight: 600; letter-spacing: .06em; padding: 2px 9px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+.tag.boss { background: var(--amber-soft); color: var(--amber); }
+.tag.plain { background: var(--sunk); color: var(--muted); }
+.lesson { margin: -6px 0 20px; max-width: 70ch; }
+
+.sheet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 760px) { .sheet { grid-template-columns: 1fr; } }
+.stage { background: radial-gradient(ellipse at 50% 78%, var(--stage) 0%, var(--stage-2) 70%); border-radius: 10px; padding: 12px; display: grid; gap: 10px; }
+.stage canvas { width: 100%; height: 210px; display: block; }
+.anims { display: flex; flex-wrap: wrap; gap: 6px; }
+.anims button { font: 500 12.5px var(--mono); padding: 4px 9px; border-radius: 5px; border: 1px solid #3c4b40; background: transparent; color: #c9d6cc; cursor: pointer; }
+.anims button[aria-pressed="true"] { background: #d7e8d9; color: #16261b; border-color: #d7e8d9; }
+.anims button:focus-visible { outline: 2px solid #9fd3ad; outline-offset: 2px; }
+.stage .cap { color: #9fb1a4; font: 12px var(--mono); }
+.fxrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.fxrow figure { margin: 0; background: #141b16; border-radius: 6px; padding: 6px; display: grid; gap: 2px; justify-items: center; }
+.fxrow canvas { width: 110px; height: 84px; }
+.fxrow figcaption { color: #9fb1a4; font: 11.5px var(--mono); }
+
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--display); font-weight: 600; font-size: 12px; letter-spacing: .06em; color: var(--muted); text-transform: uppercase; }
+td.num, th.num { text-align: right; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stats div { background: var(--surface); padding: 8px 10px; }
+.stats b { display: block; font: 600 19px var(--mono); font-variant-numeric: tabular-nums; }
+.stats span { font-size: 12px; color: var(--muted); }
+@media (max-width: 480px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.traits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.traits span { font-size: 13px; background: var(--surface); border: 1px solid var(--line); padding: 2px 9px; border-radius: 99px; }
+
+.block { margin-top: 26px; }
+.block > h3 { font-size: 17px; margin-bottom: 10px; font-weight: 600; }
+.moves { display: grid; gap: 10px; }
+.move { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; }
+.move h4 { font-size: 15.5px; font-weight: 600; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.move h4 .mono { font-size: 12px; color: var(--muted); font-weight: 400; }
+.move p { margin: 0; }
+.move .counter { color: var(--accent); }
+.move .counter::before { content: "วิธีรับมือ — "; font-weight: 600; }
+.nums { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 12.5px var(--mono); color: var(--muted); }
+.nums b { color: var(--ink); font-weight: 500; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.tablewrap table { min-width: 520px; }
+.ico { width: 36px; height: 36px; border-radius: 6px; background-color: var(--stage-2); background-repeat: no-repeat; flex: none; }
+.itemcell { display: flex; gap: 10px; align-items: center; }
+.itemcell small { display: block; color: var(--muted); font-size: 12px; }
+.r-common { color: var(--common); } .r-uncommon { color: var(--uncommon); } .r-rare { color: var(--rare); }
+.r-epic { color: var(--epic); } .r-legendary { color: var(--legendary); } .r-mythic { color: var(--mythic); }
+.bar { height: 6px; background: var(--sunk); border-radius: 3px; min-width: 60px; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+
+.where { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 760px) { .where { grid-template-columns: 1fr; } }
+.where canvas { width: 100%; height: auto; aspect-ratio: 3 / 2; border-radius: 8px; display: block; background: var(--sunk); }
+.files { display: grid; gap: 6px; font-size: 13.5px; }
+.files div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; }
+.files span { color: var(--muted); }
+.rows { font: 12.5px var(--mono); color: var(--muted); }
+
+/* ---------- guide ---------- */
+.guide { margin-top: 44px; display: grid; gap: 32px; }
+.guide h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+.guide p, .guide li { max-width: 72ch; }
+.gloss { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.gloss div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.gloss code { background: var(--accent-soft); color: var(--accent); }
+.gloss p { margin: 6px 0 0; font-size: 14px; }
+ol.steps { padding-left: 22px; display: grid; gap: 10px; margin: 0; }
+ol.steps li::marker { font-family: var(--display); font-weight: 700; color: var(--accent); }
+.tree { font: 13px/1.7 var(--mono); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; white-space: pre; margin: 0; }
+@media (prefers-reduced-motion: reduce) { .anims button { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="label">Artaria Frontier Online · สมุดมอนสเตอร์</div>
+      <h1>Greenmire <span>Bestiary</span></h1>
+      <p>มอนสเตอร์ทั้ง 8 ตัวของทุ่งกรีนไมร์ พร้อมตัวช่วยของบอส: สเตตัส ท่าต่อสู้และวิธีรับมือ ของดรอปและโอกาส จุดเกิดบนแผนที่ และไฟล์ asset ทุกไฟล์ที่ใช้ ตัวเลขทั้งหมดดึงจากโค้ดเกมโดยตรง</p>
+    </div>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <div class="layout">
+    <nav class="ladder" id="ladder" aria-label="รายชื่อมอนสเตอร์"></nav>
+    <main id="mobs"></main>
+  </div>
+
+  <section class="guide" id="guide">
+    <div>
+      <h2>กลไกที่มอนใช้</h2>
+      <p>ท่าพิเศษทุกท่าตั้งค่าในข้อมูลมอน (<code>shared/data/monsters.js</code>) และเซิร์ฟเวอร์เป็นคนตัดสินว่าใครโดน ท่าที่เจ็บจะมีวงหรือเลนเตือนบนพื้นก่อนเสมอ ผู้เล่นจึงเรียนรู้และหลบได้</p>
+      <div class="gloss">
+        <div><code>burst</code><p>วงเตือนบนพื้น นับถอยหลัง <code>tell</code> แล้วระเบิด ใครยังอยู่ในวงโดน ตั้งให้ขึ้นรอบตัวมอนหรือใต้เท้าเป้าหมาย (<code>at: 'target'</code>) ก็ได้ ตรึงคนที่โดน (<code>root</code>) และตีหลายครั้ง (<code>pulses</code>) ได้ บอสมีหลายท่า แต่ละท่ามี cooldown ของตัวเองและไม่ออกซ้อนกัน</p></div>
+        <div><code>charge</code><p>เลนเตือนจากตัวมอนผ่านจุดที่เป้ายืน แล้วมอนพุ่งตามเลน ชนทุกคนในเลนครั้งเดียว เลนล็อกตั้งแต่ตอนเตือน การก้าวออกด้านข้างจึงหลบได้</p></div>
+        <div><code>shot</code> / <code>kite</code><p>ยิงกระสุนที่บินตามเป้า ดาเมจลงตอนกระสุนถึง ส่วน <code>kite</code> คือถ้าเป้าเข้ามาใกล้กว่าระยะที่ตั้ง มอนจะถอยหนีระหว่างรอยิงนัดถัดไป</p></div>
+        <div><code>leap</code><p>วงเตือนใต้เท้าเป้า มอนย่อตัว กระโดดโค้งข้ามไปลงตรงวง จุดลงล็อกไว้แล้ว วิ่งออกจากวงก็รอด</p></div>
+        <div><code>howl</code><p>วงรอบตัวมอน คนที่ยังอยู่ในวงช้าลง และมอนตีแรงขึ้นชั่วคราว</p></div>
+        <div><code>enrage</code><p>เมื่อเลือดต่ำกว่าที่ตั้ง มอนคลั่งครั้งเดียว ตีแรงขึ้น เร็วขึ้น ตีถี่ขึ้น มีออร่าแดงและแบนเนอร์ Phase 2 ถ้ามอนหนีกลับที่หรือเกิดใหม่ จะกลับเป็นปกติ</p></div>
+        <div><code>calls</code><p>บอสเรียกตัวช่วยมาฟื้นเลือดตัวเองทุกวินาทีจนกว่าจะถูกตัด เรียกใหม่ได้เมื่อตัวช่วยชุดเดิมหมดแล้ว</p></div>
+        <div><code>sprite.fly</code> / <code>lunge</code> / <code>hop</code><p>ตัวบินลอยเหนือเงาและโยกขึ้นลง ตัวที่พุ่งแทงจะพุ่งเข้าแล้วถอยกลับ ตัวที่กระโดดจะลอยเป็นโค้งตามความสูงที่ตั้ง</p></div>
+      </div>
+    </div>
+
+    <div>
+      <h2>กติกาของดรอป</h2>
+      <ul>
+        <li>ของตกลงพื้นพร้อมท่าตกของแต่ละชิ้น นอนบนพื้นเป็นกองตามจำนวน (4 ระดับ) และมีเอฟเฟคตอนเก็บ</li>
+        <li>คนที่ตีมอนตัวนั้นจะได้สิทธิ์เก็บก่อน <b class="num">25</b> วินาที หลังจากนั้นใครก็เก็บได้ และของหายไปเองใน <b class="num">120</b> วินาที</li>
+        <li>บอสและมินิบอส: ต้องทำดาเมจอย่างน้อย <b class="num">10%</b> ของเลือดบอส (นับรวมทั้งปาร์ตี้) ถึงจะได้ของ คนที่มาตีแค่ทีเดียวได้ EXP แต่ไม่ได้ของ</li>
+        <li>บอสทุกตัวดรอปของบังคับชุดเดียวกัน: ยาชุบชีวิต ม้วนเจาะเกราะ ตั๋วกาชา หินนำโชคตีบวก</li>
+        <li>กล่องทุกชนิดซื้อขายได้ มอนยิ่งยากเรทกล่องยิ่งดี ส่วนมอนง่ายที่บอทชอบฟาร์มได้เรทต่ำสุด</li>
+      </ul>
+    </div>
+
+    <div>
+      <h2>เพิ่มมอนตัวใหม่</h2>
+      <ol class="steps">
+        <li>วางชีตท่าทางไว้ที่ <code>assets/mob/source/</code> เป็นภาพพื้นโปร่งใส แถวละหนึ่งท่า</li>
+        <li>เพิ่มรายการใน <code>MOBS</code> ของ <code>tools/slice-mob.py</code>: ระบุขอบบนล่างของแต่ละแถว จำนวนเฟรม ช่วงคอลัมน์หรือจุดตัดเมื่อเฟรมติดกัน ป้ายชื่อที่ต้องลบ (<code>blank</code>) และแถบเอฟเฟค (<code>fx</code>)</li>
+        <li>รัน <code>python3 tools/slice-mob.py &lt;key&gt; preview.png</code> จะได้ atlas <code>assets/mob/&lt;key&gt;.webp</code> แถบเอฟเฟค <code>&lt;key&gt;_fx.webp</code> และข้อมูลใน <code>shared/data/mobart.js</code></li>
+        <li>วางชีตของดรอปไว้ที่ <code>assets/ui/source/</code> แล้วเพิ่มใน <code>SHEETS</code> ของ <code>tools/slice-drops.py</code> ของดรอปทุกตัวรวมอยู่ในไฟล์เดียว <code>assets/ui/drops.webp</code> เดโมจึงไม่เพิ่มไฟล์</li>
+        <li>เพิ่มไอเทมใน <code>shared/data/items.js</code> (ภาพ <code>DROP('ชื่อ_1')</code> และชนิดกอง <code>loot</code>) และมอนใน <code>shared/data/monsters.js</code> (<code>sprite: { kind: 'frames', key }</code> พร้อมท่าพิเศษ)</li>
+        <li>ใส่จุดเกิดใน <code>shared/data/maps.js</code> แล้วรัน <code>npm test</code> เทสต์จะตรวจว่าจุดเกิดเดินถึงได้ ของดรอปมีจริง บอสดรอปของบังคับครบ และค่าความแม่นยำยังสมดุล</li>
+      </ol>
+    </div>
+
+    <div>
+      <h2>ไฟล์อยู่ตรงไหน</h2>
+<pre class="tree">assets/
+  mob/
+    source/            ชีตต้นฉบับที่วาดมา (ไม่ถูกส่งไปกับเดโม)
+    &lt;key&gt;.webp         atlas ท่าทาง: หนึ่งแถวต่อหนึ่งท่า ทุกเฟรมยืนบนเส้นเท้าเดียวกัน
+    &lt;key&gt;_fx.webp      แถบเอฟเฟคจากชีต (ลูกเวท รากไม้ รอยข่วน ระเบิด)
+  ui/
+    source/*_drops.png ชีตของดรอปต้นฉบับ
+    drops.webp         ของดรอปทุกตัวในไฟล์เดียว: ไอคอน ท่าตก กองบนพื้น เอฟเฟคตอนเก็บ
+  maps/greenmire.webp  ภาพแผนที่ทุ่งกรีนไมร์
+shared/data/
+  monsters.js          สเตตัส ท่าพิเศษ ดรอป
+  mobart.js            ขนาดช่องเฟรมและจำนวนเฟรมต่อท่า (สร้างอัตโนมัติ)
+  dropart.js           ตำแหน่งภาพดรอปใน drops.webp (สร้างอัตโนมัติ)
+  items.js             ไอเทม ชื่อ ราคา คำอธิบาย
+  maps.js              จุดเกิดและทางวาร์ป
+tools/
+  slice-mob.py         ตัดชีตมอน
+  slice-drops.py       ตัดชีตดรอป</pre>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = /*DATA*/null;
+const FPS = { idle: 8, walk: 11, run: 13, attack: 13, skill: 9, hit: 16, death: 11, spawn: 13, leap: 8, howl: 9, enrage: 9, spike: 9, tornado: 9, summon: 9 };
+const EL = { ice: 'น้ำแข็ง', earth: 'ดิน', wind: 'ลม', fire: 'ไฟ', neutral: 'ไม่มีธาตุ', dark: 'มืด', holy: 'ศักดิ์สิทธิ์', lightning: 'สายฟ้า' };
+const RACE = { formless: 'ไร้รูป', plant: 'พืช', beast: 'สัตว์', undead: 'อันเดด', demon: 'ปีศาจ', human: 'มนุษย์' };
+const SIZE = { small: 'เล็ก', medium: 'กลาง', large: 'ใหญ่' };
+const ANIM_TH = { idle: 'ยืน', walk: 'เดิน', run: 'วิ่ง', attack: 'โจมตี', skill: 'สกิล', hit: 'โดนตี', death: 'ตาย', spawn: 'เกิด',
+  leap: 'กระโดด', howl: 'หอน', enrage: 'คลั่ง', spike: 'รากไม้พุ่ง', tornado: 'ทอร์นาโดใบไม้', summon: 'เรียกต้นไม้' };
+const LESSON = {
+  blue_slime: 'มอนตัวแรกนอกเมือง สอนวิธีสู้: เลือดน้อย เดินช้า ตีช้า มีแค่ท่าพุ่งชนธรรมดา',
+  mushroom: 'บทเรียนเรื่องท่าตีเป็นวง: มันจะหยุดนิ่ง พื้นรอบตัวขึ้นวงเตือน แล้วเห็ดเล็กระเบิดขึ้นมา ก้าวออกจากวงก็หลบได้',
+  caterpillar: 'ช้าและอึด การต่อสู้จึงนานพอให้ท่าพิเศษมีผล มันม้วนตัวเป็นลูกบอล ขึ้นเลนเตือนผ่านจุดที่ผู้เล่นยืน แล้วกลิ้งตามเลน ก้าวออกด้านข้างก็หลบได้',
+  forest_bee: 'ตัวบินตัวแรก สอนเรื่องท่าที่เร็ว: ลอยเหนือเงา พุ่งเข้าต่อยแล้วถอย หลบยาก และเข้าโจมตีเองถ้าเข้าใกล้รังของมัน ท่าหมุนพุ่งเตือนแค่ครึ่งวินาที ต้องตอบสนองไว',
+  wild_boar: 'จุดที่ทุ่งเริ่มตีกลับ กัดแรง ท่าพุ่งชนแรงที่สุดในทุ่ง แต่ถ้าพุ่งพลาด มันจะยืนหอบเต็มหนึ่งวินาที เป็นจังหวะให้ตีสวน',
+  forest_spirit: 'มอนสายเวทตัวแรก เปลี่ยนจังหวะการสู้: มันไม่เดินเข้าหา ถอยรักษาระยะแล้วยิงลูกเวท การสู้คือการไล่ปิดระยะ ท่ารากไม้ขึ้นใต้เท้าผู้เล่น',
+  alpha_wolf: 'มินิบอสกลางทุ่ง ทุกท่าอ่านได้จากพื้น: กระโดดลงตรงวง หอนทำให้คนในวงช้าลง เลือดต่ำกว่าครึ่งจะคลั่งถาวร ครึ่งหลังของไฟต์จึงควรมีเพื่อนมาด้วย',
+  tree_guardian: 'บอสสุดทางใต้ ช้าและใหญ่ ไฟต์นี้เป็นเรื่องของพื้นกับตัวช่วย: รากไม้ขึ้นใต้เท้า ทอร์นาโดตีรอบตัวสามครั้ง และเรียกต้นกล้ามาฟื้นเลือดให้ ต้องตัดต้นกล้าก่อน',
+  guardian_sapling: 'ตัวช่วยของผู้พิทักษ์ ไม่โจมตี ไม่เดิน ยืนฟื้นเลือดให้บอสทุกวินาที และหายไปเมื่อบอสตาย',
+};
+const $ = (s, el = document) => el.querySelector(s);
+const pct = (c) => (c >= 0.1 ? (c * 100).toFixed(0) : c >= 0.01 ? (c * 100).toFixed(1) : (c * 100).toFixed(2)).replace(/\.?0+$/, '') + '%';
+const sec = (ms) => (ms / 1000).toFixed(ms % 1000 ? 1 : 0) + ' วิ';
+const tiles = (px) => (px / DATA.map.tile).toFixed(1).replace(/\.0$/, '') + ' ช่อง';
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function load(src) {
+  const img = new Image();
+  img.src = src;
+  return img;
+}
+const DROPS = load('assets/ui/drops.webp');
+const MAP = load('assets/maps/greenmire.webp');
+
+/* ---------- moves, written from the numbers ---------- */
+function moves(m) {
+  const out = [];
+  const n = (pairs) => `<div class="nums">${pairs.filter(Boolean).map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join('')}</div>`;
+  out.push({ t: 'โจมตีปกติ', k: m.shot ? 'shot' : 'melee',
+    p: m.shot ? `ยิงลูกเวทจากระยะ ${tiles(m.attackRange)} ลูกเวทบินด้วยความเร็ว ${m.shot.speed} px/วิ และดาเมจลงตอนลูกถึงตัว ลูกเวทบินตามเป้าที่ยิงไป หนีไม่พ้น`
+      : `กัด ข่วน หรือพุ่งชนระยะประชิด ${tiles(m.attackRange)}${m.claw ? ' มีเอฟเฟคฟาดจากชีตขึ้นบนตัวคนที่โดน' : ''}${m.sprite?.lunge ? ` พุ่งเข้าแทง ${m.sprite.lunge} px แล้วถอยกลับ` : ''}`,
+    c: m.shot ? 'ปิดระยะให้เร็ว ยิ่งยืนไกลยิ่งโดนยิงฟรี' : null,
+    nums: n([['ตีทุก', m.attackDelay + ' วิ'], ['ระยะ', m.attackRange + ' px']]) });
+  if (m.kite) out.push({ t: 'ถอยรักษาระยะ', k: 'kite', p: `ถ้าผู้เล่นเข้ามาใกล้กว่า ${m.kite} px มันจะถอยหนีระหว่างรอยิงนัดถัดไป`, c: 'ต้อนเข้ามุมหรือกำแพง มันจะถอยต่อไม่ได้', nums: '' });
+  for (const b of m.burst) {
+    const under = b.at === 'target';
+    const name = b.anim === 'tornado' ? 'ทอร์นาโดใบไม้' : b.anim === 'spike' ? 'รากไม้พุ่ง' : under ? 'รากไม้ใต้เท้า' : 'ระเบิดรอบตัว';
+    out.push({ t: name, k: 'burst',
+      p: `${under ? 'วงเตือนขึ้นใต้เท้าผู้เล่นที่มันเล็งอยู่' : 'วงเตือนขึ้นรอบตัวมัน'} รัศมี ${b.radius} px มันยืนนิ่งตลอดช่วงเตือน ${sec(b.tell)} แล้ว${(b.pulses ?? 1) > 1 ? `ตี ${b.pulses} ครั้ง ห่างกัน ${sec(b.gap)}` : 'ระเบิด'} คนที่ยังอยู่ในวงโดนดาเมจ ${b.power}× ATK${b.root ? ` และถูกตรึง ${sec(b.root)}` : ''}`,
+      c: `ออกจากวงก่อนครบ ${sec(b.tell)}`,
+      nums: n([['cooldown', sec(b.every)], ['ใช้เมื่อเป้าอยู่ใน', b.reach + ' px'], ['ธาตุ', EL[b.element] ?? b.element]]) });
+  }
+  if (m.charge) {
+    const c = m.charge;
+    out.push({ t: 'พุ่งชนตามเลน', k: 'charge',
+      p: `เลนกว้าง ${c.width} px ขึ้นจากตัวมันผ่านจุดที่ผู้เล่นยืน เตือน ${sec(c.tell)} แล้วพุ่งด้วยความเร็ว ${c.speed} px/วิ ชนทุกคนในเลนครั้งเดียว ${c.power}× ATK หลังพุ่งจบยืนนิ่ง ${sec(c.recover)}`,
+      c: c.recover >= 800 ? `ก้าวออกด้านข้างของเลน แล้วตีสวนตอนมันยืนหอบ ${sec(c.recover)}` : 'ก้าวออกด้านข้างของเลน เลนล็อกตั้งแต่ตอนเตือน',
+      nums: n([['cooldown', sec(c.every)], ['ระยะพุ่งสูงสุด', c.max + ' px'], ['ธาตุ', EL[c.element] ?? c.element]]) });
+  }
+  if (m.leap) {
+    const l = m.leap;
+    out.push({ t: 'กระโดดตะครุบ', k: 'leap',
+      p: `วงรัศมี ${l.radius} px ขึ้นใต้เท้าผู้เล่น มันย่อตัว ${sec(l.tell)} กระโดดลอย ${sec(l.air)} แล้วลงตรงวง คนในวงโดน ${l.power}× ATK พร้อมระเบิดน้ำแข็ง หลังลงยืนนิ่ง ${sec(l.recover)}`,
+      c: 'มันลงตรงวงเดิม ไม่ตามคนที่วิ่งหนี วิ่งออกจากวงก็รอด',
+      nums: n([['cooldown', sec(l.every)], ['กระโดดได้ไกล', l.max + ' px']]) });
+  }
+  if (m.howl) {
+    const h = m.howl;
+    out.push({ t: 'หอน', k: 'howl',
+      p: `วงรัศมี ${h.radius} px รอบตัวมัน เตือน ${sec(h.tell)} แล้วหอน คนที่ยังอยู่ในวงช้าลง ${h.slow}% นาน ${sec(h.slowMs)} และมันตีแรงขึ้น ${h.buff * 100}% นาน ${sec(h.buffMs)}`,
+      c: 'ถอยออกจากวงก่อนมันหอน', nums: n([['cooldown', sec(h.every)]]) });
+  }
+  if (m.calls) {
+    const c = m.calls;
+    out.push({ t: 'เรียกต้นไม้', k: 'calls',
+      p: `เรียกต้นกล้า ${c.count} ต้นห่างตัว ${c.radius} px ครั้งแรก ${sec(c.first)} หลังเริ่มสู้ ต้นกล้าฟื้นเลือดให้บอสทุกวินาทีจนกว่าจะถูกตัด เรียกใหม่ได้ทุก ${sec(c.every)} แต่ต้องรอให้ชุดเดิมหมดก่อน`,
+      c: 'ตัดต้นกล้าก่อนเสมอ ไม่อย่างนั้นบอสจะฟื้นเลือดเร็วกว่าที่ตีได้', nums: '' });
+  }
+  if (m.mend) out.push({ t: 'ฟื้นเลือดบอส', k: 'mend', p: `ฟื้นเลือดให้บอส ${m.mend * 100}% ของเลือดสูงสุดทุกวินาที มีเส้นแสงจากต้นกล้าไปที่บอส`, c: 'ตีให้ล้มเร็ว ๆ มันไม่ตีกลับ', nums: '' });
+  if (m.enrage) {
+    const e = m.enrage;
+    out.push({ t: 'คลั่ง', k: 'enrage',
+      p: `เมื่อเลือดต่ำกว่า ${e.at * 100}% (ครั้งเดียว): ตีแรงขึ้น ×${e.atk} วิ่งเร็วขึ้น ×${e.speed} ตีถี่ขึ้น (ระยะห่างระหว่างการตี ×${e.haste}) มีออร่าแดงและแบนเนอร์ Phase 2`,
+      c: 'เก็บสกิลแรงไว้ใช้ช่วงนี้ หรือมีเพื่อนช่วยรับดาเมจ', nums: '' });
+  }
+  return out;
+}
+
+/* ---------- sprite stage ---------- */
+function stage(m, holder) {
+  const art = m.art;
+  const img = load(m.files.atlas);
+  const cv = document.createElement('canvas');
+  const ctx = cv.getContext('2d');
+  let anim = 0, t0 = performance.now();
+  const bar = document.createElement('div');
+  bar.className = 'anims';
+  art.anims.forEach(([name, count], i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = `${m.id}-anim-${name}`;
+    b.textContent = `${name} · ${count}`;
+    b.title = ANIM_TH[name] ?? name;
+    b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false');
+    b.addEventListener('click', () => {
+      anim = i; t0 = performance.now();
+      bar.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', j === i ? 'true' : 'false'));
+      cap.textContent = capText();
+    });
+    bar.append(b);
+  });
+  const cap = document.createElement('div');
+  cap.className = 'cap';
+  const capText = () => {
+    const [name, count] = art.anims[anim];
+    return `${ANIM_TH[name] ?? name} · ${count} เฟรม · ${FPS[name] ?? 10} fps · ช่อง ${art.cell[0]}×${art.cell[1]} px`;
+  };
+  cap.textContent = capText();
+  holder.append(cv, bar, cap);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw(now) {
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = devicePixelRatio || 1;
+    if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const [name, count] = art.anims[anim];
+    const [cw, ch] = art.cell;
+    const k = Math.min(2.6, (h - 16) / ch, (w - 16) / cw);
+    const fps = FPS[name] ?? 10;
+    const f = reduce ? 0 : Math.floor(((now - t0) / 1000) * fps) % (count + 3);
+    const frame = Math.min(f, count - 1);
+    // a soft shadow under the feet
+    const fx = w / 2, fy = h / 2 - (ch * k) / 2 + art.foot * k;
+    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.beginPath(); ctx.ellipse(fx, fy, cw * k * 0.22, 6, 0, 0, Math.PI * 2); ctx.fill();
+    if (img.complete && img.naturalWidth) {
+      ctx.drawImage(img, frame * cw, anim * ch, cw, ch, w / 2 - (cw * k) / 2, h / 2 - (ch * k) / 2, cw * k, ch * k);
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+
+function fxStrips(m, holder) {
+  if (!m.art.fx) return;
+  const img = load(m.files.fx);
+  const row = document.createElement('div');
+  row.className = 'fxrow';
+  for (const [name, fx] of Object.entries(m.art.fx)) {
+    const fig = document.createElement('figure');
+    const cv = document.createElement('canvas');
+    const cap = document.createElement('figcaption');
+    cap.textContent = `${name} · ${fx.n} เฟรม`;
+    fig.append(cv, cap);
+    row.append(fig);
+    const ctx = cv.getContext('2d');
+    const loop = (now) => {
+      const w = cv.clientWidth, h = cv.clientHeight, dpr = devicePixelRatio || 1;
+      if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const [cw, ch] = fx.cell;
+      const k = Math.min((w - 6) / cw, (h - 6) / ch);
+      const f = Math.floor(now / 100) % (fx.n + 3);
+      if (img.complete && img.naturalWidth) {
+        ctx.drawImage(img, Math.min(f, fx.n - 1) * cw, fx.y, cw, ch, w / 2 - (cw * k) / 2, h / 2 - (ch * k) / 2, cw * k, ch * k);
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+  const lab = document.createElement('div');
+  lab.className = 'cap';
+  lab.textContent = 'เอฟเฟคจากชีต (' + m.files.fx.split('/').pop() + ')';
+  holder.append(lab, row);
+}
+
+/* ---------- where it lives ---------- */
+function spawnMap(m, cv) {
+  const ctx = cv.getContext('2d');
+  const draw = () => {
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = devicePixelRatio || 1;
+    cv.width = w * dpr; cv.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (MAP.complete && MAP.naturalWidth) ctx.drawImage(MAP, 0, 0, w, h);
+    ctx.fillStyle = 'rgba(10,16,12,.35)'; ctx.fillRect(0, 0, w, h);
+    const sx = w / DATA.map.w, sy = h / DATA.map.h;
+    for (const s of m.spawns) {
+      const [x, y, aw, ah] = s.area;
+      ctx.fillStyle = m.boss ? 'rgba(232,166,90,.45)' : 'rgba(123,192,142,.45)';
+      ctx.strokeStyle = m.boss ? '#ffcf8a' : '#c8f0d2';
+      ctx.lineWidth = 2;
+      ctx.fillRect(x * sx, y * sy, aw * sx, ah * sy);
+      ctx.strokeRect(x * sx, y * sy, aw * sx, ah * sy);
+      ctx.fillStyle = '#fff'; ctx.font = '600 12px "IBM Plex Mono", monospace';
+      ctx.fillText('×' + s.count, x * sx + 4, y * sy + 14);
+    }
+  };
+  if (MAP.complete) draw(); else MAP.addEventListener('load', draw);
+  addEventListener('resize', draw);
+}
+
+/* ---------- drop table ---------- */
+function iconStyle(cell, size = 36) {
+  if (cell == null) return '';
+  const { cell: c, cols } = DATA.drops;
+  const k = size / c;
+  return `background-image:url(assets/ui/drops.webp);background-size:${cols * c * k}px auto;background-position:${-(cell % cols) * size}px ${-Math.floor(cell / cols) * size}px`;
+}
+function dropTable(m) {
+  const rows = m.drops.map((d) => `<tr>
+    <td><div class="itemcell"><div class="ico" style="${iconStyle(d.icon)}" role="img" aria-label="${esc(d.name)}"></div>
+      <div><b class="r-${d.rarity}">${esc(d.th)}</b><small>${esc(d.name)}${d.box ? ' · กล่อง' : ''}</small></div></div></td>
+    <td class="num">${pct(d.chance)}</td>
+    <td><div class="bar" aria-hidden="true"><i style="width:${Math.max(2, Math.sqrt(d.chance) * 100)}%"></i></div></td>
+    <td class="num">${Array.isArray(d.qty) ? d.qty.join('–') : d.qty}</td>
+    <td class="num">${d.value.toLocaleString()}</td></tr>`).join('');
+  const gold = m.aurum ? `<tr><td><div class="itemcell"><div class="ico" style="${iconStyle(DATA.gold)}" role="img" aria-label="Gold"></div><div><b class="r-legendary">ทอง</b><small>Aurum</small></div></div></td>
+    <td class="num">${pct(m.aurum.chance)}</td><td><div class="bar"><i style="width:${Math.sqrt(m.aurum.chance) * 100}%"></i></div></td>
+    <td class="num">${m.aurum.min}–${m.aurum.max}</td><td class="num">—</td></tr>` : '';
+  return `<div class="tablewrap"><table><thead><tr><th>ไอเทม</th><th class="num">โอกาส</th><th>สเกล</th><th class="num">จำนวน</th><th class="num">ราคาขาย</th></tr></thead><tbody>${rows}${gold}</tbody></table></div>
+  <p class="rows">แถบสเกลใช้รากที่สองของโอกาส ของหายากจึงยังมองเห็นได้</p>`;
+}
+
+/* ---------- build ---------- */
+const bosses = DATA.mobs.filter((m) => m.boss);
+$('#facts').innerHTML = `
+  <div><span class="label">เลเวล</span><b class="num">${DATA.map.levelRange?.join('–') ?? '1–10'}</b></div>
+  <div><span class="label">มอน</span><b class="num">${DATA.mobs.filter((m) => m.id !== 'guardian_sapling').length}</b></div>
+  <div><span class="label">บอส</span><b class="num">${bosses.length}</b></div>`;
+
+const ladder = $('#ladder');
+ladder.innerHTML = '<span class="label">ไล่ตามความยาก</span>' + DATA.mobs.map((m, i) =>
+  `${m.id === 'alpha_wolf' ? '<div class="sep"></div>' : ''}<a href="#${m.id}" class="${m.boss ? 'boss' : ''}"><span class="num">Lv${m.level}</span>${esc(m.th)}</a>`).join('');
+
+const host = $('#mobs');
+for (const m of DATA.mobs) {
+  const sec = document.createElement('section');
+  sec.className = 'mob';
+  sec.id = m.id;
+  const role = m.boss ? (m.mini ? 'MINI BOSS' : 'BOSS') : m.id === 'guardian_sapling' ? 'ตัวช่วยบอส' : m.aggressive ? 'เข้าโจมตีเอง' : 'ไม่โจมตีก่อน';
+  const total = m.spawns.reduce((s, x) => s + x.count, 0);
+  sec.innerHTML = `
+    <div class="mob-head">
+      <h2>${esc(m.name)}</h2><span class="th">${esc(m.th)}</span>
+      <span class="tag ${m.boss ? 'boss' : ''}">Lv.${m.level}</span>
+      <span class="tag ${m.boss ? 'boss' : 'plain'}">${role}</span>
+    </div>
+    <p class="lesson">${LESSON[m.id] ?? ''}</p>
+    <div class="sheet">
+      <div class="stage" data-stage></div>
+      <div>
+        <div class="stats">
+          <div><b>${m.hp.toLocaleString()}</b><span>HP</span></div>
+          <div><b>${m.atk}</b><span>ATK</span></div>
+          <div><b>${m.def}</b><span>DEF</span></div>
+          <div><b>${m.mdef}</b><span>MDEF</span></div>
+          <div><b>${m.hit}</b><span>HIT</span></div>
+          <div><b>${m.flee}</b><span>FLEE</span></div>
+          <div><b>${m.exp}</b><span>EXP</span></div>
+          <div><b>${m.jobExp}</b><span>Job EXP</span></div>
+        </div>
+        <div class="traits">
+          <span>ธาตุ ${EL[m.element] ?? m.element}</span><span>${RACE[m.race] ?? m.race}</span><span>ขนาด${SIZE[m.size] ?? m.size}</span>
+          <span>ความเร็ว ${m.speed} px/วิ</span>
+          ${m.aggroRange ? `<span>มองเห็น ${m.aggroRange} px</span>` : ''}
+          ${m.respawn ? `<span>เกิดใหม่ ${m.respawn >= 60 ? m.respawn / 60 + ' นาที' : m.respawn + ' วิ'}</span>` : ''}
+          ${m.sprite?.fly ? `<span>บินสูง ${m.sprite.fly} px</span>` : ''}
+          ${m.phases ? `<span>เฟส 2 ที่ ${m.phases.map((p) => p * 100 + '%').join(', ')}</span>` : ''}
+        </div>
+      </div>
+    </div>
+    <div class="block"><h3>ท่าต่อสู้</h3><div class="moves">${moves(m).map((x) => `
+      <div class="move"><h4>${x.t} <span class="mono">${x.k}</span></h4><p>${x.p}</p>${x.c ? `<p class="counter">${x.c}</p>` : ''}${x.nums}</div>`).join('')}</div></div>
+    <div class="block"><h3>ของดรอป</h3>${dropTable(m)}</div>
+    <div class="block"><h3>จุดเกิดและไฟล์</h3>
+      <div class="where">
+        ${m.spawns.length ? `<div><canvas aria-label="จุดเกิดบนแผนที่ทุ่งกรีนไมร์"></canvas><p class="rows">${total} ตัว · ${m.spawns.map((s) => `[${s.area.join(', ')}]`).join(' ')} (ช่อง x, y, กว้าง, สูง)</p></div>`
+          : `<div class="rows" style="padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px">ไม่มีจุดเกิดของตัวเอง: บอสเรียกออกมาระหว่างไฟต์</div>`}
+        <div class="files">
+          <div><span>ชีตต้นฉบับ</span><code>${m.files.sheet}</code></div>
+          <div><span>atlas ท่าทาง</span><code>${m.files.atlas}</code></div>
+          ${m.files.fx ? `<div><span>แถบเอฟเฟค</span><code>${m.files.fx}</code></div>` : ''}
+          ${m.files.dropSheet ? `<div><span>ชีตของดรอป</span><code>${m.files.dropSheet}</code></div>` : ''}
+          <div><span>ช่องเฟรม</span><code>${m.art.cell.join(' × ')} px · เท้าที่ y ${m.art.foot} · แสดง ×${m.art.show}</code></div>
+          <div><span>แถวท่าทาง</span><code>${m.art.anims.map(([a, n]) => `${a} ${n}`).join(' · ')}</code></div>
+        </div>
+      </div>
+    </div>`;
+  host.append(sec);
+  const st = sec.querySelector('[data-stage]');
+  stage(m, st);
+  fxStrips(m, st);
+  const cv = sec.querySelector('.where canvas');
+  if (cv) spawnMap(m, cv);
+}
+</script>

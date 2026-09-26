@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Cuts the character / equipment sheet (assets/ui/source/char_sheet2.png)
+into ONE atlas, assets/ui/char_atlas.webp, and writes the CSS that
+addresses it into client/css/style.css between the "char atlas" markers.
+
+    python3 tools/slice-char.py [preview.png]
+
+Pieces are used through `ca ca-<name>`; size is the piece's size times --s.
+Numbers painted into panels ("123,456", "Lv. 99", "999,999") are wiped by
+copying a clean column across them, so the game can write its own.
+"""
+import os
+import re
+import sys
+import numpy as np
+from PIL import Image
+
+ROOT = os.path.join(os.path.dirname(__file__), '..')
+SHEET = np.array(Image.open(os.path.join(ROOT, 'assets/ui/source/char_sheet2.png')).convert('RGBA'))
+CSS = os.path.join(ROOT, 'client/css/style.css')
+
+
+def crop(box):
+    x0, y0, x1, y1 = box
+    a = SHEET[y0:y1, x0:x1].copy()
+    al = a[:, :, 3].astype(np.float32)
+    a[:, :, 3] = np.where(al < 40, 0, np.clip(al * 255 / 250, 0, 255)).astype(np.uint8)
+    return a
+
+
+def smear(a, box, src):
+    """Sheet-coordinate box, relative to the crop origin given in `o`."""
+    x0, y0, x1, y1 = box
+    a[y0:y1, x0:x1] = a[y0:y1, src:src + 1]
+    return a
+
+
+def cut(box, wipes=(), holes=()):
+    x0, y0 = box[0], box[1]
+    a = crop(box)
+    for (wx0, wy0, wx1, wy1, sx) in wipes:
+        smear(a, (wx0 - x0, wy0 - y0, wx1 - x0, wy1 - y0), sx - x0)
+    for (hx0, hy0, hx1, hy1) in holes:
+        a[hy0 - y0:hy1 - y0, hx0 - x0:hx1 - x0, 3] = 0
+    return a
+
+
+P = {}
+# portrait ring with its level plate, the words wiped; the middle cleared
+P['ring'] = cut((14, 16, 222, 316), wipes=[(76, 266, 160, 292, 74)])
+P['title'] = cut((553, 10, 971, 126))
+cp = crop((1277, 30, 1529, 136))
+# the plate shades top to bottom: rebuild the number band row by row from its own dark red
+# the plate shades top to bottom: fill the number band with a vertical blend
+# of the clean rows just above and below it
+top = np.median(cp[52, 70:220, :3].astype(np.float32), 0)
+bot = top * .72                        # the plate darkens toward its foot
+for r in range(54, 95):
+    t = (r - 54) / 40
+    cp[r, 64:226, :3] = (top * (1 - t) + bot * t).astype(np.uint8)
+P['cp'] = cp
+P['base'] = cut((1024, 43, 1278, 402), wipes=[(1122, 90, 1262, 390, 1120)])
+P['detail'] = cut((1283, 138, 1523, 356), wipes=[(1380, 180, 1505, 350, 1378)])
+P['tab_on'] = cut((510, 133, 606, 189), wipes=[(524, 146, 594, 177, 522)])
+P['tab_off'] = cut((610, 133, 706, 189), wipes=[(622, 146, 696, 177, 620)])
+P['stab_on'] = cut((511, 215, 578, 266), wipes=[(520, 225, 570, 257, 518)])
+P['stab_off'] = cut((580, 215, 646, 266), wipes=[(588, 225, 640, 257, 586)])
+# the empty slots, each with its grey outline of what goes there
+for name, box in {'s_weapon': (10, 385, 89, 468), 's_head': (92, 329, 175, 411), 's_hair': (200, 320, 285, 405),
+                  's_glasses': (310, 328, 395, 414), 's_cloak': (397, 383, 479, 470), 's_offhand': (98, 431, 176, 509),
+                  's_mask': (310, 431, 387, 509), 's_accessory': (10, 481, 89, 565), 's_hands': (98, 526, 175, 605),
+                  's_legs': (310, 526, 387, 605), 's_scarf': (397, 482, 479, 568), 's_bow': (12, 577, 90, 658),
+                  's_wings': (397, 577, 479, 658)}.items():
+    P[name] = crop(box)
+tile = crop((200, 320, 285, 405))
+h, w = tile.shape[:2]
+tile[int(h * .2):int(h * .8), int(w * .2):int(w * .8)] = tile[int(h * .2):int(h * .8), int(w * .2) - 1:int(w * .2)]
+P['s_blank'] = tile
+P['holo'] = crop((186, 414, 300, 628))
+P['plat'] = crop((141, 620, 353, 672))
+for name, box in {'b_equip': (1031, 424, 1175, 476), 'b_unequip': (1031, 480, 1175, 533), 'b_upgrade': (1031, 538, 1175, 589),
+                  'b_enhance': (1031, 595, 1175, 646), 'b_look': (1187, 570, 1359, 642), 'b_compare': (1370, 582, 1519, 631),
+                  'b_plus': (1187, 431, 1222, 466), 'b_reset': (1286, 362, 1390, 408), 'b_addstat': (1392, 362, 1519, 408),
+                  'preset': (17, 901, 179, 1002), 'b_save': (187, 925, 287, 981), 'b_load': (289, 925, 390, 981),
+                  'male': (396, 912, 464, 978), 'female': (472, 912, 540, 978),
+                  'n_info': (1001, 898, 1079, 1001), 'n_skill': (1089, 898, 1169, 1001), 'n_achieve': (1180, 898, 1258, 1001),
+                  'n_emblem': (1269, 898, 1349, 1001), 'n_pet': (1360, 898, 1438, 1001), 'n_mount': (1448, 898, 1525, 1001),
+                  'titles': (841, 687, 1218, 881), 'wings': (1223, 688, 1523, 880)}.items():
+    P[name] = crop(box)
+
+W, PAD = 1024, 2
+order = sorted(P, key=lambda k: -P[k].shape[0])
+x = y = shelf = 0
+at = {}
+for k in order:
+    h, w = P[k].shape[:2]
+    if x + w > W:
+        x, y, shelf = 0, y + shelf + PAD, 0
+    at[k] = (x, y, w, h)
+    x += w + PAD
+    shelf = max(shelf, h)
+H = y + shelf
+atlas = np.zeros((H, W, 4), np.uint8)
+for k, (x, y, w, h) in at.items():
+    atlas[y:y + h, x:x + w] = P[k]
+Image.fromarray(atlas).save(os.path.join(ROOT, 'assets/ui/char_atlas.webp'), 'WEBP', quality=88, method=6)
+
+rules = ['/* char atlas: generated by tools/slice-char.py - do not edit by hand */',
+         f'.ca {{ display: block; flex: none; background: url(../../assets/ui/char_atlas.webp) no-repeat;'
+         f' width: calc(var(--w) * var(--s, .5) * 1px); height: calc(var(--h) * var(--s, .5) * 1px);'
+         f' background-size: calc({W} * var(--s, .5) * 1px) calc({H} * var(--s, .5) * 1px);'
+         f' background-position: calc(var(--x) * var(--s, .5) * -1px) calc(var(--y) * var(--s, .5) * -1px); }}']
+for k in sorted(at):
+    x, y, w, h = at[k]
+    rules.append(f'.ca-{k} {{ --x: {x}; --y: {y}; --w: {w}; --h: {h}; }}')
+rules.append('/* end char atlas */')
+block = '\n'.join(rules)
+css = open(CSS).read()
+if '/* char atlas:' in css:
+    css = re.sub(r'/\* char atlas:.*?/\* end char atlas \*/', lambda _: block, css, flags=re.S)
+else:
+    css += '\n' + block + '\n'
+open(CSS, 'w').write(css)
+
+if len(sys.argv) > 1:
+    bg = Image.new('RGBA', (W, H), (30, 90, 40, 255))
+    bg.alpha_composite(Image.fromarray(atlas))
+    bg.convert('RGB').save(sys.argv[1])
+print(len(P), 'pieces,', f'{W}x{H}')

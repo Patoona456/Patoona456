@@ -1,0 +1,85 @@
+<title>Artaria Frontier Online</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap">
+<style>
+/*STYLE*/
+
+/* ---------- demo shell ---------- */
+#demo-intro {
+  position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+  background: radial-gradient(1100px 620px at 50% 25%, #1d1629, #06070d 72%);
+  padding: 20px; overflow: auto;
+}
+#demo-intro .card {
+  width: min(600px, 94vw); background: rgba(18,21,30,.95); border: 1px solid var(--line);
+  border-radius: 18px; padding: 26px; box-shadow: 0 30px 90px rgba(0,0,0,.75);
+}
+#demo-intro h1 { margin: 0; font-size: clamp(28px, 6vw, 38px); letter-spacing: .5px; }
+#demo-intro h1 span { color: var(--gold); }
+#demo-intro .name-th { margin: 2px 0 8px; font-size: 14px; letter-spacing: .08em; opacity: .8; }
+#demo-intro .lede { color: var(--muted); margin: 6px 0 18px; font-size: 14px; line-height: 1.85; }
+#demo-intro dl { display: grid; grid-template-columns: auto 1fr; gap: 10px 14px; margin: 0 0 20px; font-size: 13px; line-height: 1.6; }
+#demo-intro dt { color: var(--gold); font-weight: 600; white-space: nowrap; }
+#demo-intro dd { margin: 0; color: var(--ink); }
+#demo-play {
+  width: 100%; padding: 13px; font-size: 16px; font-weight: 700; border-radius: 12px;
+  background: linear-gradient(180deg, #3d63a3, #2f4a7a); border: 1px solid #4a72b8; color: #fff;
+}
+#demo-play:disabled { opacity: .6; }
+#demo-intro .fine { color: var(--muted); font-size: 11px; margin: 16px 0 0; line-height: 1.9; }
+
+</style>
+
+<!--BODY-->
+
+<div id="demo-intro">
+  <div class="card">
+    <h1>Artaria <span>Frontier Online</span></h1>
+    <p class="name-th">อาร์ทาเรีย ฟรอนเทียร์ ออนไลน์</p>
+    <p class="lede">เดโมเล่นได้จริงของเกม 2D MMORPG ที่กำลังพัฒนา — หน้านี้รัน<strong>ทั้งเซิร์ฟเวอร์และไคลเอนต์ในเบราว์เซอร์ของคุณ</strong>
+      จึงเล่นคนเดียว (ไม่มีผู้เล่นอื่น) แต่ระบบทุกอย่างเป็นโค้ดชุดเดียวกับเซิร์ฟเวอร์จริง</p>
+    <dl>
+      <dt>เดิน</dt><dd>WASD / ลูกศร / อนาล็อกซ้ายของจอย / จอยหลอกบนมือถือ</dd>
+      <dt>โจมตี</dt><dd>Space (ค้างไว้ได้) · จอย: X หรือ RT · มือถือ: ปุ่ม ⚔</dd>
+      <dt>เป้าหมาย</dt><dd>Tab / Q สลับเป้า · จอย: RB / LB</dd>
+      <dt>คุย NPC</dt><dd>E · จอย: A · มือถือ: ปุ่ม ✋</dd>
+      <dt>สกิล</dt><dd>1–6 · จอย: ปุ่มทิศ · ต้องเรียนสกิลในเมนู ✨ ก่อน</dd>
+      <dt>เมนู</dt><dd>C ตัวละคร · I กระเป๋า · K สกิล · J ภารกิจ · F1 วิธีเล่น</dd>
+    </dl>
+    <button id="demo-play" type="button">เล่นเลย</button>
+    <p class="fine">ตัวละครถูกเก็บไว้ในเบราว์เซอร์นี้เท่านั้น ·
+      งานศิลป์: Universal LPC Spritesheet (CC-BY-SA 3.0 / GPL 3.0)</p>
+  </div>
+</div>
+
+<script>
+  document.body.dataset.ui = "ember";
+  // The server half of this page was written for Node; these two globals are
+  // all it needs from that environment. There are no dev shortcuts here: an
+  // account becomes a game master by typing "/admin <token>" in chat.
+  globalThis.process = globalThis.process ?? { env: { AFO_ADMIN_TOKEN: 'afo-gm' } };
+  globalThis.Buffer = globalThis.Buffer ?? {
+    from(value) {
+      if (typeof value !== 'string') return Uint8Array.from(value);
+      const out = new Uint8Array(Math.floor(value.length / 2));
+      for (let i = 0; i < out.length; i++) out[i] = parseInt(value.substr(i * 2, 2), 16);
+      return out;
+    },
+  };
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "node:crypto": "./demo/shim-crypto.js",
+    "./server/persistence.js": "./demo/shim-persistence.js",
+    "./client/js/net.js": "./demo/net-loopback.js"
+  }
+}
+</script>
+
+<script type="module">
+  import { startDemo } from './demo/demo-ui.js';
+  import './client/js/main.js';
+  startDemo();
+</script>

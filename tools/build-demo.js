@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+/**
+ * Builds the single-page, offline build of the game:
+ *
+ *   node tools/build-demo.js [outDir]        # default: dist/demo
+ *
+ * It copies the client, the shared data and the *real* server into one folder
+ * and adds an import map that swaps three modules for browser stand-ins
+ * (demo/): the websocket client becomes an in-page loopback, the JSON file
+ * store becomes localStorage, and node:crypto becomes a tiny digest. Serve the
+ * folder with any static server - there is no backend.
+ */
+import { cp, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const out = path.resolve(process.argv[2] ?? path.join(root, 'dist', 'demo'));
+
+// Every client module, read from the directory rather than listed here: a
+// hand-kept list silently ships a build missing whichever file was added
+// last, and the only symptom is a 404 for a module nothing else imports.
+const CLIENT = (await readdir(path.join(root, 'client', 'js')))
+  .filter((f) => f.endsWith('.js'))
+  .map((f) => f.slice(0, -3));
+
+await mkdir(path.join(out, 'client', 'js'), { recursive: true });
+for (const f of CLIENT) {
+  let src = await readFile(path.join(root, 'client', 'js', `${f}.js`), 'utf8');
+  // published artifacts live under a path prefix, so assets are referenced relatively
+  src = src.replace("const BASE = '/assets/lpc';", "const BASE = 'assets/lpc';")
+    .replace("const MOB_BASE = '/assets/mob';", "const MOB_BASE = 'assets/mob';")
+    .replace("const CHIBI_BASE = '/assets/chibi';", "const CHIBI_BASE = 'assets/chibi';")
+    .replace("const NPC_BASE = '/assets/npc';", "const NPC_BASE = 'assets/npc';")
+    .replace("export const UI_BASE = '/assets/ui';", "export const UI_BASE = 'assets/ui';")
+    .replace("const GEAR_UI_BASE = '/assets/ui';", "const GEAR_UI_BASE = 'assets/ui';");
+  // a root-relative asset path left in the code 404s under the artifact's
+  // prefix and the picture silently never draws: refuse to build instead
+  const rooted = src.match(/['"`]\/assets\/[^'"`]*/g);
+  if (rooted) throw new Error(`client/js/${f}.js: root-relative asset path ${rooted.join(', ')} - give it a base constant the demo rewrites`);
+  await writeFile(path.join(out, 'client', 'js', `${f}.js`), src);
+}
+await cp(path.join(root, 'shared'), path.join(out, 'shared'), { recursive: true });
+await cp(path.join(root, 'server', 'game'), path.join(out, 'server', 'game'), { recursive: true });
+for (const f of ['net.js', 'accounts.js']) {
+  await cp(path.join(root, 'server', f), path.join(out, 'server', f));
+}
+await cp(path.join(root, 'demo'), path.join(out, 'demo'), { recursive: true });
+// source/ folders hold the full-size sheets the tools cut from; the game never loads them
+await cp(path.join(root, 'assets'), path.join(out, 'assets'), {
+  recursive: true, filter: (src) => path.basename(src) !== 'source',
+});
+
+// the stylesheet is inlined into index.html, so its ../../assets paths move up to the root
+const css = (await readFile(path.join(root, 'client', 'css', 'style.css'), 'utf8'))
+  .replaceAll('url(../../assets/', 'url(assets/');
+const html = await readFile(path.join(root, 'client', 'index.html'), 'utf8');
+const body = '<canvas id="game"></canvas>' + html.split('<canvas id="game"></canvas>')[1].split('<script')[0];
+const shell = await readFile(path.join(root, 'demo', 'page.html'), 'utf8');
+
+await writeFile(
+  path.join(out, 'index.html'),
+  shell.replace('/*STYLE*/', css).replace('<!--BODY-->', body)
+);
+
+console.log(`demo build -> ${path.relative(root, out)}`);
+console.log('serve it with any static file server, e.g.  npx serve dist/demo');

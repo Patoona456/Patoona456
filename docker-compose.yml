@@ -1,0 +1,17 @@
+# Bring the whole game up with: docker compose up -d
+services:
+  afo:
+    build: .
+    image: artaria-frontier-online
+    restart: unless-stopped
+    ports:
+      - "${AFO_PORT:-8080}:8080"
+    volumes:
+      - afo-data:/data      # accounts, characters, market - keep this
+    environment:
+      AFO_STORE: sqlite
+      # set to 1 only while testing: it enables the dev warp/boost commands
+      AFO_DEV: "0"
+
+volumes:
+  afo-data:
