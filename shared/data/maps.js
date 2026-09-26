@@ -8,6 +8,7 @@ import { ARTARIS_OBSTACLES } from './artaris-obstacles.js';
 import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
 import { AMBERWOOD_OBSTACLES } from './amberwood-obstacles.js';
 import { OBSIDIAN_OBSTACLES } from './obsidian-obstacles.js';
+import { FROSTFALL_OBSTACLES } from './frostfall-obstacles.js';
 
 export const TILES = {
   GRASS: 0, PATH: 1, WATER: 2, TREE: 3, ROCK: 4, SAND: 5,
@@ -347,10 +348,34 @@ export const MAPS = {
     walk: [[0, 0, 90, 60]],
     obstacles: OBSIDIAN_OBSTACLES,
     spawnPoint: [4, 16],
-    // In from Amberwood on the forest road in the west. The east bridge and
-    // the arena's south-east gate wait for the next field.
+    // In from Amberwood on the forest road in the west, on to the Frostfall
+    // pass over the east bridge; the arena's south-east gate waits.
     warps: [
       { x: 0, y: 15, w: 1, h: 3, to: 'amberwood', at: [85, 21], label: 'ป่าอำพันชายแดน' },   // the west road
+      { x: 89, y: 15, w: 1, h: 3, to: 'frostfall', at: [4, 19], label: 'ช่องเขามังกรน้ำแข็ง' },  // the east bridge
+    ],
+    // its monsters come with their own sheets
+    spawns: [],
+  },
+
+  frostfall: {
+    id: 'frostfall', name: 'Frostfall Dragon Pass', nameTh: 'ช่องเขามังกรน้ำแข็ง', kind: 'field',
+    width: 90, height: 60, seed: 5005, theme: 'ice', levelRange: [40, 50],
+    // Monster Field 04, one 1536x1024 painting upscaled 4x by Real-ESRGAN and
+    // cut into 2048px tiles: snowbound ridges and frozen falls, snowy roads
+    // and clearings, stone bridges, a stair-topped ruin in the north and a
+    // great rune plaza over a frozen lake in the north-east. Its walk grid is
+    // traced by tools/trace-field.py (the 'snow' sort; bridges, stairs and
+    // the plaza opened by hand).
+    backdrop: 'assets/maps/frostfall.webp',
+    backdropTiles: { dir: 'assets/maps/frostfall/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
+    walk: [[0, 0, 90, 60]],
+    obstacles: FROSTFALL_OBSTACLES,
+    spawnPoint: [4, 19],
+    // In from the Obsidian Highlands on the west road; the east road out
+    // waits for the next field.
+    warps: [
+      { x: 0, y: 18, w: 1, h: 3, to: 'obsidian', at: [85, 16], label: 'ที่ราบสูงออบซิเดียน' },   // the west road
     ],
     // its monsters come with their own sheets
     spawns: [],

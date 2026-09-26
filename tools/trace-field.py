@@ -109,7 +109,45 @@ FIELDS = {
                         (70, 26, 4, 3), (52, 35, 4, 3), (80, 45, 4, 4)],
         'force_block': [],
     },
+    'frostfall': {
+        # Monster Field 04, one 1536x1024 painting: snowbound ridges and ice
+        # falls, snowy roads and clearings, a stair-topped ruin in the north,
+        # a great rune plaza in the north-east over a frozen lake
+        'src': 'assets/maps/source/frostfall/full.png',
+        'cols': 90, 'rows': 60,
+        'backdrop_scale': 1,
+        'seed': (40, 22),
+        'classify': 'snow',
+        'close_gaps': 0.2,
+        'bridge_gaps': 5,
+        'force_open': [(22, 22, 5, 3),                           # the west roads onto the middle
+                       (9, 21, 4, 2), (12, 22, 8, 3),            # the west bridge over the falls
+                       (14, 9, 10, 2),                           # the north-west bridge
+                       (13, 45, 7, 2), (10, 44, 4, 3),           # the south-west bridge
+                       (19, 23, 3, 3), (17, 33, 4, 2),           # the west roads' ends
+                       (56, 16, 4, 3), (62, 14, 6, 4),           # up the rune plaza's west stairs
+                       (80, 16, 7, 5),                           # ...and down its east stairs
+                       (67, 6, 17, 10),                          # the rune plaza's floor
+                       (53, 17, 4, 3),                           # the middle road up to its west stairs
+                       (63, 45, 15, 1), (61, 44, 3, 2),          # the south-east bridge
+                       (7, 43, 4, 3), (13, 33, 5, 3),            # the south-west roads
+                       (76, 45, 5, 2), (80, 44, 10, 3)],         # the east road out
+        'force_block': [],
+    },
 }
+
+
+def classify_snow(rgb):
+    """Per pixel, for the frost pass: the trodden snow and the grey paving
+    are ground - pale, colourless and smooth; the snow on the ridges is as
+    pale but rough with rock and trees, the ice blue."""
+    img = cv2.GaussianBlur(rgb, (0, 0), 1.2)
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(np.int32)
+    s, v = hsv[..., 1], hsv[..., 2]
+    lum = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.float32)
+    mu = cv2.blur(lum, (9, 9))
+    sd = np.sqrt(np.maximum(cv2.blur(lum * lum, (9, 9)) - mu * mu, 0))
+    return ((s < 55) & (v >= 130) & (sd < 18)).astype(np.float32)
 
 
 def classify_ash(rgb):
@@ -165,7 +203,7 @@ def main(key, overlay=None):
     rgb = np.array(Image.open(os.path.join(ROOT, cfg['src'])).convert('RGB'))
     H, W = rgb.shape[:2]
     cols, rows = cfg['cols'], cfg['rows']
-    g = {'autumn': classify_autumn, 'ash': classify_ash}.get(cfg.get('classify'), classify)(rgb)
+    g = {'autumn': classify_autumn, 'ash': classify_ash, 'snow': classify_snow}.get(cfg.get('classify'), classify)(rgb)
     share = cv2.resize(g, (cols, rows), interpolation=cv2.INTER_AREA)
     # the middle of a tile is where the feet are; weigh it over the corners
     core = np.zeros((rows, cols), np.float32)
@@ -185,10 +223,16 @@ def main(key, overlay=None):
     if cfg.get('bridge_gaps'):
         img = cv2.GaussianBlur(rgb, (0, 0), 1.2)
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV).astype(np.int32)
-        lava = ((hsv[..., 1] > 150) & (hsv[..., 2] > 140)) | ((hsv[..., 0] * 2 < 25) & (hsv[..., 1] > 120) & (hsv[..., 2] > 110))
+        if cfg.get('classify') == 'snow':
+            # the ice and water are blue, the rock and pines dark
+            lava = hsv[..., 1] > 75
+            dark = hsv[..., 2] < 115
+        else:
+            lava = ((hsv[..., 1] > 150) & (hsv[..., 2] > 140)) | ((hsv[..., 0] * 2 < 25) & (hsv[..., 1] > 120) & (hsv[..., 2] > 110))
+            dark = hsv[..., 2] < 85
         lava_share = cv2.resize(lava.astype(np.float32), (cols, rows), interpolation=cv2.INTER_AREA)
         # and the black rock: a stair or bridge is grey stone, lighter than it
-        dark_share = cv2.resize((hsv[..., 2] < 85).astype(np.float32), (cols, rows), interpolation=cv2.INTER_AREA)
+        dark_share = cv2.resize(dark.astype(np.float32), (cols, rows), interpolation=cv2.INTER_AREA)
         span = (lava_share < 0.3) & (dark_share < 0.4)
         k = cfg['bridge_gaps']
         for _ in range(2):

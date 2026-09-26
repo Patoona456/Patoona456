@@ -4108,6 +4108,7 @@ const WORLD_SPOTS = [
   { id: 'greenmire', x: 100, y: 267, art: 'forest' },
   { id: 'amberwood', x: 590, y: 330, art: 'forest' },
   { id: 'obsidian', x: 405, y: 110, art: 'volcano' },
+  { id: 'frostfall', x: 168, y: 118, art: 'snow' },
 ];
 
 const GRADE_TH = { R: 'ธรรมดา', SR: 'หายาก', SSR: 'หายากมาก', UR: 'ยอดเยี่ยม', LR: 'ตำนาน' };

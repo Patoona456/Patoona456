@@ -252,6 +252,7 @@ export const WARP_ROUTES = [
   { to: 'greenmire', at: [44, 4], price: 150, label: 'ทุ่งกรีนไมร์', kind: 'field', needVisit: true },
   { to: 'amberwood', at: [4, 28], price: 400, label: 'ป่าอำพันชายแดน', kind: 'field', needVisit: true },
   { to: 'obsidian', at: [4, 16], price: 900, label: 'ที่ราบสูงออบซิเดียน', kind: 'field', needVisit: true },
+  { to: 'frostfall', at: [4, 19], price: 1500, label: 'ช่องเขามังกรน้ำแข็ง', kind: 'field', needVisit: true },
 ];
 
 export const HEAL_PRICE_PER_LEVEL = 18;
