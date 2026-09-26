@@ -444,12 +444,16 @@ const MARKS = typeof Image !== 'undefined'
   ? Object.fromEntries(['main', 'sub', 'daily', 'event', 'ready'].map((k) => [k, uiImage('mark_' + k)])) : {};
 const NPC_PLATE = typeof Image !== 'undefined' ? uiImage('npc_plate') : null;
 
-const DIGITS = [];
+// the damage digits, 0-9 in one strip of equal cells, each glyph on the
+// cell's bottom-left, with its own width (one file: the demo counts its files)
+const DIGIT_CELL = [18, 24];
+const DIGIT_W = [18, 14, 17, 17, 18, 17, 18, 17, 17, 17];
+let DIGITS = null;
 if (typeof Image !== 'undefined') {
   for (const name of ['h2_fx_miss', 'h2_fx_critical', 'h2_fx_levelup', ...ATLAS_FILES]) uiImage(name);
-  for (let i = 0; i < 10; i++) DIGITS.push(uiImage('digit_' + i));
+  DIGITS = uiImage('digits');
 }
-const digitsReady = () => DIGITS.length === 10 && DIGITS.every((d) => d.naturalWidth);
+const digitsReady = () => !!DIGITS?.naturalWidth;
 
 // Camera distance: three steps the player picks (ไกล / กลาง / ใกล้).
 export const ZOOM_STEPS = [
@@ -1852,11 +1856,12 @@ export class Renderer {
       }
       if (f.digits && digitsReady()) {
         const h = f.size * 1.35 * grow * this.dpr;
-        const glyphs = [...f.text].map((c) => DIGITS[+c]);
-        const ws = glyphs.map((g) => h * (g.naturalWidth / g.naturalHeight));
+        const [cw, ch] = DIGIT_CELL;
+        const glyphs = [...f.text].map((c) => +c);
+        const ws = glyphs.map((d) => h * (DIGIT_W[d] / ch));
         const gap = -h * 0.08;
         let x = sx - (ws.reduce((a, b) => a + b, 0) + gap * (ws.length - 1)) / 2;
-        glyphs.forEach((g, i) => { ctx.drawImage(g, x, sy - h * 0.8, ws[i], h); x += ws[i] + gap; });
+        glyphs.forEach((d, i) => { ctx.drawImage(DIGITS, d * cw, 0, DIGIT_W[d], ch, x, sy - h * 0.8, ws[i], h); x += ws[i] + gap; });
         continue;
       }
       ctx.font = `bold ${Math.round(f.size * grow * this.dpr)}px system-ui, sans-serif`;

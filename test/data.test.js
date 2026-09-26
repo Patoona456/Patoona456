@@ -371,7 +371,7 @@ test('every painted HUD piece the stylesheet and icons ask for is on disk', () =
     ...[...icons.matchAll(/'((?:skill|item)_\w+)'/g)].map((m) => m[1]),
     ...[...ui.matchAll(/'(st_\w+)'/g)].map((m) => m[1]),
     ...[...ui.matchAll(/'(h2_\w+)'/g)].map((m) => m[1]).filter((n) => !/^h2_st_$/.test(n)), 'h2_status',
-    ...Array.from({ length: 10 }, (_, i) => 'digit_' + i),
+    'digits',
     'ghost_torso', 'ghost_armor', 'h2_fx_miss', 'h2_fx_critical', 'h2_fx_levelup', 'h2_fx_questclear',
   ]);
   assert.ok(names.size > 20, `only found ${names.size} references`);
