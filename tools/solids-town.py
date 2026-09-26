@@ -43,7 +43,7 @@ FOOTPRINTS = {
     'stall_n_right': (866, 305, 944, 345),
     'stall_w_market': (440, 560, 570, 603),
     'stall_e_market': (980, 572, 1112, 606),
-    'stall_se': (995, 676, 1078, 714),
+    'stall_se': (1002, 648, 1074, 680),
     # (the fountain's round basin is traced into the fine grid: tools/trace-town.py)
 }
 POST_HALF, POST_DEPTH = 7, 9
@@ -74,7 +74,9 @@ FENCES = [
 
 
 def main(overlay=None):
-    rects = list(FOOTPRINTS.values())
+    # each footprint kept a little inside the wall it traces, so a body
+    # slides along a house front instead of snagging on its corner
+    rects = [(x0 + 4, y0, x1 - 4, y1 - 6) for x0, y0, x1, y1 in FOOTPRINTS.values()]
     rects += [(x - POST_HALF, y - POST_DEPTH, x + POST_HALF, y + 1) for x, y, _ in bt.POSTS]
     rects += [(x0 * TILE_PX, y0 * TILE_PX, x1 * TILE_PX, y1 * TILE_PX) for x0, y0, x1, y1 in FENCES]
     t = lambda v: round(v / TILE_PX, 2)
