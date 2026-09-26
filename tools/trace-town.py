@@ -78,7 +78,11 @@ def main(overlay=None):
     # you are behind them); only the water and the walls stop you.
     # the water on the plan (the painting's blue roofs are not water)
     water = plan[..., 2].astype(int) > plan[..., 0].astype(int) + 60
-    open_ = (plan_open | plan_lawn | (tile_share(town_pave) > 0.45)) & (tile_share(water) < 0.3)
+    # the plan's own paving, strictly - its raised ledges, stone walls and
+    # fences stay shut - and its lots, where the houses stand (they block by
+    # their footings: tools/solids-town.py)
+    strict = (tile_share(pave, (0.15, 0.85, 0.15, 0.85)) > 0.72) & (tile_share(dark, (0.15, 0.85, 0.15, 0.85)) < 0.06)
+    open_ = (strict | (tile_share(wood, (0.15, 0.85, 0.15, 0.85)) > 0.5) | plan_lawn) & (tile_share(water) < 0.3)
     # a one-tile notch in a street is a place to snag on: fill it
     import cv2 as _cv
     open_ = _cv.morphologyEx(open_.astype(np.uint8), _cv.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool) & (tile_share(water) < 0.3)
