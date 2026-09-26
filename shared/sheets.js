@@ -127,7 +127,30 @@ export const CHIBI_WALK = {
   },
 };
 
-export const LAYOUTS = { lpc: LPC, chibi8: CHIBI8, chibi_walk: CHIBI_WALK };
+/**
+ * The chibi's own eight-way walk, Ragnarok style (tools/build-walk8.py): a
+ * row per facing - down, down-left, left, up-left, up, up-right, right,
+ * down-right - of twelve steps and the standing frame, on the same cell as
+ * CHIBI_WALK so the two swap frame for frame. Walking and standing are drawn
+ * from it; everything else from CHIBI_WALK.
+ */
+export const CHIBI_WALK8 = {
+  id: 'chibi_walk8',
+  aliases: {},
+  frame: { w: 192, h: 224 },
+  cols: 13,
+  rows: 8,
+  anchor: 216 / 224,
+  drawScale: 0.36,
+  dirRows: 8,
+  anims: {
+    idle: { row: 0, frames: 1, fps: 1, start: 12 },
+    // a full cycle over one stride (the renderer paces it by distance)
+    walk: { row: 0, frames: 12, fps: 16.5 },
+  },
+};
+
+export const LAYOUTS = { lpc: LPC, chibi8: CHIBI8, chibi_walk: CHIBI_WALK, chibi_walk8: CHIBI_WALK8 };
 
 /**
  * Register a layout. Art that arrives on a different grid gets described here
