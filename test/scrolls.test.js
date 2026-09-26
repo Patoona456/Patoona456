@@ -10,7 +10,7 @@ import { SHOPS } from '../shared/data/npcs.js';
 import { Player } from '../server/game/player.js';
 import { useConsumable } from '../server/game/consumables.js';
 import * as Econ from '../server/game/economy.js';
-import { QUESTS, HELD_QUESTS } from '../shared/data/quests.js';
+import { QUESTS } from '../shared/data/quests.js';
 
 const world = { stats: { minted: 0, burned: 0 }, warpPlayer(p, map, x, y) { p.warpedTo = { map, x, y }; } };
 
@@ -146,13 +146,18 @@ test('a party book reaches the party nearby, and nobody else', () => {
 });
 
 test('the renewal scroll reopens handed-in dailies and nothing else', () => {
-  // the Greenmire daily waits on monsters still to come back; the scroll does not
-  QUESTS.q_daily_greenmire ??= HELD_QUESTS.q_daily_greenmire;
-  const p = character(['scroll_daily_reset']);
-  p.record.quests = { q_daily_greenmire: { done: true, at: Date.now() }, q_first_blood: { done: true, at: Date.now() } };
-  assert.ok(useConsumable(world, p, 0).ok);
-  assert.ok(!p.record.quests.q_daily_greenmire);
-  assert.ok(p.record.quests.q_first_blood, 'a one-time quest was reopened');
+  // (no daily is in the game until the new maps bring theirs: a stand-in)
+  QUESTS.q_test_daily = { id: 'q_test_daily', name: 'daily', giver: 'board', minLevel: 1, repeatable: 'daily',
+    objectives: [{ type: 'kill', mob: 'blue_slime', count: 1 }], rewards: {} };
+  try {
+    const p = character(['scroll_daily_reset']);
+    p.record.quests = { q_test_daily: { done: true, at: Date.now() }, q_first_blood: { done: true, at: Date.now() } };
+    assert.ok(useConsumable(world, p, 0).ok);
+    assert.ok(!p.record.quests.q_test_daily);
+    assert.ok(p.record.quests.q_first_blood, 'a one-time quest was reopened');
+  } finally {
+    delete QUESTS.q_test_daily;
+  }
 });
 
 test('the challenge writ clears the weekly boss rewards', () => {
