@@ -315,6 +315,17 @@ test('no keeper stands inside a wall, a tree or a lamp', () => {
   }
 });
 
+test('nobody stands inside a wall or a stall: keepers, the spawn point and the warps are clear of solids', async () => {
+  const { solidsOf } = await import('../shared/solids.js');
+  for (const m of Object.values(MAPS)) {
+    const solid = solidsOf(m);
+    const at = (x, y) => solid((x + 0.5) * 32, (y + 0.5) * 32);
+    for (const n of m.npcs ?? []) assert.ok(!at(n.x, n.y), `${m.id}: ${n.id} stands in a solid`);
+    if (m.spawnPoint) assert.ok(!at(...m.spawnPoint), `${m.id}: the spawn point is in a solid`);
+    for (const w of m.warps ?? []) assert.ok(!at(w.x + w.w / 2 - 0.5, w.y + w.h / 2 - 0.5), `${m.id}: the warp to ${w.to} is in a solid`);
+  }
+});
+
 test('every townsperson starts somewhere they can stand', () => {
   for (const m of Object.values(MAPS)) {
     const g = buildGrid(m);

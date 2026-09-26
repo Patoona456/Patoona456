@@ -2,6 +2,7 @@
 // The server builds the tile grid at boot and ships it to clients RLE-encoded,
 // so the generator only has to be right once.
 
+import { EMBERHOLD_SOLIDS } from './emberhold-solids.js';
 import { EMBERHOLD_OBSTACLES } from './emberhold-obstacles.js';
 import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
 
@@ -58,6 +59,9 @@ export const MAPS = {
     backdropTiles: { dir: 'assets/maps/emberhold/ground', size: 2048, bleed: 2, cols: 3, rows: 2, width: 6144, height: 4096 },
     walk: [[0, 0, 90, 60]],
     obstacles: EMBERHOLD_OBSTACLES,
+    // what stands on that ground - house walls, stall counters, lamp posts,
+    // the fountain basin - finer than a tile (tools/solids-town.py)
+    solids: EMBERHOLD_SOLIDS,
     // the moat and the canals shimmer; no falls in town
     waterFx: { falls: [] },
     spawnPoint: [45, 35],
@@ -153,7 +157,7 @@ export const MAPS = {
     walkers: [
       { name: 'ชาวนาทอม', pic: 'farmer', x: 20, y: 30, range: 5 },
       { name: 'หนูมีมี่', pic: 'bunnygirl', x: 55, y: 30, range: 5 },
-      { name: 'เนโกะ', pic: 'catgirl', x: 36, y: 31, range: 4 },
+      { name: 'เนโกะ', pic: 'catgirl', x: 38, y: 31, range: 4 },
       { name: 'นักเดินทางคาอิ', pic: 'traveller', x: 70, y: 30, range: 5 },
       { name: 'พ่อครัวบิน', pic: 'chef', x: 45, y: 15, range: 4 },
     ],
@@ -168,13 +172,25 @@ export const MAPS = {
     // from the decor sheet packed underneath (tools/build-castle.py); the
     // floor is drawn from its top and each piece from its `crop`.
     backdrop: 'assets/maps/castle.webp',
-    // the whole hall floor, the throne steps and the stair down to the door:
-    // pillars, candles and the dressing are walked through (the dressing
-    // fades when you stand behind it); only the walls hold you in
+    // the whole hall floor, the throne steps and the stair down to the door;
+    // what stands on it blocks only by its base (solids, below)
     walk: [
       [4, 5, 41, 20],                                   // the hall floor
       [21, 3, 7, 3],                                    // the steps up to the throne
       [21, 24, 7, 6], [20, 29, 9, 3],                   // the stair down to the door, and the path out
+    ],
+    // what stands on the floor, by its base (shared/solids.js): the rest of
+    // the hall is open, and the dressing fades when you are behind it
+    solids: [
+      [16.3, 11.6, 4, 1.4], [27.9, 11.6, 4, 1.4],       // the banner pillars with their candles and pots
+      [16.3, 19.6, 4, 1.6], [27.9, 19.6, 4, 1.6],
+      [17.1, 5.8, 1.5, 0.8], [29.3, 5.8, 1.6, 0.8],     // the armour either side of the throne
+      [4.6, 5.9, 1.1, 0.8], [42.6, 5.9, 1, 0.8],        // the potted trees in the corners
+      [3.9, 23.2, 1, 1], [43.1, 23.2, 1, 1],
+      [6.4, 7.0, 2.8, 0.8], [6.1, 23.0, 3.8, 1.0],      // spear rack, sword table
+      [38.5, 7.0, 3.6, 0.8],                            // bookcase
+      [6.9, 13.0, 1, 0.7], [13.5, 13.0, 1, 0.7],        // the blue flames
+      [20.8, 23.5, 0.9, 0.7], [26.3, 23.5, 0.9, 0.7],   // the braziers by the door
     ],
     spawnPoint: [23, 27],
     warps: [

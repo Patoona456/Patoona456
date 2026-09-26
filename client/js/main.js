@@ -8,7 +8,8 @@ import { Audio } from './audio.js';
 import { findPath, zoneRoute, warpTo, sourceOf, huntingGround, homeOf } from './autowalk.js';
 import { preloadCommon, playerLayers, drawCharacter, loadedRatio } from './sprites.js';
 import { TILE } from '../../shared/constants.js';
-import { BLOCKING, decodeGrid } from '../../shared/data/maps.js';
+import { BLOCKING, decodeGrid, MAPS } from '../../shared/data/maps.js';
+import { solidsOf } from '../../shared/solids.js';
 import { ITEMS } from '../../shared/data/items.js';
 import { rgba as elRgba, triple as elTriple } from '../../shared/elements.js';
 import { SKILLS } from '../../shared/data/skills.js';
@@ -769,7 +770,10 @@ class Game {
       if (tx < 0 || ty < 0 || tx >= this.zone.width || ty >= this.zone.height) return true;
       return BLOCKING.has(this.grid[ty * this.zone.width + tx]);
     };
-    return !blocked(x - r, y - r) && !blocked(x + r, y - r) && !blocked(x - r, y + r) && !blocked(x + r, y + r);
+    if (blocked(x - r, y - r) || blocked(x + r, y - r) || blocked(x - r, y + r) || blocked(x + r, y + r)) return false;
+    // the feet clear of what stands on the ground, as the server has it
+    const solid = solidsOf(MAPS[this.zone.id]);
+    return !solid(x - 7, y - 4) && !solid(x + 7, y - 4) && !solid(x - 7, y + 2) && !solid(x + 7, y + 2);
   }
 
   interpolate(t) {

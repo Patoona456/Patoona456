@@ -1,4 +1,5 @@
 // One running instance of a map: terrain, entities, spawns, ground loot.
+import { solidsOf } from '../../shared/solids.js';
 import { MAPS, buildGrid, encodeGrid, TILES, BLOCKING, HAZARD, rng } from '../../shared/data/maps.js';
 import { MONSTERS } from '../../shared/data/monsters.js';
 import { ITEMS } from '../../shared/data/items.js';
@@ -103,6 +104,8 @@ function inOneShot(e, t) {
   return ONE_SHOT.has(e.anim) && e.animUntil > t;
 }
 
+const FOOT = 7;                 // half the width of a body's feet, world px
+
 export class Zone {
   constructor(id, world) {
     this.id = id;
@@ -133,8 +136,11 @@ export class Zone {
   blocked(x, y) { return BLOCKING.has(this.tileAt(x, y)); }
 
   walkable(x, y, r = 10) {
-    return !this.blocked(x - r, y - r) && !this.blocked(x + r, y - r)
-      && !this.blocked(x - r, y + r) && !this.blocked(x + r, y + r);
+    if (this.blocked(x - r, y - r) || this.blocked(x + r, y - r)
+      || this.blocked(x - r, y + r) || this.blocked(x + r, y + r)) return false;
+    // and the feet clear of anything standing on the ground (shared/solids.js)
+    const solid = solidsOf(this.def);
+    return !solid(x - FOOT, y - 4) && !solid(x + FOOT, y - 4) && !solid(x - FOOT, y + 2) && !solid(x + FOOT, y + 2);
   }
 
   /**

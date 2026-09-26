@@ -34,7 +34,7 @@ FORCE_OPEN = [
     (43, 3, 5, 4), (9, 29, 4, 3), (78, 29, 5, 3), (58, 43, 6, 5),
     (56, 42, 8, 1), (57, 40, 2, 3), (34, 20, 4, 3),     # paving the shade of a stall or roof hides
 ]
-FORCE_BLOCK = [(40, 25, 10, 8)]
+FORCE_BLOCK = [(40, 25, 10, 8)]   # the fountain basin
 # the lamp posts and banners: the tile each stands on (see POSTS in build-town.py)
 import importlib.util
 _spec = importlib.util.spec_from_file_location('build_town', os.path.join(os.path.dirname(__file__), 'build-town.py'))
