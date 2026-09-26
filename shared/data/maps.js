@@ -63,7 +63,7 @@ export const MAPS = {
     // what stands on that ground - house walls, stall counters, lamp posts,
     // the fountain basin - finer than a tile (tools/solids-town.py)
     solids: EMBERHOLD_SOLIDS,
-    // and where there is ground at all, 8px a cell (tools/trace-town.py)
+    // and where there is ground at all, 4px a cell (tools/trace-town.py)
     fine: EMBERHOLD_FINE,
     // the moat and the canals shimmer; no falls in town
     waterFx: { falls: [] },

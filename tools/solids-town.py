@@ -44,8 +44,7 @@ FOOTPRINTS = {
     'stall_w_market': (440, 560, 570, 603),
     'stall_e_market': (980, 572, 1112, 606),
     'stall_se': (995, 676, 1078, 714),
-    # the fountain's basin, all of it: it is low, so it is all ground
-    'fountain': (688, 440, 856, 552),
+    # (the fountain's round basin is traced into the fine grid: tools/trace-town.py)
 }
 POST_HALF, POST_DEPTH = 7, 9
 # The fences and railings, in tiles: x0, y0, x1, y1 of each run, a thin

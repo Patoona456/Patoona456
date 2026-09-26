@@ -584,7 +584,7 @@ test('every open spot in Emberhold can be walked to from the spawn', (t) => {
   t.after(() => w.stop());
   const z = w.zone('emberhold');
   // at the fine grid's own size: 8 world px a step
-  const S = 8, cols = z.width * 4, rows = z.height * 4;
+  const S = 8, cols = z.width * 4, rows = z.height * 4;   // 8px steps are enough to find the ways
   const fits = (x, y) => z.walkable(x * S + 4, y * S + 4, 6);
   const sx = z.def.spawnPoint[0] * 4 + 2, sy = z.def.spawnPoint[1] * 4 + 2;
   assert.ok(fits(sx, sy), 'the spawn point is shut');
