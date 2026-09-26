@@ -34,7 +34,13 @@ FORCE_OPEN = [
     (43, 3, 5, 4), (9, 29, 4, 3), (78, 29, 5, 3), (58, 43, 6, 5),
     (56, 42, 8, 1), (57, 40, 2, 3), (34, 20, 4, 3),     # paving the shade of a stall or roof hides
 ]
-FORCE_BLOCK = [(40, 25, 10, 8)]        # the fountain basin (its statue rises over the path behind: see build-town.py)
+FORCE_BLOCK = [(40, 25, 10, 8)]
+# the lamp posts and banners: the tile each stands on (see POSTS in build-town.py)
+import importlib.util
+_spec = importlib.util.spec_from_file_location('build_town', os.path.join(os.path.dirname(__file__), 'build-town.py'))
+_bt = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_bt)
+POSTS = _bt.POSTS        # the fountain basin (its statue rises over the path behind: see build-town.py)
 
 
 def tile_share(mask, inset=(0.2, 0.8, 0.3, 0.95)):
@@ -70,6 +76,10 @@ def main(overlay=None):
         open_[y:y + hh, x:x + w] = True
     for x, y, w, hh in FORCE_BLOCK:
         open_[y:y + hh, x:x + w] = False
+    W, H = town.shape[1], town.shape[0]
+    for px, py, _ in POSTS:
+        tx, ty = int(px / (W / COLS)), min(ROWS - 1, int((py - 3) / (H / ROWS)))
+        open_[ty, tx] = False
     sx, sy = SEED
     seen = np.zeros_like(open_)
     seen[sy, sx] = True

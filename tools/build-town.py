@@ -42,6 +42,21 @@ BUILDINGS = {
     'e_edge': (1438, 40, 1536, 222),
     'w_edge': (0, 88, 62, 192),
 }
+# the lamp posts and banners along the streets: x, y of the foot on the 1x
+# picture and how tall. Each is cut 26px wide over its foot; the tile it
+# stands on is closed (tools/trace-town.py reads POSTS from here)
+POSTS = [
+    (686, 190, 85), (851, 190, 85), (688, 302, 80), (838, 302, 80), (708, 100, 55), (820, 100, 55),
+    (613, 545, 90), (925, 545, 90), (612, 625, 50), (925, 625, 50), (697, 712, 80), (841, 712, 80),
+    (716, 918, 85), (820, 918, 85), (686, 1020, 75), (850, 1020, 75), (851, 832, 75), (688, 975, 70), (848, 975, 70),
+    (213, 372, 65), (207, 470, 90), (213, 542, 75), (326, 372, 75), (326, 488, 80), (328, 570, 50),
+    (202, 114, 75), (296, 92, 60), (516, 165, 80), (538, 242, 85),
+    (1210, 382, 75), (1245, 492, 95), (1378, 362, 105), (1357, 110, 70), (1265, 115, 60),
+    (13, 620, 55), (135, 602, 60), (1285, 592, 60), (1402, 592, 60),
+    (1181, 975, 90), (1180, 1022, 40), (329, 928, 45), (557, 915, 45), (1470, 305, 60), (1352, 450, 70),
+    (162, 140, 55), (180, 188, 50),
+]
+POST_W = 26
 
 
 def obstacles():
@@ -76,7 +91,8 @@ def main(big):
 
     # shelf-pack the cut-outs
     cuts, x, y, row = [], 0, 0, 0
-    for name, (x0, y0, x1, y1) in BUILDINGS.items():
+    posts = {f'post{i}': (x - POST_W // 2, y - hh, x + POST_W // 2, min(H, y + 2)) for i, (x, y, hh) in enumerate(POSTS)}
+    for name, (x0, y0, x1, y1) in {**BUILDINGS, **posts}.items():
         w, hh = (x1 - x0) * K, (y1 - y0) * K
         if x + w > SHEET_W:
             x, y, row = 0, y + row + 2, 0
@@ -86,7 +102,8 @@ def main(big):
     tile = W / COLS
     print('    structures: [')
     for name, (x0, y0, x1, y1), (sx, sy, w, hh) in cuts:
-        m = keep[y0:y1, x0:x1].astype(np.float32)
+        # a post keeps only itself: what is not paving, with the paving round it left behind
+        m = (keep[y0:y1, x0:x1] if not name.startswith('post') else ~pave[y0:y1, x0:x1]).astype(np.float32)
         m = cv2.resize(m, (w, hh), interpolation=cv2.INTER_LINEAR)
         m = cv2.GaussianBlur(m, (0, 0), 1.2)
         rgb = np.array(x4.crop((x0 * K, y0 * K, x1 * K, y1 * K)))
