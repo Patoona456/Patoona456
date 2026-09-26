@@ -397,7 +397,8 @@ export function drawNpcFrames(ctx, url, { x, y, now, phase = 0, flip = false, fl
   const [cw, ch] = art.cell;
   const f = art.seq[Math.floor((now + phase) / (1000 / art.fps)) % art.seq.length];
   const h = art.height, w = h * cw / ch;
-  const dx = x - w / 2, dy = y - h + 4;
+  // (the feet are at the cell's bottom, or `foot` of the way down when light is drawn below them)
+  const dx = x - w / 2, dy = y - h * (art.foot ?? 1) + 4;
   ctx.save();
   if (flip) { ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
   ctx.imageSmoothingEnabled = true;

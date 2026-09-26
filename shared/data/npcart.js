@@ -37,4 +37,12 @@ export const NPC_ART = {
     cell: [197, 192], frames: 24, height: 90, fps: 4.5,
     seq: [...range(0, 8), ...range(0, 24)],
   },
+  // the royal class master, an elf mage with her staff (tools/slice-npc-fx.py):
+  // at rest, gathering light, a circle under her feet, the rite and its
+  // stars, and back to rest (1-60). Her feet stand `foot` of the way down the
+  // cell, the circle below them; slower than the tradesfolk, it is a rite
+  jobmaster: {
+    cell: [176, 192], frames: 60, height: 90, fps: 6, foot: 153 / 175,
+    seq: range(0, 60),
+  },
 };

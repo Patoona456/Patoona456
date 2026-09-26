@@ -216,7 +216,7 @@ export const MAPS = {
     ],
     npcs: [
       { id: 'princess', name: 'เจ้าหญิงเซเลน่า', role: 'townsfolk', x: 23, y: 5, look: { pic: 'princess' } },
-      { id: 'royal_trainer', name: 'ปรมาจารย์ออลริค', role: 'trainer', x: 10, y: 14, look: { pic: 'knight' } },
+      { id: 'royal_trainer', name: 'ปรมาจารย์เอเลนเดีย', role: 'trainer', x: 10, y: 14, look: { anim: 'jobmaster' } },
       { id: 'royal_board', name: 'บรรณารักษ์หลวงเอลวิน', role: 'quests', x: 37, y: 14, look: { pic: 'wizard' } },
     ],
     spawns: [],
