@@ -485,8 +485,8 @@ const rand = (seed) => {
   return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
 };
 
-// Warp art made of light (tools/slice-glow.py): strips of equal cells on
-// black, drawn with 'lighter'.
+// Warp art made of light (tools/slice-glow.py): strips of equal cells,
+// blue light with its brightness as coverage.
 const GLOW_ART = {
   town: { frames: 24, cell: [191, 160], fps: 10 },
   town_spark: { frames: 24, cell: [195, 160], fps: 18 },
@@ -819,7 +819,6 @@ export class Renderer {
     const [fw, fh] = g.cell;
     const dw = 96, dh = dw * fh / fw;
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(art, f * fw, 0, fw, fh, me.x - dw / 2, me.y + dh * 0.12 - dh, dw, dh);
     ctx.restore();
@@ -844,10 +843,12 @@ export class Renderer {
         // nothing; its rings a little wider than the pad
         const [fw, fh] = glow.cell;
         const frame = Math.floor(now / (1000 / glow.fps)) % glow.frames;
-        const dw = Math.max(92, w.w * TILE * 1.25), dh = dw * fh / fw;
+        const dw = Math.max(84, w.w * TILE * 1.1), dh = dw * fh / fw;
         top = foot + dh * 0.1 - dh;
         ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
+        // coloured light with its own coverage (tools/slice-glow.py), so it
+        // shows on pale paving as well as dark grass
+        ctx.globalAlpha = 0.9;
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(art, frame * fw, 0, fw, fh, cx - dw / 2, top, dw, dh);

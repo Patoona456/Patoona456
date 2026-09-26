@@ -9,9 +9,8 @@ says where its frame is (the frame stands on the tag, centred over it), so
 every frame is cut from the same place relative to its tag and the circle
 never slides. Then the light is kept and the ground dropped: the colour is
 multiplied by its own coverage and the noisy cyan fringe the painter's
-matte left is filtered out, and the strip is stored on black - the game
-adds it to the ground ('lighter'), so black is nothing and the light is
-light. Writes assets/warp/<key>.webp and prints its entry for renderer.js.
+matte left is filtered out, and the light is stored as a blue colour with
+its brightness as coverage, so it reads on pale paving and on dark. Writes assets/warp/<key>.webp and prints its entry for renderer.js.
 """
 import os
 import sys
@@ -68,8 +67,19 @@ def main(key):
         fade_y = np.clip(np.arange(ch) / 14, 0, 1)
         cell *= (fade_y[:, None] * fade_x[None, :])[..., None]
         strip[:, i * W:(i + 1) * W] = cv2.resize(cell, (W, OUT_H), interpolation=cv2.INTER_AREA)
-    Image.fromarray(strip.clip(0, 255).astype(np.uint8)).save(
-        os.path.join(ROOT, f'assets/warp/{key}.webp'), 'WEBP', quality=90, method=6)
+    # Light added to pale paving burns to white and is lost, so the strip is
+    # stored as colour and coverage instead, drawn over the ground normally:
+    # how bright a pixel is becomes how solid it is, and its colour is pushed
+    # toward the circle's blue so the rings read on pale stone as on dark.
+    strip = strip.clip(0, 255)
+    cov = np.clip(strip.max(2) / 190, 0, 1) ** 0.8
+    col = strip / np.maximum(strip.max(2, keepdims=True), 1) * 255
+    blue = np.float32([70, 150, 255])
+    core = np.clip((strip.max(2, keepdims=True) - 200) / 55, 0, 1)      # the hottest light stays white
+    col = col * 0.35 + blue * 0.65
+    col = col * (1 - core) + 255 * core
+    out = np.dstack([col, cov[..., None] * 255]).clip(0, 255).astype(np.uint8)
+    Image.fromarray(out).save(os.path.join(ROOT, f'assets/warp/{key}.webp'), 'WEBP', quality=90, method=6)
     print(f"  {key}: {{ frames: {len(tags)}, cell: [{W}, {OUT_H}] }},")
 
 
