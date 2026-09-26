@@ -136,7 +136,7 @@ export const MAPS = {
       { kind: 'decor', img: 'assets/maps/emberhold/roofs.webp', crop: [2120, 2786, 104, 208], x: 9.79, y: 8.09, w: 1.52, h: 3.05, walk: true },   // post45
     ],
     npcs: [
-      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 18, y: 18, look: { pic: 'blacksmith' } },
+      { id: 'smith', name: 'ช่างตีเหล็กบอร์ก', role: 'smith', x: 31, y: 17, look: { anim: 'blacksmith' } },
       { id: 'apothecary', name: 'แม่ค้าโรซ่า', role: 'shop', x: 28, y: 28, shop: 'apothecary', look: { pic: 'maid' } },
       { id: 'vendor', name: 'พ่อค้าเมล', role: 'shop', x: 64, y: 19, shop: 'general', look: { pic: 'alchemist' } },
       { id: 'banker', name: 'ผู้ดูแลคลังลีน่า', role: 'storage', x: 62, y: 29, look: { pic: 'dwarf' } },

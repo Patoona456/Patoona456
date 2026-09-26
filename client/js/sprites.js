@@ -4,6 +4,7 @@ import { SPRITE, ANIM, SHEET_COLS } from '../../shared/constants.js';
 import { LPC, layoutOf, frameAt, rowAt, frameRect, fits } from '../../shared/sheets.js';
 import { ITEMS } from '../../shared/data/items.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
+import { NPC_ART } from '../../shared/data/npcart.js';
 
 const BASE = '/assets/lpc';
 const MOB_BASE = '/assets/mob';
@@ -175,6 +176,7 @@ export function npcLayers(look) {
   if (!look) return null;
   // a painted townsperson is one picture, not a stack of LPC layers
   if (look.pic) return { pic: `${NPC_BASE}/${look.pic}.png` };
+  if (look.anim && NPC_ART[look.anim]) return { anim: `${NPC_BASE}/${look.anim}.webp` };
   const g = look.body?.startsWith('female') ? 'female' : 'male';
   const layers = { body: layerUrl('body', look.body ?? 'male/light') };
   if (look.hair) layers.hair = layerUrl('hair', look.hair, g);
@@ -385,6 +387,30 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
   }
   ctx.restore();
   return { dx, dy, size };
+}
+
+/** A painted NPC that moves: a frame of its strip, by the clock, stood on its foot. */
+export function drawNpcFrames(ctx, url, { x, y, now, phase = 0, flip = false, flash = 0 }) {
+  const art = NPC_ART[url.slice(url.lastIndexOf('/') + 1, -'.webp'.length)];
+  const s = art && sheet(url);
+  if (!s?.ready) return null;
+  const [cw, ch] = art.cell;
+  const f = art.seq[Math.floor((now + phase) / (1000 / art.fps)) % art.seq.length];
+  const h = art.height, w = h * cw / ch;
+  const dx = x - w / 2, dy = y - h + 4;
+  ctx.save();
+  if (flip) { ctx.translate(x * 2, 0); ctx.scale(-1, 1); }
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(s.img, f * cw, 0, cw, ch, dx, dy, w, h);
+  if (flash) {
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.globalAlpha = flash * 0.6;
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(dx, dy, w, h);
+  }
+  ctx.restore();
+  return { dx, dy, w, h };
 }
 
 /** A painted NPC: stood on its feet, facing the camera whichever way it 'faces'. */

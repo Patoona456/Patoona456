@@ -5,7 +5,7 @@ import { TILES, MAPS, decodeGrid, generateProps, hash2 } from '../../shared/data
 import { propSprite, GLOWING } from './props.js';
 import { buildTerrain } from './terrain.js';
 import { ITEMS, RARITY_COLORS } from '../../shared/data/items.js';
-import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture,
+import { drawCharacter, drawBlob, drawRefineGlow, drawOverlaySheet, playerLayers, monsterLayers, npcLayers, drawPicture, drawNpcFrames,
   drawMobFrames, mobAnimMs, drawMobFx } from './sprites.js';
 import { glowTier, hasOverlay } from '../../shared/refineglow.js';
 import { drawWings } from './wings.js';
@@ -21,6 +21,7 @@ import { CHIBI_WALK, frameAt } from '../../shared/sheets.js';
 import { CHIBI_FISTS } from '../../shared/data/chibi.js';
 import { SWING } from '../../shared/data/swing.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
+import { NPC_ART } from '../../shared/data/npcart.js';
 import { DROP_ART } from '../../shared/data/dropart.js';
 import { prefs, onPref } from './prefs.js';
 import { atlasFile, atlasRect, ATLAS_FILES } from '../../shared/atlas.js';
@@ -1158,7 +1159,9 @@ export class Renderer {
         const layers = e.k === 'p' ? playerLayers(e.look, e.eq ?? {})
           : e.k === 'n' ? npcLayers(e.look)
           : monsterLayers(e.sprite);
-        if (layers?.pic) {
+        if (layers?.anim) {
+          drawNpcFrames(ctx, layers.anim, { x: e.x, y: e.y, now, flash: hurt, phase: (e.id.charCodeAt(e.id.length - 1) ?? 0) * 131 });
+        } else if (layers?.pic) {
           // a walking picture hops a little with each step and turns to face
           // left or right (it has no side or back view)
           const walking = anim === 'walk';
@@ -1483,9 +1486,10 @@ export class Renderer {
     const isTarget = e.id === state.targetId;
     const chibi = e.k === 'p' && e.look?.style === 'chibi';   // a big head, a little taller than LPC
     const painted = e.k === 'n' && e.look?.pic;   // painted NPCs stand ~52px tall
+    const moving = e.k === 'n' && e.look?.anim && NPC_ART[e.look.anim];
     const art = e.sprite?.kind === 'frames' ? MOB_ART[e.sprite.key] : null;
     const top = e.y - (e.sprite?.fly ?? 0) - (art ? art.top * (e.sprite.scale ?? 1) + 12
-      : e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : painted ? 56 : 44);
+      : e.sprite?.scale ? 46 * e.sprite.scale : chibi ? 52 : painted ? 56 : moving ? moving.height - 4 : 44);
 
     if (isTarget) {
       // the sheet's reticles: red once you are hitting it, gold while it is
