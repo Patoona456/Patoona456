@@ -171,9 +171,14 @@ def split_legs(f, r):
         # facing the camera or away the legs stand side by side: split in
         # the gap between them (the thinnest column near the middle), so
         # neither piece carries a sliver of the other leg
-        cols = legs.sum(0)
-        c0 = CELL_W // 2
-        mid = c0 - 20 + int(np.argmin(cols[c0 - 20:c0 + 21]))
+        # (looked for in the inner part of the legs' own width: outside
+        # them every column is empty)
+        low = legs.copy()
+        low[:BASELINE - 16] = False                   # the feet and shins, apart
+        cols = low.sum(0)
+        xs = np.nonzero(cols)[0]
+        lo, hi = xs[0] + (xs[-1] - xs[0]) // 4, xs[-1] - (xs[-1] - xs[0]) // 4
+        mid = lo + int(np.argmin(cols[lo:hi + 1]))
         left = legs.copy(); left[:, mid:] = False
         right = legs.copy(); right[:, :mid] = False
         sides = [left, right]
@@ -275,7 +280,7 @@ def walk_side(f, r):
         img = extend_up(img, hip + dy, np.roll(sm, dy, axis=0))
         return shade(img, 0.9) if far else img
 
-    frames, offs = [], []
+    frames, offs, rig = [], [], []
     for k in range(WALK_FRAMES + 1):
         idle = k == IDLE_COL
         phi = 0.0 if idle else 2 * np.pi * k / WALK_FRAMES
@@ -285,21 +290,50 @@ def walk_side(f, r):
         lift_far = 0 if idle else FOOT_LIFT['side'] * max(0.0, -np.cos(phi)) ** 1.5
         bob = -round(L * (np.cos(th) - np.cos(a0)))
         cell = np.zeros((CELL_H, CELL_W, 4), np.uint8)
-        cell = over(cell, leg_at(-th, lift_far, bob, True))
-        cell = over(cell, leg_at(th, lift_near, bob, False))
+        far_img, near_img = leg_at(-th, lift_far, bob, True), leg_at(th, lift_near, bob, False)
+        cell = over(cell, far_img)
+        cell = over(cell, near_img)
         cell = over(cell, transform(body, shift(0, bob)))
+        if idle:
+            LABELS.append(labels_of(transform(body, shift(0, 0)), far_img, near_img))
         frames.append(cell)
         offs.append((0, bob))
-    return frames, offs
+        # how each part moves from the standing frame, for the gear on it
+        # (tools/build-gear.py): the far leg and the near one turned about
+        # the hip from standing straight, and lifted; the body moved
+        rig.append({'body': [0, bob], 'pivot': [float(piv[0]), float(piv[1])],
+                    'legs': [{'deg': float(np.degrees(-th) * fwd), 'dy': float(bob - lift_far)},
+                             {'deg': float(np.degrees(th) * fwd), 'dy': float(bob - lift_near)}]})
+    return frames, offs, rig
 
 
 def walk_front(f, r):
     """Eight steps and a stand facing the camera or away: the feet lift in turn."""
     hip = HIP_Y[r]
-    body, (left, right) = split_legs(f, r)
+    body, legs = split_legs(f, r)
     sm = shorts_mask(f)
+    # Facing the camera or away, every frame on the board has one leg half
+    # behind the other, so the one behind is never whole: lifted, it would
+    # drag a sliver, and the front one lifted would leave a hole. The whole
+    # leg is kept and the other made from it, mirrored about the middle of
+    # the shorts - chibi legs are a matched pair from the front.
+    whole = max(legs, key=lambda l: (l[:, :, 3] > 100).sum())
+    cx = float(np.nonzero(sm)[1].mean())
+    twin = transform(whole, np.float32([[-1, 0, 2 * cx], [0, 1, 0]]))
+    xs_w = np.nonzero(whole[:, :, 3] > 100)[1].mean()
+    left, right = (whole, twin) if xs_w < cx else (twin, whole)
     left, right = extend_up(left, hip, sm), extend_up(right, hip, sm)
-    frames, offs = [], []
+    # the dark rim the body kept along the hem traced the board's own legs;
+    # under the made pair it is stray ink, so below the shorts it goes
+    # (columns without shorts - the fists hanging by them - keep theirs)
+    body = body.copy()
+    low_sm = sm.copy()
+    low_sm[:hip - 25] = False                         # (grey in the eyes is not shorts)
+    for x in range(body.shape[1]):
+        ys = np.nonzero(low_sm[:, x])[0]
+        if len(ys):
+            body[ys[-1] + 2:, x, 3] = 0
+    frames, offs, rig = [], [], []
     for k in range(WALK_FRAMES + 1):
         idle = k == IDLE_COL
         phi = 0.0 if idle else 2 * np.pi * k / WALK_FRAMES
@@ -314,9 +348,29 @@ def walk_front(f, r):
         cell = over(cell, transform(left, shift(0, -lift_l)))
         cell = over(cell, transform(right, shift(0, -lift_r)))
         cell = over(cell, transform(body, shift(sway, bob)))
+        if idle:
+            LABELS.append(labels_of(body, left, right))
         frames.append(cell)
         offs.append((sway, bob))
-    return frames, offs
+        rig.append({'body': [sway, bob], 'pivot': [0.0, 0.0],
+                    'legs': [{'deg': 0.0, 'dy': float(-lift_l)}, {'deg': 0.0, 'dy': float(-lift_r)}]})
+    return frames, offs, rig
+
+
+LABELS = []       # per row, the standing frame's parts: 1 body, 2 far/left leg, 3 near/right leg
+
+
+def labels_of(body, leg_a, leg_b):
+    """Which part each pixel of the standing frame belongs to, drawn in the
+    same order as the frame (legs, then the body over them)."""
+    lab = np.zeros(body.shape[:2], np.uint8)
+    lab[leg_a[:, :, 3] > 20] = 2
+    lab[leg_b[:, :, 3] > 20] = 3
+    lab[body[:, :, 3] > 20] = 1
+    return lab
+
+
+RIG = []          # per row, per walk column: how the body and each leg move (see walk_side)
 
 
 def main():
@@ -330,11 +384,18 @@ def main():
         if r in SIDE_ROWS:
             # the frame with the legs furthest apart cuts most cleanly
             k = int(np.argmax([stride(c[:, :, 3]) for c in row]))
-            frames, offs = walk_side(row[k], r)
+            frames, offs, rig = walk_side(row[k], r)
         else:
-            k = int(np.argmin([stride(c[:, :, 3]) for c in row]))
-            frames, offs = walk_front(row[k], r)
+            # the frame whose two legs split most evenly: in the others one
+            # leg is half behind the other, and lifting it drags a sliver
+            def even(c):
+                _, (a, b) = split_legs(c, r)
+                na, nb = (a[:, :, 3] > 100).sum(), (b[:, :, 3] > 100).sum()
+                return min(na, nb) / max(na, nb, 1)
+            k = int(np.argmax([even(c) for c in row]))
+            frames, offs, rig = walk_front(row[k], r)
         bases.append((row[k], offs))
+        RIG.append(rig)
         hs = []
         for c, cell in enumerate(frames):
             sheet[r * CELL_H:(r + 1) * CELL_H, c * CELL_W:(c + 1) * CELL_W] = cell
@@ -713,6 +774,20 @@ def slash_frames(heads_walk):
     return cells, heads
 
 
+def write_rig():
+    """The walk's rig, for tools/build-gear.py: per row, how each part of the
+    standing frame moves in each walk column, and which part each pixel of
+    the standing frame is - in the sheet's 192x224 cell."""
+    lab = np.zeros((OUT_H * 4, OUT_W), np.uint8)
+    for r, m in enumerate(LABELS):
+        lab[r * OUT_H + PAD_Y:(r + 1) * OUT_H, PAD_X:PAD_X + CELL_W] = m
+    Image.fromarray(lab * 80).save(os.path.join(ROOT, 'tools/data/chibi-parts.png'), optimize=True)
+    pad = lambda p: [p[0] + PAD_X, p[1] + PAD_Y]
+    rows = [[{**f, 'pivot': pad(f['pivot'])} for f in row] for row in RIG]
+    with open(os.path.join(ROOT, 'tools/data/chibi-rig.json'), 'w') as fp:
+        json.dump({'side_rows': list(SIDE_ROWS), 'far_shift': 3, 'rows': rows}, fp, indent=1)
+
+
 def register_out(f):
     """register(), into the sheet's big cell."""
     h = head_of(f[:, :, 3])
@@ -745,4 +820,5 @@ if __name__ == '__main__':
     for colour in HAIR_COLOURS:
         Image.fromarray(hair_sheet(heads, pieces, colour, arms)).save(os.path.join(ROOT, f'assets/chibi/hair/spiky_{colour}.png'), optimize=True)
     write_table(heads, fists)
+    write_rig()
     print('wrote base_male, hair x', len(HAIR_COLOURS), 'and shared/data/chibi.js')
