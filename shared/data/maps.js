@@ -2,6 +2,7 @@
 // The server builds the tile grid at boot and ships it to clients RLE-encoded,
 // so the generator only has to be right once.
 
+import { EMBERHOLD_FINE } from './emberhold-fine.js';
 import { EMBERHOLD_SOLIDS } from './emberhold-solids.js';
 import { EMBERHOLD_OBSTACLES } from './emberhold-obstacles.js';
 import { GREENMIRE_OBSTACLES } from './greenmire-obstacles.js';
@@ -62,6 +63,8 @@ export const MAPS = {
     // what stands on that ground - house walls, stall counters, lamp posts,
     // the fountain basin - finer than a tile (tools/solids-town.py)
     solids: EMBERHOLD_SOLIDS,
+    // and where there is ground at all, 8px a cell (tools/trace-town.py)
+    fine: EMBERHOLD_FINE,
     // the moat and the canals shimmer; no falls in town
     waterFx: { falls: [] },
     spawnPoint: [45, 35],

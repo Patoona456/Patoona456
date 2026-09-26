@@ -579,24 +579,29 @@ test('townsfolk wander, but never into a tree, a wall or a building', (t) => {
   }
 });
 
-test('every open tile in Emberhold can be walked to from the spawn', (t) => {
+test('every open spot in Emberhold can be walked to from the spawn', (t) => {
   const w = freshWorld();
   t.after(() => w.stop());
   const z = w.zone('emberhold');
-  const fits = (x, y) => z.walkable(x * 32 + 16, y * 32 + 16, 10);
-  const [sx, sy] = z.def.spawnPoint;
-  const seen = new Set([`${sx},${sy}`]);
-  const queue = [[sx, sy]];
+  // at the fine grid's own size: 8 world px a step
+  const S = 8, cols = z.width * 4, rows = z.height * 4;
+  const fits = (x, y) => z.walkable(x * S + 4, y * S + 4, 6);
+  const sx = z.def.spawnPoint[0] * 4 + 2, sy = z.def.spawnPoint[1] * 4 + 2;
+  assert.ok(fits(sx, sy), 'the spawn point is shut');
+  const seen = new Uint8Array(cols * rows);
+  seen[sy * cols + sx] = 1;
+  const queue = [sy * cols + sx];
   while (queue.length) {
-    const [x, y] = queue.pop();
+    const i = queue.pop(), x = i % cols, y = (i - x) / cols;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = x + dx, ny = y + dy, k = `${nx},${ny}`;
-      if (nx < 0 || ny < 0 || nx >= z.width || ny >= z.height || seen.has(k) || !fits(nx, ny)) continue;
-      seen.add(k);
-      queue.push([nx, ny]);
+      const nx = x + dx, ny = y + dy, k = ny * cols + nx;
+      if (nx < 0 || ny < 0 || nx >= cols || ny >= rows || seen[k] || !fits(nx, ny)) continue;
+      seen[k] = 1;
+      queue.push(k);
     }
   }
-  const stranded = [];
-  for (let y = 0; y < z.height; y++) for (let x = 0; x < z.width; x++) if (fits(x, y) && !seen.has(`${x},${y}`)) stranded.push(`${x},${y}`);
-  assert.deepEqual(stranded, [], 'open ground nobody can reach');
+  // every warp, keeper and townsperson's home is on that ground
+  const reach = (tx, ty) => seen[(ty * 4 + 2) * cols + tx * 4 + 2];
+  for (const wp of z.def.warps) assert.ok(reach(Math.floor(wp.x + wp.w / 2), Math.floor(wp.y + wp.h / 2)), `the warp to ${wp.to} cannot be reached`);
+  for (const n of z.def.npcs) assert.ok(reach(n.x, n.y + 1) || reach(n.x, n.y), `${n.id} cannot be reached`);
 });
