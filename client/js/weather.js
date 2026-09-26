@@ -14,6 +14,14 @@ import { FROST_ATLAS } from './ambient.js';
 
 const frostImg = new Image();
 let frostAsked = false;
+const leafImg = new Image();
+let leafAsked = false;
+const LEAF_ATLAS = { leaf: { at: [0, 0], cell: [64, 64], frames: 19 }, streak: { at: [0, 64], cell: [128, 56], frames: 8 } };
+function leafAtlas() {
+  if (!leafAsked) { leafAsked = true; leafImg.src = 'assets/fx/leaves.webp'; }
+  return leafImg.complete && leafImg.naturalWidth > 0 ? leafImg : null;
+}
+
 function frostAtlas() {
   if (!frostAsked) { frostAsked = true; frostImg.src = 'assets/fx/frost.webp'; }
   return frostImg.complete && frostImg.naturalWidth > 0 ? frostImg : null;
@@ -30,6 +38,9 @@ const SKIES = {
   // the lava highlands: grey ash and dust drifting down across the screen,
   // embers rising through it, and a warm haze at the bottom
   ash:   { kind: 'ash', drops: 150, embers: 70, sparks: 26, speed: 34, color: '175,165,160', ember: '255,150,60', alpha: 0.75, gust: true, heat: true },
+  // Amberwood: autumn leaves blown across the screen, tumbling, and in the
+  // gusts a flurry of them streaking past
+  autumn: { kind: 'leaves', leaves: 16, streaks: 4 },
   grass: null,
   town: null,
   hall: null,
@@ -59,6 +70,8 @@ export class Weather {
     this.flakes = [];
     this.gusts = [];
     this.sparks = [];
+    this.leaves = [];
+    this.streaks = [];
   }
 
   /** How bright the sky is right now, 0..1. The zone tint reads this. */
@@ -106,6 +119,21 @@ export class Weather {
         if (this.gusts.length < bz.gusts && Math.random() < dt * 0.8 * this.wind) this.gusts.push(this.spawnGust(w, h));
         for (const g of this.gusts) g.x += g.v * this.wind * dt;
       }
+    } else if (sky.kind === 'leaves') {
+      // the wind: a steady breeze with gusts, and the leaves ride it
+      this.wind = 0.6 + Math.max(0, Math.sin(now / 5200)) * 1.6 + Math.sin(now / 1500) * 0.25;
+      this.leaves ??= [];
+      while (this.leaves.length < sky.leaves) this.leaves.push(this.spawnLeaf(w, h, true));
+      for (const l of this.leaves) {
+        l.x += (l.v * this.wind + Math.sin(now / 900 + l.seed * 5) * 25) * dt;
+        l.y += (l.fall + Math.sin(now / 600 + l.seed * 3) * 30) * dt;
+        l.rot += l.spin * this.wind * dt;
+        if (l.x > w + 60 || l.y > h + 60) Object.assign(l, this.spawnLeaf(w, h, false));
+      }
+      this.streaks ??= [];
+      this.streaks = this.streaks.filter((k) => k.x < w + 150);
+      if (this.wind > 1.4 && this.streaks.length < sky.streaks && Math.random() < dt * 3) this.streaks.push(this.spawnStreak(w, h));
+      for (const k of this.streaks) { k.x += k.v * this.wind * dt; k.y += k.v * 0.18 * dt; }
     } else if (sky.kind === 'ash') {
       while (this.drops.length < sky.drops) this.drops.push(this.spawn(w, h, true));
       this.embers ??= [];
@@ -148,6 +176,23 @@ export class Weather {
       r: 0.8 + Math.random() * 1.4,
       seed: Math.random() * 10,
     };
+  }
+
+  spawnLeaf(w, h, anywhere) {
+    // in from the left or the top, as the wind blows
+    const fromTop = !anywhere && Math.random() < 0.4;
+    return {
+      x: anywhere ? Math.random() * w : fromTop ? Math.random() * w * 0.7 : -50,
+      y: anywhere ? Math.random() * h : fromTop ? -50 : Math.random() * h * 0.7,
+      v: 50 + Math.random() * 60, fall: 25 + Math.random() * 35,
+      size: 0.35 + Math.random() * 0.4, rot: Math.random() * 6, spin: (Math.random() - 0.5) * 3,
+      f: Math.floor(Math.random() * LEAF_ATLAS.leaf.frames), seed: Math.random() * 10,
+    };
+  }
+
+  spawnStreak(w, h) {
+    return { x: -140, y: Math.random() * h * 0.85, v: 420 + Math.random() * 260,
+      size: 0.6 + Math.random() * 0.5, f: Math.floor(Math.random() * LEAF_ATLAS.streak.frames), tilt: 0.15 + Math.random() * 0.2 };
   }
 
   spawnSpark(w, h, anywhere) {
@@ -274,6 +319,31 @@ export class Weather {
         // and a cold cast over everything
         ctx.fillStyle = 'rgba(120,160,220,0.06)';
         ctx.fillRect(0, 0, w, h);
+      }
+    } else if (sky.kind === 'leaves') {
+      const at = leafAtlas();
+      if (at) {
+        const L = LEAF_ATLAS.leaf, K = LEAF_ATLAS.streak;
+        for (const l of this.leaves ?? []) {
+          const s = L.cell[0] * l.size;
+          ctx.save();
+          ctx.translate(l.x, l.y);
+          ctx.rotate(l.rot);
+          // tumbling: the leaf turns edge-on and back as it goes
+          ctx.scale(Math.cos(now / 500 + l.seed * 4) * 0.8 + 0.2 * Math.sign(Math.cos(now / 500 + l.seed * 4) || 1), 1);
+          ctx.globalAlpha = 0.95;
+          ctx.drawImage(at, L.at[0] + l.f * L.cell[0], L.at[1], L.cell[0], L.cell[1], -s / 2, -s / 2, s, s);
+          ctx.restore();
+        }
+        for (const k of this.streaks ?? []) {
+          const sw = K.cell[0] * k.size, sh = K.cell[1] * k.size;
+          ctx.save();
+          ctx.translate(k.x, k.y);
+          ctx.rotate(k.tilt);
+          ctx.globalAlpha = 0.85;
+          ctx.drawImage(at, K.at[0] + k.f * K.cell[0], K.at[1], K.cell[0], K.cell[1], -sw / 2, -sh / 2, sw, sh);
+          ctx.restore();
+        }
       }
     } else if (sky.kind === 'ash') {
       if (sky.heat) this.heatHaze(ctx, now, w, h);
