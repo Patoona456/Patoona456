@@ -1,4 +1,4 @@
-# Emberfall Online — เอกสารออกแบบเกม
+# Artaria Frontier Online (AFO) — เอกสารออกแบบเกม
 
 ## 1. โลกและโทนเรื่อง
 

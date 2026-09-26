@@ -1,4 +1,4 @@
-# Emberfall Online - one container, no build step.
+# Artaria Frontier Online - one container, no build step.
 # The client is plain ES modules served straight from source, so there is
 # nothing to bundle; the only dependency is `ws`.
 FROM node:22-alpine

@@ -2,7 +2,7 @@
 services:
   emberfall:
     build: .
-    image: emberfall-online
+    image: artaria-frontier-online
     restart: unless-stopped
     ports:
       - "${EMBERFALL_PORT:-8080}:8080"

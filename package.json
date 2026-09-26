@@ -1,8 +1,8 @@
 {
-  "name": "emberfall-online",
+  "name": "artaria-frontier-online",
   "version": "0.1.0",
   "private": true,
-  "description": "Emberfall Online - 2D MMORPG (browser + mobile, gamepad-first) built on Universal LPC spritesheets",
+  "description": "Artaria Frontier Online (AFO) - 2D MMORPG (browser + mobile, gamepad-first) built on Universal LPC spritesheets",
   "type": "module",
   "main": "server/index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "dev": "EMBERFALL_DEV=1 node --watch server/index.js",
     "import-lpc": "node tools/import-lpc.js",
     "build:demo": "node tools/build-demo.js",
-    "docker:build": "docker build -t emberfall-online .",
+    "docker:build": "docker build -t artaria-frontier-online .",
     "docker:run": "docker run --rm -p 8080:8080 -v emberfall-data:/data emberfall-online",
     "backup": "node tools/backup.js",
     "test": "node --test test/*.test.js",

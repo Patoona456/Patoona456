@@ -125,7 +125,7 @@ export function handle(req, res, world) {
 const PAGE = `<!doctype html>
 <html lang="th"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Emberfall — เศรษฐกิจ</title>
+<title>AFO — เศรษฐกิจ</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -147,7 +147,7 @@ const PAGE = `<!doctype html>
   td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
   .err { color:#ff7a7a; }
 </style></head><body>
-<h1>Emberfall Online — เศรษฐกิจ</h1>
+<h1>Artaria Frontier Online — เศรษฐกิจ</h1>
 <div class="sub" id="sub">กำลังโหลด…</div>
 <div class="grid" id="grid"></div>
 <script>

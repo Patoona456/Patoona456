@@ -456,7 +456,7 @@ class Game {
     $('#chat').classList.remove('hidden');
     preloadCommon(this.self.look);
     if (this.zone) this.ui.zoneBanner(this.zone);
-    this.ui.toast('ยินดีต้อนรับสู่ Emberfall — กด F1 เพื่อดูปุ่มควบคุม');
+    this.ui.toast('ยินดีต้อนรับสู่ Artaria Frontier Online — กด F1 เพื่อดูปุ่มควบคุม');
   }
 
   loop(t) {

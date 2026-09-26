@@ -1,4 +1,4 @@
-// Emberfall job tree. Ragnarok-shaped (Novice -> 1st -> 2nd) but our own
+// Artaria job tree. Ragnarok-shaped (Novice -> 1st -> 2nd) but our own
 // classes, our own numbers. Everything here is data: adding a job is a patch.
 
 export const JOBS = {

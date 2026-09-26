@@ -1,7 +1,10 @@
 // Shared between the authoritative server and the browser client.
 // Keep this file dependency-free: it is imported by Node and by the browser.
 
-export const GAME_NAME = 'Emberfall Online';
+export const GAME_NAME = 'Artaria Frontier Online';
+/** The Thai name, and the short one. */
+export const GAME_NAME_TH = 'อาร์ทาเรีย ฟรอนเทียร์ ออนไลน์';
+export const GAME_SHORT = 'AFO';
 export const PROTOCOL_VERSION = 1;
 
 /** World geometry ------------------------------------------------------- */

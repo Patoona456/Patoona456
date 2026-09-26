@@ -55,7 +55,7 @@ EMBERFALL_DATA=/var/lib/emberfall PORT=8080 npm start
 
 ```ini
 [Unit]
-Description=Emberfall Online
+Description=Artaria Frontier Online
 After=network.target
 
 [Service]

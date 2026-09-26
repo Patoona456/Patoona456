@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Imports the curated Universal-LPC-spritesheet subset used by Emberfall Online.
+ * Imports the curated Universal-LPC-spritesheet subset used by Artaria Frontier Online.
  *
  *   git clone --depth 1 https://github.com/makrohn/Universal-LPC-spritesheet.git
  *   npm run import-lpc -- ./Universal-LPC-spritesheet
