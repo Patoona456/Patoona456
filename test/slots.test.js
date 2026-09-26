@@ -14,8 +14,8 @@ import { LEVEL_CAP } from '../tools/balance.js';
 // These check the whole item set - gear at every level, a weapon for every job,
 // what fights cost wearing it. The old set was cleared for the new item
 // sheet, so they wait until the table has gear in it again.
-const WAITING_FOR_ITEMS = !Object.values(ITEMS).some((it) => it.type === 'armor')
-  && 'the item set is only partly in (no armour yet): waiting for the rest of the sheets';
+const WAITING_FOR_ITEMS = !Object.values(ITEMS).some((it) => it.slot === 'armor')
+  && 'the item set is only partly in (no body armour yet): waiting for the rest of the sheets';
 
 test('every slot says what it is called and where it is drawn', () => {
   assert.equal(SLOTS.length, 15);

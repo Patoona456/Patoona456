@@ -369,6 +369,11 @@ export class Player {
     if (def.type === 'weapon' && !jobCanHold(job, def.wclass)) {
       return { error: `อาชีพ ${job.nameTh} ใช้อาวุธประเภทนี้ไม่ได้` };
     }
+    // armour made for a fighting style (the swordsman's helmets) is worn by
+    // the jobs that fight that way
+    if (def.wears && !jobCanHold(job, def.wears)) {
+      return { error: `อาชีพ ${job.nameTh} สวมใส่ของชิ้นนี้ไม่ได้` };
+    }
     const slot = def.slot;
     if (this.record.equipment[slot] !== undefined) this.unequip(slot);
     if (def.twoHanded && this.record.equipment.offhand !== undefined) this.unequip('offhand');

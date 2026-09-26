@@ -17,6 +17,10 @@ export const ATLASES = {
   potions: { cols: 8 },
   drops: { cols: 10 },        // monster loot: icons, falling, lying, picked up (tools/slice-drops.py)
   scrolls: { cols: 8 },
+  // worn and icons: a tier a row, its Front first (tools/slice-helmets.py);
+  // a piece stands on its cell's floor with room above for a plume, so its
+  // icon is the lower middle of the cell, `zoom` times closer
+  helmets: { cols: 4, zoom: 1.25 },
   swords: { in: 'weapons', cols: 6, row: 0, count: 24 },
   swords_rare: { in: 'weapons', cols: 8, row: 4, count: 25 },
   swords_epic: { in: 'weapons', cols: 8, row: 8, count: 23 },

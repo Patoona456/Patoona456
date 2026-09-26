@@ -5,6 +5,8 @@ import { LPC, layoutOf, frameAt, rowAt, frameRect, fits } from '../../shared/she
 import { ITEMS } from '../../shared/data/items.js';
 import { MOB_ART } from '../../shared/data/mobart.js';
 import { NPC_ART } from '../../shared/data/npcart.js';
+import { CHIBI_HEADS } from '../../shared/data/chibi.js';
+import { HEADGEAR } from '../../shared/data/headgear.js';
 
 const BASE = '/assets/lpc';
 const MOB_BASE = '/assets/mob';
@@ -139,6 +141,13 @@ export function playerLayers(look, equipment = {}) {
     for (const itemId of Object.values(equipment)) {
       const c = ITEMS[itemId]?.chibi;
       if (!c) continue;                 // LPC-only art would not fit this body
+      if (c.headgear != null) {
+        // a helmet is one picture per facing, set on the skull frame by frame
+        // (drawHeadgear); it covers the hair, and has hair painted under it
+        layers.head = { url: `/assets/ui/${HEADGEAR.file}.webp`, headgear: c.headgear };
+        delete layers.hair;
+        continue;
+      }
       const names = c.layer === 'cape' ? [['cape_under', '_under'], ['cape_over', '_over']] : [[c.layer, '']];
       for (const [layer, suffix] of names) {
         const url = `${CHIBI_BASE}/gear/${c.key}${suffix}.webp`;
@@ -358,6 +367,10 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
       const url = urlOf(entry);
       const plain = sheet(url);
       if (!plain.ready) continue;
+      if (entry.headgear != null) {
+        drawHeadgear(g, plain.img, entry.headgear, frameRect(layout, anim, dir, elapsed, !ONE_SHOT.has(anim)), ox, oy, scale);
+        continue;
+      }
       const own = layoutFor(url);
       checkGeometry(url, plain.img, own);
       const { sx, sy, sw, sh } = frameRect(own, anim, dir, elapsed, !ONE_SHOT.has(anim));
@@ -387,6 +400,25 @@ export function drawCharacter(ctx, layers, { x, y, anim = 'idle', dir = 2, elaps
   }
   ctx.restore();
   return { dx, dy, size };
+}
+
+/**
+ * A helmet (tools/slice-helmets.py) on the skull of the frame the body is
+ * showing: its facing's picture, set from the skull's centre and top. With
+ * the sword raised over the head the arms pass in front, so they are drawn
+ * back over it.
+ */
+function drawHeadgear(g, img, tier, { sx, sy, sw, sh }, ox, oy, scale) {
+  const col = Math.round(sx / sw), row = Math.round(sy / sh);
+  const head = CHIBI_HEADS[row]?.[col];
+  const at = HEADGEAR.at[tier]?.[row];
+  if (!head || !at) return;
+  const c = HEADGEAR.cell;
+  g.drawImage(img, row * c, tier * c, c, c, ox + (head.x + at[0]) * scale, oy + (head.top + at[1]) * scale, c * scale, c * scale);
+  if (col === HEADGEAR.raisedCol) {
+    const a = HEADGEAR.arms[row];
+    g.drawImage(img, a.sx, a.sy, a.w, a.h, ox + a.x * scale, oy + a.y * scale, a.w * scale, a.h * scale);
+  }
 }
 
 /** A painted NPC that moves: a frame of its strip, by the clock, stood on its foot. */

@@ -54,7 +54,8 @@ function paintArt(canvas, name) {
     g.imageSmoothingQuality = 'high';
     if (cellId != null && ATLASES[file]) {
       const { sx, sy, size } = atlasRect(file, cellId, img.naturalWidth);
-      g.drawImage(img, sx, sy, size, size, w * 0.03, h * 0.03, w * 0.94, h * 0.94);
+      const z = ATLASES[file].zoom ?? 1, crop = size / z;
+      g.drawImage(img, sx + (size - crop) / 2, sy + size - crop, crop, crop, w * 0.03, h * 0.03, w * 0.94, h * 0.94);
       return;
     }
     if (square) { g.drawImage(img, 0, 0, w, h); return; }

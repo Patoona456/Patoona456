@@ -321,6 +321,40 @@ export const BOWS = {
 };
 Object.assign(ITEMS, BOWS);
 
+/* ============ SWORDSMAN HELMETS (assets/chibi/source/gear/swordsman_helmet.png) ============
+   The ordinary ladder, Lv.1 to Lv.120, for anyone who fights with a sword.
+   Each is worn on the chibi's own head (tools/slice-helmets.py cuts it four
+   ways round, shared/data/headgear.js sets it on the skull every frame) and
+   its Front is its icon. DEF = 2 + 0.4 x level - the head's share of a full
+   set - and +1 VIT every thirty levels. */
+const HELM = (tier, o) => A({ slot: 'head', art: 'helmets#' + tier * 4, chibi: { headgear: tier }, wears: 'sword',
+  rarity: 'common', weight: 20 + Math.round(o.level * 0.4), ...o });
+export const HELMETS = {
+  leather_cap: HELM(0, { id: 'leather_cap', name: 'Leather Cap', nameTh: 'หมวกหนังฝึกหัด', level: 1, def: 2, value: 210, desc: 'หมวกหนังบาง ๆ สำหรับหัดจับดาบ กันกิ่งไม้ได้ ส่วนดาบกันได้นิดหน่อย' }),
+  banded_cap: HELM(1, { id: 'banded_cap', name: 'Banded Leather Cap', nameTh: 'หมวกหนังรัดเหล็ก', level: 5, def: 4, value: 330 }),
+  iron_helm: HELM(2, { id: 'iron_helm', name: 'Iron Helm', nameTh: 'หมวกเหล็ก', level: 10, def: 6, value: 680 }),
+  crested_helm: HELM(3, { id: 'crested_helm', name: 'Crested Helm', nameTh: 'หมวกหงอนแดง', level: 15, def: 8, value: 1230 }),
+  guard_helm: HELM(4, { id: 'guard_helm', name: 'Guardsman Helm', nameTh: 'หมวกทหารยาม', level: 20, def: 10, value: 1980 }),
+  knight_helm: HELM(5, { id: 'knight_helm', name: 'Knight Helm', nameTh: 'หมวกอัศวิน', level: 25, def: 12, value: 2920 }),
+  sentinel_helm: HELM(6, { id: 'sentinel_helm', name: 'Sentinel Helm', nameTh: 'หมวกผู้พิทักษ์', level: 30, def: 14, value: 4040, stats: { vit: 1 } }),
+  gilded_helm: HELM(7, { id: 'gilded_helm', name: 'Gilded Helm', nameTh: 'หมวกขลิบทอง', level: 35, def: 16, value: 5350, stats: { vit: 1 } }),
+  veteran_helm: HELM(8, { id: 'veteran_helm', name: 'Veteran Helm', nameTh: 'หมวกทหารผ่านศึก', level: 40, def: 18, value: 6840, stats: { vit: 1 } }),
+  crimson_helm: HELM(9, { id: 'crimson_helm', name: 'Crimson Crest Helm', nameTh: 'หมวกหงอนชาด', level: 45, def: 20, value: 8500, stats: { vit: 1 } }),
+  wingguard_helm: HELM(10, { id: 'wingguard_helm', name: 'Wingguard Helm', nameTh: 'หมวกปีกพิทักษ์', level: 50, def: 22, value: 10340, stats: { vit: 1 } }),
+  griffin_helm: HELM(11, { id: 'griffin_helm', name: 'Griffin Helm', nameTh: 'หมวกกริฟฟิน', level: 55, def: 24, value: 12360, stats: { vit: 1 } }),
+  royal_helm: HELM(12, { id: 'royal_helm', name: 'Royal Guard Helm', nameTh: 'หมวกองครักษ์', level: 60, def: 26, value: 14540, stats: { vit: 2 } }),
+  valor_helm: HELM(13, { id: 'valor_helm', name: 'Valor Helm', nameTh: 'หมวกกล้าหาญ', level: 65, def: 28, value: 16900, stats: { vit: 2 } }),
+  ruby_helm: HELM(14, { id: 'ruby_helm', name: 'Ruby Crest Helm', nameTh: 'หมวกหงอนทับทิม', level: 70, def: 30, value: 19420, stats: { vit: 2 } }),
+  warlord_helm: HELM(15, { id: 'warlord_helm', name: 'Warlord Helm', nameTh: 'หมวกขุนศึก', level: 75, def: 32, value: 22120, stats: { vit: 2 } }),
+  dragon_helm: HELM(16, { id: 'dragon_helm', name: 'Dragon Helm', nameTh: 'หมวกมังกร', level: 80, def: 34, value: 24980, stats: { vit: 2 } }),
+  sovereign_helm: HELM(17, { id: 'sovereign_helm', name: 'Sovereign Helm', nameTh: 'หมวกราชันย์', level: 85, def: 36, value: 28000, stats: { vit: 2 } }),
+  seraph_helm: HELM(18, { id: 'seraph_helm', name: 'Seraph Helm', nameTh: 'หมวกเทวทูต', level: 90, def: 38, value: 31190, stats: { vit: 3 } }),
+  heroic_helm: HELM(19, { id: 'heroic_helm', name: 'Heroic Helm', nameTh: 'หมวกวีรบุรุษ', level: 100, def: 42, value: 38060, stats: { vit: 3 } }),
+  paragon_helm: HELM(20, { id: 'paragon_helm', name: 'Paragon Helm', nameTh: 'หมวกยอดอัศวิน', level: 110, def: 46, value: 45570, stats: { vit: 3 } }),
+  celestial_helm: HELM(21, { id: 'celestial_helm', name: 'Celestial Helm', nameTh: 'หมวกสวรรค์', level: 120, def: 50, value: 53730, stats: { vit: 4 } }),
+};
+Object.assign(ITEMS, HELMETS);
+
 /* ============ RARE SWORDS (assets/ui/source/sword_rare_sheet.png) ============
    Twenty-five rare swords on the common ladder's own steps, Lv.1 to Lv.120.
    A rare sword is the common sword of its level plus a fifth more ATK, a
