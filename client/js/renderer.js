@@ -667,6 +667,7 @@ export class Renderer {
   }
 
   render(state, now) {
+    this._me = state.me;
     // hit-stop. Only the *animation* clock is held; positions keep
     // interpolating, so the world never desyncs from the server for it.
     if (now < this.freezeUntil) now = this._frozenAt ?? (this._frozenAt = now);
@@ -976,8 +977,18 @@ export class Renderer {
     const smooth = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
+    // someone standing behind it - above its front, inside its outline - sees
+    // through it: the picture fades while you are there
+    const me = this._me;
+    const behind = me && !p.flat && me.y < p.y && me.y > p.y - p.h - 8
+      && me.x > p.x - p.w / 2 - 6 && me.x < p.x + p.w / 2 + 6;
+    const target = behind ? 0.42 : 1;
+    p._alpha = p._alpha == null ? target : p._alpha + (target - p._alpha) * 0.18;   // eased, not snapped
+    const prevAlpha = ctx.globalAlpha;
+    ctx.globalAlpha = prevAlpha * p._alpha;
     if (p.crop) ctx.drawImage(pic, ...p.crop, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
     else ctx.drawImage(pic, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
+    ctx.globalAlpha = prevAlpha;
     ctx.imageSmoothingEnabled = smooth;
   }
 

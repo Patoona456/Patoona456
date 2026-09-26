@@ -65,21 +65,28 @@ def main(overlay=None):
     wood = (h >= 15) & (h <= 40) & (s > 120) & (v > 90) & ~lawn
     pave = (s < 95) & (v >= 135) & (v >= 115)
     dark = v < 115
-    plan_open = ((tile_share(pave, (0.15, 0.85, 0.15, 0.85)) > 0.72) & (tile_share(dark, (0.15, 0.85, 0.15, 0.85)) < 0.06)) \
+    plan_open = ((tile_share(pave, (0.15, 0.85, 0.15, 0.85)) > 0.5) & (tile_share(dark, (0.15, 0.85, 0.15, 0.85)) < 0.2)) \
         | (tile_share(wood, (0.15, 0.85, 0.15, 0.85)) > 0.5)
+    plan_lawn = tile_share(lawn, (0.15, 0.85, 0.15, 0.85)) > 0.5
     # the painting: still paving
     hsv = cv2.cvtColor(cv2.GaussianBlur(town, (0, 0), 1.2), cv2.COLOR_RGB2HSV).astype(int)
     h, s, v = hsv[..., 0] * 2, hsv[..., 1], hsv[..., 2]
     town_pave = (s < 90) & (v >= 150) & ((h <= 45) | (s < 30))
-    open_ = plan_open & (tile_share(town_pave) > 0.55)
+    # Wherever there is a way, one can walk: paving on the plan or in the
+    # painting, and the lots the houses and stalls stand on. Houses, stalls,
+    # lamp posts and banners are walked through (they go see-through when
+    # you are behind them); only the water and the walls stop you.
+    # the water on the plan (the painting's blue roofs are not water)
+    water = plan[..., 2].astype(int) > plan[..., 0].astype(int) + 60
+    open_ = (plan_open | plan_lawn | (tile_share(town_pave) > 0.45)) & (tile_share(water) < 0.3)
+    # a one-tile notch in a street is a place to snag on: fill it
+    import cv2 as _cv
+    open_ = _cv.morphologyEx(open_.astype(np.uint8), _cv.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool) & (tile_share(water) < 0.3)
     for x, y, w, hh in FORCE_OPEN:
         open_[y:y + hh, x:x + w] = True
     for x, y, w, hh in FORCE_BLOCK:
         open_[y:y + hh, x:x + w] = False
     W, H = town.shape[1], town.shape[0]
-    for px, py, _ in POSTS:
-        tx, ty = int(px / (W / COLS)), min(ROWS - 1, int((py - 3) / (H / ROWS)))
-        open_[ty, tx] = False
     sx, sy = SEED
     seen = np.zeros_like(open_)
     seen[sy, sx] = True
