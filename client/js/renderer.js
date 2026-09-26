@@ -485,6 +485,13 @@ const rand = (seed) => {
   return () => ((a = (a * 1664525 + 1013904223) >>> 0) / 4294967296);
 };
 
+// Warp art made of light (tools/slice-glow.py): strips of equal cells on
+// black, drawn with 'lighter'.
+const GLOW_ART = {
+  town: { frames: 24, cell: [191, 160], fps: 10 },
+  town_spark: { frames: 24, cell: [195, 160], fps: 18 },
+};
+
 export class Renderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -554,6 +561,8 @@ export class Renderer {
   }
 
   setZone(zonePayload) {
+    // arriving in a town (or the castle) by its circle: a sparkle over you
+    if (this.zone && MAPS[zonePayload.id]?.kind === 'town') this.arrival = { start: performance.now() };
     this.zone = zonePayload;
     this.tileCache = new Map();          // let the last map's sharp tiles go
     this.particles.setTheme(zonePayload.theme);
@@ -711,6 +720,7 @@ export class Renderer {
     this.drawGroundItems(ctx, state, now);
     this.drawEntities(ctx, state, now, visibleProps);
     this.drawFx(ctx, now);
+    this.drawArrival(ctx, state, now);
     this.drawMobFx(ctx, state, now);
     this.particles.update(now, view);
     this.particles.draw(ctx, now);
@@ -786,12 +796,33 @@ export class Renderer {
     const m = MAPS[to];
     if (!m) return 'city';
     if (m.pvp || to === 'ashen_lists') return 'holy';
-    if (m.kind === 'town') return 'city';
+    if (m.kind === 'town') return 'town';          // the magic circle
     if (m.kind === 'boss') return 'boss';
     if (m.kind === 'dungeon') return 'void';
     if (m.theme === 'ice') return 'ice';
     if (m.kind === 'cave') return 'dungeon';
     return 'nature';
+  }
+
+  /** The warp-in sparkle, played once over you when you arrive by a town circle. */
+  drawArrival(ctx, state, now) {
+    const a = this.arrival;
+    const me = state.me;
+    if (!a || !me) return;
+    const g = GLOW_ART.town_spark;
+    const f = Math.floor((now - a.start) / (1000 / g.fps));
+    if (f >= g.frames) { this.arrival = null; return; }
+    this.warpArt ??= new Map();
+    let art = this.warpArt.get('town_spark');
+    if (!art) { art = new Image(); art.src = 'assets/warp/town_spark.webp'; this.warpArt.set('town_spark', art); }
+    if (!art.complete || !art.naturalWidth) return;
+    const [fw, fh] = g.cell;
+    const dw = 96, dh = dw * fh / fw;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(art, f * fw, 0, fw, fh, me.x - dw / 2, me.y + dh * 0.12 - dh, dw, dh);
+    ctx.restore();
   }
 
   drawWarps(ctx, now) {
@@ -807,7 +838,22 @@ export class Renderer {
         this.warpArt.set(style, art);
       }
       let top = foot - 64;
-      if (art.complete && art.naturalWidth) {
+      const glow = GLOW_ART[style];
+      if (glow && art.complete && art.naturalWidth) {
+        // a circle of light on the ground: added to the street, so black is
+        // nothing; its rings a little wider than the pad
+        const [fw, fh] = glow.cell;
+        const frame = Math.floor(now / (1000 / glow.fps)) % glow.frames;
+        const dw = Math.max(92, w.w * TILE * 1.25), dh = dw * fh / fw;
+        top = foot + dh * 0.1 - dh;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(art, frame * fw, 0, fw, fh, cx - dw / 2, top, dw, dh);
+        ctx.restore();
+        top += dh * 0.35;
+      } else if (art.complete && art.naturalWidth) {
         // eight frames side by side; a gate is ~2 tiles wide whatever the pad
         const fw = art.naturalWidth / 8, fh = art.naturalHeight;
         const frame = Math.floor(now / 110) % 8;
