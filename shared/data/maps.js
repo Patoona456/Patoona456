@@ -168,18 +168,13 @@ export const MAPS = {
     // from the decor sheet packed underneath (tools/build-castle.py); the
     // floor is drawn from its top and each piece from its `crop`.
     backdrop: 'assets/maps/castle.webp',
+    // the whole hall floor, the throne steps and the stair down to the door:
+    // pillars, candles and the dressing are walked through (the dressing
+    // fades when you stand behind it); only the walls hold you in
     walk: [
-      [5, 6, 38, 18],                                   // the hall floor
-      [22, 24, 4, 8],                                   // the steps down to the door
-      [22, 4, 4, 2],                                    // the steps up to the throne
-    ],
-    block: [
-      [16, 8, 5, 5], [27, 8, 5, 5], [16, 16, 5, 6], [27, 16, 5, 6],   // the four banner pillars and their candles
-      [17, 6, 2, 1], [29, 6, 2, 1],                                   // the armour either side of the throne
-      [5, 6, 1, 1], [42, 6, 1, 1], [5, 22, 1, 2], [42, 22, 1, 2],     // the potted trees in the corners
-      [6, 6, 4, 2], [6, 21, 4, 3], [38, 6, 5, 2],                     // spear rack, sword table, bookcase
-      [6, 12, 2, 2], [13, 12, 2, 2],                                  // the blue flames
-      [20, 22, 2, 2], [26, 22, 2, 2],                                 // the braziers by the door
+      [4, 5, 41, 20],                                   // the hall floor
+      [21, 3, 7, 3],                                    // the steps up to the throne
+      [21, 24, 7, 6], [20, 29, 9, 3],                   // the stair down to the door, and the path out
     ],
     spawnPoint: [23, 27],
     warps: [

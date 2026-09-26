@@ -963,6 +963,19 @@ export class Renderer {
     }
   }
 
+  /**
+   * How solid a picture prop is drawn: someone standing behind it - above its
+   * front, inside its outline - sees through it while they are there.
+   */
+  seeThrough(p) {
+    const me = this._me;
+    const behind = me && !p.flat && me.y < p.y && me.y > p.y - p.h - 8
+      && me.x > p.x - p.w / 2 - 6 && me.x < p.x + p.w / 2 + 6;
+    const target = behind ? 0.42 : 1;
+    p._alpha = p._alpha == null ? target : p._alpha + (target - p._alpha) * 0.18;   // eased, not snapped
+    return p._alpha;
+  }
+
   /** A building drawn as art rather than code: stood on its foot, at its size. */
   drawPictureProp(ctx, p) {
     this.pictures ??= new Map();
@@ -977,15 +990,8 @@ export class Renderer {
     const smooth = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    // someone standing behind it - above its front, inside its outline - sees
-    // through it: the picture fades while you are there
-    const me = this._me;
-    const behind = me && !p.flat && me.y < p.y && me.y > p.y - p.h - 8
-      && me.x > p.x - p.w / 2 - 6 && me.x < p.x + p.w / 2 + 6;
-    const target = behind ? 0.42 : 1;
-    p._alpha = p._alpha == null ? target : p._alpha + (target - p._alpha) * 0.18;   // eased, not snapped
     const prevAlpha = ctx.globalAlpha;
-    ctx.globalAlpha = prevAlpha * p._alpha;
+    ctx.globalAlpha = prevAlpha * this.seeThrough(p);
     if (p.crop) ctx.drawImage(pic, ...p.crop, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
     else ctx.drawImage(pic, Math.round(p.x - p.w / 2), Math.round(p.y - p.h), p.w, p.h);
     ctx.globalAlpha = prevAlpha;
@@ -1106,7 +1112,10 @@ export class Renderer {
     if (p.flame) {
       const smooth = ctx.imageSmoothingEnabled;
       ctx.imageSmoothingEnabled = true;
+      const a = ctx.globalAlpha;
+      ctx.globalAlpha = a * this.seeThrough(p);
       drawFlame(ctx, p.flame, p.x, p.y, p.h, now, p.x % 7);   // out of step with its neighbour
+      ctx.globalAlpha = a;
       ctx.imageSmoothingEnabled = smooth;
       return;
     }
