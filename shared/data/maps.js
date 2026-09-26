@@ -331,8 +331,13 @@ export const MAPS = {
       { x: 89, y: 41, w: 1, h: 3, to: 'artaris', at: [85, 29], label: 'อาร์ทาริส' },     // the east bridge
       { x: 89, y: 21, w: 1, h: 2, to: 'obsidian', at: [4, 16], label: 'ที่ราบสูงออบซิเดียน' },  // the plaza's east aqueduct
     ],
-    // its monsters come with their own sheets
-    spawns: [],
+    // its monsters come a sheet at a time: the leaf slimes first, on the
+    // meadows over the west bridge and round the north-west path loop
+    spawns: [
+      { mob: 'autumn_slime', count: 6, area: [8, 18, 10, 9] },
+      { mob: 'autumn_slime', count: 5, area: [15, 6, 8, 13] },
+      { mob: 'autumn_slime', count: 4, area: [10, 34, 6, 14] },
+    ],
   },
 
   obsidian: {

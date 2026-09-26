@@ -183,6 +183,29 @@ MOBS = {
         'scale': 2,
         'show': .275,
     },
+    # Amberwood's first: a slime of fallen leaves. Its sheet is transparent;
+    # the title card and row labels are cleared, and each row given its
+    # extent where the sheet runs effects on past the frames
+    'autumn_slime': {
+        'src': 'assets/mob/source/autumn_slime_sheet.png',
+        'alpha': True,
+        'x0': 180,
+        'blank': [(0, 0, 330, 100), (0, 100, 180, 924)],
+        'rows': [('idle', 106, 188, 12), ('walk', 193, 274, 11),
+                 # it rolls a few frames, then the row is the leaf trail alone
+                 ('run', 280, 366, 5, (180, 880)),
+                 ('attack', 366, 450, 10),
+                 # Leaf Spin: whirls round itself (played for its spinning burst)
+                 ('tornado', 455, 543, 10),
+                 # Leaf Burst: leaves blow up out of the ground under it
+                 ('skill', 546, 648, 11),
+                 ('hit', 652, 736, 9), ('enrage', 736, 826, 10),
+                 ('death', 833, 906, 11), ('spawn', 909, 1003, 10)],
+        'faces': 'left',
+        # painted at about the size it is drawn: stored whole, so it stays sharp
+        'scale': 1,
+        'show': .32,
+    },
     'wild_boar': {
         'src': 'assets/mob/source/boar_sheet.png',
         'alpha': True,

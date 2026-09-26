@@ -4,6 +4,7 @@
 // covers, how tall it stands at rest, and each animation row with its frame count.
 export const MOB_ART = {
   "alpha_wolf": {"cell": [153, 89], "foot": 80, "faces": "left", "show": 1, "top": 38, "anims": [["idle", 8], ["walk", 10], ["run", 9], ["attack", 6], ["leap", 5], ["howl", 8], ["hit", 6], ["enrage", 6], ["death", 4], ["spawn", 10]], "fx": {"claw": {"n": 4, "cell": [75, 57], "anchor": [38, 28], "y": 0}, "impact": {"n": 3, "cell": [93, 66], "anchor": [46, 55], "y": 57}, "rage": {"n": 5, "cell": [82, 48], "anchor": [41, 24], "y": 123}}},
+  "autumn_slime": {"cell": [280, 121], "foot": 109, "faces": "left", "show": 0.32, "top": 26, "anims": [["idle", 12], ["walk", 11], ["run", 5], ["attack", 10], ["tornado", 10], ["skill", 11], ["hit", 9], ["enrage", 10], ["death", 11], ["spawn", 10]]},
   "blue_slime": {"cell": [201, 60], "foot": 59, "faces": "left", "show": 0.56, "top": 27, "anims": [["idle", 9], ["walk", 9], ["run", 6], ["attack", 7], ["hit", 8], ["death", 8], ["spawn", 10]]},
   "caterpillar": {"cell": [162, 70], "foot": 62, "faces": "left", "show": 0.56, "top": 26, "anims": [["idle", 9], ["walk", 9], ["run", 8], ["attack", 8], ["skill", 7], ["hit", 9], ["death", 8], ["spawn", 8]]},
   "forest_bee": {"cell": [119, 78], "foot": 60, "faces": "left", "show": 0.6, "top": 24, "anims": [["idle", 10], ["walk", 12], ["run", 8], ["attack", 11], ["skill", 8], ["hit", 9], ["death", 10], ["spawn", 9]]},

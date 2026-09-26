@@ -37,6 +37,34 @@ export const MONSTERS = {
     aurum: { chance: 0.35, min: 1, max: 3 },
   }),
 
+  // Amberwood's first, over the west bridge: a slime of fallen leaves. It
+  // rolls into its tackle; now and then it whirls a ring of leaves round
+  // itself that hits twice (walk out of it), or sends leaves bursting up
+  // out of the ground under whoever it is after (step off the mark).
+  autumn_slime: M({
+    id: 'autumn_slime', name: 'Autumn Leaf Slime', nameTh: 'สไลม์ใบไม้ร่วง', level: 11,
+    hp: 300, atk: 30, def: 9, mdef: 6, hit: 78, flee: 64, exp: 50, jobExp: 29,
+    element: 'earth', race: 'formless', size: 'small', speed: 42, attackRange: 38,
+    attackDelay: 2.1, aggressive: false, aggroRange: 130, respawn: 12,
+    sprite: { kind: 'frames', key: 'autumn_slime' },
+    burst: [
+      // Leaf Spin: round itself, two hits
+      { every: 12000, reach: 70, radius: 70, tell: 900, lead: 444, recover: 400, power: 1.1,
+        pulses: 2, gap: 350, element: 'wind', anim: 'tornado', label: 'ออกห่าง!' },
+      // Leaf Burst: under the target
+      { every: 15000, reach: 180, radius: 52, tell: 1100, lead: 667, recover: 350, power: 1.8,
+        element: 'earth', at: 'target', anim: 'skill', label: 'หลบ!' },
+    ],
+    drops: [
+      { id: 'autumn_jelly', chance: 0.55, qty: [1, 2] },
+      { id: 'red_maple_leaf', chance: 0.3 },
+      { id: 'earth_crystal_s', chance: 0.06 },
+      { id: 'box_weapon_1', chance: 0.002 },
+      { id: 'scroll_mystery', chance: 0.004 },
+    ],
+    aurum: { chance: 0.45, min: 5, max: 10 },
+  }),
+
   // One step up from the slime: a touch slower on its feet but it hits harder,
   // spinning into a tackle. Its one trick is the lesson in area attacks: it
   // roots itself, the floor round it is marked, and a moment later a ring of
