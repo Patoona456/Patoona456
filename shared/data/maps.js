@@ -328,36 +328,8 @@ export const MAPS = {
       { x: 0, y: 27, w: 1, h: 3, to: 'greenmire', at: [44, 55], label: 'ทุ่งกรีนไมร์' },   // the west bridge
       { x: 89, y: 41, w: 1, h: 3, to: 'artaris', at: [85, 29], label: 'อาร์ทาริส' },     // the east bridge
     ],
-    // Harder going east and south: slimes (Lv11) and caps (Lv12) on the
-    // western meadows by the bridge, crawlers (Lv13) in the north and south-
-    // west clearings, hornets (Lv15, the ones that start a fight) over the
-    // middle road and the stairs path, boars (Lv16) in the south-east
-    // clearing and along the south road, wisps (Lv18) round the ruins in the
-    // east. The Ember Alpha holds the plateau up the stairs; the Amber
-    // Warden the plaza.
-    spawns: [
-      { mob: 'amber_slime', count: 5, area: [8, 18, 10, 9] },      // the meadows over the west bridge
-      { mob: 'crimson_cap', count: 2, area: [8, 18, 10, 9] },
-      { mob: 'amber_slime', count: 3, area: [15, 6, 8, 13] },      // the north-west path loop
-      { mob: 'crimson_cap', count: 3, area: [15, 6, 8, 13] },
-      { mob: 'crimson_cap', count: 3, area: [27, 12, 14, 8] },     // the north clearing
-      { mob: 'autumn_crawler', count: 3, area: [27, 12, 14, 8] },
-      { mob: 'autumn_crawler', count: 4, area: [21, 35, 13, 10] }, // the south-west clearing
-      { mob: 'crimson_cap', count: 2, area: [21, 35, 13, 10] },
-      { mob: 'autumn_crawler', count: 2, area: [10, 34, 6, 14] },  // the west road south
-      { mob: 'amber_slime', count: 2, area: [10, 34, 6, 14] },
-      { mob: 'amber_hornet', count: 3, area: [40, 25, 12, 5] },    // the middle road
-      { mob: 'amber_hornet', count: 3, area: [46, 14, 7, 12] },    // the stairs path
-      { mob: 'ember_boar', count: 4, area: [51, 35, 15, 12] },     // the south-east clearing
-      { mob: 'amber_hornet', count: 2, area: [51, 35, 15, 12] },
-      { mob: 'ember_boar', count: 3, area: [20, 48, 42, 4] },      // the south road
-      { mob: 'autumn_crawler', count: 2, area: [20, 48, 42, 4] },
-      { mob: 'dusk_wisp', count: 3, area: [66, 32, 14, 14] },      // the east loop round the ruins
-      { mob: 'ember_boar', count: 2, area: [66, 32, 14, 14] },
-      { mob: 'dusk_wisp', count: 3, area: [56, 21, 11, 6] },       // under the plaza's west arches
-      { mob: 'ember_alpha', count: 1, area: [52, 5, 5, 3] },       // the mini boss, on the plateau
-      { mob: 'amber_warden', count: 1, area: [71, 17, 6, 6] },     // the boss, in the plaza
-    ],
+    // its monsters come with their own sheets
+    spawns: [],
   },
 
 };
