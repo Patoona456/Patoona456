@@ -29,7 +29,7 @@ const SKIES = {
   rock:  { kind: 'fog', banks: 3, speed: 8, color: '120,96,70', alpha: 0.10 },
   // the lava highlands: grey ash and dust drifting down across the screen,
   // embers rising through it, and a warm haze at the bottom
-  ash:   { kind: 'ash', drops: 150, embers: 40, speed: 34, color: '175,165,160', ember: '255,150,60', alpha: 0.75, gust: true },
+  ash:   { kind: 'ash', drops: 150, embers: 70, sparks: 26, speed: 34, color: '175,165,160', ember: '255,150,60', alpha: 0.75, gust: true, heat: true },
   grass: null,
   town: null,
   hall: null,
@@ -58,6 +58,7 @@ export class Weather {
     this.embers = [];
     this.flakes = [];
     this.gusts = [];
+    this.sparks = [];
   }
 
   /** How bright the sky is right now, 0..1. The zone tint reads this. */
@@ -116,6 +117,14 @@ export class Weather {
         d.x += (sky.speed * (0.5 + gust) * d.z + Math.sin(now / 700 + d.seed * 6) * 14) * dt;
         if (d.y > h + 20 || d.x < -40 || d.x > w + 40) Object.assign(d, this.spawn(w, h, false));
       }
+      this.sparks ??= [];
+      while (this.sparks.length < (sky.sparks ?? 0)) this.sparks.push(this.spawnSpark(w, h, true));
+      for (const k of this.sparks) {
+        k.x += k.vx * dt; k.y += k.vy * dt;
+        k.vx += Math.sin(now / 300 + k.seed * 7) * 40 * dt;    // they flutter as they fly
+        k.life -= dt;
+        if (k.life <= 0 || k.y < -30 || k.x < -30 || k.x > w + 30) Object.assign(k, this.spawnSpark(w, h, false));
+      }
       for (const e of this.embers) {
         e.y -= e.v * dt;
         e.x += (Math.sin(now / 500 + e.seed * 5) * 18 + gust * 12) * dt;
@@ -141,6 +150,13 @@ export class Weather {
     };
   }
 
+  spawnSpark(w, h, anywhere) {
+    // thrown up from below the screen, fast, and burning out
+    const life = 0.8 + Math.random() * 1.6;
+    return { x: Math.random() * w, y: anywhere ? h * (0.3 + Math.random() * 0.7) : h + 10,
+      vx: (Math.random() - 0.5) * 120, vy: -(160 + Math.random() * 260), life, max: life, seed: Math.random() * 10 };
+  }
+
   spawnFlake(w, h, anywhere) {
     return {
       x: anywhere ? Math.random() * w : -40 - Math.random() * w * 0.3,
@@ -163,6 +179,32 @@ export class Weather {
       v: 30 + Math.random() * 60, r: 0.8 + Math.random() * 1.6,
       life, max: life, seed: Math.random() * 10,
     };
+  }
+
+  /**
+   * The air shimmering over the heat: the picture already drawn is copied and
+   * put back in thin rows, each slid sideways on its own slow wave - more
+   * toward the bottom of the screen, nearer the lava.
+   */
+  heatHaze(ctx, now, w, h) {
+    const src = ctx.canvas;
+    if (!src || !w || !h) return;
+    const c = (this.hazeCanvas ??= document.createElement('canvas'));
+    if (c.width !== src.width || c.height !== src.height) { c.width = src.width; c.height = src.height; }
+    const o = c.getContext('2d');
+    o.setTransform(1, 0, 0, 1, 0, 0);
+    o.clearRect(0, 0, c.width, c.height);
+    o.drawImage(src, 0, 0);
+    const sx = src.width / w, sy = src.height / h;
+    const band = 6, t = now / 1000;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    for (let y = Math.floor(h * 0.2); y < h; y += band) {
+      const depth = (y / h - 0.2) / 0.8;
+      const dx = Math.sin(y * 0.07 + t * 3.1) * 1.6 * depth + Math.sin(y * 0.021 - t * 1.7) * 1.1 * depth;
+      ctx.drawImage(c, 0, y * sy, src.width, band * sy, dx * sx, y * sy, src.width, band * sy);
+    }
+    ctx.restore();
   }
 
   spawnBank(w, h) {
@@ -234,6 +276,7 @@ export class Weather {
         ctx.fillRect(0, 0, w, h);
       }
     } else if (sky.kind === 'ash') {
+      if (sky.heat) this.heatHaze(ctx, now, w, h);
       // the haze: warm from below, where the lava is
       const g = ctx.createLinearGradient(0, h * 0.55, 0, h);
       g.addColorStop(0, 'rgba(255,90,30,0)');
@@ -262,7 +305,32 @@ export class Weather {
         ctx.fillStyle = gg;
         ctx.fillRect(e.x - rr, e.y - rr, rr * 2, rr * 2);
       }
+      // sparks: short bright streaks along the way they fly
+      ctx.lineCap = 'round';
+      for (const k of this.sparks ?? []) {
+        const a = Math.min(1, k.life / k.max * 1.5);
+        const len = 0.06;
+        // a glow round the streak, then the hot core
+        ctx.strokeStyle = `rgba(255,110,30,${a * 0.45})`;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(k.x, k.y);
+        ctx.lineTo(k.x - k.vx * len, k.y - k.vy * len);
+        ctx.stroke();
+        ctx.strokeStyle = `rgba(255,${200 + Math.round(a * 40)},140,${a})`;
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+      }
       ctx.globalCompositeOperation = 'source-over';
+      // the heat: a warm, breathing glow at the edges of the screen
+      const pulse = 0.5 + Math.sin(now / 1400) * 0.5;
+      const v = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.hypot(w, h) * 0.55);
+      v.addColorStop(0, 'rgba(255,80,20,0)');
+      v.addColorStop(1, `rgba(200,50,10,${0.22 + pulse * 0.1})`);
+      ctx.fillStyle = v;
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = `rgba(255,120,40,${0.05 + pulse * 0.03})`;
+      ctx.fillRect(0, 0, w, h);
       ctx.globalAlpha = 1;
     } else if (sky.kind === 'fog') {
       for (const b of this.banks) {
